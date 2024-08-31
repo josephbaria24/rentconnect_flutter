@@ -6,6 +6,7 @@ class BookmarkPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Color.fromRGBO(255, 252, 242, 1),
       
     );
   }

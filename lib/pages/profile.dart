@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import 'package:line_awesome_flutter/line_awesome_flutter.dart';
+import 'package:rentcon/pages/landlords/listing.dart';
 
 
 //white 255, 252, 242
@@ -55,7 +57,9 @@ class ProfilePage extends StatelessWidget {
           // Menu
           ProfileMenuWidget(title: "Personal Information", icon: LineAwesomeIcons.user, onPress: () {}),
           ProfileMenuWidget(title: "Account Settings", icon: LineAwesomeIcons.cog_solid, onPress: () {}),
-          ProfileMenuWidget(title: "Listing", icon: LineAwesomeIcons.list_alt_solid, onPress: () {}),
+          ProfileMenuWidget(title: "Listing", icon: LineAwesomeIcons.list_alt_solid, onPress: () {
+            Navigator.push(context, MaterialPageRoute(builder: (context) =>  ListingPage()),);
+          }),
           ProfileMenuWidget(title: "About", icon: LineAwesomeIcons.info_solid, onPress: () {}),
           ProfileMenuWidget(title: "Logout", icon: LineAwesomeIcons.sign_out_alt_solid, textColor: Colors.red, endIcon: false, onPress: () {}),
           ], 

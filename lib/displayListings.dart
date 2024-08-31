@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:line_awesome_flutter/line_awesome_flutter.dart';
 import 'MongoDBModel.dart';// Adjust import based on your model location
 import 'package:rentcon/dbHelper/mongodb.dart';
 
@@ -51,11 +52,36 @@ class _MongoDbDisplayListingState extends State<MongoDbDisplayListing> {
 
 Widget displayCard(BoardingHouse data) {
   return Card(
+    color: Color.fromRGBO(255, 252, 242, 1),
     child: Padding(
       padding: const EdgeInsets.all(15.0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // Row for profile icon and creator's name
+          Row(
+            children: [
+              // Circle avatar for the profile icon
+              CircleAvatar(
+                backgroundImage: NetworkImage(
+                  // Replace with the URL to the creator's profile image
+                  //data.creatoPhoto ?? 
+                  'https://images.pexels.com/photos/771742/pexels-photo-771742.jpeg?auto=compress&cs=tinysrgb&w=600',
+                ),
+                radius: 20, // Adjust the size as needed
+              ),
+              SizedBox(width: 10), // Spacing between avatar and text
+              // Creator's name
+              Text(
+                "${data.creator}",
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 16, // Adjust font size as needed
+                ),
+              ),
+            ],
+          ),
+          SizedBox(height: 10),
           // Display the image from the URL
           if (data.photo.isNotEmpty) // Check if photo URL is not empty
             Image.network(
@@ -65,16 +91,25 @@ Widget displayCard(BoardingHouse data) {
               fit: BoxFit.cover, // Adjust fit as needed
             ),
           SizedBox(height: 10),
-          Text("${data.id.oid}"),
-          SizedBox(height: 5),
           Text("${data.description}"),
+          Row(
+            children: [
           SizedBox(height: 5),
-          Text("${data.address}"),
-          SizedBox(height: 5),
-          Text("${data.creator}"),
+          Icon(Icons.location_on, color: const Color.fromARGB(255, 3, 182, 99),),
+          SizedBox(width: 6,),
+          Expanded(child:
+            Text(
+            "${data.address}"),
+           )
+          
+            ]
+            
+          )
+          
         ],
       ),
     ),
   );
 }
+
 }
