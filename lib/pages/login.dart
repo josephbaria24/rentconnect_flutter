@@ -1,9 +1,58 @@
-import 'package:flutter/material.dart';
-import 'package:rentcon/navigation_menu.dart';
-import 'signup.dart';
+import 'dart:convert';
 
-class LoginPage extends StatelessWidget {
-  const LoginPage({super.key});
+import 'package:flutter/material.dart';
+import 'package:get/get.dart';
+import 'package:rentcon/navigation_menu.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'signup.dart';
+import 'package:http/http.dart' as http;
+import 'package:rentcon/config.dart';
+
+class LoginPage extends StatefulWidget {
+  @override
+  _LoginPageState createState() => _LoginPageState();
+}
+
+class _LoginPageState extends State<LoginPage> {
+  TextEditingController emailController = TextEditingController();
+  TextEditingController passwordController = TextEditingController();
+  bool _isNotValidate = false;
+  late SharedPreferences prefs;
+
+  @override
+  void initState() {
+    super.initState();
+    initSharedPref();
+  }
+
+  void initSharedPref() async {
+    prefs = await SharedPreferences.getInstance();
+  }
+
+  void loginUser() async {
+    if (emailController.text.isNotEmpty && passwordController.text.isNotEmpty) {
+      var reqBody = {
+        "email": emailController.text,
+        "password": passwordController.text,
+      };
+      var response = await http.post(
+        Uri.parse(login),
+        headers: {"Content-Type": "application/json"},
+        body: jsonEncode(reqBody),
+      );
+      var jsonResponse = jsonDecode(response.body);
+      if (jsonResponse['status']) {
+        var myToken = jsonResponse['token'];
+        prefs.setString('token', myToken);
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => NavigationMenu(token: myToken)),
+        );
+      } else {
+        print("Something went wrong");
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -25,6 +74,7 @@ class LoginPage extends StatelessWidget {
             ),
             const SizedBox(height: 40.0),
             TextField(
+              controller: emailController,
               decoration: InputDecoration(
                 labelText: 'Email',
                 filled: true,
@@ -37,6 +87,7 @@ class LoginPage extends StatelessWidget {
             ),
             const SizedBox(height: 20.0),
             TextField(
+              controller: passwordController,
               obscureText: true,
               decoration: InputDecoration(
                 labelText: 'Password',
@@ -46,15 +97,14 @@ class LoginPage extends StatelessWidget {
                   borderRadius: BorderRadius.circular(8.0),
                   borderSide: BorderSide.none,
                 ),
+               
                 suffixIcon: const Icon(Icons.visibility),
               ),
             ),
             const SizedBox(height: 40.0),
             ElevatedButton(
               onPressed: () {
-                Navigator.push(context, 
-                MaterialPageRoute(builder: (context) => const NavigationMenu()),
-                );
+                loginUser();
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: Color.fromRGBO(37, 36, 34, 1),
@@ -64,7 +114,7 @@ class LoginPage extends StatelessWidget {
                 ),
               ),
               child: const Text(
-                'Sign In',
+                'Login',
                 style: TextStyle(
                   fontFamily: 'Poppins',
                   fontWeight: FontWeight.w500,
@@ -92,8 +142,7 @@ class LoginPage extends StatelessWidget {
                     Navigator.push(
                       context,
                       MaterialPageRoute(builder: (context) => SignUpPage()),
-                      );
-            
+                    );
                   },
                   child: const Text(
                     'Sign Up',

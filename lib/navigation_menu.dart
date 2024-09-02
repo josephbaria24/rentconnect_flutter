@@ -5,57 +5,85 @@ import 'package:rentcon/pages/home.dart';
 import 'package:rentcon/pages/message.dart';
 import 'package:rentcon/pages/profile.dart';
 import 'package:rentcon/pages/trends.dart';
+import 'package:jwt_decoder/jwt_decoder.dart';
 
-class NavigationMenu extends StatelessWidget {
-  const NavigationMenu({super.key});
+class NavigationMenu extends StatefulWidget {
+  final String token;
+  const NavigationMenu({required this.token, Key? key}) : super(key: key);
+
+  @override
+  State<NavigationMenu> createState() => _NavigationMenuState();
+}
+
+class _NavigationMenuState extends State<NavigationMenu> {
+  late String email;
+
+  @override
+  void initState() {
+    super.initState();
+    final Map<String, dynamic> jwtDecodedToken = JwtDecoder.decode(widget.token);
+    // Using ?? operator to avoid null errors
+    email = jwtDecodedToken['email']?.toString() ?? 'Unknown email';
+  }
 
   @override
   Widget build(BuildContext context) {
-    final controller = Get.put(NavigationController());
+    final controller = Get.put(NavigationController(token: widget.token));
     return Scaffold(
       bottomNavigationBar: Obx(
         () => NavigationBarTheme(
           data: NavigationBarThemeData(
-            indicatorColor: Color.fromRGBO(64, 61, 57, 1), // Background of the selected item
-            labelTextStyle: WidgetStateProperty.all(
+            indicatorColor: Color.fromRGBO(64, 61, 57, 1),
+            labelTextStyle: MaterialStateProperty.all(
               const TextStyle(
                 color: Color.fromRGBO(37, 36, 34, 1),
                 fontWeight: FontWeight.normal,
               ),
             ),
-            iconTheme: WidgetStateProperty.all(
+            iconTheme: MaterialStateProperty.all(
               const IconThemeData(
                 color: Color.fromRGBO(235, 94, 40, 1),
               ),
             ),
           ),
           child: NavigationBar(
-              height: 80,
-              backgroundColor: Color.fromRGBO(255, 252, 242, 1),
-              elevation: 0,
-              selectedIndex: controller.selectedIndex.value,
-              onDestinationSelected: (index) => controller.selectedIndex.value = index,
-          
-            
-             
+            height: 80,
+            backgroundColor: Color.fromRGBO(255, 252, 242, 1),
+            elevation: 0,
+            selectedIndex: controller.selectedIndex.value,
+            onDestinationSelected: (index) => controller.selectedIndex.value = index,
             destinations: const [
               NavigationDestination(icon: ImageIcon(AssetImage('assets/icons/home.png')), label: 'Home'),
               NavigationDestination(icon: ImageIcon(AssetImage('assets/icons/bookmark.png')), label: 'Bookmark'),
-              NavigationDestination(icon: ImageIcon(AssetImage('assets/icons/trend.png'), size: 30,), label: ''),
+              NavigationDestination(icon: ImageIcon(AssetImage('assets/icons/trend.png'), size: 30), label: ''),
               NavigationDestination(icon: ImageIcon(AssetImage('assets/icons/message.png')), label: 'Message'),
               NavigationDestination(icon: ImageIcon(AssetImage('assets/icons/profile.png')), label: 'Profile'),
-              ],
-            ),
+            ],
+          ),
         ),
       ),
-        body: Obx(() => controller.screens[controller.selectedIndex.value]),
+      body: Obx(() => controller.screens[controller.selectedIndex.value]),
     );
   }
 }
 
-class NavigationController extends GetxController{
+class NavigationController extends GetxController {
   final Rx<int> selectedIndex = 0.obs;
+  final String token;
 
-  final screens = [ const HomePage(), const BookmarkPage(), const TrendsPage(), const MessagePage(), const ProfilePage()];
+  NavigationController({required this.token});
+
+  final screens = <Widget>[];
+
+  @override
+  void onInit() {
+    super.onInit();
+    screens.addAll([
+      HomePage(token: token),
+      BookmarkPage(token: token),
+      TrendPage(token: token),
+      MessagePage(token: token),
+      ProfilePage(token: token),
+    ]);
+  }
 }
-

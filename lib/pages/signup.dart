@@ -1,6 +1,9 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'login.dart';
 import 'package:http/http.dart' as http;
+import 'package:rentcon/config.dart';
 
 
 class SignUpPage extends StatefulWidget {
@@ -17,7 +20,24 @@ class _RegistrationState extends State<SignUpPage> {
 
   void registerUser() async {
     if(emailController.text.isNotEmpty && passworController.text.isNotEmpty) {
+      
+      var regBody = {
+        "email":emailController.text,
+        "password":passworController.text
+      };
 
+      var response = await http.post(Uri.parse(registration),
+      headers: {"Content-Type":"application/json"},
+      body: jsonEncode(regBody)
+      );
+      var jsonResponse = jsonDecode(response.body);
+      print(jsonResponse['status']);
+
+      if(jsonResponse['status']){
+        Navigator.push(context, MaterialPageRoute(builder: (context) => LoginPage()));
+      }else{
+        print("Something went wrong");
+      }
     }else {
       setState(() {
         _isNotValidate = true;
@@ -35,7 +55,7 @@ class _RegistrationState extends State<SignUpPage> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: <Widget>[
-            SizedBox(height: 50,),
+            SizedBox(height: 150,),
             const Text(
               'Sign Up to RentConnect',
               style: TextStyle(
@@ -162,7 +182,7 @@ class _RegistrationState extends State<SignUpPage> {
                 GestureDetector(
                   onTap: () {
                     Navigator.push(context,
-                    MaterialPageRoute(builder: (context) => const LoginPage()),
+                    MaterialPageRoute(builder: (context) =>  LoginPage()),
                     );
                   },
                   child: const Text(

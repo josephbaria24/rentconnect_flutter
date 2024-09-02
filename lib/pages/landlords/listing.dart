@@ -1,9 +1,29 @@
 import 'package:flutter/material.dart';
+import 'package:jwt_decoder/jwt_decoder.dart';
 import 'package:rentcon/pages/landlords/analytics.dart';
 import 'package:rentcon/pages/landlords/components/listingNavMenu.dart';
 import 'package:rentcon/pages/landlords/inbox.dart';
+import 'package:rentcon/pages/profile.dart';
 
-class ListingPage extends StatelessWidget {
+class ListingPage extends StatefulWidget {
+  final String token;
+  const ListingPage({required this.token, Key? key}) : super(key: key);
+
+  @override
+  State<ListingPage> createState() => _ListingPageState();
+}
+
+class _ListingPageState extends State<ListingPage> {
+  late String email;
+
+  @override
+  void initState() {
+    super.initState();
+    final Map<String, dynamic> jwtDecodedToken = JwtDecoder.decode(widget.token);
+    // Using ?? operator to avoid null errors
+    email = jwtDecodedToken['email']?.toString() ?? 'Unknown email';
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -11,10 +31,11 @@ class ListingPage extends StatelessWidget {
       appBar: AppBar(
         backgroundColor: Color.fromRGBO(255, 252, 242, 1),
         title: Text('Listing'),
+        
         actions: [
           TextButton(
             onPressed: () {
-              // Add exit functionality
+              //Navigator.push(context, MaterialPageRoute(builder: (context) => ProfilePage()));
             },
             child: Text(
               'Exit',
@@ -39,14 +60,7 @@ class ListingPage extends StatelessWidget {
           ],
         ),
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          // Add your onPressed code here!
-        },
-        child: Icon(Icons.add),
-      ),
-      floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
-
+      
       bottomNavigationBar: ListingNavigationMenu()
     );
   }
@@ -168,7 +182,7 @@ void main() {
     initialRoute: '/listing', // Set the initial route
     routes: {
       '/inbox': (context) => Inbox(), // Define Inbox page
-      '/listing': (context) => ListingPage(),
+      //'/listing': (context) => ListingPage(token: token),
       '/analytics': (context) => Analytics(), // Define Analytics page
     },
   ));

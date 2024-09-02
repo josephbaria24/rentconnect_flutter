@@ -1,20 +1,42 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
+import 'package:jwt_decoder/jwt_decoder.dart';
+import 'package:rentcon/pages/landlords/addListing.dart';
 import 'package:rentcon/pages/landlords/analytics.dart';
 import 'package:rentcon/pages/landlords/components/listingNavMenu.dart';
 import 'package:rentcon/pages/landlords/inbox.dart';
+import 'package:rentcon/pages/profile.dart';
 
-class CurrentListing extends StatelessWidget {
+class CurrentListingPage extends StatefulWidget {
+  final String token;
+  const CurrentListingPage({required this.token, Key? key}) : super(key: key);
+
+  @override
+  State<CurrentListingPage> createState() => _CurrentListingPageState();
+}
+
+class _CurrentListingPageState extends State<CurrentListingPage> {
+  late String email;
+
+  @override
+  void initState() {
+    super.initState();
+    final Map<String, dynamic> jwtDecodedToken = JwtDecoder.decode(widget.token);
+    // Using ?? operator to avoid null errors
+    email = jwtDecodedToken['email']?.toString() ?? 'Unknown email';
+  }
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Color.fromRGBO(255, 252, 242, 1),
       appBar: AppBar(
+
         backgroundColor: Color.fromRGBO(255, 252, 242, 1),
         title: Text('Listing'),
         actions: [
           TextButton(
             onPressed: () {
-              // Add exit functionality
+              //Navigator.push(context, MaterialPageRoute(builder: (context) => ProfilePage(token: ,)));
             },
             child: Text(
               'Exit',
@@ -39,14 +61,15 @@ class CurrentListing extends StatelessWidget {
           ],
         ),
       ),
-      floatingActionButton: FloatingActionButton(
+    floatingActionButton: FloatingActionButton(
         onPressed: () {
+          Navigator.push(context, MaterialPageRoute(builder: (context)=> PropertyInsertPage(token: widget.token,)),);
           // Add your onPressed code here!
         },
         child: Icon(Icons.add),
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
-
+    // bottomNavigationBar: ListingNavigationMenu()
     );
   }
 
@@ -55,7 +78,7 @@ class CurrentListing extends StatelessWidget {
       child: Column(
         children: [
           Image.network(
-            'https://via.placeholder.com/400x200', // Replace with your image URL
+            'https://img.freepik.com/free-photo/3d-house-model-with-modern-architecture_23-2151004049.jpg?size=626&ext=jpg&ga=GA1.1.2008272138.1725148800&semt=ais_hybrid', // Replace with your image URL
             fit: BoxFit.cover,
           ),
           // Add dots or other indicators if needed
@@ -138,7 +161,7 @@ class CurrentListing extends StatelessWidget {
         child: Row(
           children: [
             Image.network(
-              'https://via.placeholder.com/100', // Replace with your image URL
+              'https://img.freepik.com/free-photo/3d-house-model-with-modern-architecture_23-2151004049.jpg?size=626&ext=jpg&ga=GA1.1.2008272138.1725148800&semt=ais_hybrid', // Replace with your image URL
               width: 100,
               height: 100,
               fit: BoxFit.cover,
