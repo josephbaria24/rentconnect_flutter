@@ -10,33 +10,79 @@ import 'package:rentcon/pages/landlords/addListing.dart';
 import 'package:rentcon/pages/login.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   SharedPreferences prefs = await SharedPreferences.getInstance();
   await MongoDatabase.connect();
-  runApp(MyApp(token: prefs.getString('token'),));
+  String? token = prefs.getString('token'); // Nullable token
+  runApp(MyApp(token: token));
 }
 
 class MyApp extends StatelessWidget {
-
-  final token;
+  final String? token; // Nullable token
 
   const MyApp({
-    @required this.token,
+    this.token,
     Key? key,
-  }): super(key: key);
+  }) : super(key: key);
 
-  // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
+    // Check if token is null or expired
+    bool isAuthenticated = token != null && !JwtDecoder.isExpired(token!);
+
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       theme: ThemeData(fontFamily: 'Poppins'),
-      home: (JwtDecoder.isExpired(token) == false) ?NavigationMenu(token: token):LoginPage(),
+      home: isAuthenticated ? NavigationMenu(token: token!) : IndexPage(),
       routes: {
-        '/login':(context) => LoginPage(),
+        '/login': (context) => LoginPage(),
         '/storeProperty': (context) => PropertyInsertPage(),
       },
     );
   }
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+// void main() async {
+//   WidgetsFlutterBinding.ensureInitialized();
+//   SharedPreferences prefs = await SharedPreferences.getInstance();
+//   await MongoDatabase.connect();
+//   runApp(MyApp(token: prefs.getString('token'),));
+// }
+
+// class MyApp extends StatelessWidget {
+
+//   final token;
+
+//   const MyApp({
+//     @required this.token,
+//     Key? key,
+//   }): super(key: key);
+
+//   // This widget is the root of your application.
+//   @override
+//   Widget build(BuildContext context) {
+//     return MaterialApp(
+//       debugShowCheckedModeBanner: false,
+//       theme: ThemeData(fontFamily: 'Poppins'),
+//       home: (JwtDecoder.isExpired(token) == false) ?NavigationMenu(token: token):LoginPage(),
+//       routes: {
+//         '/login':(context) => LoginPage(),
+//         '/storeProperty': (context) => PropertyInsertPage(),
+//       },
+//     );
+//   }
+// }

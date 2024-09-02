@@ -30,21 +30,21 @@ class _CurrentListingPageState extends State<CurrentListingPage> {
     return Scaffold(
       backgroundColor: Color.fromRGBO(255, 252, 242, 1),
       appBar: AppBar(
-
-        backgroundColor: Color.fromRGBO(255, 252, 242, 1),
-        title: Text('Listing'),
-        actions: [
-          TextButton(
-            onPressed: () {
-              //Navigator.push(context, MaterialPageRoute(builder: (context) => ProfilePage(token: ,)));
-            },
-            child: Text(
-              'Exit',
-              style: TextStyle(color: Colors.red),
+      backgroundColor: Color.fromRGBO(255, 252, 242, 1),
+      title: Text('Listing'),
+      leading: IconButton(
+        icon: Icon(Icons.arrow_back),
+        onPressed: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => ProfilePage(token: widget.token),
             ),
-          ),
-        ],
+          );
+        },
       ),
+    ),
+
       body: Padding(
         padding: const EdgeInsets.all(10.0),
         child: ListView(

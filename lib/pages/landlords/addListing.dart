@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:jwt_decoder/jwt_decoder.dart';
 import 'package:rentcon/config.dart';
+import 'package:rentcon/pages/landlords/current_listing.dart';
 
 
 
@@ -108,6 +109,13 @@ class _PropertyInsertPageState extends State<PropertyInsertPage> {
 
       var jsonResponse = jsonDecode(response.body);
       if (jsonResponse['status']) {
+        descriptionController.clear();
+        photoController.clear();
+        addressController.clear();
+        priceController.clear();
+        numberOfRoomsController.clear();
+        amenitiesController.clear();
+        Navigator.push(context, MaterialPageRoute(builder: (context)=> CurrentListingPage(token: widget.token)));
         print("Property added successfully");
         // Handle success, e.g., navigate to another page
       } else {

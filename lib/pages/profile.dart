@@ -4,6 +4,7 @@ import 'package:jwt_decoder/jwt_decoder.dart';
 import 'package:line_awesome_flutter/line_awesome_flutter.dart';
 import 'package:rentcon/pages/landlords/current_listing.dart';
 import 'package:rentcon/pages/landlords/listing.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 
 //white 255, 252, 242
@@ -36,6 +37,16 @@ class _ProfilePageState extends State<ProfilePage> {
     // Safely extracting 'email' from the decoded token
     email = jwtDecodedToken['email']?.toString() ?? 'Unknown email';
   }
+
+  
+  Future<void> _logout() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove('token'); // Replace 'auth_token' with your actual key
+
+    // Navigate to login page or splash screen
+    Navigator.pushReplacementNamed(context, '/login'); // Replace '/login' with your actual route name
+  }
+
   
   @override
   Widget build(BuildContext context) {
@@ -79,7 +90,7 @@ class _ProfilePageState extends State<ProfilePage> {
             Navigator.push(context, MaterialPageRoute(builder: (context) =>  CurrentListingPage(token: widget.token)),);
           }),
           ProfileMenuWidget(title: "About", icon: LineAwesomeIcons.info_solid, onPress: () {}),
-          ProfileMenuWidget(title: "Logout", icon: LineAwesomeIcons.sign_out_alt_solid, textColor: Colors.red, endIcon: false, onPress: () {}),
+          ProfileMenuWidget(title: "Logout", icon: LineAwesomeIcons.sign_out_alt_solid, textColor: Colors.red, endIcon: false, onPress: _logout),
           ], 
         ),
         
