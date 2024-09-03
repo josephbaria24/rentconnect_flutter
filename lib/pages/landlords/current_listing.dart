@@ -1,14 +1,13 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
 import 'package:jwt_decoder/jwt_decoder.dart';
+import 'package:http/http.dart' as http;
+import 'package:rentcon/config.dart';
 import 'package:rentcon/pages/landlords/addListing.dart';
-import 'package:rentcon/pages/landlords/analytics.dart';
-import 'package:rentcon/pages/landlords/components/listingNavMenu.dart';
-import 'package:rentcon/pages/landlords/inbox.dart';
 import 'package:rentcon/pages/profile.dart';
 
 class CurrentListingPage extends StatefulWidget {
-  final String token;
+  final token;
   const CurrentListingPage({required this.token, Key? key}) : super(key: key);
 
   @override
@@ -16,171 +15,237 @@ class CurrentListingPage extends StatefulWidget {
 }
 
 class _CurrentListingPageState extends State<CurrentListingPage> {
-  late String email;
+  late String userId;
+late String email;
+  List? items;
 
   @override
   void initState() {
     super.initState();
-    final Map<String, dynamic> jwtDecodedToken = JwtDecoder.decode(widget.token);
-    // Using ?? operator to avoid null errors
+    Map<String, dynamic> jwtDecodedToken = JwtDecoder.decode(widget.token);
+    userId = jwtDecodedToken['_id'];
     email = jwtDecodedToken['email']?.toString() ?? 'Unknown email';
+    getPropertyList(userId);
+    
   }
+
+void getPropertyList(userId) async{
+        var regBody = {
+        "userId":userId,
+       
+      };
+
+      var response = await http.post(Uri.parse(getProperty),
+        headers: {"Content-Type": "application/json"},
+        body: jsonEncode(regBody),
+      );
+
+      print("Status Code: ${response.statusCode}");
+      print("Response Body: ${response.body}");
+
+      var jsonResponse = jsonDecode(response.body);
+      items = jsonResponse['success'];
+
+      setState(() {
+        
+      });
+
+}
+  // void getPropertyList(String userId) async {
+  //   try {
+  //     final uri = Uri.parse('$getUserPropertyList?userId=$userId');
+  //     var response = await http.post(
+  //       uri,
+  //       headers: {"Content-Type": "application/json"},
+  //     );
+
+  //     if (response.statusCode == 200) {
+  //       var jsonResponse = jsonDecode(response.body);
+  //       if (jsonResponse['success'] != null) {
+  //         setState(() {
+  //           items = jsonResponse['success'];
+  //         });
+  //       } else {
+  //         print("Error: ${jsonResponse['error']}");
+  //       }
+  //     } else {
+  //       print("Error: ${response.statusCode}");
+  //       print("Response Body: ${response.body}");
+  //     }
+  //   } catch (e) {
+  //     print("Error fetching property list: $e");
+  //   }
+  // }
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Color.fromRGBO(255, 252, 242, 1),
       appBar: AppBar(
-      backgroundColor: Color.fromRGBO(255, 252, 242, 1),
-      title: Text('Listing'),
-      leading: IconButton(
-        icon: Icon(Icons.arrow_back),
+        backgroundColor: Color.fromRGBO(255, 252, 242, 1),
+        title: Text('Property Listings'),
+        leading: IconButton(
+          icon: Icon(Icons.arrow_back),
+          onPressed: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => ProfilePage(token: widget.token),
+              ),
+            );
+          },
+        ),
+      ),
+      body: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            padding: EdgeInsets.symmetric(vertical: 30.0, horizontal: 20.0),
+            decoration: BoxDecoration(
+              color: Color.fromRGBO(255, 252, 242, 1),
+              borderRadius: BorderRadius.only(
+                bottomLeft: Radius.circular(20),
+                bottomRight: Radius.circular(20),
+              ),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                CircleAvatar(
+                  child: Icon(Icons.list, size: 30.0),
+                  backgroundColor: Colors.white,
+                  radius: 30.0,
+                ),
+                SizedBox(height: 10.0),
+                Text(
+                  'Your Listings $email',
+                  style: TextStyle(
+                    fontSize: 30.0,
+                    fontWeight: FontWeight.w700,
+                    color: Colors.black,
+                  ),
+                ),
+                SizedBox(height: 8.0),
+                Text(
+                  '${items?.length ?? 0} Properties',
+                  style: TextStyle(fontSize: 20, color: Colors.black),
+                ),
+              ],
+            ),
+          ),
+Expanded(
+  child: Container(
+    decoration: BoxDecoration(
+      color: Colors.white,
+      borderRadius: BorderRadius.only(
+        topLeft: Radius.circular(20),
+        topRight: Radius.circular(20),
+      ),
+    ),
+    child: Padding(
+      padding: const EdgeInsets.all(8.0),
+      child: items == null
+          ? Center(child: CircularProgressIndicator())
+          : ListView.builder(
+              itemCount: items!.length,
+              itemBuilder: (context, index) {
+                final item = items![index];
+                final photoUrl = item['photo'] != null && item['photo'].isNotEmpty
+                  ? (item['photo'].startsWith('http') 
+                      ? item['photo'] 
+                      : '$url${item['photo']}')
+                  : 'https://via.placeholder.com/150';  // Fallback URL
+
+
+                return Card(
+                  margin: EdgeInsets.symmetric(vertical: 10.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Display property image
+                      Image.network(
+                        photoUrl,
+                        height: 150.0,
+                        width: double.infinity,
+                        fit: BoxFit.cover,
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.all(10.0),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            // Display property description
+                            Text(
+                              item['description'] ?? 'No Description',
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 18.0,
+                              ),
+                            ),
+                            SizedBox(height: 5.0),
+                            // Display property address
+                            Text(
+                              item['address'] ?? 'No Address',
+                              style: TextStyle(color: Colors.grey),
+                            ),
+                            SizedBox(height: 5.0),
+                            // Display property price
+                            Text(
+                              'Price: \$${item['price']}',
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 16.0,
+                              ),
+                            ),
+                            SizedBox(height: 5.0),
+                            // Display number of rooms
+                            Text(
+                              'Rooms: ${item['numberOfRooms']}',
+                              style: TextStyle(color: Colors.grey),
+                            ),
+                            SizedBox(height: 5.0),
+                            // Display amenities
+                            Text(
+                              'Amenities: ${item['amenities']?.join(', ') ?? 'None'}',
+                              style: TextStyle(color: Colors.grey),
+                            ),
+                            SizedBox(height: 5.0),
+                            // Display status
+                            Text(
+                              'Status: ${item['status']}',
+                              style: TextStyle(
+                                color: item['status'] == 'available'
+                                    ? Colors.green
+                                    : item['status'] == 'reserved'
+                                        ? Colors.orange
+                                        : Colors.red,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              },
+            ),
+    ),
+  ),
+),
+
+        ],
+      ),
+      floatingActionButton: FloatingActionButton(
         onPressed: () {
           Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (context) => ProfilePage(token: widget.token),
+              builder: (context) => PropertyInsertPage(token: widget.token),
             ),
           );
-        },
-      ),
-    ),
-
-      body: Padding(
-        padding: const EdgeInsets.all(10.0),
-        child: ListView(
-          children: [
-            buildImageSection(),
-            SizedBox(height: 10),
-            buildLocationAndTypeSection(),
-            SizedBox(height: 10),
-            buildDescriptionSection(),
-            SizedBox(height: 10),
-            buildAmenitiesSection(),
-            SizedBox(height: 10),
-            buildRoomsSection(),
-          ],
-        ),
-      ),
-    floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          Navigator.push(context, MaterialPageRoute(builder: (context)=> PropertyInsertPage(token: widget.token,)),);
-          // Add your onPressed code here!
         },
         child: Icon(Icons.add),
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
-    // bottomNavigationBar: ListingNavigationMenu()
-    );
-  }
-
-  Widget buildImageSection() {
-    return Card(
-      child: Column(
-        children: [
-          Image.network(
-            'https://img.freepik.com/free-photo/3d-house-model-with-modern-architecture_23-2151004049.jpg?size=626&ext=jpg&ga=GA1.1.2008272138.1725148800&semt=ais_hybrid', // Replace with your image URL
-            fit: BoxFit.cover,
-          ),
-          // Add dots or other indicators if needed
-        ],
-      ),
-    );
-  }
-
-  Widget buildLocationAndTypeSection() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          children: [
-            Icon(Icons.location_on),
-            SizedBox(width: 5),
-            Text(
-              'Lacao St. Barangay Maningning PPC',
-              style: TextStyle(fontWeight: FontWeight.bold),
-            ),
-          ],
-        ),
-        SizedBox(height: 5),
-        Text(
-          'Apartment',
-          style: TextStyle(fontWeight: FontWeight.bold),
-        ),
-      ],
-    );
-  }
-
-  Widget buildDescriptionSection() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          'Description',
-          style: TextStyle(fontWeight: FontWeight.bold),
-        ),
-        SizedBox(height: 5),
-        Text(
-          'Cozy apartment and boarding house listings offering convenient, comfortable spaces for modern living. Explore our selection of well-appointed, affordable accommodations.',
-        ),
-      ],
-    );
-  }
-
-  Widget buildAmenitiesSection() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          'Amenities',
-          style: TextStyle(fontWeight: FontWeight.bold),
-        ),
-        SizedBox(height: 5),
-        Text('Laundry Area'),
-        Text('Parking Space'),
-        Text('Wifi'),
-        Text('Communal Kitchen'),
-      ],
-    );
-  }
-
-  Widget buildRoomsSection() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        buildRoomCard('Room/Unit no.1', '3,500', '4', 'Reserved'),
-        SizedBox(height: 10),
-        buildRoomCard('Room/Unit no.2', '5,000', '5', 'Available'),
-      ],
-    );
-  }
-
-  Widget buildRoomCard(String roomTitle, String price, String capacity, String status) {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(10.0),
-        child: Row(
-          children: [
-            Image.network(
-              'https://img.freepik.com/free-photo/3d-house-model-with-modern-architecture_23-2151004049.jpg?size=626&ext=jpg&ga=GA1.1.2008272138.1725148800&semt=ais_hybrid', // Replace with your image URL
-              width: 100,
-              height: 100,
-              fit: BoxFit.cover,
-            ),
-            SizedBox(width: 10),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(roomTitle, style: TextStyle(fontWeight: FontWeight.bold)),
-                  Text('Price: $price'),
-                  Text('Capacity: $capacity'),
-                  Text('Status: $status', style: TextStyle(color: status == 'Reserved' ? Colors.red : Colors.green)),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
     );
   }
 }

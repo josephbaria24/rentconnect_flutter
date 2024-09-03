@@ -1,10 +1,11 @@
 import 'dart:convert';
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:jwt_decoder/jwt_decoder.dart';
 import 'package:rentcon/config.dart';
 import 'package:rentcon/pages/landlords/current_listing.dart';
-
+import 'package:image_picker/image_picker.dart';
 
 
 class PropertyInsertPage extends StatefulWidget {
@@ -19,12 +20,13 @@ class _PropertyInsertPageState extends State<PropertyInsertPage> {
 
   late String userId;
   TextEditingController descriptionController = TextEditingController();
-  TextEditingController photoController = TextEditingController();
   TextEditingController addressController = TextEditingController();
   TextEditingController priceController = TextEditingController();
   TextEditingController numberOfRoomsController = TextEditingController();
   TextEditingController amenitiesController = TextEditingController();
   DateTime? availableFromDate;
+  File? _image;
+  final ImagePicker _picker = ImagePicker();
 
   @override
   void initState() {
@@ -34,20 +36,18 @@ class _PropertyInsertPageState extends State<PropertyInsertPage> {
 
     userId = jwtDecodedToken['_id'];
   }
-// @override
-// void initState() {
-//   super.initState();
-//   Map<String, dynamic> jwtDecodedToken = JwtDecoder.decode(widget.token);
 
-//   if (jwtDecodedToken.containsKey('_id')) {
-//     userId = jwtDecodedToken['_id'];
-//   } else {
-//     print('User ID not found in token');
-//     // Handle error, e.g., log out the user or show an error message
-//   }
-// }
+  
+  void _selectImage() async {
+    final pickedFile = await _picker.pickImage(source: ImageSource.gallery);
 
-  // Controllers for each form field
+    if (pickedFile != null) {
+      setState(() {
+        _image = File(pickedFile.path);
+      });
+    }
+  }
+
 
   String? selectedStatus;
   final List<String> statusOptions = ['available', 'reserved', 'rented'];
@@ -83,51 +83,60 @@ class _PropertyInsertPageState extends State<PropertyInsertPage> {
   //   }
   // }
 
-    void addProperty() async {
-    if(descriptionController.text.isNotEmpty && photoController.text.isNotEmpty && addressController.text.isNotEmpty && priceController.text.isNotEmpty && numberOfRoomsController.text.isNotEmpty) {
-      
-      var regBody = {
-        "userId":userId,
-        "description":descriptionController.text,
-        "photo":photoController.text,
-        "address":addressController.text,
-        "price":double.tryParse(priceController.text),
-        "numberOfRooms":int.tryParse(numberOfRoomsController.text),
-        "amenities":amenitiesController.text.split(','),
-        "availableFrom":availableFromDate?.toIso8601String(),
-        "status":selectedStatus ?? "available",
+  void _submitForm() async {
+    if (descriptionController.text.isNotEmpty &&
+        addressController.text.isNotEmpty &&
+        priceController.text.isNotEmpty &&
+        numberOfRoomsController.text.isNotEmpty) {
 
-      };
-    try {
-      var response = await http.post(Uri.parse(storeProperty),
-        headers: {"Content-Type": "application/json"},
-        body: jsonEncode(regBody),
-      );
+      var request = http.MultipartRequest('POST', Uri.parse(storeProperty));
+      request.fields['userId'] = userId;
+      request.fields['description'] = descriptionController.text;
+      request.fields['address'] = addressController.text;
+      request.fields['price'] = priceController.text;
+      request.fields['numberOfRooms'] = numberOfRoomsController.text;
+      request.fields['amenities'] = amenitiesController.text.split(',').join(',');
+      request.fields['availableFrom'] = availableFromDate?.toIso8601String() ?? '';
 
-      print("Status Code: ${response.statusCode}");
-      print("Response Body: ${response.body}");
-
-      var jsonResponse = jsonDecode(response.body);
-      if (jsonResponse['status']) {
-        descriptionController.clear();
-        photoController.clear();
-        addressController.clear();
-        priceController.clear();
-        numberOfRoomsController.clear();
-        amenitiesController.clear();
-        Navigator.push(context, MaterialPageRoute(builder: (context)=> CurrentListingPage(token: widget.token)));
-        print("Property added successfully");
-        // Handle success, e.g., navigate to another page
-      } else {
-        print("Failed to add property: ${jsonResponse['message']}");
+      if (_image != null) {
+        request.files.add(await http.MultipartFile.fromPath('photo', _image!.path));
       }
-    } catch (error) {
-      print("Error occurred: $error");
+
+      try {
+        var response = await request.send();
+
+        if (response.statusCode == 200) {
+          var responseBody = await response.stream.bytesToString();
+          var jsonResponse = jsonDecode(responseBody);
+
+          if (jsonResponse['status']) {
+            descriptionController.clear();
+            addressController.clear();
+            priceController.clear();
+            numberOfRoomsController.clear();
+            amenitiesController.clear();
+            setState(() {
+              _image = null; // Clear the selected image
+            });
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => CurrentListingPage(token: widget.token)),
+            );
+            print("Property added successfully");
+          } else {
+            print("Failed to add property: ${jsonResponse['message']}");
+          }
+        } else {
+          print("Failed with status code: ${response.statusCode}");
+        }
+      } catch (error) {
+        print("Error occurred: $error");
+      }
+    } else {
+      print("Please fill all required fields.");
     }
-  } else {
-    print("Please fill all required fields.");
   }
-}
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -149,15 +158,13 @@ class _PropertyInsertPageState extends State<PropertyInsertPage> {
                   return null;
                 },
               ),
-              TextFormField(
-                controller: photoController,
-                decoration: InputDecoration(labelText: 'Photo URL'),
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Please enter a photo URL';
-                  }
-                  return null;
-                },
+               SizedBox(height: 10),
+              _image == null
+                  ? Text('No image selected.')
+                  : Image.file(_image!),
+              ElevatedButton(
+                onPressed: _selectImage,
+                child: Text('Select Image'),
               ),
               TextFormField(
                 controller: addressController,
@@ -226,7 +233,7 @@ class _PropertyInsertPageState extends State<PropertyInsertPage> {
               SizedBox(height: 20),
               ElevatedButton(
                 onPressed: () {
-                  addProperty();
+                  _submitForm();
                 },
                 child: Text('Submit'),
               ),
