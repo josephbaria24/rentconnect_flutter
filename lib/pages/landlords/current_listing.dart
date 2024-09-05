@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:jwt_decoder/jwt_decoder.dart';
 import 'package:http/http.dart' as http;
 import 'package:rentcon/config.dart';
+import 'package:rentcon/navigation_menu.dart';
 import 'package:rentcon/pages/landlords/addListing.dart';
 import 'package:rentcon/pages/profile.dart';
 
@@ -89,7 +90,7 @@ void getPropertyList(userId) async{
             Navigator.push(
               context,
               MaterialPageRoute(
-                builder: (context) => ProfilePage(token: widget.token),
+                builder: (context) => NavigationMenu(token: widget.token),
               ),
             );
           },

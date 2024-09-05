@@ -6,18 +6,18 @@ import 'package:jwt_decoder/jwt_decoder.dart';
 import 'package:rentcon/config.dart';
 import 'package:rentcon/pages/landlords/current_listing.dart';
 import 'package:image_picker/image_picker.dart';
-
+import 'package:http_parser/http_parser.dart';
+import 'package:mime/mime.dart'; // Add this line
 
 class PropertyInsertPage extends StatefulWidget {
   final token;
-  const PropertyInsertPage({@required this.token,Key? key}) : super(key: key);
+  const PropertyInsertPage({@required this.token, Key? key}) : super(key: key);
 
   @override
   State<PropertyInsertPage> createState() => _PropertyInsertPageState();
 }
 
 class _PropertyInsertPageState extends State<PropertyInsertPage> {
-
   late String userId;
   TextEditingController descriptionController = TextEditingController();
   TextEditingController addressController = TextEditingController();
@@ -26,28 +26,28 @@ class _PropertyInsertPageState extends State<PropertyInsertPage> {
   TextEditingController amenitiesController = TextEditingController();
   DateTime? availableFromDate;
   File? _image;
+  File? _legalDocImage;
   final ImagePicker _picker = ImagePicker();
 
   @override
   void initState() {
-    // TODO: implement initState
     super.initState();
-    Map<String,dynamic> jwtDecodedToken = JwtDecoder.decode(widget.token);
-
+    Map<String, dynamic> jwtDecodedToken = JwtDecoder.decode(widget.token);
     userId = jwtDecodedToken['_id'];
   }
 
-  
-  void _selectImage() async {
+  void _selectImage({required bool isLegalDoc}) async {
     final pickedFile = await _picker.pickImage(source: ImageSource.gallery);
-
     if (pickedFile != null) {
       setState(() {
-        _image = File(pickedFile.path);
+        if (isLegalDoc) {
+          _legalDocImage = File(pickedFile.path);
+        } else {
+          _image = File(pickedFile.path);
+        }
       });
     }
   }
-
 
   String? selectedStatus;
   final List<String> statusOptions = ['available', 'reserved', 'rented'];
@@ -65,24 +65,6 @@ class _PropertyInsertPageState extends State<PropertyInsertPage> {
       });
   }
 
-  // void _submitForm() {
-  //   if (_formKey.currentState!.validate()) {
-  //     // Perform the insert action here, like making a POST request to your server.
-  //     // For now, we'll just print the values to the console.
-  //     print('Description: ${descriptionController.text}');
-  //     print('Photo URL: ${photoController.text}');
-  //     print('Address: ${addressController.text}');
-  //     print('Price: ${priceController.text}');
-  //     print('Number of Rooms: ${numberOfRoomsController.text}');
-  //     print('Amenities: ${amenitiesController.text}');
-  //     print('Available From: $availableFromDate');
-  //     print('Status: $selectedStatus');
-      
-  //     // Reset the form after submission
-  //     _formKey.currentState!.reset();
-  //   }
-  // }
-
   void _submitForm() async {
     if (descriptionController.text.isNotEmpty &&
         addressController.text.isNotEmpty &&
@@ -99,7 +81,30 @@ class _PropertyInsertPageState extends State<PropertyInsertPage> {
       request.fields['availableFrom'] = availableFromDate?.toIso8601String() ?? '';
 
       if (_image != null) {
-        request.files.add(await http.MultipartFile.fromPath('photo', _image!.path));
+        // Get the MIME type of the selected image
+        String mimeType = lookupMimeType(_image!.path) ?? 'application/octet-stream';
+        var fileExtension = mimeType.split('/').last;
+
+        request.files.add(
+          await http.MultipartFile.fromPath(
+            'photo', 
+            _image!.path,
+            contentType: MediaType('image', fileExtension),
+          ),
+        );
+      }
+
+      if (_legalDocImage != null) {
+        String mimeType = lookupMimeType(_legalDocImage!.path) ?? 'application/octet-stream';
+        var fileExtension = mimeType.split('/').last;
+
+        request.files.add(
+          await http.MultipartFile.fromPath(
+            'legalDocPhoto', 
+            _legalDocImage!.path,
+            contentType: MediaType('image', fileExtension),
+          ),
+        );
       }
 
       try {
@@ -117,6 +122,7 @@ class _PropertyInsertPageState extends State<PropertyInsertPage> {
             amenitiesController.clear();
             setState(() {
               _image = null; // Clear the selected image
+              _legalDocImage = null; // Clear the legal document image
             });
             Navigator.push(
               context,
@@ -158,13 +164,21 @@ class _PropertyInsertPageState extends State<PropertyInsertPage> {
                   return null;
                 },
               ),
-               SizedBox(height: 10),
+              SizedBox(height: 10),
               _image == null
                   ? Text('No image selected.')
                   : Image.file(_image!),
               ElevatedButton(
-                onPressed: _selectImage,
-                child: Text('Select Image'),
+                onPressed: () => _selectImage(isLegalDoc: false),
+                child: Text('Select Property Image'),
+              ),
+              SizedBox(height: 10),
+              _legalDocImage == null
+                  ? Text('No legal document image selected.')
+                  : Image.file(_legalDocImage!),
+              ElevatedButton(
+                onPressed: () => _selectImage(isLegalDoc: true),
+                child: Text('Select Legal Document Image'),
               ),
               TextFormField(
                 controller: addressController,

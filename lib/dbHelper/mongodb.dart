@@ -6,8 +6,8 @@ import 'package:rentcon/dbHelper/constant.dart';
 
 class MongoDatabase {
   static late Db db;
-  static late DbCollection userCollection;
-  static late DbCollection propertiesCollection;
+  static late DbCollection users;
+  static late DbCollection properties;
 
   static Future<void> connect() async {
     db = await Db.create(MONGO_CONN_URL);
@@ -16,23 +16,23 @@ class MongoDatabase {
     log("Using user collection: $USER_COLLECTION");
     log("Using properties collection: $PROPERTIES_COLLECTION");
 
-    userCollection = db.collection(USER_COLLECTION);
-    propertiesCollection = db.collection(PROPERTIES_COLLECTION);
+    users = db.collection(USER_COLLECTION);
+    properties = db.collection(PROPERTIES_COLLECTION);
   }
 
   static Future<List<Map<String, dynamic>>> getUserData() async {
-    final arrData = await userCollection.find().toList();
+    final arrData = await users.find().toList();
     return arrData;
   }
 
   static Future<List<Map<String, dynamic>>> getPropertiesData() async {
-    final arrData = await propertiesCollection.find().toList();
+    final arrData = await properties.find().toList();
     return arrData;
   }
 
   static Future<String> insertUser(MongoDb data) async {
     try {
-      var result = await userCollection.insertOne(data.toJson());
+      var result = await users.insertOne(data.toJson());
       if (result.isSuccess) {
         return "User Data Inserted";
       } else {
@@ -46,7 +46,7 @@ class MongoDatabase {
 
   static Future<String> insertProperty(BoardingHouse data) async {
     try {
-      var result = await propertiesCollection.insertOne(data.toJson());
+      var result = await properties.insertOne(data.toJson());
       if (result.isSuccess) {
         return "Property Data Inserted";
       } else {
