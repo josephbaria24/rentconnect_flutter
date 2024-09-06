@@ -1,11 +1,13 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:fluttertoast/fluttertoast.dart';
 import 'package:http/http.dart' as http;
+import 'toast.dart';
 import 'package:jwt_decoder/jwt_decoder.dart';
 import 'package:rentcon/models/property.dart'; // Import the correct Property class
 
 Future<List<Property>> getBookmarkedProperties(String token, String userId) async {
-  final url = Uri.parse('https://rentconnect-backend-nodejs.onrender.com/getUserBookmarks/$userId'); // Adjust the endpoint if necessary
+  final url = Uri.parse('http://192.168.1.22:3000/getUserBookmarks/$userId'); // Adjust the endpoint if necessary
 
   try {
     final response = await http.get(
@@ -50,18 +52,26 @@ class _BookmarkPageState extends State<BookmarkPage> {
   late Future<List<Property>> bookmarkedProperties;
   late String email;
   late String userId;
+  late FToast ftoast;
+  late ToastNotification toast;
 
   @override
   void initState() {
     super.initState();
+    ftoast = FToast(); // Initialize FToast
+    ftoast.init(context);
     final Map<String, dynamic> jwtDecodedToken = JwtDecoder.decode(widget.token);
     email = jwtDecodedToken['email']?.toString() ?? 'Unknown email';
     userId =  jwtDecodedToken['_id']?.toString() ?? 'Unknown userID'; // Implement this function
     bookmarkedProperties = getBookmarkedProperties(widget.token, userId);
+    toast = ToastNotification(ftoast.init(context));
   }
 
   @override
   Widget build(BuildContext context) {
+    ftoast = FToast();
+    ftoast.init(context);
+    toast = ToastNotification(ftoast);
     return Scaffold(
       backgroundColor: Color.fromRGBO(255, 252, 242, 1),
       appBar: AppBar(
@@ -83,7 +93,7 @@ class _BookmarkPageState extends State<BookmarkPage> {
                 final property = snapshot.data![index];
                 final imageUrl = property.photo.startsWith('http')
                     ? property.photo
-                    : 'https://rentconnect-backend-nodejs.onrender.com/${property.photo}'; // Handle relative image URLs
+                    : 'http://192.168.1.22:3000/${property.photo}'; // Handle relative image URLs
 
                 return Card(
                   elevation: 4,

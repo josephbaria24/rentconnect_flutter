@@ -6,6 +6,10 @@ import 'package:jwt_decoder/jwt_decoder.dart';
 import 'package:rentcon/config.dart';
 import 'package:rentcon/pages/fullscreenImage.dart';
 import 'package:rentcon/navigation_menu.dart';
+import 'package:fluttertoast/fluttertoast.dart';
+import 'package:rentcon/pages/search_result.dart';
+import 'toast.dart';
+import '../models/property.dart';
 
 class HomePage extends StatefulWidget {
   final String token;
@@ -21,17 +25,40 @@ class _HomePageState extends State<HomePage> {
   late String userId;
   late Future<List<Property>> propertiesFuture;
   List<String> bookmarkedPropertyIds = [];
+  List<Property> filteredProperties = [];
+  late FToast ftoast;
+  late ToastNotification toast;
+  String searchQuery = '';
+late TextEditingController _searchController;
+final TextEditingController _minPriceController = TextEditingController();
+final TextEditingController _maxPriceController = TextEditingController();
+
 
   @override
   void initState() {
     super.initState();
+    _searchController = TextEditingController();
+    ftoast = FToast(); // Initialize FToast
+    ftoast.init(context);
     final Map<String, dynamic> jwtDecodedToken = JwtDecoder.decode(widget.token);
     email = jwtDecodedToken['email']?.toString() ?? 'Unknown email';
     userId = jwtDecodedToken['_id']?.toString() ?? 'Unknown userId';
     propertiesFuture = fetchProperties();
      fetchUserBookmarks();
+     toast = ToastNotification(ftoast.init(context));
+     propertiesFuture.then((properties) {
+      setState(() {
+        filteredProperties = properties;
+      });
+    });
   }
-
+  @override
+  void dispose() {
+    _searchController.dispose();
+    _minPriceController.dispose();
+    _maxPriceController.dispose();
+    super.dispose();
+  }
   // Fetch properties from the API
   Future<List<Property>> fetchProperties() async {
     try {
@@ -50,6 +77,26 @@ class _HomePageState extends State<HomePage> {
   }
 
 
+List<Property> filterProperties(List<Property> properties) {
+  double? minPrice = double.tryParse(_minPriceController.text);
+  double? maxPrice = double.tryParse(_maxPriceController.text);
+
+  return properties.where((property) {
+    bool matchesDescription = property.description.toLowerCase().contains(searchQuery.toLowerCase()) ||
+                              property.address.toLowerCase().contains(searchQuery.toLowerCase());
+
+    bool matchesPrice = true;
+    if (minPrice != null) {
+      matchesPrice = property.price >= minPrice;
+    }
+    if (maxPrice != null) {
+      matchesPrice = matchesPrice && property.price <= maxPrice;
+    }
+
+    return matchesDescription && matchesPrice;
+  }).toList();
+}
+
 
 
   Future<void> fetchUserBookmarks() async {
@@ -58,7 +105,7 @@ class _HomePageState extends State<HomePage> {
 
     try {
       final response = await http.get(
-        Uri.parse('https://rentconnect-backend-nodejs.onrender.com/getUserBookmarks/$userId'), // Adjust endpoint if necessary
+        Uri.parse('http://192.168.1.22:3000/getUserBookmarks/$userId'), // Adjust endpoint if necessary
         headers: {
           'Authorization': 'Bearer ${widget.token}',
         },
@@ -83,7 +130,7 @@ class _HomePageState extends State<HomePage> {
   // Fetch user email from API
   Future<String> fetchUserEmail(String userId) async {
     try {
-      final response = await http.get(Uri.parse('https://rentconnect-backend-nodejs.onrender.com/getUserEmail/$userId'));
+      final response = await http.get(Uri.parse('http://192.168.1.22:3000/getUserEmail/$userId'));
 
       if (response.statusCode == 200) {
         final Map<String, dynamic> json = jsonDecode(response.body);
@@ -105,71 +152,156 @@ class _HomePageState extends State<HomePage> {
 
 
 // Function to bookmark a property
-  Future<void> bookmarkProperty(String propertyId) async {
-    final url = Uri.parse('https://rentconnect-backend-nodejs.onrender.com/addBookmark'); // Your API endpoint
-    final Map<String, dynamic> jwtDecodedToken = JwtDecoder.decode(widget.token);
-    String userId = jwtDecodedToken['_id']?.toString() ?? 'Unknown user ID';
+Future<void> bookmarkProperty(String propertyId) async {
+  final url = Uri.parse('http://192.168.1.22:3000/addBookmark');
+  final Map<String, dynamic> jwtDecodedToken = JwtDecoder.decode(widget.token);
+  String userId = jwtDecodedToken['_id']?.toString() ?? 'Unknown user ID';
 
-    try {
-      if (bookmarkedPropertyIds.contains(propertyId)) {
-        // If already bookmarked, remove it
-        final removeUrl = Uri.parse('https://rentconnect-backend-nodejs.onrender.com/removeBookmark'); // Adjust this endpoint if you have a remove API
-        await http.post(removeUrl,
-          headers: {
-            'Authorization': 'Bearer ${widget.token}',
-            'Content-Type': 'application/json',
-          },
-          body: jsonEncode({
-            'userId': userId,
-            'propertyId': propertyId,
-          }));
-        setState(() {
-          bookmarkedPropertyIds.remove(propertyId); // Update local state
-        });
-        Get.snackbar('Success', 'Property removed from bookmarks!');
-      } else {
-        // If not bookmarked, add it
-        await http.post(url,
-          headers: {
-            'Authorization': 'Bearer ${widget.token}',
-            'Content-Type': 'application/json',
-          },
-          body: jsonEncode({
-            'userId': userId,
-            'propertyId': propertyId,
-          }));
-        setState(() {
-            if (bookmarkedPropertyIds.contains(propertyId)) {
-              bookmarkedPropertyIds.remove(propertyId);
-            } else {
-              bookmarkedPropertyIds.add(propertyId);
-          }
-  });
-      }
+  try {
+    if (bookmarkedPropertyIds.contains(propertyId)) {
+      // If already bookmarked, remove it
+      final removeUrl = Uri.parse('http://192.168.1.22:3000/removeBookmark');
+      await http.post(removeUrl,
+        headers: {
+          'Authorization': 'Bearer ${widget.token}',
+          'Content-Type': 'application/json',
+        },
+        body: jsonEncode({
+          'userId': userId,
+          'propertyId': propertyId,
+        }));
 
-      // Refresh properties to reflect changes immediately
-      await _refreshProperties();
-    } catch (error) {
-      print('Error toggling bookmark: $error');
-      Get.snackbar('Error', 'Failed to toggle bookmark');
+      setState(() {
+        bookmarkedPropertyIds.remove(propertyId); // Update local state
+        filteredProperties = filteredProperties.where((property) => property.id != propertyId).toList();
+      });
+
+      // Show custom toast for removal
+       toast.warn('Property removed from bookmarks!');
+
+    } else {
+      // If not bookmarked, add it
+      await http.post(url,
+        headers: {
+          'Authorization': 'Bearer ${widget.token}',
+          'Content-Type': 'application/json',
+        },
+        body: jsonEncode({
+          'userId': userId,
+          'propertyId': propertyId,
+        }));
+
+      setState(() {
+        bookmarkedPropertyIds.add(propertyId); // Update local state
+      });
+
+      // Show custom toast for addition
+      toast.success('Property added to bookmarks!');
     }
+
+    // Refresh properties to reflect changes immediately
+    await _refreshProperties();
+  } catch (error) {
+    print('Error toggling bookmark: $error');
+    // Show error message with a custom toast
+    toast.error('Failed to toggle bookmark');
   }
+}
 
 
+void _performSearch() {
+  final query = _searchController.text;
+  if (query.isNotEmpty) {
+    // Filter properties based on the search query
+    final matchingProperties = filterProperties(filteredProperties);
+    // Navigate to the search results page with the matching properties
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => SearchResultPage(
+          query: query,
+          properties: matchingProperties,
+        ),
+      ),
+    );
+  }
+}
 
 
+void _handleSearch(String query) {
+    setState(() {
+      searchQuery = query.toLowerCase();
+      filteredProperties = (propertiesFuture as Future<List<Property>>).then((properties) {
+        return properties.where((property) {
+          return property.description.toLowerCase().contains(searchQuery) ||
+                 property.address.toLowerCase().contains(searchQuery);
+        }).toList();
+      }) as List<Property>;
+    });
+  }
+void _applyFilters() {
+  setState(() {
+    // Re-fetch the complete list of properties
+    propertiesFuture.then((properties) {
+      filteredProperties = filterProperties(properties);
+    });
+  });
+}
 
 
-
-
-
+// void _showFilterDialog() {
+//   showDialog(
+//     context: context,
+//     builder: (BuildContext context) {
+//       return AlertDialog(
+//         title: Text('Filter Properties'),
+//         content: Column(
+//           mainAxisSize: MainAxisSize.min,
+//           children: [
+//             // Add filter criteria fields here, e.g., price range, property type
+//             // For example:
+//             TextField(
+//               controller: _minPriceController,
+//               decoration: InputDecoration(labelText: 'Min Price'),
+//               keyboardType: TextInputType.number,
+//             ),
+//             TextField(
+//               controller: _maxPriceController,
+//               decoration: InputDecoration(labelText: 'Max Price'),
+//               keyboardType: TextInputType.number,
+//             ),
+//           ],
+//         ),
+//         actions: [
+//           TextButton(
+//             onPressed: () {
+//               Navigator.of(context).pop(); // Close the dialog
+//               _applyFilters(); // Apply the filters
+//             },
+//             child: Text('Apply'),
+//           ),
+//           TextButton(
+//             onPressed: () {
+//               Navigator.of(context).pop(); // Close the dialog without applying filters
+//             },
+//             child: Text('Cancel'),
+//           ),
+//         ],
+//       );
+//     },
+//   );
+// }
 
 
   @override
   Widget build(BuildContext context) {
+    ftoast = FToast();
+    ftoast.init(context);
+    toast = ToastNotification(ftoast);
     final NavigationController controller = Get.find<NavigationController>();
 
     return Scaffold(
+      
       backgroundColor: Color.fromRGBO(255, 252, 242, 1),
       body: Padding(
         padding: EdgeInsets.symmetric(horizontal: 10.0),
@@ -201,13 +333,16 @@ class _HomePageState extends State<HomePage> {
                     } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
                       return Center(child: Text('No properties available.'));
                     } else {
+                      final properties = searchQuery.isEmpty
+                          ? snapshot.data!
+                          : filteredProperties;
                       return ListView.builder(
                         itemCount: snapshot.data!.length,
                         itemBuilder: (context, index) {
                           final property = snapshot.data![index];
                           final imageUrl = property.photo.startsWith('http')
                               ? property.photo
-                              : 'https://rentconnect-backend-nodejs.onrender.com/${property.photo}';
+                              : 'http://192.168.1.22:3000/${property.photo}';
 
                           return FutureBuilder<String>(
                             future: fetchUserEmail(property.userId),
@@ -320,29 +455,38 @@ class _HomePageState extends State<HomePage> {
   }
 
   // Search field widget
-  Container _searchField() {
-    return Container(
-      margin: EdgeInsets.only(top: 20, left: 20, right: 20),
-      decoration: BoxDecoration(
-        boxShadow: [
-          BoxShadow(
-            color: Color(0xff101617).withOpacity(0.1),
-            blurRadius: 5,
-            spreadRadius: 0.0,
-          ),
-        ],
-      ),
-      child: TextField(
-        decoration: InputDecoration(
-          filled: true,
-          fillColor: Colors.white,
-          contentPadding: EdgeInsets.all(15),
-          hintText: 'Search',
-          hintStyle: TextStyle(
-            color: Color(0xffDDDADA),
-            fontSize: 14,
-          ),
-          prefixIcon: Padding(
+Container _searchField() {
+  return Container(
+    margin: EdgeInsets.only(top: 20, left: 20, right: 20),
+    decoration: BoxDecoration(
+      boxShadow: [
+        BoxShadow(
+          color: Color(0xff101617).withOpacity(0.1),
+          blurRadius: 5,
+          spreadRadius: 0.0,
+        ),
+      ],
+    ),
+    child: TextField(
+      controller: _searchController,
+      onChanged: (value) {
+        _handleSearch(value);
+      },
+      decoration: InputDecoration(
+        filled: true,
+        fillColor: Colors.white,
+        contentPadding: EdgeInsets.all(15),
+        hintText: 'Search',
+        hintStyle: TextStyle(
+          color: Color(0xffDDDADA),
+          fontSize: 14,
+        ),
+        prefixIcon: GestureDetector(
+          onTap: () {
+            // Trigger search action
+            _performSearch();
+          },
+          child: Padding(
             padding: const EdgeInsets.all(12),
             child: Image.asset(
               'assets/icons/search.png',
@@ -350,7 +494,13 @@ class _HomePageState extends State<HomePage> {
               height: 16.0,
             ),
           ),
-          suffixIcon: Container(
+        ),
+        suffixIcon: GestureDetector(
+          onTap: () {
+            // Trigger filter action
+            _showFilterDialog();
+          },
+          child: Container(
             width: 100,
             child: IntrinsicHeight(
               child: Row(
@@ -374,6 +524,7 @@ class _HomePageState extends State<HomePage> {
               ),
             ),
           ),
+        ),
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(15),
             borderSide: BorderSide.none,
@@ -382,33 +533,49 @@ class _HomePageState extends State<HomePage> {
       ),
     );
   }
-}
-
-class Property {
-  final String id;
-  final String description;
-  final String address;
-  final double price;
-  final String photo;
-  final String userId;
-
-  Property({
-    required this.id,
-    required this.description,
-    required this.address,
-    required this.price,
-    required this.photo,
-    required this.userId,
-  });
-
-  factory Property.fromJson(Map<String, dynamic> json) {
-    return Property(
-      id: json['_id'],
-      description: json['description'],
-      address: json['address'],
-      price: json['price'].toDouble(),
-      photo: json['photo'],
-      userId: json['userId'],
+   void _showFilterDialog() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text('Filter Properties'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: _minPriceController,
+                decoration: InputDecoration(labelText: 'Min Price'),
+                keyboardType: TextInputType.number,
+              ),
+              TextField(
+                controller: _maxPriceController,
+                decoration: InputDecoration(labelText: 'Max Price'),
+                keyboardType: TextInputType.number,
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop(); // Close the dialog
+                _applyFilters(); // Apply the filters
+              },
+              child: Text('Apply'),
+            ),
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop(); // Close the dialog without applying filters
+              },
+              child: Text('Cancel'),
+            ),
+          ],
+        );
+      },
     );
   }
 }
+
+
+// Controller for the search field
+final TextEditingController _searchController = TextEditingController();
+

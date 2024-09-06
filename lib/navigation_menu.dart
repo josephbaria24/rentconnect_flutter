@@ -6,6 +6,8 @@ import 'package:rentcon/pages/message.dart';
 import 'package:rentcon/pages/profile.dart';
 import 'package:rentcon/pages/trends.dart';
 import 'package:jwt_decoder/jwt_decoder.dart';
+import 'package:fluttertoast/fluttertoast.dart';
+import 'package:rentcon/pages/toast.dart';
 
 class NavigationMenu extends StatefulWidget {
   final String token;
@@ -17,6 +19,8 @@ class NavigationMenu extends StatefulWidget {
 
 class _NavigationMenuState extends State<NavigationMenu> {
   late String email;
+  late FToast ftoast;
+  late ToastNotification toast;
 
   @override
   void initState() {
@@ -24,10 +28,23 @@ class _NavigationMenuState extends State<NavigationMenu> {
     final Map<String, dynamic> jwtDecodedToken = JwtDecoder.decode(widget.token);
     // Using ?? operator to avoid null errors
     email = jwtDecodedToken['email']?.toString() ?? 'Unknown email';
+    print("MessagePage initialized with email: $email");
   }
-
+  void showToast() {
+    Fluttertoast.showToast(
+      msg: "This is a test toast!",  // Message displayed in the toast
+      toastLength: Toast.LENGTH_SHORT,
+      gravity: ToastGravity.BOTTOM,
+      backgroundColor: Colors.green,
+      textColor: Colors.white,
+      fontSize: 16.0,
+    );
+  }
   @override
   Widget build(BuildContext context) {
+    ftoast = FToast();
+    ftoast.init(context);
+    toast = ToastNotification(ftoast);
     final controller = Get.put(NavigationController(token: widget.token));
     return Scaffold(
       bottomNavigationBar: Obx(
@@ -69,6 +86,8 @@ class _NavigationMenuState extends State<NavigationMenu> {
 
 class NavigationController extends GetxController {
   final Rx<int> selectedIndex = 0.obs;
+  late FToast ftoast;
+  late ToastNotification toast;
   final String token;
 
   NavigationController({required this.token});
