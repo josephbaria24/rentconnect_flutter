@@ -1,14 +1,19 @@
 import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
+import 'package:get/get.dart';
 import 'package:http/http.dart' as http;
 import 'package:rentcon/pages/home.dart';
+import 'package:rentcon/theme_controller.dart';
 import 'toast.dart';
+import 'global_loading_indicator.dart';
 import 'package:jwt_decoder/jwt_decoder.dart';
-import 'package:rentcon/models/property.dart'; // Import the correct Property class
+import 'package:rentcon/models/property.dart';
+ // Make sure to import your theme controller
 
 Future<List<Property>> getBookmarkedProperties(String token, String userId) async {
-  final url = Uri.parse('http://192.168.1.13:3000/getUserBookmarks/$userId'); // Adjust the endpoint if necessary
+  final url = Uri.parse('https://rentconnect-backend-nodejs.onrender.com/getUserBookmarks/$userId'); 
 
   try {
     final response = await http.get(
@@ -23,18 +28,15 @@ Future<List<Property>> getBookmarkedProperties(String token, String userId) asyn
       
       if (data['status'] == true) {
         final List<dynamic> properties = data['properties'];
-        // Ensure that properties is a list of maps and map each property to Property object
         return properties.map((json) => Property.fromJson(json)).toList();
       } else {
         throw Exception('Failed to load bookmarked properties: ${data['error'] ?? 'Unknown error'}');
       }
     } else {
-      // Log or print the response body for debugging
       print('Response body: ${response.body}');
       throw Exception('Failed to load bookmarked properties. Status Code: ${response.statusCode}');
     }
   } catch (error) {
-    // Print the error to debug
     print('Error loading bookmarked properties: $error');
     throw Exception('Error loading bookmarked properties: $error');
   }
@@ -55,17 +57,19 @@ class _BookmarkPageState extends State<BookmarkPage> {
   late String userId;
   late FToast ftoast;
   late ToastNotification toast;
+  final ThemeController _themeController = Get.find<ThemeController>();
+
 
   @override
   void initState() {
     super.initState();
-    ftoast = FToast(); // Initialize FToast
+    ftoast = FToast();
     ftoast.init(context);
     final Map<String, dynamic> jwtDecodedToken = JwtDecoder.decode(widget.token);
     email = jwtDecodedToken['email']?.toString() ?? 'Unknown email';
-    userId =  jwtDecodedToken['_id']?.toString() ?? 'Unknown userID'; // Implement this function
+    userId = jwtDecodedToken['_id']?.toString() ?? 'Unknown userID';
     bookmarkedProperties = getBookmarkedProperties(widget.token, userId);
-    toast = ToastNotification(ftoast.init(context));
+    toast = ToastNotification(ftoast);
   }
 
   @override
@@ -73,55 +77,68 @@ class _BookmarkPageState extends State<BookmarkPage> {
     ftoast = FToast();
     ftoast.init(context);
     toast = ToastNotification(ftoast);
-    return Scaffold(
-      backgroundColor: Color.fromRGBO(255, 252, 242, 1),
-      appBar: AppBar(
-        title: Text('Bookmarked Properties $userId'),
-      ),
-      body: FutureBuilder<List<Property>>(
-        future: bookmarkedProperties,
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return Center(child: CircularProgressIndicator());
-          } else if (snapshot.hasError) {
-            return Center(child: Text('Error: ${snapshot.error}'));
-          } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
-            return Center(child: Text('No bookmarked properties.'));
-          } else {
-            return ListView.builder(
-              itemCount: snapshot.data!.length,
-              itemBuilder: (context, index) {
-                final property = snapshot.data![index];
-                final imageUrl = property.photo.startsWith('http')
-                    ? property.photo
-                    : 'http://192.168.1.13:3000/${property.photo}'; // Handle relative image URLs
 
-                return Card(
-                  elevation: 4,
-                  margin: EdgeInsets.symmetric(vertical: 10.0, horizontal: 15.0),
-                  child: ListTile(
-                    title: Text(property.description),
-                    subtitle: Text('₱${property.price.toStringAsFixed(2)} - ${property.address}',
-                    style:TextStyle(
-                         fontFamily: 'Roboto',
-                        fontWeight: FontWeight.bold,
-                         ),),
-                    leading: Image.network(imageUrl, width: 100, fit: BoxFit.cover),
-                  ),
-                );
+
+    return Scaffold(
+      backgroundColor: _themeController.isDarkMode.value ? Color.fromARGB(255, 19, 19, 19) : Color.fromRGBO(252, 252, 252, 1),
+      body: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(height: 30,),
+          Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Text(
+              'Bookmark',
+              style: TextStyle(
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
+                color: _themeController.isDarkMode.value ? Colors.white : Colors.black,
+              ),
+            ),
+          ),
+          Expanded(
+            child: FutureBuilder<List<Property>>(
+              future: bookmarkedProperties,
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return GlobalLoadingIndicator();
+                } else if (snapshot.hasError) {
+                  return Center(child: Text('Error: ${snapshot.error}'));
+                } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
+                  return Center(child: Text('No bookmarked properties.'));
+                } else {
+                  return ListView.builder(
+                    itemCount: snapshot.data!.length,
+                    itemBuilder: (context, index) {
+                      final property = snapshot.data![index];
+                      final imageUrl = property.photo.startsWith('http')
+                          ? property.photo
+                          : 'https://rentconnect-backend-nodejs.onrender.com/${property.photo}';
+
+                      return Card(
+                        color: _themeController.isDarkMode.value ? Colors.grey[850] : Colors.white,
+                        elevation: 4,
+                        margin: EdgeInsets.symmetric(vertical: 10.0, horizontal: 15.0),
+                        child: ListTile(
+                          title: Text(property.description, style: TextStyle(color: _themeController.isDarkMode.value ? Colors.white : Colors.black)),
+                          subtitle: Text('₱${property.price.toStringAsFixed(2)} - ${property.address}',
+                            style: TextStyle(
+                              color: _themeController.isDarkMode.value ? Colors.white70 : Colors.black54,
+                              fontFamily: 'Roboto',
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          leading: Image.network(imageUrl, width: 100, fit: BoxFit.cover),
+                        ),
+                      );
+                    },
+                  );
+                }
               },
-            );
-          }
-        },
+            ),
+          ),
+        ],
       ),
     );
   }
-}
-
-// Implement this function to extract userId from the token
-String extractUserIdFromToken(String token) {
-  // Example implementation using jwt_decoder package:
-  // Map<String, dynamic> decodedToken = JwtDecoder.decode(token);
-  // return decodedToken['userId'];
-  return 'userId'; // Replace with actual logic
 }

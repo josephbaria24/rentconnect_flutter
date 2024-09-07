@@ -4,6 +4,7 @@ import 'package:jwt_decoder/jwt_decoder.dart';
 import 'package:line_awesome_flutter/line_awesome_flutter.dart';
 import 'package:rentcon/pages/landlords/current_listing.dart';
 import 'package:rentcon/pages/profileSection/profileChecker.dart';
+import 'package:rentcon/theme_controller.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:image_picker/image_picker.dart'; // For picking images
 import 'dart:io'; // For file operations
@@ -28,19 +29,36 @@ class _ProfilePageState extends State<ProfilePage> {
   final ImagePicker _picker = ImagePicker();
   bool _isUpdating = false;
   bool _hasImageChanged = false; // Flag to track if image has changed
-
+  bool _isDarkMode = false; // To manage dark mode
   @override
   void initState() {
     super.initState();
+     _loadThemePreference();
     final Map<String, dynamic> jwtDecodedToken = JwtDecoder.decode(widget.token);
     email = jwtDecodedToken['email']?.toString() ?? 'Unknown email';
     userId = jwtDecodedToken['_id']?.toString() ?? 'Unknown userId';
     _fetchUserProfile();
     print('Initialized with email: $email and userId: $userId');
   }
+    Future<void> _loadThemePreference() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    setState(() {
+      _isDarkMode = prefs.getBool('isDarkMode') ?? false;
+    });
+  }
+
+  Future<void> _toggleTheme(bool isDark) async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    setState(() {
+      _isDarkMode = isDark;
+      prefs.setBool('isDarkMode', isDark);
+      // Refresh the page
+      Get.changeThemeMode(isDark ? ThemeMode.dark : ThemeMode.light);
+    });
+  }
 
   Future<void> _fetchUserProfile() async {
-    final url = Uri.parse('http://192.168.1.13:3000/user/$userId'); // Adjust the endpoint if needed
+    final url = Uri.parse('https://rentconnect-backend-nodejs.onrender.com/user/$userId'); // Adjust the endpoint if needed
     try {
       final response = await http.get(url, headers: {'Authorization': 'Bearer ${widget.token}'});
       if (response.statusCode == 200) {
@@ -79,7 +97,7 @@ class _ProfilePageState extends State<ProfilePage> {
 
   Future<void> _uploadProfilePicture() async {
     if (_profileImage != null) {
-      final url = Uri.parse('http://192.168.1.13:3000/updateProfilePicture/$userId');
+      final url = Uri.parse('https://rentconnect-backend-nodejs.onrender.com/updateProfilePicture/$userId');
       var request = http.MultipartRequest('PATCH', url)
         ..headers['Authorization'] = 'Bearer ${widget.token}';
 
@@ -132,11 +150,26 @@ class _ProfilePageState extends State<ProfilePage> {
     });
     print('Save button processing completed.');
   }
-
+ final themeController = Get.put(ThemeController()); // Get theme controller
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Color.fromRGBO(255, 252, 242, 1),
+    return Obx(
+      () => Scaffold(
+      appBar: AppBar(
+      backgroundColor: themeController.isDarkMode.value ? Color.fromARGB(255, 19, 19, 19) : Color.fromRGBO(255, 255, 255, 1),
+      actions: [
+        IconButton(
+          icon: Icon(
+            themeController.isDarkMode.value ? Icons.nights_stay_outlined: Icons.wb_sunny_outlined, // Moon for dark mode, sun for light mode
+            color: themeController.isDarkMode.value ? const Color.fromARGB(255, 108, 151, 245) : const Color.fromARGB(255, 214, 182, 38),
+          ),
+          onPressed: () {
+           themeController.toggleTheme(!themeController.isDarkMode.value); // Toggle between dark and light mode
+          },
+        ),
+      ],
+    ),
+      backgroundColor: themeController.isDarkMode.value ? Color.fromARGB(255, 19, 19, 19) : Color.fromRGBO(255, 255, 255, 1),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(40),
         child: Column(
@@ -152,7 +185,7 @@ class _ProfilePageState extends State<ProfilePage> {
                     child: _profileImage != null
                         ? Image.file(_profileImage!, fit: BoxFit.cover)
                         : _profileImageUrl != null
-                            ? Image.network('http://192.168.1.13:3000/$_profileImageUrl', fit: BoxFit.cover)
+                            ? Image.network('https://rentconnect-backend-nodejs.onrender.com/$_profileImageUrl', fit: BoxFit.cover)
                             : Image.asset("assets/images/profile.png"),
                   ),
                 ),
@@ -169,12 +202,14 @@ class _ProfilePageState extends State<ProfilePage> {
               'Joseph',
               style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                 fontWeight: FontWeight.bold,
+                 color: themeController.isDarkMode.value ? Colors.white : Colors.black,
               ),
             ),
             Text(
               '$email',
               style: Theme.of(context).textTheme.bodySmall?.copyWith(
                 fontWeight: FontWeight.w500,
+                color: themeController.isDarkMode.value ? Colors.white : Colors.black,
               ),
             ),
             const SizedBox(height: 20),
@@ -199,6 +234,7 @@ class _ProfilePageState extends State<ProfilePage> {
             ProfileMenuWidget(
               title: "Personal Information",
               icon: LineAwesomeIcons.user,
+              textColor:themeController.isDarkMode.value ? Colors.white : Colors.black,
               onPress: () {
                 Navigator.push(
                   context,
@@ -211,11 +247,13 @@ class _ProfilePageState extends State<ProfilePage> {
             ProfileMenuWidget(
               title: "Account Settings",
               icon: LineAwesomeIcons.cog_solid,
+              textColor: themeController.isDarkMode.value ? Colors.white : Colors.black,
               onPress: () {},
             ),
             ProfileMenuWidget(
               title: "Listing",
               icon: LineAwesomeIcons.list_alt_solid,
+              textColor:themeController.isDarkMode.value ? Colors.white : Colors.black,
               onPress: () {
                 Navigator.push(
                   context,
@@ -228,6 +266,7 @@ class _ProfilePageState extends State<ProfilePage> {
             ProfileMenuWidget(
               title: "About",
               icon: LineAwesomeIcons.info_solid,
+              textColor: themeController.isDarkMode.value ? Colors.white : Colors.black,
               onPress: () {},
             ),
             ProfileMenuWidget(
@@ -240,7 +279,7 @@ class _ProfilePageState extends State<ProfilePage> {
           ],
         ),
       ),
-    );
+    ));
   }
 }
 
@@ -269,11 +308,11 @@ class ProfileMenuWidget extends StatelessWidget {
         height: 40,
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(100),
-          color: const Color.fromRGBO(247, 40, 147, 0.1),
+          color: const Color.fromARGB(255, 46, 45, 45),
         ),
         child: Icon(
           icon,
-          color: Color.fromRGBO(235, 94, 40, 1),
+          color: Color.fromARGB(255, 115, 212, 77),
         ),
       ),
       title: Text(
@@ -286,12 +325,12 @@ class ProfileMenuWidget extends StatelessWidget {
               height: 30,
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(100),
-                color: const Color.fromRGBO(204, 197, 185, 0.2),
+                color: const Color.fromARGB(51, 151, 245, 187),
               ),
               child: const Icon(
                 LineAwesomeIcons.angle_right_solid,
                 size: 18.0,
-                color: Color.fromRGBO(94, 94, 94, 1),
+                color: Color.fromARGB(255, 115, 212, 77),
               ),
             )
           : null,

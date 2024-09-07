@@ -1,5 +1,5 @@
-//final url = 'https://rentconnect-backend-nodejs.onrender.com/';
-final url = 'http://192.168.1.13:3000/';
+final url = 'https://rentconnect-backend-nodejs.onrender.com/';
+//final url = 'http://192.168.1.13:3000/';
 final registration = url + "registration";
 final login = url + 'login';
 final storeProperty = url + 'storeProperty';

@@ -9,7 +9,9 @@ import 'package:rentcon/navigation_menu.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:rentcon/pages/search_result.dart';
 import 'toast.dart';
+import 'package:rentcon/theme_controller.dart';
 import '../models/property.dart';
+import 'global_loading_indicator.dart';
 
 class HomePage extends StatefulWidget {
   final String token;
@@ -32,7 +34,7 @@ class _HomePageState extends State<HomePage> {
 late TextEditingController _searchController;
 final TextEditingController _minPriceController = TextEditingController();
 final TextEditingController _maxPriceController = TextEditingController();
-
+final ThemeController _themeController = Get.find<ThemeController>();
 
   @override
   void initState() {
@@ -111,7 +113,7 @@ List<Property> filterProperties(List<Property> properties) {
 
     try {
       final response = await http.get(
-        Uri.parse('http://192.168.1.13:3000/getUserBookmarks/$userId'), // Adjust endpoint if necessary
+        Uri.parse('https://rentconnect-backend-nodejs.onrender.com/getUserBookmarks/$userId'), // Adjust endpoint if necessary
         headers: {
           'Authorization': 'Bearer ${widget.token}',
         },
@@ -136,7 +138,7 @@ List<Property> filterProperties(List<Property> properties) {
   // Fetch user email from API
   Future<String> fetchUserEmail(String userId) async {
     try {
-      final response = await http.get(Uri.parse('http://192.168.1.13:3000/getUserEmail/$userId'));
+      final response = await http.get(Uri.parse('https://rentconnect-backend-nodejs.onrender.com/getUserEmail/$userId'));
 
       if (response.statusCode == 200) {
         final Map<String, dynamic> json = jsonDecode(response.body);
@@ -159,14 +161,14 @@ List<Property> filterProperties(List<Property> properties) {
 
 // Function to bookmark a property
 Future<void> bookmarkProperty(String propertyId) async {
-  final url = Uri.parse('http://192.168.1.13:3000/addBookmark');
+  final url = Uri.parse('https://rentconnect-backend-nodejs.onrender.com/addBookmark');
   final Map<String, dynamic> jwtDecodedToken = JwtDecoder.decode(widget.token);
   String userId = jwtDecodedToken['_id']?.toString() ?? 'Unknown user ID';
 
   try {
     if (bookmarkedPropertyIds.contains(propertyId)) {
       // If already bookmarked, remove it
-      final removeUrl = Uri.parse('http://192.168.1.13:3000/removeBookmark');
+      final removeUrl = Uri.parse('https://rentconnect-backend-nodejs.onrender.com/removeBookmark');
       await http.post(removeUrl,
         headers: {
           'Authorization': 'Bearer ${widget.token}',
@@ -305,10 +307,12 @@ void _applyFilters() {
     ftoast.init(context);
     toast = ToastNotification(ftoast);
     final NavigationController controller = Get.find<NavigationController>();
-
+   return Obx(() {
     return Scaffold(
       
-      backgroundColor: Color.fromRGBO(255, 252, 242, 1),
+      backgroundColor: _themeController.isDarkMode.value
+            ? Color.fromARGB(255, 19, 19, 19)
+            : Color.fromRGBO(255, 255, 255, 1),
       body: Padding(
         padding: EdgeInsets.symmetric(horizontal: 10.0),
         child: Column(
@@ -320,7 +324,7 @@ void _applyFilters() {
               style: TextStyle(
                 fontSize: 18.0,
                 fontWeight: FontWeight.bold,
-                color: Colors.black,
+                color: _themeController.isDarkMode.value ? Colors.white : Colors.black,
               ),
             ),
             SizedBox(height: 10),
@@ -333,7 +337,7 @@ void _applyFilters() {
                   future: propertiesFuture,
                   builder: (context, snapshot) {
                     if (snapshot.connectionState == ConnectionState.waiting) {
-                      return Center(child: CircularProgressIndicator());
+                      return GlobalLoadingIndicator();
                     } else if (snapshot.hasError) {
                       return Center(child: Text('Error: ${snapshot.error}'));
                     } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
@@ -348,13 +352,13 @@ void _applyFilters() {
                           final property = snapshot.data![index];
                           final imageUrl = property.photo.startsWith('http')
                               ? property.photo
-                              : 'http://192.168.1.13:3000/${property.photo}';
+                              : 'https://rentconnect-backend-nodejs.onrender.com/${property.photo}';
 
                           return FutureBuilder<String>(
                             future: fetchUserEmail(property.userId),
                             builder: (context, userSnapshot) {
                               if (userSnapshot.connectionState == ConnectionState.waiting) {
-                                return Center(child: CircularProgressIndicator());
+                                 return GlobalLoadingIndicator();
                               } else if (userSnapshot.hasError) {
                                 return Center(child: Text('Error: ${userSnapshot.error}'));
                               } else if (!userSnapshot.hasData || userSnapshot.data!.isEmpty) {
@@ -363,7 +367,7 @@ void _applyFilters() {
                                 final userEmail = userSnapshot.data!;
 
                                 return Card(
-                                  color: Color.fromRGBO(255, 252, 242, 1),
+                                  color: _themeController.isDarkMode.value ? const Color.fromARGB(255, 53, 53, 53) : const Color.fromARGB(255, 255, 255, 255),
                                   elevation: 5.0,
                                   margin: EdgeInsets.symmetric(vertical: 10.0, horizontal: 10.0),
                                   child: Column(
@@ -373,7 +377,7 @@ void _applyFilters() {
                                         padding: const EdgeInsets.all(8.0),
                                         child: Text(
                                           userEmail,
-                                          style: TextStyle(fontWeight: FontWeight.bold),
+                                          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 17),
                                         ),
                                       ),
                                       Stack(
@@ -394,9 +398,13 @@ void _applyFilters() {
                                               child: SizedBox(
                                                 width: double.infinity,
                                                 height: 200,
-                                                child: Image.network(
-                                                  imageUrl,
-                                                  fit: BoxFit.cover,
+                                                child: ClipRRect(
+    
+                                                  borderRadius: BorderRadius.circular(10), // Adjust the radius as needed
+                                                  child: Image.network(
+                                                    imageUrl,
+                                                    fit: BoxFit.cover,
+                                                  ),
                                                 ),
                                               ),
                                             ),
@@ -458,6 +466,9 @@ void _applyFilters() {
         ),
       ),
     );
+    });
+    
+
   }
 
   // Search field widget
@@ -467,9 +478,9 @@ Container _searchField() {
     decoration: BoxDecoration(
       boxShadow: [
         BoxShadow(
-          color: Color(0xff101617).withOpacity(0.1),
-          blurRadius: 5,
-          spreadRadius: 0.0,
+          color:  _themeController.isDarkMode.value ? Colors.grey[900]! : Color(0xff101617).withOpacity(0.1),
+          blurRadius: 10,
+          spreadRadius: 1,
         ),
       ],
     ),
@@ -480,11 +491,11 @@ Container _searchField() {
       },
       decoration: InputDecoration(
         filled: true,
-        fillColor: Colors.white,
+        fillColor: _themeController.isDarkMode.value ? Colors.grey[850] : Colors.white,
         contentPadding: EdgeInsets.all(15),
         hintText: 'Search',
         hintStyle: TextStyle(
-          color: Color(0xffDDDADA),
+          color: _themeController.isDarkMode.value ? Colors.grey : Color(0xffDDDADA),
           fontSize: 14,
         ),
         prefixIcon: GestureDetector(
@@ -496,6 +507,7 @@ Container _searchField() {
             padding: const EdgeInsets.all(12),
             child: Image.asset(
               'assets/icons/search.png',
+              color: _themeController.isDarkMode.value ? Colors.white : Colors.black,
               width: 16.0,
               height: 16.0,
             ),
@@ -522,6 +534,7 @@ Container _searchField() {
                     padding: const EdgeInsets.all(12),
                     child: Image.asset(
                       'assets/icons/filter.png',
+                       color: _themeController.isDarkMode.value ? Colors.white : Colors.black,
                       width: 20.0,
                       height: 20.0,
                     ),

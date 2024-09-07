@@ -8,6 +8,7 @@ import 'package:rentcon/pages/trends.dart';
 import 'package:jwt_decoder/jwt_decoder.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:rentcon/pages/toast.dart';
+import 'package:rentcon/theme_controller.dart';
 
 class NavigationMenu extends StatefulWidget {
   final String token;
@@ -21,6 +22,7 @@ class _NavigationMenuState extends State<NavigationMenu> {
   late String email;
   late FToast ftoast;
   late ToastNotification toast;
+  final themeController = Get.find<ThemeController>();
 
   @override
   void initState() {
@@ -42,30 +44,27 @@ class _NavigationMenuState extends State<NavigationMenu> {
   }
   @override
   Widget build(BuildContext context) {
-    ftoast = FToast();
-    ftoast.init(context);
-    toast = ToastNotification(ftoast);
     final controller = Get.put(NavigationController(token: widget.token));
     return Scaffold(
       bottomNavigationBar: Obx(
         () => NavigationBarTheme(
           data: NavigationBarThemeData(
-            indicatorColor: Color.fromRGBO(64, 61, 57, 1),
-            labelTextStyle: MaterialStateProperty.all(
-              const TextStyle(
-                color: Color.fromRGBO(37, 36, 34, 1),
+            indicatorColor: themeController.isDarkMode.value ? Colors.grey[850] : Color.fromRGBO(9, 10, 9, 1),
+            labelTextStyle: WidgetStateProperty.all(
+              TextStyle(
+                color:  themeController.isDarkMode.value ? Colors.white : Color.fromRGBO(37, 36, 34, 1),
                 fontWeight: FontWeight.normal,
               ),
             ),
-            iconTheme: MaterialStateProperty.all(
-              const IconThemeData(
-                color: Color.fromRGBO(235, 94, 40, 1),
+            iconTheme: WidgetStateProperty.all(
+               IconThemeData(
+                 color: themeController.isDarkMode.value ?Color.fromARGB(255, 132, 238, 90) : Color.fromARGB(255, 72, 128, 49),
               ),
             ),
           ),
           child: NavigationBar(
             height: 80,
-            backgroundColor: Color.fromRGBO(255, 252, 242, 1),
+            backgroundColor: themeController.isDarkMode.value ? Color.fromARGB(255, 19, 19, 19) : Color.fromARGB(255, 255, 255, 255),
             elevation: 0,
             selectedIndex: controller.selectedIndex.value,
             onDestinationSelected: (index) => controller.selectedIndex.value = index,
