@@ -60,21 +60,27 @@ final TextEditingController _maxPriceController = TextEditingController();
     super.dispose();
   }
   // Fetch properties from the API
-  Future<List<Property>> fetchProperties() async {
-    try {
-      final response = await http.get(Uri.parse(getAllProperties));
+Future<List<Property>> fetchProperties() async {
+  try {
+    final response = await http.get(Uri.parse(getAllProperties));
 
-      if (response.statusCode == 200) {
-        final Map<String, dynamic> json = jsonDecode(response.body);
-        final List<dynamic> data = json['success'];
-        return data.map((json) => Property.fromJson(json)).toList();
-      } else {
-        throw Exception('Failed to load properties');
-      }
-    } catch (error) {
-      throw Exception('Failed to load properties: $error');
+    if (response.statusCode == 200) {
+      final Map<String, dynamic> json = jsonDecode(response.body);
+      final List<dynamic> data = json['success'];
+
+      // Convert JSON data to Property objects
+      final properties = data.map((json) => Property.fromJson(json as Map<String, dynamic>)).toList();
+
+      // Reverse the list to show newest properties first
+      return properties.reversed.toList();
+    } else {
+      throw Exception('Failed to load properties');
     }
+  } catch (error) {
+    throw Exception('Failed to load properties: $error');
   }
+}
+
 
 
 List<Property> filterProperties(List<Property> properties) {
@@ -105,7 +111,7 @@ List<Property> filterProperties(List<Property> properties) {
 
     try {
       final response = await http.get(
-        Uri.parse('http://192.168.1.22:3000/getUserBookmarks/$userId'), // Adjust endpoint if necessary
+        Uri.parse('http://192.168.1.13:3000/getUserBookmarks/$userId'), // Adjust endpoint if necessary
         headers: {
           'Authorization': 'Bearer ${widget.token}',
         },
@@ -130,7 +136,7 @@ List<Property> filterProperties(List<Property> properties) {
   // Fetch user email from API
   Future<String> fetchUserEmail(String userId) async {
     try {
-      final response = await http.get(Uri.parse('http://192.168.1.22:3000/getUserEmail/$userId'));
+      final response = await http.get(Uri.parse('http://192.168.1.13:3000/getUserEmail/$userId'));
 
       if (response.statusCode == 200) {
         final Map<String, dynamic> json = jsonDecode(response.body);
@@ -153,14 +159,14 @@ List<Property> filterProperties(List<Property> properties) {
 
 // Function to bookmark a property
 Future<void> bookmarkProperty(String propertyId) async {
-  final url = Uri.parse('http://192.168.1.22:3000/addBookmark');
+  final url = Uri.parse('http://192.168.1.13:3000/addBookmark');
   final Map<String, dynamic> jwtDecodedToken = JwtDecoder.decode(widget.token);
   String userId = jwtDecodedToken['_id']?.toString() ?? 'Unknown user ID';
 
   try {
     if (bookmarkedPropertyIds.contains(propertyId)) {
       // If already bookmarked, remove it
-      final removeUrl = Uri.parse('http://192.168.1.22:3000/removeBookmark');
+      final removeUrl = Uri.parse('http://192.168.1.13:3000/removeBookmark');
       await http.post(removeUrl,
         headers: {
           'Authorization': 'Bearer ${widget.token}',
@@ -342,7 +348,7 @@ void _applyFilters() {
                           final property = snapshot.data![index];
                           final imageUrl = property.photo.startsWith('http')
                               ? property.photo
-                              : 'http://192.168.1.22:3000/${property.photo}';
+                              : 'http://192.168.1.13:3000/${property.photo}';
 
                           return FutureBuilder<String>(
                             future: fetchUserEmail(property.userId),
@@ -578,4 +584,3 @@ Container _searchField() {
 
 // Controller for the search field
 final TextEditingController _searchController = TextEditingController();
-

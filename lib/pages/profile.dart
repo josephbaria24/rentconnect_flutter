@@ -4,6 +4,8 @@ import 'package:jwt_decoder/jwt_decoder.dart';
 import 'package:line_awesome_flutter/line_awesome_flutter.dart';
 import 'package:rentcon/pages/landlords/current_listing.dart';
 import 'package:rentcon/pages/landlords/listing.dart';
+import 'package:rentcon/pages/profileSection/personalInformation.dart';
+import 'package:rentcon/pages/profileSection/profileChecker.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 
@@ -84,7 +86,9 @@ class _ProfilePageState extends State<ProfilePage> {
           const SizedBox(height: 10),
 
           // Menu
-          ProfileMenuWidget(title: "Personal Information", icon: LineAwesomeIcons.user, onPress: () {}),
+          ProfileMenuWidget(title: "Personal Information", icon: LineAwesomeIcons.user, onPress: () {
+             Navigator.push(context, MaterialPageRoute(builder: (context) =>  ProfilePageChecker(token: widget.token)),);
+          }),
           ProfileMenuWidget(title: "Account Settings", icon: LineAwesomeIcons.cog_solid, onPress: () {}),
           ProfileMenuWidget(title: "Listing", icon: LineAwesomeIcons.list_alt_solid, onPress: () {
             Navigator.push(context, MaterialPageRoute(builder: (context) =>  CurrentListingPage(token: widget.token)),);

@@ -21,13 +21,17 @@ class _PropertyInsertPageState extends State<PropertyInsertPage> {
   late String userId;
   TextEditingController descriptionController = TextEditingController();
   TextEditingController addressController = TextEditingController();
-  TextEditingController priceController = TextEditingController();
-  TextEditingController numberOfRoomsController = TextEditingController();
   TextEditingController amenitiesController = TextEditingController();
   DateTime? availableFromDate;
-  File? _image;
-  File? _legalDocImage;
+
+  File? _coverPhoto;
   final ImagePicker _picker = ImagePicker();
+
+  // Room list
+  List<RoomUnit> roomUnits = [];
+
+  // List for additional property photos
+  List<File> _additionalPhotos = [];
 
   @override
   void initState() {
@@ -36,75 +40,108 @@ class _PropertyInsertPageState extends State<PropertyInsertPage> {
     userId = jwtDecodedToken['_id'];
   }
 
-  void _selectImage({required bool isLegalDoc}) async {
+  void _selectImage(RoomUnit room) async {
     final pickedFile = await _picker.pickImage(source: ImageSource.gallery);
     if (pickedFile != null) {
       setState(() {
-        if (isLegalDoc) {
-          _legalDocImage = File(pickedFile.path);
-        } else {
-          _image = File(pickedFile.path);
+        room.roomImage = File(pickedFile.path);
+      });
+    }
+  }
+
+  void _selectCoverImage() async {
+    final pickedFile = await _picker.pickImage(source: ImageSource.gallery);
+    if (pickedFile != null) {
+      setState(() {
+        _coverPhoto = File(pickedFile.path);
+      });
+    }
+  }
+
+  void _selectAdditionalImages() async {
+    final pickedFile = await _picker.pickImage(source: ImageSource.gallery);
+    if (pickedFile != null) {
+      setState(() {
+        _additionalPhotos.add(File(pickedFile.path));
+      });
+    }
+  }
+
+  void _applyToAll() {
+    if (roomUnits.isNotEmpty) {
+      final price = roomUnits.first.priceController.text;
+      final capacity = roomUnits.first.capacityController.text;
+
+      setState(() {
+        for (var room in roomUnits) {
+          room.priceController.text = price;
+          room.capacityController.text = capacity;
         }
       });
     }
   }
 
-  String? selectedStatus;
-  final List<String> statusOptions = ['available', 'reserved', 'rented'];
-
-  void _selectDate(BuildContext context) async {
-    final DateTime? picked = await showDatePicker(
-      context: context,
-      initialDate: DateTime.now(),
-      firstDate: DateTime(2000),
-      lastDate: DateTime(2101),
-    );
-    if (picked != null && picked != availableFromDate)
-      setState(() {
-        availableFromDate = picked;
-      });
-  }
-
   void _submitForm() async {
     if (descriptionController.text.isNotEmpty &&
         addressController.text.isNotEmpty &&
-        priceController.text.isNotEmpty &&
-        numberOfRoomsController.text.isNotEmpty) {
+        roomUnits.isNotEmpty) {
 
       var request = http.MultipartRequest('POST', Uri.parse(storeProperty));
       request.fields['userId'] = userId;
       request.fields['description'] = descriptionController.text;
       request.fields['address'] = addressController.text;
-      request.fields['price'] = priceController.text;
-      request.fields['numberOfRooms'] = numberOfRoomsController.text;
-      request.fields['amenities'] = amenitiesController.text.split(',').join(',');
       request.fields['availableFrom'] = availableFromDate?.toIso8601String() ?? '';
+      request.fields['amenities'] = amenitiesController.text.split(',').join(',');
 
-      if (_image != null) {
-        // Get the MIME type of the selected image
-        String mimeType = lookupMimeType(_image!.path) ?? 'application/octet-stream';
+      // Add cover photo
+      if (_coverPhoto != null) {
+        String mimeType = lookupMimeType(_coverPhoto!.path) ?? 'application/octet-stream';
         var fileExtension = mimeType.split('/').last;
 
         request.files.add(
           await http.MultipartFile.fromPath(
-            'photo', 
-            _image!.path,
+            'coverPhoto',
+            _coverPhoto!.path,
             contentType: MediaType('image', fileExtension),
           ),
         );
       }
 
-      if (_legalDocImage != null) {
-        String mimeType = lookupMimeType(_legalDocImage!.path) ?? 'application/octet-stream';
+      // Add additional property photos
+      for (int i = 0; i < _additionalPhotos.length; i++) {
+        File photo = _additionalPhotos[i];
+
+        String mimeType = lookupMimeType(photo.path) ?? 'application/octet-stream';
         var fileExtension = mimeType.split('/').last;
 
         request.files.add(
           await http.MultipartFile.fromPath(
-            'legalDocPhoto', 
-            _legalDocImage!.path,
+            'propertyPhoto[$i]',
+            photo.path,
             contentType: MediaType('image', fileExtension),
           ),
         );
+      }
+
+      // Add room photos and details
+      for (int i = 0; i < roomUnits.length; i++) {
+        RoomUnit room = roomUnits[i];
+
+        if (room.roomImage != null) {
+          String mimeType = lookupMimeType(room.roomImage!.path) ?? 'application/octet-stream';
+          var fileExtension = mimeType.split('/').last;
+
+          request.files.add(
+            await http.MultipartFile.fromPath(
+              'roomPhoto[$i]',
+              room.roomImage!.path,
+              contentType: MediaType('image', fileExtension),
+            ),
+          );
+        }
+
+        request.fields['roomPrice[$i]'] = room.priceController.text;
+        request.fields['roomCapacity[$i]'] = room.capacityController.text;
       }
 
       try {
@@ -117,12 +154,11 @@ class _PropertyInsertPageState extends State<PropertyInsertPage> {
           if (jsonResponse['status']) {
             descriptionController.clear();
             addressController.clear();
-            priceController.clear();
-            numberOfRoomsController.clear();
             amenitiesController.clear();
             setState(() {
-              _image = null; // Clear the selected image
-              _legalDocImage = null; // Clear the legal document image
+              _coverPhoto = null;
+              roomUnits.clear();
+              _additionalPhotos.clear();
             });
             Navigator.push(
               context,
@@ -151,110 +187,191 @@ class _PropertyInsertPageState extends State<PropertyInsertPage> {
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
-        child: Form(
-          child: ListView(
-            children: [
-              TextFormField(
-                controller: descriptionController,
-                decoration: InputDecoration(labelText: 'Description'),
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Please enter a description';
-                  }
-                  return null;
-                },
-              ),
-              SizedBox(height: 10),
-              _image == null
-                  ? Text('No image selected.')
-                  : Image.file(_image!),
-              ElevatedButton(
-                onPressed: () => _selectImage(isLegalDoc: false),
-                child: Text('Select Property Image'),
-              ),
-              SizedBox(height: 10),
-              _legalDocImage == null
-                  ? Text('No legal document image selected.')
-                  : Image.file(_legalDocImage!),
-              ElevatedButton(
-                onPressed: () => _selectImage(isLegalDoc: true),
-                child: Text('Select Legal Document Image'),
-              ),
-              TextFormField(
-                controller: addressController,
-                decoration: InputDecoration(labelText: 'Address'),
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Please enter an address';
-                  }
-                  return null;
-                },
-              ),
-              TextFormField(
-                controller: priceController,
-                decoration: InputDecoration(labelText: 'Price'),
-                keyboardType: TextInputType.number,
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Please enter a price';
-                  }
-                  return null;
-                },
-              ),
-              TextFormField(
-                controller: numberOfRoomsController,
-                decoration: InputDecoration(labelText: 'Number of Rooms'),
-                keyboardType: TextInputType.number,
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Please enter the number of rooms';
-                  }
-                  return null;
-                },
-              ),
-              TextFormField(
-                controller: amenitiesController,
-                decoration: InputDecoration(
-                  labelText: 'Amenities (comma separated)',
+        child: ListView(
+          children: [
+            Text('I. Information', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20)),
+            SizedBox(height: 20),
+            Text('A. Property Details', style: TextStyle(fontWeight: FontWeight.bold)),
+            SizedBox(height: 10),
+            // Cover Photo Section
+            _coverPhoto == null
+                ? GestureDetector(
+                    onTap: _selectCoverImage,
+                    child: Container(
+                      height: 200,
+                      color: Colors.grey[300],
+                      child: Center(
+                        child: Text('Set your Property Cover Photo'),
+                      ),
+                    ),
+                  )
+                : GestureDetector(
+                    onTap: _selectCoverImage,
+                    child: Image.file(_coverPhoto!, height: 200, fit: BoxFit.cover),
+                  ),
+            SizedBox(height: 10),
+            // Additional Property Photos Section
+            Row(
+              children: [
+                ..._additionalPhotos.map((photo) => Padding(
+                      padding: const EdgeInsets.only(right: 8.0),
+                      child: Stack(
+                        children: [
+                          Image.file(photo, height: 100, width: 100, fit: BoxFit.cover),
+                          Positioned(
+                            right: 0,
+                            top: 0,
+                            child: GestureDetector(
+                              onTap: () {
+                                setState(() {
+                                  _additionalPhotos.remove(photo);
+                                });
+                              },
+                              child: Icon(Icons.cancel, color: Colors.red),
+                            ),
+                          )
+                        ],
+                      ),
+                    )),
+                GestureDetector(
+                  onTap: _selectAdditionalImages,
+                  child: Container(
+                    height: 100,
+                    width: 100,
+                    color: Colors.grey[200],
+                    child: Center(child: Icon(Icons.add_a_photo)),
+                  ),
+                )
+              ],
+            ),
+            SizedBox(height: 20),
+            Text('B. Room/Unit Specification', style: TextStyle(fontWeight: FontWeight.bold)),
+            Row(
+              children: [
+                Expanded(
+                  child: TextField(
+                    decoration: InputDecoration(
+                      labelText: 'Price',
+                      prefixIcon: Icon(Icons.money),
+                    ),
+                    controller: roomUnits.isNotEmpty ? roomUnits.first.priceController : null,
+                  ),
                 ),
-              ),
-              ListTile(
-                title: Text('Available From: ${availableFromDate != null ? availableFromDate!.toLocal().toString().split(' ')[0] : 'Select Date'}'),
-                trailing: Icon(Icons.calendar_today),
-                onTap: () => _selectDate(context),
-              ),
-              DropdownButtonFormField<String>(
-                decoration: InputDecoration(labelText: 'Status'),
-                value: selectedStatus,
-                onChanged: (String? newValue) {
-                  setState(() {
-                    selectedStatus = newValue;
-                  });
-                },
-                items: statusOptions.map((String status) {
-                  return DropdownMenuItem<String>(
-                    value: status,
-                    child: Text(status),
-                  );
-                }).toList(),
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Please select a status';
-                  }
-                  return null;
-                },
-              ),
-              SizedBox(height: 20),
-              ElevatedButton(
-                onPressed: () {
-                  _submitForm();
-                },
-                child: Text('Submit'),
-              ),
-            ],
-          ),
+                Expanded(
+                  child: TextField(
+                    decoration: InputDecoration(
+                      labelText: 'Capacity',
+                    ),
+                    controller: roomUnits.isNotEmpty ? roomUnits.first.capacityController : null,
+                  ),
+                ),
+                ElevatedButton(
+                  onPressed: _applyToAll,
+                  child: Text('Apply to all'),
+                ),
+              ],
+            ),
+            ...roomUnits.map((room) {
+              return RoomUnitWidget(
+                room: room,
+                onImageSelected: (image) => setState(() => room.roomImage = image),
+              );
+            }).toList(),
+            IconButton(
+              onPressed: () {
+                setState(() {
+                  roomUnits.add(RoomUnit(
+                    priceController: TextEditingController(),
+                    capacityController: TextEditingController(),
+                  ));
+                });
+              },
+              icon: Icon(Icons.add),
+            ),
+            SizedBox(height: 10),
+            TextFormField(
+              controller: addressController,
+              decoration: InputDecoration(labelText: 'Address'),
+            ),
+            TextFormField(
+              controller: amenitiesController,
+              decoration: InputDecoration(labelText: 'Amenities (comma separated)'),
+            ),
+            SizedBox(height: 20),
+            ElevatedButton(
+              onPressed: _submitForm,
+              child: Text('Submit'),
+            ),
+          ],
         ),
       ),
+    );
+  }
+}
+
+class RoomUnit {
+  TextEditingController priceController;
+  TextEditingController capacityController;
+  File? roomImage;
+
+  RoomUnit({
+    required this.priceController,
+    required this.capacityController,
+    this.roomImage,
+  });
+}
+
+class RoomUnitWidget extends StatelessWidget {
+  final RoomUnit room;
+  final ValueChanged<File?> onImageSelected;
+
+  const RoomUnitWidget({
+    Key? key,
+    required this.room,
+    required this.onImageSelected,
+  }) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        room.roomImage == null
+            ? GestureDetector(
+                onTap: () async {
+                  final pickedFile = await ImagePicker().pickImage(source: ImageSource.gallery);
+                  if (pickedFile != null) {
+                    onImageSelected(File(pickedFile.path));
+                  }
+                },
+                child: Container(
+                  height: 100,
+                  width: 100,
+                  color: Colors.grey[300],
+                  child: Center(child: Icon(Icons.add_a_photo)),
+                ),
+              )
+            : GestureDetector(
+                onTap: () async {
+                  final pickedFile = await ImagePicker().pickImage(source: ImageSource.gallery);
+                  if (pickedFile != null) {
+                    onImageSelected(File(pickedFile.path));
+                  }
+                },
+                child: Image.file(room.roomImage!, height: 100, width: 100, fit: BoxFit.cover),
+              ),
+        Expanded(
+          child: TextField(
+            controller: room.priceController,
+            decoration: InputDecoration(labelText: 'Price'),
+          ),
+        ),
+        Expanded(
+          child: TextField(
+            controller: room.capacityController,
+            decoration: InputDecoration(labelText: 'Capacity'),
+          ),
+        ),
+      ],
     );
   }
 }

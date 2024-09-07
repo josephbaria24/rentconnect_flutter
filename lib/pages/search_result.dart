@@ -24,7 +24,7 @@ class SearchResultPage extends StatelessWidget {
                 final property = properties[index];
                 final imageUrl = property.photo.startsWith('http')
                     ? property.photo
-                    : 'http://192.168.1.22:3000/${property.photo}';
+                    : 'http://192.168.1.13:3000/${property.photo}';
 
                 return Card(
                   color: Color.fromRGBO(255, 252, 242, 1),
