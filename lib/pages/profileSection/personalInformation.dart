@@ -23,7 +23,7 @@ class _PersonalInformationState extends State<PersonalInformation> {
   final TextEditingController _addressController = TextEditingController();
   File? _validIdImage;
   final ImagePicker _picker = ImagePicker();
-  bool _isProfileComplete = false; // This could be updated based on your logic
+  bool _isProfileComplete = false;
   late String email;
   late String userId;
 
@@ -37,154 +37,150 @@ class _PersonalInformationState extends State<PersonalInformation> {
     _checkProfileCompletion();
   }
 
-Future<void> _checkProfileCompletion() async {
-  final url = Uri.parse('http://192.168.1.13:3000/profile/checkProfileCompletion/$userId');
-  print("Checking profile completion for userId: $userId");
-
-  try {
-    final response = await http.get(url, headers: {'Authorization': 'Bearer ${widget.token}'});
-    print("Profile completion response status: ${response.statusCode}");
-
-    if (response.statusCode == 200) {
-      final responseData = jsonDecode(response.body);
-      print("Profile completion response data: $responseData");
-
-      // Check if 'status' key is present and is a boolean
-      if (responseData.containsKey('status') && responseData['status'] is bool) {
-        setState(() {
-          _isProfileComplete = responseData['status'];
-        });
-      } else {
-        print("Unexpected response data format: $responseData");
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Unexpected response format')),
-        );
-      }
-    } else {
-      print("Failed to check profile completion. Status code: ${response.statusCode}");
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Failed to check profile completion')),
-      );
-    }
-  } catch (error) {
-    print("Error checking profile completion: $error");
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Error checking profile completion')),
-    );
-  }
-}
-
-
-Future<void> _updateProfileCompletion() async {
-  final url = Uri.parse('http://192.168.1.13:3000/profile/updateProfile');
-  print("Updating profile for userId: $userId");
-
-  try {
-    final response = await http.patch(
-      url,
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': 'Bearer ${widget.token}', // Ensure the token is included
-      },
-      body: jsonEncode({
-        'userId': userId,
-        'fullName': _fullNameController.text,
-        'phone': _phoneController.text,
-        'address': _addressController.text,
-        'isProfileComplete': _isProfileComplete,
-      }),
-    );
-    print("Update profile response status: ${response.statusCode}");
-
-    if (response.statusCode == 200) {
-      final responseData = jsonDecode(response.body);
-      print("Update profile response data: $responseData");
-
-      if (responseData['status']) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Profile updated successfully')),
-        );
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to update profile: ${responseData['message']}')),
-        );
-      }
-    } else {
-      print("Failed to update profile. Status code: ${response.statusCode}");
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Server error')),
-      );
-    }
-  } catch (error) {
-    print("Error updating profile: $error");
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Error updating profile')),
-    );
-  }
-}
-
-
-Future<void> _uploadValidId() async {
-  if (_validIdImage != null) {
-    print('Uploading valid ID image: ${_validIdImage!.path}'); // Debugging log
-
-    var request = http.MultipartRequest(
-      'PATCH',
-      Uri.parse('http://192.168.1.13:3000/profile/uploadValidId')
-    );
-
-    // Add the userId as a field in the request
-    request.fields['userId'] = userId;
-
-    // Add the image file
-    String mimeType = lookupMimeType(_validIdImage!.path) ?? 'application/octet-stream';
-    var fileExtension = mimeType.split('/').last;
-
-    request.files.add(
-      await http.MultipartFile.fromPath(
-        'validIdImage', // Ensure this matches the backend field name
-        _validIdImage!.path,
-        contentType: MediaType('image', fileExtension),
-      ),
-    );
+  Future<void> _checkProfileCompletion() async {
+    final url = Uri.parse('http://192.168.1.13:3000/profile/checkProfileCompletion/$userId');
+    print("Checking profile completion for userId: $userId");
 
     try {
-      var response = await request.send();
-      final responseBody = await response.stream.bytesToString();
-
-      print('Upload valid ID response status: ${response.statusCode}'); // Debugging log
-      print('Upload valid ID response body: $responseBody'); // Debugging log
+      final response = await http.get(url, headers: {'Authorization': 'Bearer ${widget.token}'});
+      print("Profile completion response status: ${response.statusCode}");
 
       if (response.statusCode == 200) {
-        var jsonResponse = jsonDecode(responseBody);
+        final responseData = jsonDecode(response.body);
+        print("Profile completion response data: $responseData");
 
-        if (jsonResponse['status']) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Valid ID uploaded successfully')),
-          );
+        // Check if 'isProfileComplete' key is present and is a boolean
+        if (responseData.containsKey('isProfileComplete') && responseData['isProfileComplete'] is bool) {
+          setState(() {
+            _isProfileComplete = responseData['isProfileComplete'];
+          });
         } else {
+          print("Unexpected response data format: $responseData");
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Failed to upload valid ID: ${jsonResponse['message']}')),
+            SnackBar(content: Text('Unexpected response format')),
           );
         }
       } else {
+        print("Failed to check profile completion. Status code: ${response.statusCode}");
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed with status code: ${response.statusCode}')),
+          SnackBar(content: Text('Failed to check profile completion')),
         );
       }
     } catch (error) {
+      print("Error checking profile completion: $error");
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error occurred: $error')),
+        SnackBar(content: Text('Error checking profile completion')),
       );
     }
-  } else {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('No valid ID image selected')),
-    );
   }
-}
 
+  Future<void> _updateProfileCompletion() async {
+    final url = Uri.parse('http://192.168.1.13:3000/profile/updateProfile');
+    print("Updating profile for userId: $userId");
 
+    try {
+      final response = await http.patch(
+        url,
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer ${widget.token}', // Ensure the token is included
+        },
+        body: jsonEncode({
+          'userId': userId,
+          'fullName': _fullNameController.text,
+          'phone': _phoneController.text,
+          'address': _addressController.text,
+          'isProfileComplete': _isProfileComplete,
+        }),
+      );
+      print("Update profile response status: ${response.statusCode}");
+
+      if (response.statusCode == 200) {
+        final responseData = jsonDecode(response.body);
+        print("Update profile response data: $responseData");
+
+        if (responseData['status']) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Profile updated successfully')),
+          );
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Failed to update profile: ${responseData['message']}')),
+          );
+        }
+      } else {
+        print("Failed to update profile. Status code: ${response.statusCode}");
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Server error')),
+        );
+      }
+    } catch (error) {
+      print("Error updating profile: $error");
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error updating profile')),
+      );
+    }
+  }
+
+  Future<void> _uploadValidId() async {
+    if (_validIdImage != null) {
+      print('Uploading valid ID image: ${_validIdImage!.path}'); // Debugging log
+
+      var request = http.MultipartRequest(
+        'PATCH',
+        Uri.parse('http://192.168.1.13:3000/profile/uploadValidId')
+      );
+
+      // Add the userId as a field in the request
+      request.fields['userId'] = userId;
+
+      // Add the image file
+      String mimeType = lookupMimeType(_validIdImage!.path) ?? 'application/octet-stream';
+      var fileExtension = mimeType.split('/').last;
+
+      request.files.add(
+        await http.MultipartFile.fromPath(
+          'validIdImage', // Ensure this matches the backend field name
+          _validIdImage!.path,
+          contentType: MediaType('image', fileExtension),
+        ),
+      );
+
+      try {
+        var response = await request.send();
+        final responseBody = await response.stream.bytesToString();
+
+        print('Upload valid ID response status: ${response.statusCode}'); // Debugging log
+        print('Upload valid ID response body: $responseBody'); // Debugging log
+
+        if (response.statusCode == 200) {
+          var jsonResponse = jsonDecode(responseBody);
+
+          if (jsonResponse['status']) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text('Valid ID uploaded successfully')),
+            );
+          } else {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text('Failed to upload valid ID: ${jsonResponse['message']}')),
+            );
+          }
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Failed with status code: ${response.statusCode}')),
+          );
+        }
+      } catch (error) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error occurred: $error')),
+        );
+      }
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('No valid ID image selected')),
+      );
+    }
+  }
 
   void _selectValidIdImage() async {
     print("Selecting valid ID image");

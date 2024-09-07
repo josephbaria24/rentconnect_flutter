@@ -75,8 +75,7 @@ class _ProfileDetailsState extends State<ProfileDetails> {
                               : null,
                           child: userDetails?['profilePicture'] == null
                               ? Icon(Icons.person, size: 40)
-                              : null,
-                              
+                              : null,  
                         ),
                         
 
