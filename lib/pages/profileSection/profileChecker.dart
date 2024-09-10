@@ -17,7 +17,7 @@ class ProfilePageChecker extends StatefulWidget {
 class _ProfilePageCheckerState extends State<ProfilePageChecker> {
   late String email;
   late String userId;
-  bool? isProfileComplete;
+  bool? isProfileComplete = false;
 
 
   @override
@@ -31,39 +31,48 @@ class _ProfilePageCheckerState extends State<ProfilePageChecker> {
  
 
   Future<void> _checkProfileCompletion() async {
-    final url = Uri.parse('https://rentconnect-backend-nodejs.onrender.com/profile/checkProfileCompletion/$userId');
+  final url = Uri.parse('http://192.168.1.16:3000/profile/checkProfileCompletion/$userId');
 
-    try {
-      final response = await http.get(url, headers: {'Authorization': 'Bearer ${widget.token}'});
-      if (response.statusCode == 200) {
-        final responseData = jsonDecode(response.body);
-        setState(() {
-          isProfileComplete = responseData['status'];
-        });
+  try {
+    final response = await http.get(url, headers: {'Authorization': 'Bearer ${widget.token}'});
+    if (response.statusCode == 200) {
+      final responseData = jsonDecode(response.body);
 
-        // Redirect based on profile completion status
-        if (isProfileComplete == true) {
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(
-              builder: (context) => ProfileDetails(token: widget.token),
-            ),
-          );
-        } else {
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(
-              builder: (context) => PersonalInformation(token: widget.token),
-            ),
-          );
-        }
+      // Debugging: Print response data
+      print('Response data: $responseData');
+
+      setState(() {
+        // Handle cases where `isProfileComplete` might be missing
+        isProfileComplete = responseData['isProfileComplete'] ?? false;
+      });
+
+      // Debugging: Print profile completion status
+      print('Profile completion status: $isProfileComplete');
+
+      // Redirect based on profile completion status
+      if (isProfileComplete == true) {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (context) => ProfileDetails(token: widget.token),
+          ),
+        );
       } else {
-        print('Failed to check profile completion');
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (context) => PersonalInformation(token: widget.token),
+          ),
+        );
       }
-    } catch (error) {
-      print('Error checking profile completion: $error');
+    } else {
+      print('Failed to check profile completion. Status code: ${response.statusCode}');
     }
+  } catch (error) {
+    print('Error checking profile completion: $error');
   }
+}
+
 
   @override
   Widget build(BuildContext context) {

@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
+import 'package:get/get.dart';
 import 'package:jwt_decoder/jwt_decoder.dart';
+import 'package:rentcon/theme_controller.dart';
 import 'toast.dart'; // Import ToastNotification
 
 class MessagePage extends StatefulWidget {
@@ -15,6 +17,7 @@ class _MessagePageState extends State<MessagePage> {
   late String email;
   late FToast ftoast;
   late ToastNotification toast;
+  final themeController = Get.find<ThemeController>();
 
   @override
   void initState() {
@@ -30,7 +33,7 @@ class _MessagePageState extends State<MessagePage> {
     toast = ToastNotification(ftoast);
 
     return Scaffold(
-      backgroundColor: Color.fromRGBO(255, 252, 242, 1),
+      backgroundColor: themeController.isDarkMode.value ? Color.fromRGBO(0, 0, 0, 1) : Colors.white,
       body: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [

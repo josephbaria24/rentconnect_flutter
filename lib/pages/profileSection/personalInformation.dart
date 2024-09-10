@@ -38,7 +38,7 @@ class _PersonalInformationState extends State<PersonalInformation> {
   }
 
   Future<void> _checkProfileCompletion() async {
-    final url = Uri.parse('http://192.168.1.13:3000/profile/checkProfileCompletion/$userId');
+    final url = Uri.parse('http://192.168.1.16:3000/profile/checkProfileCompletion/$userId');
     print("Checking profile completion for userId: $userId");
 
     try {
@@ -75,7 +75,7 @@ class _PersonalInformationState extends State<PersonalInformation> {
   }
 
   Future<void> _updateProfileCompletion() async {
-    final url = Uri.parse('http://192.168.1.13:3000/profile/updateProfile');
+    final url = Uri.parse('http://192.168.1.16:3000/profile/updateProfile');
     print("Updating profile for userId: $userId");
 
     try {
@@ -128,7 +128,7 @@ class _PersonalInformationState extends State<PersonalInformation> {
 
       var request = http.MultipartRequest(
         'PATCH',
-        Uri.parse('http://192.168.1.13:3000/profile/uploadValidId')
+        Uri.parse('http://192.168.1.16:3000/profile/uploadValidId')
       );
 
       // Add the userId as a field in the request

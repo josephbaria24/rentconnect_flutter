@@ -7,6 +7,7 @@ import 'package:rentcon/config.dart';
 import 'package:rentcon/pages/fullscreenImage.dart';
 import 'package:rentcon/navigation_menu.dart';
 import 'package:fluttertoast/fluttertoast.dart';
+import 'package:rentcon/pages/propertyDetailPage.dart';
 import 'package:rentcon/pages/search_result.dart';
 import 'toast.dart';
 import 'package:rentcon/theme_controller.dart';
@@ -32,8 +33,8 @@ class _HomePageState extends State<HomePage> {
   late ToastNotification toast;
   String searchQuery = '';
 late TextEditingController _searchController;
-final TextEditingController _minPriceController = TextEditingController();
-final TextEditingController _maxPriceController = TextEditingController();
+//final TextEditingController _minPriceController = TextEditingController();
+//final TextEditingController _maxPriceController = TextEditingController();
 final ThemeController _themeController = Get.find<ThemeController>();
 
   @override
@@ -54,13 +55,13 @@ final ThemeController _themeController = Get.find<ThemeController>();
       });
     });
   }
-  @override
-  void dispose() {
-    _searchController.dispose();
-    _minPriceController.dispose();
-    _maxPriceController.dispose();
-    super.dispose();
-  }
+  // @override
+  // void dispose() {
+  //   _searchController.dispose();
+  //   _minPriceController.dispose();
+  //   _maxPriceController.dispose();
+  //   super.dispose();
+  // }
   // Fetch properties from the API
 Future<List<Property>> fetchProperties() async {
   try {
@@ -85,25 +86,25 @@ Future<List<Property>> fetchProperties() async {
 
 
 
-List<Property> filterProperties(List<Property> properties) {
-  double? minPrice = double.tryParse(_minPriceController.text);
-  double? maxPrice = double.tryParse(_maxPriceController.text);
+// List<Property> filterProperties(List<Property> properties) {
+//   double? minPrice = double.tryParse(_minPriceController.text);
+//   double? maxPrice = double.tryParse(_maxPriceController.text);
 
-  return properties.where((property) {
-    bool matchesDescription = property.description.toLowerCase().contains(searchQuery.toLowerCase()) ||
-                              property.address.toLowerCase().contains(searchQuery.toLowerCase());
+//   return properties.where((property) {
+//     bool matchesDescription = property.description.toLowerCase().contains(searchQuery.toLowerCase()) ||
+//                               property.address.toLowerCase().contains(searchQuery.toLowerCase());
 
-    bool matchesPrice = true;
-    if (minPrice != null) {
-      matchesPrice = property.price >= minPrice;
-    }
-    if (maxPrice != null) {
-      matchesPrice = matchesPrice && property.price <= maxPrice;
-    }
+//     // bool matchesPrice = true;
+//     // if (minPrice != null) {
+//     //   matchesPrice = property.price >= minPrice;
+//     // }
+//     // if (maxPrice != null) {
+//     //   matchesPrice = matchesPrice && property.price <= maxPrice;
+//     // }
 
-    return matchesDescription && matchesPrice;
-  }).toList();
-}
+//     //return matchesDescription && matchesPrice;
+//   }).toList();
+// }
 
 
 
@@ -113,7 +114,7 @@ List<Property> filterProperties(List<Property> properties) {
 
     try {
       final response = await http.get(
-        Uri.parse('https://rentconnect-backend-nodejs.onrender.com/getUserBookmarks/$userId'), // Adjust endpoint if necessary
+        Uri.parse('http://192.168.1.16:3000/getUserBookmarks/$userId'), // Adjust endpoint if necessary
         headers: {
           'Authorization': 'Bearer ${widget.token}',
         },
@@ -138,7 +139,7 @@ List<Property> filterProperties(List<Property> properties) {
   // Fetch user email from API
   Future<String> fetchUserEmail(String userId) async {
     try {
-      final response = await http.get(Uri.parse('https://rentconnect-backend-nodejs.onrender.com/getUserEmail/$userId'));
+      final response = await http.get(Uri.parse('http://192.168.1.16:3000/getUserEmail/$userId'));
 
       if (response.statusCode == 200) {
         final Map<String, dynamic> json = jsonDecode(response.body);
@@ -161,14 +162,14 @@ List<Property> filterProperties(List<Property> properties) {
 
 // Function to bookmark a property
 Future<void> bookmarkProperty(String propertyId) async {
-  final url = Uri.parse('https://rentconnect-backend-nodejs.onrender.com/addBookmark');
+  final url = Uri.parse('http://192.168.1.16:3000/addBookmark');
   final Map<String, dynamic> jwtDecodedToken = JwtDecoder.decode(widget.token);
   String userId = jwtDecodedToken['_id']?.toString() ?? 'Unknown user ID';
 
   try {
     if (bookmarkedPropertyIds.contains(propertyId)) {
       // If already bookmarked, remove it
-      final removeUrl = Uri.parse('https://rentconnect-backend-nodejs.onrender.com/removeBookmark');
+      final removeUrl = Uri.parse('http://192.168.1.16:3000/removeBookmark');
       await http.post(removeUrl,
         headers: {
           'Authorization': 'Bearer ${widget.token}',
@@ -217,23 +218,23 @@ Future<void> bookmarkProperty(String propertyId) async {
 }
 
 
-void _performSearch() {
-  final query = _searchController.text;
-  if (query.isNotEmpty) {
-    // Filter properties based on the search query
-    final matchingProperties = filterProperties(filteredProperties);
-    // Navigate to the search results page with the matching properties
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => SearchResultPage(
-          query: query,
-          properties: matchingProperties,
-        ),
-      ),
-    );
-  }
-}
+// void _performSearch() {
+//   final query = _searchController.text;
+//   if (query.isNotEmpty) {
+//     // Filter properties based on the search query
+//     final matchingProperties = filterProperties(filteredProperties);
+//     // Navigate to the search results page with the matching properties
+//     Navigator.push(
+//       context,
+//       MaterialPageRoute(
+//         builder: (context) => SearchResultPage(
+//           query: query,
+//           properties: matchingProperties,
+//         ),
+//       ),
+//     );
+//   }
+// }
 
 
 void _handleSearch(String query) {
@@ -247,14 +248,14 @@ void _handleSearch(String query) {
       }) as List<Property>;
     });
   }
-void _applyFilters() {
-  setState(() {
-    // Re-fetch the complete list of properties
-    propertiesFuture.then((properties) {
-      filteredProperties = filterProperties(properties);
-    });
-  });
-}
+// void _applyFilters() {
+//   setState(() {
+//     // Re-fetch the complete list of properties
+//     propertiesFuture.then((properties) {
+//       filteredProperties = filterProperties(properties);
+//     });
+//   });
+// }
 
 
 // void _showFilterDialog() {
@@ -307,11 +308,10 @@ void _applyFilters() {
     ftoast.init(context);
     toast = ToastNotification(ftoast);
     final NavigationController controller = Get.find<NavigationController>();
-   return Obx(() {
     return Scaffold(
       
       backgroundColor: _themeController.isDarkMode.value
-            ? Color.fromARGB(255, 19, 19, 19)
+            ? Color.fromARGB(255, 0, 0, 0)
             : Color.fromRGBO(255, 255, 255, 1),
       body: Padding(
         padding: EdgeInsets.symmetric(horizontal: 10.0),
@@ -352,7 +352,7 @@ void _applyFilters() {
                           final property = snapshot.data![index];
                           final imageUrl = property.photo.startsWith('http')
                               ? property.photo
-                              : 'https://rentconnect-backend-nodejs.onrender.com/${property.photo}';
+                              : 'http://192.168.1.16:3000/${property.photo}';
 
                           return FutureBuilder<String>(
                             future: fetchUserEmail(property.userId),
@@ -367,89 +367,102 @@ void _applyFilters() {
                                 final userEmail = userSnapshot.data!;
 
                                 return Card(
-                                  color: _themeController.isDarkMode.value ? const Color.fromARGB(255, 53, 53, 53) : const Color.fromARGB(255, 255, 255, 255),
-                                  elevation: 5.0,
-                                  margin: EdgeInsets.symmetric(vertical: 10.0, horizontal: 10.0),
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      Padding(
-                                        padding: const EdgeInsets.all(8.0),
-                                        child: Text(
-                                          userEmail,
-                                          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 17),
-                                        ),
-                                      ),
-                                      Stack(
-                                        children: [
-                                          GestureDetector(
-                                            onTap: () {
-                                              Navigator.push(
-                                                context,
-                                                MaterialPageRoute(
-                                                  builder: (context) => FullscreenImage(
-                                                    imageUrl: imageUrl,
-                                                  ),
-                                                ),
-                                              );
-                                            },
-                                            child: Hero(
-                                              tag: imageUrl,
-                                              child: SizedBox(
-                                                width: double.infinity,
-                                                height: 200,
-                                                child: ClipRRect(
-    
-                                                  borderRadius: BorderRadius.circular(10), // Adjust the radius as needed
-                                                  child: Image.network(
-                                                    imageUrl,
-                                                    fit: BoxFit.cover,
-                                                  ),
-                                                ),
-                                              ),
-                                            ),
-                                          ),
-                                          Positioned(
-                                            right: 10,
-                                            top: 10,
-                                            child: IconButton(
-                                              icon: Icon(
-                                                bookmarkedPropertyIds.contains(property.id) 
-                                                  ? Icons.bookmark 
-                                                  : Icons.bookmark_border,
-                                                color: Colors.red,
-                                              ),
-                                              onPressed: () {
-                                                bookmarkProperty(property.id); // Call the toggle bookmark function
-                                              },
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                      Padding(
-                                        padding: const EdgeInsets.all(8.0),
-                                        child: Text(
-                                          property.description,
-                                          style: TextStyle(fontWeight: FontWeight.bold),
-                                        ),
-                                      ),
-                                      Padding(
-                                        padding: const EdgeInsets.symmetric(horizontal: 8.0),
-                                        child: Text(property.address),
-                                      ),
-                                      Padding(
-                                        padding: const EdgeInsets.all(8.0),
-                                        child: Text(
-                                          '₱${property.price.toStringAsFixed(2)}',
-                                          style: TextStyle(
-                                            fontFamily: 'Roboto',
-                                            fontWeight: FontWeight.bold,
-                                          ),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                );
+  color: _themeController.isDarkMode.value ? const Color.fromARGB(255, 53, 53, 53) : const Color.fromARGB(255, 255, 255, 255),
+  elevation: 5.0,
+  margin: EdgeInsets.symmetric(vertical: 10.0, horizontal: 10.0),
+  child: InkWell(
+    onTap: () {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => PropertyDetailPage(
+            property: property,
+            userEmail: userEmail,
+          ),
+        ),
+      );
+    },
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.all(8.0),
+          child: Text(
+            userEmail,
+            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 17),
+          ),
+        ),
+        Stack(
+          children: [
+            GestureDetector(
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => FullscreenImage(
+                      imageUrl: imageUrl,
+                    ),
+                  ),
+                );
+              },
+              child: Hero(
+                tag: imageUrl,
+                child: SizedBox(
+                  width: double.infinity,
+                  height: 200,
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(10),
+                    child: Image.network(
+                      imageUrl,
+                      fit: BoxFit.cover,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+            Positioned(
+              right: 10,
+              top: 10,
+              child: IconButton(
+                icon: Icon(
+                  bookmarkedPropertyIds.contains(property.id)
+                      ? Icons.bookmark
+                      : Icons.bookmark_border,
+                  color: Colors.red,
+                ),
+                onPressed: () {
+                  bookmarkProperty(property.id);
+                },
+              ),
+            ),
+          ],
+        ),
+        Padding(
+          padding: const EdgeInsets.all(8.0),
+          child: Text(
+            property.description,
+            style: TextStyle(fontWeight: FontWeight.bold),
+          ),
+        ),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 8.0),
+          child: Text(property.address),
+        ),
+        Padding(
+          padding: const EdgeInsets.all(8.0),
+          child: Text(
+            '',
+            style: TextStyle(
+              fontFamily: 'Roboto',
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ),
+      ],
+    ),
+  ),
+);
+
 
 
                               }
@@ -466,7 +479,7 @@ void _applyFilters() {
         ),
       ),
     );
-    });
+    
     
 
   }
@@ -501,7 +514,7 @@ Container _searchField() {
         prefixIcon: GestureDetector(
           onTap: () {
             // Trigger search action
-            _performSearch();
+            //_performSearch();
           },
           child: Padding(
             padding: const EdgeInsets.all(12),
@@ -516,7 +529,7 @@ Container _searchField() {
         suffixIcon: GestureDetector(
           onTap: () {
             // Trigger filter action
-            _showFilterDialog();
+            //_showFilterDialog();
           },
           child: Container(
             width: 100,
@@ -552,46 +565,46 @@ Container _searchField() {
       ),
     );
   }
-   void _showFilterDialog() {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: Text('Filter Properties'),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(
-                controller: _minPriceController,
-                decoration: InputDecoration(labelText: 'Min Price'),
-                keyboardType: TextInputType.number,
-              ),
-              TextField(
-                controller: _maxPriceController,
-                decoration: InputDecoration(labelText: 'Max Price'),
-                keyboardType: TextInputType.number,
-              ),
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.of(context).pop(); // Close the dialog
-                _applyFilters(); // Apply the filters
-              },
-              child: Text('Apply'),
-            ),
-            TextButton(
-              onPressed: () {
-                Navigator.of(context).pop(); // Close the dialog without applying filters
-              },
-              child: Text('Cancel'),
-            ),
-          ],
-        );
-      },
-    );
-  }
+  //  void _showFilterDialog() {
+  //   showDialog(
+  //     context: context,
+  //     builder: (BuildContext context) {
+  //       return AlertDialog(
+  //         title: Text('Filter Properties'),
+  //         content: Column(
+  //           mainAxisSize: MainAxisSize.min,
+  //           children: [
+  //             TextField(
+  //               controller: _minPriceController,
+  //               decoration: InputDecoration(labelText: 'Min Price'),
+  //               keyboardType: TextInputType.number,
+  //             ),
+  //             TextField(
+  //               controller: _maxPriceController,
+  //               decoration: InputDecoration(labelText: 'Max Price'),
+  //               keyboardType: TextInputType.number,
+  //             ),
+  //           ],
+  //         ),
+  //         actions: [
+  //           TextButton(
+  //             onPressed: () {
+  //               Navigator.of(context).pop(); // Close the dialog
+  //               //_applyFilters(); // Apply the filters
+  //             },
+  //             child: Text('Apply'),
+  //           ),
+  //           TextButton(
+  //             onPressed: () {
+  //               Navigator.of(context).pop(); // Close the dialog without applying filters
+  //             },
+  //             child: Text('Cancel'),
+  //           ),
+  //         ],
+  //       );
+  //     },
+  //   );
+  // }
 }
 
 

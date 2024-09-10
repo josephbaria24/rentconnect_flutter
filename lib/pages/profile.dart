@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:jwt_decoder/jwt_decoder.dart';
 import 'package:line_awesome_flutter/line_awesome_flutter.dart';
+import 'package:rentcon/pages/global_loading_indicator.dart';
 import 'package:rentcon/pages/landlords/current_listing.dart';
 import 'package:rentcon/pages/profileSection/profileChecker.dart';
 import 'package:rentcon/theme_controller.dart';
@@ -58,7 +59,7 @@ class _ProfilePageState extends State<ProfilePage> {
   }
 
   Future<void> _fetchUserProfile() async {
-    final url = Uri.parse('https://rentconnect-backend-nodejs.onrender.com/user/$userId'); // Adjust the endpoint if needed
+    final url = Uri.parse('http://192.168.1.16:3000/user/$userId'); // Adjust the endpoint if needed
     try {
       final response = await http.get(url, headers: {'Authorization': 'Bearer ${widget.token}'});
       if (response.statusCode == 200) {
@@ -97,7 +98,7 @@ class _ProfilePageState extends State<ProfilePage> {
 
   Future<void> _uploadProfilePicture() async {
     if (_profileImage != null) {
-      final url = Uri.parse('https://rentconnect-backend-nodejs.onrender.com/updateProfilePicture/$userId');
+      final url = Uri.parse('http://192.168.1.16:3000/updateProfilePicture/$userId');
       var request = http.MultipartRequest('PATCH', url)
         ..headers['Authorization'] = 'Bearer ${widget.token}';
 
@@ -156,7 +157,7 @@ class _ProfilePageState extends State<ProfilePage> {
     return Obx(
       () => Scaffold(
       appBar: AppBar(
-      backgroundColor: themeController.isDarkMode.value ? Color.fromARGB(255, 19, 19, 19) : Color.fromRGBO(255, 255, 255, 1),
+      backgroundColor: themeController.isDarkMode.value ? Color.fromARGB(255, 0, 0, 0) : Color.fromRGBO(255, 255, 255, 1),
       actions: [
         IconButton(
           icon: Icon(
@@ -169,7 +170,7 @@ class _ProfilePageState extends State<ProfilePage> {
         ),
       ],
     ),
-      backgroundColor: themeController.isDarkMode.value ? Color.fromARGB(255, 19, 19, 19) : Color.fromRGBO(255, 255, 255, 1),
+      backgroundColor: themeController.isDarkMode.value ? Color.fromARGB(255, 0, 0, 0) : Color.fromRGBO(255, 255, 255, 1),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(40),
         child: Column(
@@ -185,7 +186,7 @@ class _ProfilePageState extends State<ProfilePage> {
                     child: _profileImage != null
                         ? Image.file(_profileImage!, fit: BoxFit.cover)
                         : _profileImageUrl != null
-                            ? Image.network('https://rentconnect-backend-nodejs.onrender.com/$_profileImageUrl', fit: BoxFit.cover)
+                            ? Image.network('http://192.168.1.16:3000/$_profileImageUrl', fit: BoxFit.cover)
                             : Image.asset("assets/images/profile.png"),
                   ),
                 ),
@@ -217,12 +218,14 @@ class _ProfilePageState extends State<ProfilePage> {
               SizedBox(
                 width: 200,
                 child: ElevatedButton(
+            
                   onPressed: _handleSave,
                   child: _isUpdating
-                      ? CircularProgressIndicator(color: Colors.white)
+                  
+                      ? GlobalLoadingIndicator()
                       : Text(
                           'Save Changes',
-                          style: TextStyle(color: Colors.black),
+                          style: TextStyle(color: themeController.isDarkMode.value? const Color.fromARGB(255, 255, 255, 255): const Color.fromARGB(255, 0, 0, 0)),
                         ),
                 ),
               ),

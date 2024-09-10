@@ -4,8 +4,7 @@ class Property {
   final String description;
   final String photo;
   final String address;
-  final double price;
-  final int numberOfRooms;
+  //final double price;
   final List<String> amenities;
   final DateTime availableFrom;
   final String status;
@@ -16,8 +15,7 @@ class Property {
     required this.description,
     required this.photo,
     required this.address,
-    required this.price,
-    required this.numberOfRooms,
+    //required this.price,
     required this.amenities,
     required this.availableFrom,
     required this.status,
@@ -30,8 +28,8 @@ class Property {
       description: json['description'] as String,
       photo: json['photo'] as String,
       address: json['address'] as String,
-      price: (json['price'] as num).toDouble(),
-      numberOfRooms: json['numberOfRooms'] as int,
+      //price: (json['price'] as num).toDouble(),
+    
       amenities: List<String>.from(json['amenities'] as List),
       availableFrom: DateTime.parse(json['availableFrom'] as String),
       status: json['status'] as String,

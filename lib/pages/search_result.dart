@@ -67,13 +67,13 @@ class SearchResultPage extends StatelessWidget {
                       ),
                       Padding(
                         padding: const EdgeInsets.all(8.0),
-                        child: Text(
-                          '₱${property.price.toStringAsFixed(2)}',
-                          style: TextStyle(
-                            fontFamily: 'Roboto',
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
+                        // child: Text(
+                        //   '₱${property.price.toStringAsFixed(2)}',
+                        //   style: TextStyle(
+                        //     fontFamily: 'Roboto',
+                        //     fontWeight: FontWeight.bold,
+                        //   ),
+                        // ),
                       ),
                     ],
                   ),
