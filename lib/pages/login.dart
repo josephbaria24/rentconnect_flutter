@@ -18,7 +18,8 @@ class _LoginPageState extends State<LoginPage> {
   TextEditingController emailController = TextEditingController();
   TextEditingController passwordController = TextEditingController();
   bool _isNotValidate = false;
-  bool _obscurePassword = true;  // New variable to toggle password visibility
+  bool _obscurePassword = true;
+  bool _isLoggingIn = false; // New variable to track login status
   late SharedPreferences prefs;
   final ThemeController _themeController = Get.find<ThemeController>();
 
@@ -34,27 +35,83 @@ class _LoginPageState extends State<LoginPage> {
 
   void loginUser() async {
     if (emailController.text.isNotEmpty && passwordController.text.isNotEmpty) {
+      setState(() {
+        _isLoggingIn = true; // Start loading state
+      });
+
       var reqBody = {
         "email": emailController.text,
         "password": passwordController.text,
       };
-      var response = await http.post(
-        Uri.parse(login),
-        headers: {"Content-Type": "application/json"},
-        body: jsonEncode(reqBody),
-      );
-      var jsonResponse = jsonDecode(response.body);
-      if (jsonResponse['status']) {
-        var myToken = jsonResponse['token'];
-        prefs.setString('token', myToken);
-        Navigator.push(
-          context,
-          MaterialPageRoute(builder: (context) => NavigationMenu(token: myToken)),
+
+      try {
+        var response = await http.post(
+          Uri.parse(login), 
+          headers: {"Content-Type": "application/json"},
+          body: jsonEncode(reqBody),
         );
-      } else {
-        print("Something went wrong");
+
+        print('Response status: ${response.statusCode}');
+        print('Response body: ${response.body}');
+
+        if (response.body.isEmpty) {
+          print("Received an empty response from the server.");
+          showErrorMessage("Error", "No response from the server.");
+          return;
+        }
+
+        var jsonResponse;
+        try {
+          jsonResponse = jsonDecode(response.body);
+        } catch (e) {
+          print("Error decoding JSON: $e");
+          showErrorMessage("Error", "Invalid response format.");
+          return;
+        }
+
+        if (jsonResponse['status'] == true) {
+          var myToken = jsonResponse['token'];
+          prefs.setString('token', myToken);
+
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => NavigationMenu(token: myToken)),
+          );
+        } else {
+          print("Login failed: ${jsonResponse['message']}");
+          showErrorMessage("Login Failed", jsonResponse['message'] ?? "Something went wrong.");
+        }
+      } catch (error) {
+        print("Error during login: $error");
+        showErrorMessage("Error", "Failed to connect to the server.");
+      } finally {
+        setState(() {
+          _isLoggingIn = false; // Stop loading state
+        });
       }
+    } else {
+      showErrorMessage("Input Error", "Email and password cannot be empty.");
     }
+  }
+
+  void showErrorMessage(String title, String message) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text(title),
+          content: Text(message),
+          actions: [
+            TextButton(
+              child: Text("OK"),
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+            ),
+          ],
+        );
+      },
+    );
   }
 
   @override
@@ -85,17 +142,16 @@ class _LoginPageState extends State<LoginPage> {
               controller: emailController,
               decoration: InputDecoration(
                 labelText: 'Email',
-                 floatingLabelStyle: TextStyle(
+                floatingLabelStyle: TextStyle(
                   color: _themeController.isDarkMode.value
-                  ? const Color.fromARGB(255, 255, 255, 255)  // Label color in dark mode
-                  : const Color.fromARGB(255, 148, 148, 148), // Label color in light mode
+                      ? const Color.fromARGB(255, 255, 255, 255)
+                      : const Color.fromARGB(255, 148, 148, 148),
                 ),
                 filled: false,
                 fillColor: _themeController.isDarkMode.value
                     ? Color.fromARGB(255, 241, 241, 241)
                     : Color.fromRGBO(117, 117, 117, 1),
                 border: OutlineInputBorder(
-                  
                   borderRadius: BorderRadius.circular(8.0),
                   borderSide: BorderSide.none,
                 ),
@@ -103,18 +159,17 @@ class _LoginPageState extends State<LoginPage> {
                   borderRadius: BorderRadius.circular(8.0),
                   borderSide: BorderSide(
                     color: _themeController.isDarkMode.value
-                        ? const Color.fromARGB(255, 253, 253, 253) // Border color in dark mode
-                        : const Color.fromARGB(255, 56, 55, 55), // Border color in light mode
+                        ? const Color.fromARGB(255, 253, 253, 253)
+                        : const Color.fromARGB(255, 56, 55, 55),
                     width: 1.0,
-                  )
+                  ),
                 ),
-                // Focused border when the field is pressed
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(8.0),
                   borderSide: BorderSide(
                     color: _themeController.isDarkMode.value
-                        ? const Color.fromARGB(255, 133, 177, 139) // Focused border color in dark mode
-                        : Colors.blue,  // Focused border color in light mode
+                        ? const Color.fromARGB(255, 133, 177, 139)
+                        : Colors.blue,
                     width: 2.0,
                   ),
                 ),
@@ -123,18 +178,13 @@ class _LoginPageState extends State<LoginPage> {
             const SizedBox(height: 20.0),
             TextField(
               controller: passwordController,
-              obscureText: _obscurePassword,  // Bind this with _obscurePassword
+              obscureText: _obscurePassword,
               decoration: InputDecoration(
                 labelText: 'Password',
                 floatingLabelStyle: TextStyle(
                   color: _themeController.isDarkMode.value
-                  ? const Color.fromARGB(255, 255, 255, 255)  // Label color in dark mode
-                  : const Color.fromARGB(255, 148, 148, 148), // Label color in light mode
-                ),
-                labelStyle: TextStyle(
-                  color: _themeController.isDarkMode.value
-                  ? const Color.fromARGB(255, 252, 252, 252)  // Label color in dark mode
-                  : const Color.fromARGB(255, 148, 148, 148), // Label color in light mode
+                      ? const Color.fromARGB(255, 255, 255, 255)
+                      : const Color.fromARGB(255, 148, 148, 148),
                 ),
                 filled: false,
                 fillColor: _themeController.isDarkMode.value
@@ -142,28 +192,26 @@ class _LoginPageState extends State<LoginPage> {
                     : Color.fromRGBO(117, 117, 117, 1),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(8.0),
-                  borderSide: BorderSide.none
+                  borderSide: BorderSide.none,
                 ),
                 enabledBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(8.0),
                   borderSide: BorderSide(
                     color: _themeController.isDarkMode.value
-                        ? const Color.fromARGB(255, 253, 253, 253) // Border color in dark mode
-                        : const Color.fromARGB(255, 56, 55, 55), // Border color in light mode
+                        ? const Color.fromARGB(255, 253, 253, 253)
+                        : const Color.fromARGB(255, 56, 55, 55),
                     width: 1.0,
-                  )
+                  ),
                 ),
-                // Focused border when the field is pressed
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(8.0),
                   borderSide: BorderSide(
                     color: _themeController.isDarkMode.value
-                        ? Color.fromARGB(255, 133, 177, 139) // Focused border color in dark mode
-                        : Colors.blue,  // Focused border color in light mode
+                        ? Color.fromARGB(255, 133, 177, 139)
+                        : Colors.blue,
                     width: 2.0,
                   ),
                 ),
-                // Add IconButton for show/hide password
                 suffixIcon: IconButton(
                   icon: Icon(
                     _obscurePassword ? Icons.visibility : Icons.visibility_off,
@@ -181,9 +229,11 @@ class _LoginPageState extends State<LoginPage> {
             ),
             const SizedBox(height: 40.0),
             ElevatedButton(
-              onPressed: () {
-                loginUser();
-              },
+              onPressed: _isLoggingIn
+                  ? null
+                  : () {
+                      loginUser();
+                    },
               style: ElevatedButton.styleFrom(
                 backgroundColor: _themeController.isDarkMode.value
                     ? Color.fromARGB(255, 115, 212, 77)
@@ -195,7 +245,7 @@ class _LoginPageState extends State<LoginPage> {
                 ),
               ),
               child: Text(
-                'Login',
+                _isLoggingIn ? 'Logging in...' : 'Login',
                 style: TextStyle(
                   fontFamily: 'Poppins',
                   fontWeight: FontWeight.w700,
@@ -227,15 +277,15 @@ class _LoginPageState extends State<LoginPage> {
                       MaterialPageRoute(builder: (context) => SignUpPage()),
                     );
                   },
-                  child:  Text(
+                  child: Text(
                     'Sign Up',
                     style: TextStyle(
                       fontFamily: 'Poppins',
                       fontWeight: FontWeight.bold,
                       fontSize: 14.0,
                       color: _themeController.isDarkMode.value
-                      ? Color.fromARGB(255, 15, 243, 72)
-                      : Color.fromRGBO(22, 104, 11, 1),
+                          ? Colors.green
+                          : Colors.blue,
                     ),
                   ),
                 ),

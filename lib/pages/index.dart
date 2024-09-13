@@ -78,7 +78,7 @@ class _IndexPageState extends State<IndexPage> with TickerProviderStateMixin {
               style: TextStyle(
                 fontFamily: 'Poppins',
                 fontWeight: FontWeight.w700,
-                fontSize: 40.0, // Adjust font size
+                fontSize: 37.0, // Adjust font size
                 color: const Color.fromARGB(255, 255, 255, 255)
                     .withOpacity(1), // Semi-transparent background effect
               ),
@@ -119,11 +119,11 @@ class _IndexPageState extends State<IndexPage> with TickerProviderStateMixin {
                                 },
                                 itemBuilder: (context, index) {
                                   return Padding(
-                                    padding: const EdgeInsets.all(8.0),
+                                    padding: const EdgeInsets.all(7.0),
                                     child: Column(
                                       children: [
                                         Container(
-                                          height: 60,
+                                          height: 50,
                                           width: 60,
                                           alignment: Alignment.topCenter,
                                           child: Gif(
@@ -161,6 +161,7 @@ class _IndexPageState extends State<IndexPage> with TickerProviderStateMixin {
                                 },
                               ),
                             ),
+                            SizedBox(height: 10.0,),
 
                             // Page Indicator
                             Row(

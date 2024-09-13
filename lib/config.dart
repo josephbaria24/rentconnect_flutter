@@ -7,3 +7,4 @@ final getProperty = url + 'getUserPropertyList';
 final getUserEmail = url + 'getUserEmail';
 final getAllProperties = url + 'getAllProperties';
 final getUserBookmarks = url + 'getUserBookmarks';
+final deleteProperty = url + 'deleteProperty';

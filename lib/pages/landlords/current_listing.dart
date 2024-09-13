@@ -55,20 +55,40 @@ class _CurrentListingPageState extends State<CurrentListingPage> {
     }
   }
 
+  Future<void> deleteProperty(String propertyId) async {
+    try {
+      var response = await http.delete(
+        Uri.parse('http://192.168.1.16:3000/deleteProperty/$propertyId'), // Adjust URL based on your delete API
+        headers: {"Authorization": "Bearer ${widget.token}"},
+      );
+
+      if (response.statusCode == 200) {
+        // Refresh property list after deletion
+        getPropertyList(userId);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Property deleted successfully')),
+        );
+      } else {
+        print("Error deleting property: ${response.statusCode}");
+      }
+    } catch (e) {
+      print("Error: $e");
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Color.fromRGBO(255, 252, 242, 1),
       appBar: AppBar(
         backgroundColor: Color.fromRGBO(255, 252, 242, 1),
-        title: Text('Property Listings'),
         leading: IconButton(
           icon: Icon(Icons.arrow_back),
           onPressed: () {
             Navigator.push(
               context,
               MaterialPageRoute(
-                builder: (context) => NavigationMenu(token: widget.token),
+                builder: (context) => NavigationMenu(token: widget.token, currentIndex: 4),
               ),
             );
           },
@@ -183,6 +203,61 @@ class _CurrentListingPageState extends State<CurrentListingPage> {
                                                   : Colors.red,
                                         ),
                                       ),
+                                      SizedBox(height: 10.0),
+                                      // Edit and Delete buttons
+                                      Row(
+                                        mainAxisAlignment: MainAxisAlignment.end,
+                                        children: [
+                                          // Edit Button
+                                          IconButton(
+                                            icon: Icon(Icons.edit, color: const Color.fromARGB(255, 6, 62, 107)),
+                                            onPressed: () {
+                                              // Navigate to edit property page
+                                              // Navigator.push(
+                                              //   context,
+                                              //   MaterialPageRoute(
+                                              //     builder: (context) => PropertyDetailsPage(
+                                              //       token: widget.token,
+                                              //       propertyId: item['_id'],
+                                              //     ),
+                                              //   ),
+                                              // );
+                                            },
+                                          ),
+                                          // Delete Button
+                                          IconButton(
+                                            icon: ImageIcon(
+                                              AssetImage('assets/icons/trash.png'),
+                                              color: Colors.red,),
+                                            onPressed: () {
+                                              showDialog(
+                                                context: context,
+                                                builder: (BuildContext context) {
+                                                  return AlertDialog(
+                                                    title: Text("Delete Property"),
+                                                    content: Text("Are you sure you want to delete this property?"),
+                                                    actions: [
+                                                      TextButton(
+                                                        child: Text("Cancel"),
+                                                        onPressed: () {
+                                                          Navigator.of(context).pop();
+                                                        },
+                                                      ),
+                                                      TextButton(
+                                                        child: Text("Delete"),
+                                                        onPressed: () {
+                                                          deleteProperty(item['_id']);
+                                                          Navigator.of(context).pop();
+                                                        },
+                                                      ),
+                                                    ],
+                                                  );
+                                                },
+                                              );
+                                            },
+                                          ),
+                                        ],
+                                      ),
                                     ],
                                   ),
                                 ),
@@ -205,9 +280,11 @@ class _CurrentListingPageState extends State<CurrentListingPage> {
             ),
           );
         },
-        child: Icon(Icons.add),
+        child: ImageIcon(
+           AssetImage('assets/icons/add.png'),
+          ),
       ),
-      floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
+      floatingActionButtonLocation: FloatingActionButtonLocation.miniEndFloat,
     );
   }
 }
