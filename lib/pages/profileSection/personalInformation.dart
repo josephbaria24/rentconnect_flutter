@@ -1,11 +1,15 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'dart:io';
 import 'package:jwt_decoder/jwt_decoder.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:http_parser/http_parser.dart';
-import 'package:mime/mime.dart'; // For MIME type detection
+import 'package:mime/mime.dart';
+import 'package:rentcon/navigation_menu.dart';
+import 'package:rentcon/pages/home.dart';
+import 'package:rentcon/theme_controller.dart'; // For MIME type detection
 
 class PersonalInformation extends StatefulWidget {
   final String token; // Specify the type of token as String
@@ -18,14 +22,19 @@ class PersonalInformation extends StatefulWidget {
 
 class _PersonalInformationState extends State<PersonalInformation> {
   final _formKey = GlobalKey<FormState>();
-  final TextEditingController _fullNameController = TextEditingController();
+  final TextEditingController _firstNameController = TextEditingController();
+  final TextEditingController _lastNameController = TextEditingController();
   final TextEditingController _phoneController = TextEditingController();
   final TextEditingController _addressController = TextEditingController();
+  String _gender = 'Male'; // Default gender value
+  String _selectedRole = 'occupant'; // Default role value
   File? _validIdImage;
   final ImagePicker _picker = ImagePicker();
   bool _isProfileComplete = false;
+  String _profileStatus = 'none';
   late String email;
   late String userId;
+  final ThemeController _themeController = Get.find<ThemeController>();
 
   @override
   void initState() {
@@ -33,170 +42,186 @@ class _PersonalInformationState extends State<PersonalInformation> {
     final Map<String, dynamic> jwtDecodedToken = JwtDecoder.decode(widget.token);
     email = jwtDecodedToken['email']?.toString() ?? 'Unknown email';
     userId = jwtDecodedToken['_id']?.toString() ?? 'Unknown userId';
-    print("Decoded token - email: $email, userId: $userId");
     _checkProfileCompletion();
   }
 
-  Future<void> _checkProfileCompletion() async {
-    final url = Uri.parse('http://192.168.1.16:3000/profile/checkProfileCompletion/$userId');
-    print("Checking profile completion for userId: $userId");
-
-    try {
-      final response = await http.get(url, headers: {'Authorization': 'Bearer ${widget.token}'});
-      print("Profile completion response status: ${response.statusCode}");
-
-      if (response.statusCode == 200) {
-        final responseData = jsonDecode(response.body);
-        print("Profile completion response data: $responseData");
-
-        // Check if 'isProfileComplete' key is present and is a boolean
-        if (responseData.containsKey('isProfileComplete') && responseData['isProfileComplete'] is bool) {
-          setState(() {
-            _isProfileComplete = responseData['isProfileComplete'];
-          });
-        } else {
-          print("Unexpected response data format: $responseData");
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Unexpected response format')),
-          );
-        }
-      } else {
-        print("Failed to check profile completion. Status code: ${response.statusCode}");
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to check profile completion')),
-        );
+Future<void> _checkProfileCompletion() async {
+  final url = Uri.parse('http://192.168.1.17:3000/profile/checkProfileCompletion/$userId');
+  try {
+    final response = await http.get(url, headers: {'Authorization': 'Bearer ${widget.token}'});
+    if (response.statusCode == 200) {
+      final responseData = jsonDecode(response.body);
+      if (responseData.containsKey('isProfileComplete') && responseData['isProfileComplete'] is bool) {
+        setState(() {
+          _isProfileComplete = responseData['isProfileComplete'];
+        });
       }
-    } catch (error) {
-      print("Error checking profile completion: $error");
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error checking profile completion')),
-      );
-    }
-  }
-
-  Future<void> _updateProfileCompletion() async {
-    final url = Uri.parse('http://192.168.1.16:3000/profile/updateProfile');
-    print("Updating profile for userId: $userId");
-
-    try {
-      final response = await http.patch(
-        url,
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer ${widget.token}', // Ensure the token is included
-        },
-        body: jsonEncode({
-          'userId': userId,
-          'fullName': _fullNameController.text,
-          'phone': _phoneController.text,
-          'address': _addressController.text,
-          'isProfileComplete': _isProfileComplete,
-        }),
-      );
-      print("Update profile response status: ${response.statusCode}");
-
-      if (response.statusCode == 200) {
-        final responseData = jsonDecode(response.body);
-        print("Update profile response data: $responseData");
-
-        if (responseData['status']) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Profile updated successfully')),
-          );
-        } else {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Failed to update profile: ${responseData['message']}')),
-          );
-        }
-      } else {
-        print("Failed to update profile. Status code: ${response.statusCode}");
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Server error')),
-        );
+      if (responseData.containsKey('profileStatus') && responseData['profileStatus'] is String) {
+        setState(() {
+          _profileStatus = responseData['profileStatus'];
+        });
       }
-    } catch (error) {
-      print("Error updating profile: $error");
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error updating profile')),
-      );
     }
+  } catch (error) {
+    print("Error checking profile completion: $error");
   }
+}
 
-  Future<void> _uploadValidId() async {
+
+Future<void> _submitProfileAndId() async {
+  if (_formKey.currentState!.validate()) {
+    // Set isProfileComplete to false and profileStatus to pending
+    _isProfileComplete = false; // Profile is incomplete until admin approval
+    await _updateProfileCompletion();
     if (_validIdImage != null) {
-      print('Uploading valid ID image: ${_validIdImage!.path}'); // Debugging log
-
-      var request = http.MultipartRequest(
-        'PATCH',
-        Uri.parse('http://192.168.1.16:3000/profile/uploadValidId')
-      );
-
-      // Add the userId as a field in the request
-      request.fields['userId'] = userId;
-
-      // Add the image file
-      String mimeType = lookupMimeType(_validIdImage!.path) ?? 'application/octet-stream';
-      var fileExtension = mimeType.split('/').last;
-
-      request.files.add(
-        await http.MultipartFile.fromPath(
-          'validIdImage', // Ensure this matches the backend field name
-          _validIdImage!.path,
-          contentType: MediaType('image', fileExtension),
-        ),
-      );
-
-      try {
-        var response = await request.send();
-        final responseBody = await response.stream.bytesToString();
-
-        print('Upload valid ID response status: ${response.statusCode}'); // Debugging log
-        print('Upload valid ID response body: $responseBody'); // Debugging log
-
-        if (response.statusCode == 200) {
-          var jsonResponse = jsonDecode(responseBody);
-
-          if (jsonResponse['status']) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text('Valid ID uploaded successfully')),
-            );
-          } else {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text('Failed to upload valid ID: ${jsonResponse['message']}')),
-            );
-          }
-        } else {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Failed with status code: ${response.statusCode}')),
-          );
-        }
-      } catch (error) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error occurred: $error')),
-        );
-      }
+      await _uploadValidId();
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('No valid ID image selected')),
       );
     }
+
+    // Show modal regardless of profile completion status
+    _showThankYouModal();
+  }
+}
+
+
+void _showThankYouModal() {
+  showDialog(
+    context: context,
+    barrierDismissible: false, // Prevent dismissal by tapping outside
+    builder: (BuildContext context) {
+      return AlertDialog(
+        title: Text("Profile Submitted"),
+        content: Text("Thank you for filling out your profile! Please wait for the admin to approve it."),
+        actions: [
+          ElevatedButton(
+            onPressed: () {
+              Navigator.of(context).pop(); // Close the modal
+              Navigator.of(context).pushReplacement(MaterialPageRoute(
+                builder: (context) => NavigationMenu(token: widget.token), // Redirect to Home after submission
+              ));
+            },
+            child: Text("OK"),
+          ),
+        ],
+      );
+    },
+  );
+}
+
+
+
+
+Future<void> _updateProfileCompletion() async {
+  final url = Uri.parse('http://192.168.1.17:3000/profile/updateProfile');
+  try {
+    final response = await http.patch(
+      url,
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ${widget.token}',
+      },
+      body: jsonEncode({
+        'userId': userId,
+        'firstName': _firstNameController.text,
+        'lastName': _lastNameController.text,
+        'phone': _phoneController.text,
+        'address': _addressController.text,
+        'gender': _gender,
+        'isProfileComplete': false,  // Profile is not complete yet
+        'profileStatus': 'pending',  // Set profile status to pending
+      }),
+    );
+    if (response.statusCode == 200) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Profile submitted and pending approval')),
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to submit profile')),
+      );
+    }
+  } catch (error) {
+    print("Error updating profile: $error");
+  }
+}
+
+
+
+  Future<void> _updateRole() async {
+    final url = Uri.parse('http://192.168.1.17:3000/updateProfile');
+    try {
+      final response = await http.patch(
+        url,
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer ${widget.token}',
+        },
+        body: jsonEncode({
+          'userId': userId,
+          'email' : email,
+          'role' : _selectedRole
+        }),
+      );
+      if (response.statusCode == 200) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Role updated successfully')),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to update role')),
+        );
+      }
+    } catch (error) {
+      print("Error updating profile: $error");
+    }
+  }
+
+  Future<void> _uploadValidId() async {
+    if (_validIdImage != null) {
+      var request = http.MultipartRequest(
+        'PATCH',
+        Uri.parse('http://192.168.1.17:3000/profile/uploadValidId')
+      );
+      request.fields['userId'] = userId;
+      String mimeType = lookupMimeType(_validIdImage!.path) ?? 'application/octet-stream';
+      var fileExtension = mimeType.split('/').last;
+      request.files.add(
+        await http.MultipartFile.fromPath(
+          'validIdImage',
+          _validIdImage!.path,
+          contentType: MediaType('image', fileExtension),
+        ),
+      );
+      try {
+        var response = await request.send();
+        if (response.statusCode == 200) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Valid ID uploaded successfully')),
+          );
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Failed to upload valid ID')),
+          );
+        }
+      } catch (error) {
+        print("Error uploading valid ID: $error");
+      }
+    }
   }
 
   void _selectValidIdImage() async {
-    print("Selecting valid ID image");
     final pickedFile = await _picker.pickImage(source: ImageSource.gallery);
     if (pickedFile != null) {
       setState(() {
         _validIdImage = File(pickedFile.path);
       });
-      print("Selected valid ID image: ${_validIdImage!.path}");
-    } else {
-      print("No image selected");
     }
   }
 
   void _removeValidIdImage() {
-    print("Removing valid ID image");
     setState(() {
       _validIdImage = null;
     });
@@ -208,99 +233,108 @@ class _PersonalInformationState extends State<PersonalInformation> {
       appBar: AppBar(
         title: Text('Personal Information'),
       ),
-      body: SingleChildScrollView(
+      body: _profileStatus == 'pending'
+        ? Center(
+            child: Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Text(
+                'Your profile is currently being reviewed, please wait for the result.',
+                style: TextStyle(fontSize: 18.0, color: _themeController.isDarkMode.value? const Color.fromARGB(255, 255, 255, 255):const Color.fromARGB(255, 0, 0, 0)),
+                textAlign: TextAlign.center,
+              ),
+            ),
+          )
+      :SingleChildScrollView(
         child: Padding(
           padding: const EdgeInsets.all(16.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              if (_isProfileComplete)
-                Container(
-                  padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 85),
-                  color: const Color.fromARGB(255, 220, 245, 220),
-                  child: Text(
-                    'Your profile is complete!',
-                    style: TextStyle(color: Colors.green, fontWeight: FontWeight.bold),
-                  ),
+          child: Form(
+            key: _formKey,
+            child: Column(
+              children: [
+                TextFormField(
+                  controller: _firstNameController,
+                  decoration: InputDecoration(labelText: 'First Name'),
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Please enter your first name';
+                    }
+                    return null;
+                  },
                 ),
-              SizedBox(height: 20),
-              Form(
-                key: _formKey,
-                child: Column(
-                  children: [
-                    TextFormField(
-                      controller: _fullNameController,
-                      decoration: InputDecoration(labelText: 'Full Name'),
-                      validator: (value) {
-                        if (value == null || value.isEmpty) {
-                          return 'Please enter your full name';
-                        }
-                        return null;
-                      },
-                    ),
-                    TextFormField(
-                      controller: _phoneController,
-                      decoration: InputDecoration(labelText: 'Phone'),
-                      validator: (value) {
-                        if (value == null || value.isEmpty) {
-                          return 'Please enter your phone number';
-                        }
-                        return null;
-                      },
-                    ),
-                    TextFormField(
-                      controller: _addressController,
-                      decoration: InputDecoration(labelText: 'Address'),
-                      validator: (value) {
-                        if (value == null || value.isEmpty) {
-                          return 'Please enter your address';
-                        }
-                        return null;
-                      },
-                    ),
-                    SizedBox(height: 20),
-                    if (_validIdImage != null)
-                      Stack(
-                        children: [
-                          Image.file(_validIdImage!),
-                          Positioned(
-                            right: 0,
-                            top: 0,
-                            child: IconButton(
-                              icon: Icon(Icons.close, color: Colors.red),
-                              onPressed: _removeValidIdImage,
-                            ),
-                          ),
-                        ],
-                      )
-                    else
-                      Text('No valid ID image selected.'),
-                    ElevatedButton(
-                      onPressed: _selectValidIdImage,
-                      child: Text('Select Valid ID Image'),
-                    ),
-                    SizedBox(height: 20),
-                    ElevatedButton(
-                      onPressed: () {
-                        print("Save button pressed");
-                        if (_formKey.currentState?.validate() ?? false) {
-                          // Set the profile as complete if the form is valid
-                          setState(() {
-                            _isProfileComplete = true;
-                          });
-                          print("Form is valid. Setting profile as complete and updating...");
-                          _updateProfileCompletion();
-                          _uploadValidId();
-                        } else {
-                          print("Form is invalid");
-                        }
-                      },
-                      child: Text('Save'),
-                    ),
-                  ],
+                TextFormField(
+                  controller: _lastNameController,
+                  decoration: InputDecoration(labelText: 'Last Name'),
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Please enter your last name';
+                    }
+                    return null;
+                  },
                 ),
-              ),
-            ],
+                TextFormField(
+                  controller: _phoneController,
+                  decoration: InputDecoration(labelText: 'Phone'),
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Please enter your phone number';
+                    }
+                    return null;
+                  },
+                ),
+                TextFormField(
+                  controller: _addressController,
+                  decoration: InputDecoration(labelText: 'Address'),
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Please enter your address';
+                    }
+                    return null;
+                  },
+                ),
+                DropdownButtonFormField<String>(
+                  value: _gender,
+                  decoration: InputDecoration(labelText: 'Gender'),
+                  items: ['Male', 'Female'].map((String value) {
+                    return DropdownMenuItem<String>(
+                      value: value,
+                      child: Text(value),
+                    );
+                  }).toList(),
+                  onChanged: (newValue) {
+                    setState(() {
+                      _gender = newValue!;
+                    });
+                  },
+                ),
+                DropdownButtonFormField<String>(
+                  value: _selectedRole,
+                  decoration: InputDecoration(labelText: 'Role'),
+                  items: ['occupant', 'landlord'].map((String value) {
+                    return DropdownMenuItem<String>(
+                      value: value,
+                      child: Text(value),
+                    );
+                  }).toList(),
+                  onChanged: (newValue) {
+                    setState(() {
+                      _selectedRole = newValue!;
+                    });
+                  },
+                ),
+                SizedBox(height: 20),
+                ElevatedButton.icon(
+                  onPressed: _validIdImage != null ? _removeValidIdImage : _selectValidIdImage,
+                  icon: Icon(_validIdImage != null ? Icons.delete : Icons.upload),
+                  label: Text(_validIdImage != null ? 'Remove ID Image' : 'Upload ID Image'),
+                ),
+                if (_validIdImage != null) Text('ID image selected: ${_validIdImage!.path}'),
+                SizedBox(height: 20),
+                ElevatedButton(
+                  onPressed: _submitProfileAndId,
+                  child: Text('Submit'),
+                ),
+              ],
+            ),
           ),
         ),
       ),

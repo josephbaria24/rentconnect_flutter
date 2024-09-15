@@ -36,7 +36,7 @@ class SearchFieldWidget extends StatelessWidget {
         },
         decoration: InputDecoration(
           filled: true,
-          fillColor:  _themeController.isDarkMode.value ? Colors.grey[850] : Colors.white,
+          fillColor:  _themeController.isDarkMode.value ? Color.fromARGB(255, 36, 38, 43) : Colors.white,
           contentPadding: EdgeInsets.all(15),
           hintText: 'Search',
           hintStyle: TextStyle(

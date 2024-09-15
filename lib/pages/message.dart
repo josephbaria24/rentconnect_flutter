@@ -33,7 +33,7 @@ class _MessagePageState extends State<MessagePage> {
     toast = ToastNotification(ftoast);
 
     return Scaffold(
-      backgroundColor: themeController.isDarkMode.value ? Color.fromRGBO(0, 0, 0, 1) : Colors.white,
+      backgroundColor: themeController.isDarkMode.value ? Color.fromRGBO(28, 29, 34, 1) : Colors.white,
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.all(16.0),

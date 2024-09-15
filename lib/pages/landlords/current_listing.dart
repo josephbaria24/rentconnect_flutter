@@ -1,11 +1,13 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import 'package:jwt_decoder/jwt_decoder.dart';
 import 'package:http/http.dart' as http;
 import 'package:rentcon/config.dart';
 import 'package:rentcon/navigation_menu.dart';
 import 'package:rentcon/pages/landlords/addListing.dart';
 import 'package:rentcon/pages/profile.dart';
+import 'package:rentcon/theme_controller.dart';
 
 class CurrentListingPage extends StatefulWidget {
   final String token;
@@ -19,6 +21,7 @@ class _CurrentListingPageState extends State<CurrentListingPage> {
   late String userId;
   late String email;
   List<dynamic>? items; // Ensure correct type
+   final ThemeController _themeController = Get.find<ThemeController>();
 
   @override
   void initState() {
@@ -58,7 +61,7 @@ class _CurrentListingPageState extends State<CurrentListingPage> {
   Future<void> deleteProperty(String propertyId) async {
     try {
       var response = await http.delete(
-        Uri.parse('http://192.168.1.16:3000/deleteProperty/$propertyId'), // Adjust URL based on your delete API
+        Uri.parse('http://192.168.1.17:3000/deleteProperty/$propertyId'), // Adjust URL based on your delete API
         headers: {"Authorization": "Bearer ${widget.token}"},
       );
 
@@ -79,62 +82,18 @@ class _CurrentListingPageState extends State<CurrentListingPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Color.fromRGBO(255, 252, 242, 1),
+      backgroundColor: _themeController.isDarkMode.value? Color.fromRGBO(0, 0, 0, 1): Colors.white,
       appBar: AppBar(
-        backgroundColor: Color.fromRGBO(255, 252, 242, 1),
-        leading: IconButton(
-          icon: Icon(Icons.arrow_back),
-          onPressed: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => NavigationMenu(token: widget.token, currentIndex: 4),
-              ),
-            );
-          },
-        ),
+        backgroundColor: _themeController.isDarkMode.value? Color.fromRGBO(0, 0, 0, 1): Colors.white,
+        
       ),
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Container(
-            padding: EdgeInsets.symmetric(vertical: 30.0, horizontal: 20.0),
-            decoration: BoxDecoration(
-              color: Color.fromRGBO(255, 252, 242, 1),
-              borderRadius: BorderRadius.only(
-                bottomLeft: Radius.circular(20),
-                bottomRight: Radius.circular(20),
-              ),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                CircleAvatar(
-                  child: Icon(Icons.list, size: 30.0),
-                  backgroundColor: Colors.white,
-                  radius: 30.0,
-                ),
-                SizedBox(height: 10.0),
-                Text(
-                  'Your Listings $email',
-                  style: TextStyle(
-                    fontSize: 30.0,
-                    fontWeight: FontWeight.w700,
-                    color: Colors.black,
-                  ),
-                ),
-                SizedBox(height: 8.0),
-                Text(
-                  '${items?.length ?? 0} Properties',
-                  style: TextStyle(fontSize: 20, color: Colors.black),
-                ),
-              ],
-            ),
-          ),
           Expanded(
             child: Container(
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: _themeController.isDarkMode.value? Color.fromRGBO(0, 0, 0, 1): Colors.white,
                 borderRadius: BorderRadius.only(
                   topLeft: Radius.circular(20),
                   topRight: Radius.circular(20),
@@ -196,10 +155,12 @@ class _CurrentListingPageState extends State<CurrentListingPage> {
                                       Text(
                                         'Status: ${item['status'] ?? 'Unknown'}',
                                         style: TextStyle(
-                                          color: item['status'] == 'available'
+                                          color: item['status'] == 'approved'
                                               ? Colors.green
-                                              : item['status'] == 'reserved'
-                                                  ? Colors.orange
+                                              : item['status'] == 'waiting'
+                                              ? Colors.orange
+                                              : item['status'] == 'under review'
+                                              ? Colors.blue
                                                   : Colors.red,
                                         ),
                                       ),

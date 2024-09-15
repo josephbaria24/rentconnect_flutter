@@ -5,6 +5,7 @@ import 'package:line_awesome_flutter/line_awesome_flutter.dart';
 import 'package:rentcon/pages/about.dart';
 import 'package:rentcon/pages/global_loading_indicator.dart';
 import 'package:rentcon/pages/landlords/current_listing.dart';
+import 'package:rentcon/pages/login.dart';
 import 'package:rentcon/pages/profileSection/profileChecker.dart';
 import 'package:rentcon/theme_controller.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -65,7 +66,7 @@ class _ProfilePageState extends State<ProfilePage> {
 
   Future<void> _fetchUserProfile() async {
     final url = Uri.parse(
-        'http://192.168.1.16:3000/user/$userId'); // Adjust the endpoint if needed
+        'http://192.168.1.17:3000/user/$userId'); // Adjust the endpoint if needed
     try {
       final response = await http
           .get(url, headers: {'Authorization': 'Bearer ${widget.token}'});
@@ -84,11 +85,22 @@ class _ProfilePageState extends State<ProfilePage> {
   }
 
   Future<void> _logout() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.remove('token');
-    print('Logged out, token removed from SharedPreferences');
-    Navigator.pushReplacementNamed(context, '/login');
-  }
+  final prefs = await SharedPreferences.getInstance();
+  
+  // Clear all relevant user data
+  await prefs.remove('token'); // Remove token
+  // Add other data removal if necessary, e.g., user info, settings
+
+  print('Logged out, token removed from SharedPreferences');
+
+  // Ensure the navigation stack is cleared and user is redirected to login page
+  Navigator.pushAndRemoveUntil(
+    context,
+    MaterialPageRoute(builder: (context) => LoginPage()), // Replace with your actual login page widget
+    (route) => false, // Remove all other routes
+  );
+}
+
 
   Future<void> _pickImage() async {
     print('Picking image...');
@@ -107,7 +119,7 @@ class _ProfilePageState extends State<ProfilePage> {
   Future<void> _uploadProfilePicture() async {
     if (_profileImage != null) {
       final url =
-          Uri.parse('http://192.168.1.16:3000/updateProfilePicture/$userId');
+          Uri.parse('http://192.168.1.17:3000/updateProfilePicture/$userId');
       var request = http.MultipartRequest('PATCH', url)
         ..headers['Authorization'] = 'Bearer ${widget.token}';
 
@@ -168,184 +180,292 @@ class _ProfilePageState extends State<ProfilePage> {
   }
 
   final themeController = Get.put(ThemeController()); // Get theme controller
+
+
   @override
-  Widget build(BuildContext context) {
-    return Obx(() => Scaffold(
-          appBar: AppBar(
-            backgroundColor: themeController.isDarkMode.value
-                ? Color.fromARGB(255, 0, 0, 0)
-                : Color.fromRGBO(255, 255, 255, 1),
-            actions: [
-              IconButton(
-                icon: Icon(
-                  themeController.isDarkMode.value
-                      ? Icons.nights_stay_outlined
-                      : Icons
-                          .wb_sunny_outlined, // Moon for dark mode, sun for light mode
-                  color: themeController.isDarkMode.value
-                      ? const Color.fromARGB(255, 108, 151, 245)
-                      : const Color.fromARGB(255, 214, 182, 38),
+Widget build(BuildContext context) {
+  return Obx(() => Scaffold(
+        appBar: AppBar(
+          automaticallyImplyLeading: false, // Remove the back icon
+          backgroundColor: themeController.isDarkMode.value
+              ? Color.fromARGB(255, 28, 29, 34)
+              : Color.fromRGBO(255, 255, 255, 1),
+          actions: [
+            IconButton(
+              icon: Icon(
+                themeController.isDarkMode.value
+                    ? Icons.nights_stay_outlined
+                    : Icons.wb_sunny_outlined, // Moon for dark mode, sun for light mode
+                color: themeController.isDarkMode.value
+                    ? const Color.fromARGB(255, 108, 151, 245)
+                    : const Color.fromARGB(255, 214, 182, 38),
+              ),
+              onPressed: () {
+                themeController.toggleTheme(!themeController
+                    .isDarkMode.value); // Toggle between dark and light mode
+              },
+            ),
+          ],
+        ),
+        backgroundColor: themeController.isDarkMode.value
+            ? Color.fromARGB(255, 28, 29, 34)
+            : Color.fromRGBO(255, 255, 255, 1),
+        body: SingleChildScrollView(
+          padding: const EdgeInsets.all(25),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.center, // Align children to the start of the column
+            children: [
+              Container(
+                height: 120,
+                width: 120,
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(100),
+                  color: themeController.isDarkMode.value? const Color.fromARGB(255, 42, 43, 36) : Color.fromARGB(125, 42, 43, 36),
                 ),
-                onPressed: () {
-                  themeController.toggleTheme(!themeController
-                      .isDarkMode.value); // Toggle between dark and light mode
+                child: Padding(
+                  padding: const EdgeInsets.all(4.0),
+                  child: Stack(
+                    alignment: Alignment.center,
+                    children: [
+                      SizedBox(
+                        width: 110,
+                        height: 110,
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(100),
+                          child: _profileImage != null
+                              ? Image.file(_profileImage!, fit: BoxFit.cover)
+                              : _profileImageUrl != null
+                                  ? Image.network(
+                                      'http://192.168.1.17:3000/$_profileImageUrl',
+                                      fit: BoxFit.cover,
+                                    )
+                                  : Image.asset("assets/images/profile.png"),
+                        ),
+                      ),
+                      Positioned(
+                        bottom: 2,
+                        right: 2,
+                        child: SizedBox(
+                          height: 30,
+                          width: 30,
+                          child: DecoratedBox(
+                            decoration: BoxDecoration(
+                              color: Colors.grey,
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: IconButton(
+                              icon: Icon(
+                                Icons.camera_alt_rounded,
+                                color: const Color.fromARGB(255, 56, 56, 56),
+                                size: 17,
+                              ),
+                              onPressed: _pickImage,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(height: 10),
+              Text(
+                userDetails?['fullName'] ?? email,
+                style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                      fontWeight: FontWeight.bold,
+                      color: themeController.isDarkMode.value
+                          ? Colors.white
+                          : Colors.black,
+                    ),
+              ),
+              Text(
+                '$userId',
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      fontWeight: FontWeight.w500,
+                      color: themeController.isDarkMode.value
+                          ? const Color.fromARGB(255, 177, 177, 177)
+                          : Colors.black,
+                    ),
+              ),
+              const SizedBox(height: 20),
+              if (_hasImageChanged) // Show the button only if there are changes
+                SizedBox(
+                  width: 200,
+                  child: ElevatedButton(
+                    onPressed: _handleSave,
+                    child: _isUpdating
+                        ? GlobalLoadingIndicator()
+                        : Text(
+                            'Save Changes',
+                            style: TextStyle(
+                                color: themeController.isDarkMode.value
+                                    ? const Color.fromARGB(255, 255, 255, 255)
+                                    : const Color.fromARGB(255, 0, 0, 0)),
+                          ),
+                  ),
+                ),
+              const SizedBox(height: 20),
+              // Menu
+              ProfileMenuWidget(
+                title: "Personal Information",
+                icon: LineAwesomeIcons.user,
+                textColor: themeController.isDarkMode.value
+                    ? Colors.white
+                    : Colors.black,
+                onPress: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) =>
+                          ProfilePageChecker(token: widget.token),
+                    ),
+                  );
                 },
+              ),
+              ProfileMenuWidget(
+                title: "Account Settings",
+                icon: LineAwesomeIcons.cog_solid,
+                textColor: themeController.isDarkMode.value
+                    ? Colors.white
+                    : Colors.black,
+                onPress: () {},
+              ),
+              ProfileMenuWidget(
+                title: "Listing",
+                icon: LineAwesomeIcons.list_alt_solid,
+                textColor: themeController.isDarkMode.value
+                    ? Colors.white
+                    : Colors.black,
+                onPress: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) =>
+                          CurrentListingPage(token: widget.token),
+                    ),
+                  );
+                },
+              ),
+              ProfileMenuWidget(
+                title: "About",
+                icon: LineAwesomeIcons.info_solid,
+                textColor: themeController.isDarkMode.value
+                    ? Colors.white
+                    : Colors.black,
+                onPress: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => AboutPage(token: widget.token),
+                    ),
+                  );
+                },
+              ),
+              ProfileMenuWidget(
+                title: "Logout",
+                icon: LineAwesomeIcons.sign_out_alt_solid,
+                textColor: Colors.red,
+                endIcon: false,
+                onPress: _logout,
               ),
             ],
           ),
-          backgroundColor: themeController.isDarkMode.value
-              ? Color.fromARGB(255, 0, 0, 0)
-              : Color.fromRGBO(255, 255, 255, 1),
-          body: SingleChildScrollView(
-            padding: const EdgeInsets.all(40),
-            child: Column(
-              children: [
-                Stack(
-                  alignment: Alignment.bottomRight,
-                  children: [
-                    SizedBox(
-                      width: 120,
-                      height: 120,
-                      child: ClipRRect(
-                        borderRadius: BorderRadius.circular(100),
-                        child: _profileImage != null
-                            ? Image.file(_profileImage!, fit: BoxFit.cover)
-                            : _profileImageUrl != null
-                                ? Image.network(
-                                    'http://192.168.1.16:3000/$_profileImageUrl',
-                                    fit: BoxFit.cover)
-                                : Image.asset("assets/images/profile.png"),
-                      ),
-                    ),
-                    SizedBox(height: 35, width: 35,
-                      child: DecoratedBox(
-                        decoration: BoxDecoration(
-                          color: Colors.grey,
-                          borderRadius: BorderRadius.circular(10)
-                        ),
-                        child: IconButton(
-                          icon: Icon(Icons.camera_alt_rounded,
-                              color: const Color.fromARGB(255, 94, 94, 94),
-                              size: 17),
-                          onPressed: _pickImage,
-                          color: Colors.black.withOpacity(0.5),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 10),
-                Text(
-                  userDetails?['fullName'] ?? email,
-                  style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                        fontWeight: FontWeight.bold,
-                        color: themeController.isDarkMode.value
-                            ? Colors.white
-                            : Colors.black,
-                      ),
-                ),
-                Text(
-                  '$userId',
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        fontWeight: FontWeight.w500,
-                        color: themeController.isDarkMode.value
-                            ? Colors.white
-                            : Colors.black,
-                      ),
-                ),
-                const SizedBox(height: 20),
-                if (_hasImageChanged) // Show the button only if there are changes
-                  SizedBox(
-                    width: 200,
-                    child: ElevatedButton(
-                      onPressed: _handleSave,
-                      child: _isUpdating
-                          ? GlobalLoadingIndicator()
-                          : Text(
-                              'Save Changes',
-                              style: TextStyle(
-                                  color: themeController.isDarkMode.value
-                                      ? const Color.fromARGB(255, 255, 255, 255)
-                                      : const Color.fromARGB(255, 0, 0, 0)),
-                            ),
-                    ),
-                  ),
-                const SizedBox(height: 30),
-                const Divider(),
-                const SizedBox(height: 10),
+        ),
+      ));
+}
+}
 
-                // Menu
-                ProfileMenuWidget(
-                  title: "Personal Information",
-                  icon: LineAwesomeIcons.user,
-                  textColor: themeController.isDarkMode.value
-                      ? Colors.white
-                      : Colors.black,
-                  onPress: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) =>
-                            ProfilePageChecker(token: widget.token),
-                      ),
-                    );
-                  },
-                ),
-                ProfileMenuWidget(
-                  title: "Account Settings",
-                  icon: LineAwesomeIcons.cog_solid,
-                  textColor: themeController.isDarkMode.value
-                      ? Colors.white
-                      : Colors.black,
-                  onPress: () {},
-                ),
-                ProfileMenuWidget(
-                  title: "Listing",
-                  icon: LineAwesomeIcons.list_alt_solid,
-                  textColor: themeController.isDarkMode.value
-                      ? Colors.white
-                      : Colors.black,
-                  onPress: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) =>
-                            CurrentListingPage(token: widget.token),
-                      ),
-                    );
-                  },
-                ),
-                ProfileMenuWidget(
-                  title: "About",
-                  icon: LineAwesomeIcons.info_solid,
-                  textColor: themeController.isDarkMode.value
-                      ? Colors.white
-                      : Colors.black,
-                  onPress: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => AboutPage(token: widget.token),
-                      ),
-                    );
-                  },
-                ),
-                ProfileMenuWidget(
-                  title: "Logout",
-                  icon: LineAwesomeIcons.sign_out_alt_solid,
-                  textColor: Colors.red,
-                  endIcon: false,
-                  onPress: _logout,
-                ),
-              ],
+
+class InfoCard extends StatelessWidget {
+  const InfoCard({
+    Key? key,
+    required this.title,
+    required this.value,
+  }) : super(key: key);
+
+  final String title;
+  final String value;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      width: MediaQuery.of(context).size.width * 0.42,
+      decoration: BoxDecoration(
+        color: Colors.grey[900],
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            title,
+            style: const TextStyle(
+              color: Colors.grey,
+              fontSize: 14,
             ),
           ),
-        ));
+          const SizedBox(height: 5),
+          Text(
+            value,
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+
+class DeviceCard extends StatelessWidget {
+  const DeviceCard({
+    Key? key,
+    required this.deviceName,
+    required this.batteryLevel,
+  }) : super(key: key);
+
+  final String deviceName;
+  final int batteryLevel;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.grey[900],
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(
+            deviceName,
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          Text(
+            '$batteryLevel%',
+            style: const TextStyle(
+              color: Colors.greenAccent,
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }
 
 class ProfileMenuWidget extends StatelessWidget {
-  const ProfileMenuWidget({
+   ProfileMenuWidget({
     Key? key,
     required this.title,
     required this.icon,
@@ -359,46 +479,59 @@ class ProfileMenuWidget extends StatelessWidget {
   final VoidCallback onPress;
   final bool endIcon;
   final Color? textColor;
+  final ThemeController _themeController = Get.find<ThemeController>();
 
   @override
   Widget build(BuildContext context) {
-    return ListTile(
-      onTap: onPress,
-      leading: Container(
-        width: 40,
-        height: 40,
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(100),
-          color: const Color.fromARGB(255, 46, 45, 45),
-        ),
-        child: Icon(
-          icon,
-          color: Color.fromARGB(255, 115, 212, 77),
-        ),
+    return Container(
+      height: 65,
+      width: double.infinity,
+      margin:  EdgeInsets.only(bottom: 10), // Adds space between tiles
+      decoration: BoxDecoration(
+      
+        color: _themeController.isDarkMode.value ? Color.fromARGB(255, 36, 37, 43) :  Color.fromARGB(166, 241, 241, 241) , // Box background color
+        borderRadius: BorderRadius.circular(12),
       ),
-      title: Text(
-        title,
-        style: Theme.of(context)
-            .textTheme
-            .bodyMedium
-            ?.copyWith(fontWeight: FontWeight.w500)
-            ?.apply(color: textColor),
+      child: ListTile(
+        onTap: onPress,
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 5),
+        leading: Container(
+          width: 40,
+          height: 40,
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(100),
+            color: const Color.fromARGB(0, 28, 28, 30), // Icon background
+          ),
+          child: Icon(
+            icon,
+            color: _themeController.isDarkMode.value? const Color.fromARGB(255, 226, 226, 226) : const Color.fromARGB(255, 0, 0, 0),
+          ),
+        ),
+        title: Text(
+          title,
+          
+          style: Theme.of(context)
+          
+              .textTheme
+              .bodyMedium
+              ?.copyWith(fontWeight: FontWeight.w400, fontSize: 15)
+              ?.apply(color: textColor ?? Colors.white),
+        ),
+        trailing: endIcon
+            ? Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: const Color.fromARGB(0, 28, 28, 30), // Trailing icon box background
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child:  Icon(
+                  Icons.arrow_forward_ios,
+                  size: 18.0,
+                  color: _themeController.isDarkMode.value? const Color.fromARGB(255, 226, 226, 226) : const Color.fromARGB(255, 0, 0, 0),
+                ),
+              )
+            : null,
       ),
-      trailing: endIcon
-          ? Container(
-              width: 30,
-              height: 30,
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(100),
-                color: const Color.fromARGB(51, 151, 245, 187),
-              ),
-              child: const Icon(
-                LineAwesomeIcons.angle_right_solid,
-                size: 18.0,
-                color: Color.fromARGB(255, 115, 212, 77),
-              ),
-            )
-          : null,
     );
   }
 }

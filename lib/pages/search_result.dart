@@ -15,7 +15,7 @@ class SearchResultPage extends StatelessWidget {
 
   Future<List<dynamic>> fetchRooms(String propertyId) async {
     try {
-      final response = await http.get(Uri.parse('http://192.168.1.16:3000/rooms/properties/$propertyId/rooms'));
+      final response = await http.get(Uri.parse('http://192.168.1.17:3000/rooms/properties/$propertyId/rooms'));
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         if (data['status']) {
@@ -43,7 +43,7 @@ class SearchResultPage extends StatelessWidget {
                 final property = properties[index];
                 final imageUrl = property.photo.startsWith('http')
                     ? property.photo
-                    : 'http://192.168.1.16:3000/${property.photo}';
+                    : 'http://192.168.1.17:3000/${property.photo}';
 
                 return FutureBuilder<List<dynamic>>(
                   future: fetchRooms(property.id),

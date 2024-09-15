@@ -34,7 +34,7 @@ class _TrendPageState extends State<TrendPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: themeController.isDarkMode.value ? Color.fromRGBO(0, 0, 0, 1) : Colors.white,
+      backgroundColor: themeController.isDarkMode.value ? Color.fromRGBO(28, 29, 34, 1) : Colors.white,
       appBar: AppBar(
         title: Text('Trend Data for $email'),
       ),

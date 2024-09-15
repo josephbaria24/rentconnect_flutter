@@ -24,6 +24,7 @@ class RoomUnitWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    print("Room Number Controller: ${room.roomNumberController.text}");
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8.0),
       child: Column(

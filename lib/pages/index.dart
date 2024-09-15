@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:gif/gif.dart';
 import 'login.dart';
 import 'signup.dart';
 
@@ -10,36 +9,15 @@ class IndexPage extends StatefulWidget {
   _IndexPageState createState() => _IndexPageState();
 }
 
-class _IndexPageState extends State<IndexPage> with TickerProviderStateMixin {
+class _IndexPageState extends State<IndexPage> {
   final List<String> descriptions = [
     'A place where you can seamlessly connect\nwith your ideal rental property and list property.',
     'Find your dream property and stay connected\nwith RentConnect services.',
   ];
 
-  final List<String> gifAssets = [
-    'assets/images/share.gif', // GIF for the first slide
-    'assets/images/link.gif', // GIF for the second slide
-  ];
+  
 
-  late final GifController _controller;
   int currentIndex = 0;
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = GifController(vsync: this);
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      // Example: Start animation or perform state changes after the initial build
-      _controller.reset();
-      _controller.forward();
-    });
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -126,17 +104,7 @@ class _IndexPageState extends State<IndexPage> with TickerProviderStateMixin {
                                           height: 50,
                                           width: 60,
                                           alignment: Alignment.topCenter,
-                                          child: Gif(
-                                            controller: _controller,
-                                            image: AssetImage(gifAssets[index]),
-                                            autostart: Autostart.loop,
-                                            placeholder: (context) => const Center(
-                                                child: CircularProgressIndicator()),
-                                            onFetchCompleted: () {
-                                              _controller.reset();
-                                              _controller.forward();
-                                            },
-                                          ),
+                                          child: Image.asset('assets/icons/ren.png'),
                                         ),
                                         const SizedBox(
                                             height: 8.0), // Space between icon and text
@@ -161,7 +129,7 @@ class _IndexPageState extends State<IndexPage> with TickerProviderStateMixin {
                                 },
                               ),
                             ),
-                            SizedBox(height: 10.0,),
+                            const SizedBox(height: 10.0),
 
                             // Page Indicator
                             Row(

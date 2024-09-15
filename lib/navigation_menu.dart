@@ -34,6 +34,16 @@ class _NavigationMenuState extends State<NavigationMenu> {
     print("NavigationMenu initialized with email: $email");
   }
 
+  Color _getIconColor(int index) {
+    return _selectedIndex == index
+        ? themeController.isDarkMode.value
+            ? Color.fromRGBO(235, 254, 114, 1)
+            : Color.fromRGBO(255, 255, 255, 1) 
+        : themeController.isDarkMode.value
+            ? Colors.grey // Adjust color for unselected icons in dark mode
+            : Color.fromRGBO(218, 218, 218, 1); // Adjust color for unselected icons in light mode
+  }
+
   @override
   Widget build(BuildContext context) {
     final controller = Get.put(NavigationController(token: widget.token, initialIndex: _selectedIndex));
@@ -45,37 +55,44 @@ class _NavigationMenuState extends State<NavigationMenu> {
       bottomNavigationBar: Obx(
         () => CurvedNavigationBar(
           animationDuration: const Duration(milliseconds: 350),
-          buttonBackgroundColor: themeController.isDarkMode.value ? const Color.fromARGB(255, 255, 255, 255) : Colors.black,
+          buttonBackgroundColor: themeController.isDarkMode.value ? const Color.fromARGB(255, 49, 50, 58) : Colors.black,
           color: themeController.isDarkMode.value
-              ? const Color.fromARGB(249, 255, 255, 255)
+              ? const Color.fromARGB(248, 36, 38, 43)
               : const Color.fromARGB(255, 0, 0, 0),
           height: 60.0,
           backgroundColor: themeController.isDarkMode.value
-              ? const Color.fromARGB(255, 0, 0, 0)
+              ? const Color.fromARGB(255, 28, 29, 34)
               : const Color.fromARGB(255, 255, 255, 255),
           items: <Widget>[
             SvgPicture.asset(
               'assets/icons/home2.svg',
-              color: themeController.isDarkMode.value ? const Color.fromARGB(255, 7, 7, 7) : const Color.fromARGB(255, 255, 255, 255),
+              color: _getIconColor(0),
             ),
             SvgPicture.asset(
               'assets/icons/bookmark.svg',
-              color: themeController.isDarkMode.value ? const Color.fromARGB(255, 0, 0, 0) : const Color.fromARGB(255, 255, 255, 255),
+              color: _getIconColor(1),
             ),
             SvgPicture.asset(
               'assets/icons/analytic.svg',
-              color: themeController.isDarkMode.value ? const Color.fromARGB(255, 0, 0, 0) : const Color.fromARGB(255, 255, 255, 255), height: 35, width: 35,
+              color: _getIconColor(2),
+              height: 35,
+              width: 35,
             ),
             SvgPicture.asset(
-              ('assets/icons/messagel.svg'),
-              color: themeController.isDarkMode.value ? const Color.fromARGB(255, 0, 0, 0) : const Color.fromARGB(255, 255, 255, 255),
+              'assets/icons/messagel.svg',
+              color: _getIconColor(3),
             ),
             SvgPicture.asset(
-              ('assets/icons/person.svg'),
-              color: themeController.isDarkMode.value ? const Color.fromARGB(255, 5, 5, 5) : const Color.fromARGB(255, 255, 255, 255), height: 24, width: 24,
+              'assets/icons/person.svg',
+              color: _getIconColor(4),
+              height: 24,
+              width: 24,
             ),
           ],
           onTap: (index) {
+            setState(() {
+              _selectedIndex = index;
+            });
             controller.selectedIndex.value = index;
           },
         ),

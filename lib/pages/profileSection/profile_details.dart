@@ -26,7 +26,7 @@ class _ProfileDetailsState extends State<ProfileDetails> {
   }
 
   Future<void> _fetchUserDetails() async {
-    final url = Uri.parse('http://192.168.1.16:3000/user/$userId'); // Your new endpoint
+    final url = Uri.parse('http://192.168.1.17:3000/user/$userId'); // Your new endpoint
     try {
       final response = await http.get(url, headers: {
         'Authorization': 'Bearer ${widget.token}',
@@ -71,7 +71,7 @@ class _ProfileDetailsState extends State<ProfileDetails> {
                           radius: 30,
                           backgroundColor: Colors.white,
                           backgroundImage: userDetails?['profilePicture'] != null
-                              ? NetworkImage('http://192.168.1.16:3000/${userDetails?['profilePicture']}')
+                              ? NetworkImage('http://192.168.1.17:3000/${userDetails?['profilePicture']}')
                               : null,
                           child: userDetails?['profilePicture'] == null
                               ? Icon(Icons.person, size: 40)

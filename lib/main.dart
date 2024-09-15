@@ -1,3 +1,4 @@
+import 'package:animated_splash_screen/animated_splash_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:jwt_decoder/jwt_decoder.dart';
@@ -7,10 +8,12 @@ import 'package:rentcon/insert.dart';
 import 'package:rentcon/insertListing.dart';
 import 'package:rentcon/nav_try.dart';
 import 'package:rentcon/navigation_menu.dart';
+import 'package:rentcon/pages/home.dart';
 import 'package:rentcon/pages/index.dart';
 import 'package:rentcon/pages/landlords/addListing.dart';
 import 'package:rentcon/pages/landlords/current_listing.dart';
 import 'package:rentcon/pages/login.dart';
+import 'package:rentcon/splash.dart';
 import 'package:rentcon/theme_controller.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -42,10 +45,24 @@ class MyApp extends StatelessWidget {
           darkTheme: ThemeData.dark(), // Set dark theme
           themeMode: themeController.isDarkMode.value ? ThemeMode.dark : ThemeMode.light,
           //home: NavTry(),
-          home: isAuthenticated ? NavigationMenu(token: token!) : IndexPage(),
+          home: isAuthenticated ? AnimatedSplashScreen(
+            splash: Image.asset('assets/icons/ren.png'),
+            duration: 3000,
+            backgroundColor: const Color.fromARGB(255, 255, 255, 255),
+            splashTransition: SplashTransition.fadeTransition,
+            nextScreen : 
+            NavigationMenu(token: token!)) 
+          : AnimatedSplashScreen(
+            splash: Image.asset('assets/icons/ren.png'),
+            duration: 3000,
+            backgroundColor: const Color.fromARGB(255, 255, 255, 255),
+            splashTransition: SplashTransition.fadeTransition,
+            nextScreen: IndexPage()),
           routes: {
+
             '/login': (context) => LoginPage(),
             '/current-listing': (context) => CurrentListingPage(token: token!),
+            '/home' :  (context) => HomePage(token: token!,)
           },
         ));
   }
