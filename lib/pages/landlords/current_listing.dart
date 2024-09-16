@@ -84,9 +84,21 @@ class _CurrentListingPageState extends State<CurrentListingPage> {
     return Scaffold(
       backgroundColor: _themeController.isDarkMode.value? Color.fromRGBO(0, 0, 0, 1): Colors.white,
       appBar: AppBar(
-        backgroundColor: _themeController.isDarkMode.value? Color.fromRGBO(0, 0, 0, 1): Colors.white,
-        
+
+      backgroundColor: _themeController.isDarkMode.value
+          ? Color.fromRGBO(0, 0, 0, 1)
+          : Colors.white,
+      leading: IconButton(
+        icon: Icon(
+          Icons.arrow_back,
+          color: _themeController.isDarkMode.value ? Colors.white : Colors.black,
+        ),
+        onPressed: () {
+          Navigator.of(context).pop(); // Navigate back when pressed
+        },
       ),
+    ),
+
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [

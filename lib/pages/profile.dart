@@ -34,6 +34,11 @@ class _ProfilePageState extends State<ProfilePage> {
   bool _hasImageChanged = false; // Flag to track if image has changed
   bool _isDarkMode = false; // To manage dark mode
   Map<String, dynamic>? userDetails;
+  String profileStatus = 'none'; // Default value
+  String userRole = '';
+
+
+
   @override
   void initState() {
     super.initState();
@@ -42,8 +47,9 @@ class _ProfilePageState extends State<ProfilePage> {
         JwtDecoder.decode(widget.token);
     email = jwtDecodedToken['email']?.toString() ?? 'Unknown email';
     userId = jwtDecodedToken['_id']?.toString() ?? 'Unknown userId';
-
+fetchUserProfileStatus();
     _fetchUserProfile();
+
     print('Initialized with email: $email and userId: $userId');
   }
 
@@ -83,6 +89,31 @@ class _ProfilePageState extends State<ProfilePage> {
       print('Error fetching profile data: $error');
     }
   }
+
+
+  Future<void> fetchUserProfileStatus() async {
+  final url = Uri.parse('http://192.168.1.17:3000/profile/checkProfileCompletion/$userId'); // Replace with your API endpoint
+  try {
+    final response = await http.get(
+      url,
+      headers: {
+        'Authorization': 'Bearer ${widget.token}',
+      },
+    );
+    if (response.statusCode == 200) {
+      final Map<String, dynamic> jsonMap = jsonDecode(response.body);
+      setState(() {
+        profileStatus = jsonMap['profileStatus'] ?? 'none';
+        userRole = jsonMap['userRole'] ?? 'none';  // Store the user role
+      });
+    } else {
+      print('Failed to fetch profile status');
+    }
+  } catch (error) {
+    print('Error fetching profile status: $error');
+  }
+}
+
 
   Future<void> _logout() async {
   final prefs = await SharedPreferences.getInstance();
@@ -185,42 +216,41 @@ class _ProfilePageState extends State<ProfilePage> {
   @override
 Widget build(BuildContext context) {
   return Obx(() => Scaffold(
-        appBar: AppBar(
-          automaticallyImplyLeading: false, // Remove the back icon
-          backgroundColor: themeController.isDarkMode.value
-              ? Color.fromARGB(255, 28, 29, 34)
-              : Color.fromRGBO(255, 255, 255, 1),
-          actions: [
-            IconButton(
-              icon: Icon(
-                themeController.isDarkMode.value
-                    ? Icons.nights_stay_outlined
-                    : Icons.wb_sunny_outlined, // Moon for dark mode, sun for light mode
-                color: themeController.isDarkMode.value
-                    ? const Color.fromARGB(255, 108, 151, 245)
-                    : const Color.fromARGB(255, 214, 182, 38),
-              ),
-              onPressed: () {
-                themeController.toggleTheme(!themeController
-                    .isDarkMode.value); // Toggle between dark and light mode
-              },
-            ),
-          ],
-        ),
         backgroundColor: themeController.isDarkMode.value
             ? Color.fromARGB(255, 28, 29, 34)
             : Color.fromRGBO(255, 255, 255, 1),
         body: SingleChildScrollView(
           padding: const EdgeInsets.all(25),
           child: Column(
-            crossAxisAlignment: CrossAxisAlignment.center, // Align children to the start of the column
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
+              // Dark mode toggle icon placed at the top-right corner
+              Align(
+                alignment: Alignment.topRight,
+                child: IconButton(
+                  icon: Icon(
+                    themeController.isDarkMode.value
+                        ? Icons.nights_stay_outlined
+                        : Icons.wb_sunny_outlined, // Moon for dark mode, sun for light mode
+                    color: themeController.isDarkMode.value
+                        ? const Color.fromARGB(255, 108, 151, 245)
+                        : const Color.fromARGB(255, 214, 182, 38),
+                  ),
+                  onPressed: () {
+                    themeController.toggleTheme(
+                        !themeController.isDarkMode.value); // Toggle dark/light mode
+                  },
+                ),
+              ),
+              // Rest of the UI components
               Container(
                 height: 120,
                 width: 120,
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(100),
-                  color: themeController.isDarkMode.value? const Color.fromARGB(255, 42, 43, 36) : Color.fromARGB(125, 42, 43, 36),
+                  color: themeController.isDarkMode.value
+                      ? const Color.fromARGB(255, 42, 43, 36)
+                      : Color.fromARGB(125, 42, 43, 36),
                 ),
                 child: Padding(
                   padding: const EdgeInsets.all(4.0),
@@ -236,7 +266,7 @@ Widget build(BuildContext context) {
                               ? Image.file(_profileImage!, fit: BoxFit.cover)
                               : _profileImageUrl != null
                                   ? Image.network(
-                                      'http://192.168.1.17:3000/$_profileImageUrl',
+                                      '$_profileImageUrl',
                                       fit: BoxFit.cover,
                                     )
                                   : Image.asset("assets/images/profile.png"),
@@ -270,14 +300,14 @@ Widget build(BuildContext context) {
               ),
               const SizedBox(height: 10),
               Text(
-                userDetails?['fullName'] ?? email,
-                style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                      fontWeight: FontWeight.bold,
-                      color: themeController.isDarkMode.value
-                          ? Colors.white
-                          : Colors.black,
-                    ),
-              ),
+                  '${userDetails?['profile']?['firstName'] ?? email} ${userDetails?['profile']?['lastName'] ?? ''}',
+                  style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                        fontWeight: FontWeight.bold,
+                        color: themeController.isDarkMode.value
+                            ? Colors.white
+                            : Colors.black,
+                      ),
+                ),
               Text(
                 '$userId',
                 style: Theme.of(context).textTheme.bodySmall?.copyWith(
@@ -288,7 +318,7 @@ Widget build(BuildContext context) {
                     ),
               ),
               const SizedBox(height: 20),
-              if (_hasImageChanged) // Show the button only if there are changes
+              if (_hasImageChanged)
                 SizedBox(
                   width: 200,
                   child: ElevatedButton(
@@ -305,7 +335,48 @@ Widget build(BuildContext context) {
                   ),
                 ),
               const SizedBox(height: 20),
-              // Menu
+              if (userRole == 'landlord' && profileStatus == 'approved') ...[
+                ProfileMenuWidget(
+                  title: "Listing",
+                  icon: LineAwesomeIcons.list_alt_solid,
+                  textColor: themeController.isDarkMode.value
+                      ? Colors.white
+                      : Colors.black,
+                  onPress: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) =>
+                            CurrentListingPage(token: widget.token),
+                      ),
+                    );
+                  },
+                ),
+              ] else if (userRole == 'occupant' && profileStatus == 'approved') ...[
+                ProfileMenuWidget(
+                  title: "My Home",
+                  icon: Icons.home_outlined,
+                  textColor: themeController.isDarkMode.value
+                      ? Colors.white
+                      : Colors.black,
+                  onPress: () {
+                    // Navigate to "My Home" page
+                  },
+                ),
+              ],
+              Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Settings',
+                      style: TextStyle(color: Colors.grey[500]),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 2),
               ProfileMenuWidget(
                 title: "Personal Information",
                 icon: LineAwesomeIcons.user,
@@ -329,22 +400,6 @@ Widget build(BuildContext context) {
                     ? Colors.white
                     : Colors.black,
                 onPress: () {},
-              ),
-              ProfileMenuWidget(
-                title: "Listing",
-                icon: LineAwesomeIcons.list_alt_solid,
-                textColor: themeController.isDarkMode.value
-                    ? Colors.white
-                    : Colors.black,
-                onPress: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) =>
-                          CurrentListingPage(token: widget.token),
-                    ),
-                  );
-                },
               ),
               ProfileMenuWidget(
                 title: "About",
@@ -373,6 +428,7 @@ Widget build(BuildContext context) {
         ),
       ));
 }
+
 }
 
 

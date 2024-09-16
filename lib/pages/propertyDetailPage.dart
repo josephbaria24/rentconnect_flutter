@@ -60,9 +60,9 @@ class _PropertyDetailPageState extends State<PropertyDetailPage> {
 void showRoomDetailsModal(BuildContext context, Map<String, dynamic> room) {
   // Define a list of room photo URLs
   final List<String> roomPhotoUrls = [
-    room['photo1'] != null ? 'http://192.168.1.17:3000/${room['photo1']}' : '',
-    room['photo2'] != null ? 'http://192.168.1.17:3000/${room['photo2']}' : '',
-    room['photo3'] != null ? 'http://192.168.1.17:3000/${room['photo3']}' : '',
+    room['photo1'] != null ? '${room['photo1']}' : '',
+    room['photo2'] != null ? '${room['photo2']}' : '',
+    room['photo3'] != null ? '${room['photo3']}' : '',
   ].where((url) => url.isNotEmpty).toList();
 
   // Create a PageController for the room photos
@@ -230,9 +230,9 @@ void showRoomDetailsModal(BuildContext context, Map<String, dynamic> room) {
   Widget build(BuildContext context) {
     // Hardcoded URLs for property photos
     final photoUrls = [
-      widget.property.photo != null ? 'http://192.168.1.17:3000/${widget.property.photo}' : '',
-      widget.property.photo2 != null ? 'http://192.168.1.17:3000/${widget.property.photo2}' : '',
-      widget.property.photo3 != null ? 'http://192.168.1.17:3000/${widget.property.photo3}' : '',
+      widget.property.photo != null ? '${widget.property.photo}' : '',
+      widget.property.photo2 != null ? '${widget.property.photo2}' : '',
+      widget.property.photo3 != null ? '${widget.property.photo3}' : '',
     ].where((url) => url.isNotEmpty).toList();
 
     return Scaffold(
@@ -306,7 +306,7 @@ void showRoomDetailsModal(BuildContext context, Map<String, dynamic> room) {
                           itemCount: rooms.length,
                           itemBuilder: (context, index) {
                             final room = rooms[index];
-                            final roomPhoto1 = 'http://192.168.1.17:3000/${room['photo1']}';
+                            final roomPhoto1 = '${room['photo1']}';
 
                             return GestureDetector(
                               onTap: () {

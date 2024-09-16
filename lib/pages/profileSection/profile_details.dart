@@ -71,7 +71,7 @@ class _ProfileDetailsState extends State<ProfileDetails> {
                           radius: 30,
                           backgroundColor: Colors.white,
                           backgroundImage: userDetails?['profilePicture'] != null
-                              ? NetworkImage('http://192.168.1.17:3000/${userDetails?['profilePicture']}')
+                              ? NetworkImage('${userDetails?['profilePicture']}')
                               : null,
                           child: userDetails?['profilePicture'] == null
                               ? Icon(Icons.person, size: 40)
@@ -84,7 +84,7 @@ class _ProfileDetailsState extends State<ProfileDetails> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                userDetails?['profile']?['fullName'] ?? 'N/A',
+                                '${userDetails?['profile']?['firstName'] ?? email} ${userDetails?['profile']?['lastName'] ?? ''}',
                                 style: TextStyle(fontSize: 18, color: Colors.white),
                               )
                             ],

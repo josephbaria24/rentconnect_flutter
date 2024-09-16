@@ -12,6 +12,7 @@ import 'package:rentcon/pages/components/showFilterDialog.dart';
 import 'package:rentcon/pages/fullscreenImage.dart';
 import 'package:rentcon/navigation_menu.dart';
 import 'package:fluttertoast/fluttertoast.dart';
+import 'package:rentcon/pages/landlords/current_listing.dart';
 import 'package:rentcon/pages/propertyDetailPage.dart';
 import 'package:rentcon/pages/search_result.dart';
 import 'toast.dart';
@@ -39,6 +40,9 @@ class _HomePageState extends State<HomePage> {
   String searchQuery = '';
   String profileStatus = 'none'; // Default value
   String userRole = '';
+  bool hasNewNotifications = true;
+
+  List<String> notifications = [];
 
   late TextEditingController _searchController;
   final TextEditingController _minPriceController = TextEditingController();
@@ -97,31 +101,76 @@ Future<void> fetchUserProfileStatus() async {
     print('Error fetching profile status: $error');
   }
 }
-  //Fetch properties from the API
-  Future<List<Property>> fetchProperties() async {
-    try {
-      final response = await http.get(Uri.parse(getAllProperties));
 
-      if (response.statusCode == 200) {
-        final Map<String, dynamic> json = jsonDecode(response.body);
-        final List<dynamic> data = json['success'];
+Future<void> fetchUserProfileStatusForNotification() async {
+  final url = Uri.parse('http://192.168.1.17:3000/profile/checkProfileCompletion/$userId'); // Your API endpoint
+  try {
+    final response = await http.get(
+      url,
+      headers: {
+        'Authorization': 'Bearer ${widget.token}',
+      },
+    );
 
-        // Convert JSON data to Property objects
-        final properties = data
-            .map((json) => Property.fromJson(json as Map<String, dynamic>))
-            .toList();
+    if (response.statusCode == 200) {
+      // Assuming the API response is in JSON format and contains a 'status' field
+      final responseData = json.decode(response.body);
+      final responseStatus = responseData['status']; // Parse the profile status
 
-        // Reverse the list to show newest properties first
-        return properties.reversed.toList();
-      } else {
-        throw Exception('Failed to load properties');
+      if (responseStatus == 'approved') {
+        setState(() {
+          notifications.add('Your profile has been approved!');
+          hasNewNotifications = true;
+        });
       }
-    } catch (error) {
-      throw Exception('Failed to load properties: $error');
+      if (responseStatus == 'rejected') {
+        setState(() {
+          notifications.add('Your profile has been rejected! Please double check the provided information if correct.');
+          hasNewNotifications = true;
+        });
+      }
+    } else {
+      // Handle non-200 status codes
+      print('Failed to fetch profile status: ${response.statusCode}');
     }
+  } catch (e) {
+    // Handle any errors that occurred during the HTTP request
+    print('Error fetching profile status: $e');
   }
+}
 
-  Future<List<dynamic>> fetchRooms(String propertyId) async {
+  //Fetch properties from the API
+// Fetch properties from the API and filter based on 'approved' status
+Future<List<Property>> fetchProperties() async {
+  try {
+    final response = await http.get(Uri.parse(getAllProperties));
+
+    if (response.statusCode == 200) {
+      final Map<String, dynamic> json = jsonDecode(response.body);
+      final List<dynamic> data = json['success'];
+
+      // Convert JSON data to Property objects
+      final properties = data
+          .map((json) => Property.fromJson(json as Map<String, dynamic>))
+          .toList();
+
+      // Filter only properties with the status 'approved'
+      final approvedProperties = properties
+          .where((property) => property.status.toLowerCase() == 'approved')
+          .toList();
+
+      // Reverse the list to show newest properties first
+      return approvedProperties.reversed.toList();
+    } else {
+      throw Exception('Failed to load properties');
+    }
+  } catch (error) {
+    throw Exception('Failed to load properties: $error');
+  }
+}
+
+
+Future<List<dynamic>> fetchRooms(String propertyId) async {
     try {
       final response = await http.get(Uri.parse(
           'http://192.168.1.17:3000/rooms/properties/$propertyId/rooms'));
@@ -137,7 +186,7 @@ Future<void> fetchUserProfileStatus() async {
     return []; // Return an empty list if an error occurs or no rooms are found
   }
 
-  Future<List<Property>> filterProperties(List<Property> properties) async {
+Future<List<Property>> filterProperties(List<Property> properties) async {
     double? minPrice = double.tryParse(_minPriceController.text);
     double? maxPrice = double.tryParse(_maxPriceController.text);
 
@@ -189,7 +238,7 @@ Future<void> fetchUserProfileStatus() async {
     return filtered;
   }
 
-  Future<void> fetchUserBookmarks() async {
+Future<void> fetchUserBookmarks() async {
     final Map<String, dynamic> jwtDecodedToken =
         JwtDecoder.decode(widget.token);
     String userId = jwtDecodedToken['_id']?.toString() ?? 'Unknown user ID';
@@ -217,7 +266,7 @@ Future<void> fetchUserProfileStatus() async {
   }
 
   // Fetch user email from API
-  Future<String> fetchUserEmail(String userId) async {
+Future<String> fetchUserEmail(String userId) async {
     try {
       final response = await http
           .get(Uri.parse('http://192.168.1.17:3000/getUserEmail/$userId'));
@@ -234,14 +283,14 @@ Future<void> fetchUserProfileStatus() async {
   }
 
   // Refresh function to reload the properties
-  Future<void> _refreshProperties() async {
+Future<void> _refreshProperties() async {
     setState(() {
       propertiesFuture = fetchProperties(); // Re-fetch properties on refresh
     });
   }
 
 // Function to bookmark a property
-  Future<void> bookmarkProperty(String propertyId) async {
+Future<void> bookmarkProperty(String propertyId) async {
     final url = Uri.parse('http://192.168.1.17:3000/addBookmark');
     final Map<String, dynamic> jwtDecodedToken =
         JwtDecoder.decode(widget.token);
@@ -299,7 +348,7 @@ Future<void> fetchUserProfileStatus() async {
     }
   }
 
-  void _performSearch() async {
+void _performSearch() async {
     final query = _searchController.text;
     if (query.isNotEmpty) {
       // Filter properties based on the search query and wait for the result
@@ -318,7 +367,7 @@ Future<void> fetchUserProfileStatus() async {
     }
   }
 
-  void _handleSearch(String query) async {
+void _handleSearch(String query) async {
     setState(() {
       searchQuery = query.toLowerCase();
       filteredProperties =
@@ -331,7 +380,7 @@ Future<void> fetchUserProfileStatus() async {
     });
   }
 
-  void _applyFilters() async {
+void _applyFilters() async {
     final properties = await propertiesFuture;
     final filtered = await filterProperties(properties);
 
@@ -339,12 +388,20 @@ Future<void> fetchUserProfileStatus() async {
     //   filteredProperties = filtered;
     // });
   }
+
+
+
+
 Future<Map<String, dynamic>> fetchNotifications() async {
   // Mock notifications, replace this with an API call to fetch actual notifications
   final notifications = {
     'Profile Status': profileStatus == 'approved'
         ? 'Your profile has been approved!'
         : 'Your profile is still under review.',
+    'Profile Status': profileStatus == 'rejected'
+        ? 'Your profile has been rejected! Please double check your provided information'
+        : 'Your profile is still under review.',
+        
     'Other Notification': 'This is an example notification',
   };
 
@@ -352,132 +409,152 @@ Future<Map<String, dynamic>> fetchNotifications() async {
 }
 
 
+ void _clearNotifications() {
+    setState(() {
+      notifications.clear();
+      hasNewNotifications = false;
+    });
+  }
 
-  void _showNotificationsModal() {
-  showModalBottomSheet(
-    context: context,
-    shape: RoundedRectangleBorder(
-      borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-    ),
-    builder: (BuildContext context) {
-      return FutureBuilder<Map<String, dynamic>>(
-        future: fetchNotifications(), // Fetch the notifications
-        builder: (BuildContext context, AsyncSnapshot<Map<String, dynamic>> snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return Center(child: CircularProgressIndicator());
-          } else if (snapshot.hasError) {
-            return Center(child: Text('Error loading notifications'));
-          } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
-            return Center(child: Text('No notifications available'));
-          } else {
-            final notifications = snapshot.data!;
-            return Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: ListView(
-                children: notifications.entries.map((entry) {
-                  final title = entry.key;
-                  final message = entry.value;
-                  return ListTile(
-                    title: Text(title),
-                    subtitle: Text(message),
-                  );
-                }).toList(),
-              ),
-            );
-          }
-        },
-      );
-    },
-  );
-}
-
-
-   @override
-  Widget build(BuildContext context) {
-    ftoast = FToast();
-    ftoast.init(context);
-    toast = ToastNotification(ftoast);
-    final NavigationController controller = Get.find<NavigationController>();
-
-    return Scaffold(
-      backgroundColor: _themeController.isDarkMode.value
-          ? Color.fromARGB(255, 28, 29, 34)//67, 66, 73
-          : Color.fromRGBO(255, 255, 255, 1),
-      body: Padding(
-        padding: EdgeInsets.symmetric(horizontal: 10.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            SizedBox(height: 27),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                Text(
-                  "Home",
-                  style: TextStyle(
-                    fontSize: 20.0,
-                    fontWeight: FontWeight.w600,
-                    fontFamily: 'Poppins',
-                    color: _themeController.isDarkMode.value
-                        ? Colors.white
-                        : Colors.black,
-                  ),
+void _showNotificationsModal() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text('Notifications'),
+          content: notifications.isEmpty
+              ? Text('No new notifications.')
+              : Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: notifications
+                      .map((notif) => ListTile(
+                            title: Text(notif),
+                          ))
+                      .toList(),
                 ),
-                 profileStatus == null
-                        ? CircularProgressIndicator() // Show loading spinner until status is fetched
-                        : profileStatus == 'none'
-                            ? Setupprofilebutton(token: widget.token,)
-                            : SizedBox.shrink(),
-                Row(
-                  children: [
-                    // Conditionally display either house or listing icon
-                    profileStatus == 'approved' && userRole == 'occupant'
-                        ? IconButton(
-                            onPressed: () {
-                              // Navigate to occupant-specific page
-                            },
-                            icon: Icon(
-                              Icons.home, // House icon for occupant
-                              color: _themeController.isDarkMode.value
-                                  ? Colors.white
-                                  : Colors.black,
-                              size: 24,
-                            ),
-                          )
-                        : profileStatus == 'approved' && userRole == 'landlord'
-                            ? IconButton(
-                                onPressed: () {
-                                  // Navigate to landlord-specific page
-                                },
-                                icon: Icon(
-                                  Icons.list, // Listing icon for landlord
-                                  color: _themeController.isDarkMode.value
-                                      ? Colors.white
-                                      : Colors.black,
-                                  size: 24,
-                                ),
-                              )
-                            : SizedBox.shrink(),
-                            // Show the SetupProfileButton only if profileStatus is 'none'
-                      // Empty space when button is not displayed // No icon if profile is not approved
-                    IconButton(
-                      onPressed: _showNotificationsModal, // Show notifications modal on bell click
-                      icon: SvgPicture.asset(
-                        'assets/icons/bell.svg',
-                        color: _themeController.isDarkMode.value
-                            ? const Color.fromARGB(255, 255, 255, 255)
-                            : Colors.black,
-                        height: 24,
-                        width: 24,
-                      ),
-                    ),
-                  ],
-                ),
-                
-              ],
-              
+          actions: [
+            TextButton(
+              child: Text('Clear All'),
+              onPressed: () {
+                _clearNotifications();
+                Navigator.of(context).pop();
+              },
             ),
+          ],
+        );
+      },
+    );
+  }
+
+
+@override
+Widget build(BuildContext context) {
+  ftoast = FToast();
+  ftoast.init(context);
+  toast = ToastNotification(ftoast);
+  final NavigationController controller = Get.find<NavigationController>();
+
+  return Scaffold(
+    backgroundColor: _themeController.isDarkMode.value
+        ? Color.fromARGB(255, 28, 29, 34) // 67, 66, 73
+        : Color.fromRGBO(255, 255, 255, 1),
+    body: Padding(
+      padding: EdgeInsets.symmetric(horizontal: 10.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          SizedBox(height: 27),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              Text(
+                "Home",
+                style: TextStyle(
+                  fontSize: 20.0,
+                  fontWeight: FontWeight.w600,
+                  fontFamily: 'Poppins',
+                  color: _themeController.isDarkMode.value
+                      ? Colors.white
+                      : Colors.black,
+                ),
+              ),
+              profileStatus == null
+                  ? CircularProgressIndicator() // Show loading spinner until status is fetched
+                  : profileStatus == 'none'
+                      ? Setupprofilebutton(
+                          token: widget.token,
+                        )
+                      : SizedBox.shrink(),
+              Row(
+                children: [
+                  // Conditionally display either house or listing icon
+                  profileStatus == 'approved' && userRole == 'occupant'
+                      ? IconButton(
+                          onPressed: () {
+                            // Navigate to occupant-specific page
+                          },
+                          icon: Icon(
+                            Icons.home, // House icon for occupant
+                            color: _themeController.isDarkMode.value
+                                ? Colors.white
+                                : Colors.black,
+                            size: 24,
+                          ),
+                        )
+                      : profileStatus == 'approved' && userRole == 'landlord'
+                          ? IconButton(
+                              onPressed: () {
+                                Navigator.push(context, MaterialPageRoute(builder: (context)=> CurrentListingPage(token: widget.token)));
+                              },
+                              icon: Icon(
+                                Icons.list, // Listing icon for landlord
+                                color: _themeController.isDarkMode.value
+                                    ? Colors.white
+                                    : Colors.black,
+                                size: 24,
+                              ),
+                            )
+                          : SizedBox.shrink(),
+                  // Notification Icon with Badge
+                  Stack(
+                    children: [
+                      IconButton(
+                        onPressed: _showNotificationsModal, // Show notifications modal on bell click
+                        icon: SvgPicture.asset(
+                          'assets/icons/bell.svg',
+                          color: _themeController.isDarkMode.value
+                              ? const Color.fromARGB(255, 255, 255, 255)
+                              : Colors.black,
+                          height: 24,
+                          width: 24,
+                        ),
+                      ),
+                      if (hasNewNotifications) // Check if there are new notifications
+                        Positioned(
+                          right: 8,
+                          top: 8,
+                          child: Container(
+                            padding: EdgeInsets.all(4),
+                            decoration: BoxDecoration(
+                              color: Colors.red,
+                              shape: BoxShape.circle,
+                            ),
+                            child: Text(
+                              notifications.length.toString(),
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 12,
+                              ),
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
+                ],
+              ),
+            ],
+          ),
             SizedBox(height: 1),
             SearchFieldWidget(
               searchController: _searchController,

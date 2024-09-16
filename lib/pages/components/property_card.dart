@@ -70,6 +70,9 @@ class PropertyCard extends StatelessWidget {
           final profileStatus = snapshot.data?['profileStatus'] ?? 'none';
           final userRole = snapshot.data?['userRole'] ?? 'none';
 
+          // Check if the property is bookmarked
+          final isBookmarked = bookmarkedPropertyIds.contains(property.id);
+
           return Card(
             color: _themeController.isDarkMode.value
                 ? const Color.fromARGB(255, 36, 38, 43)
@@ -177,8 +180,8 @@ class PropertyCard extends StatelessWidget {
                             child: Hero(
                               tag: imageUrl,
                               child: Container(
-                                width: 90,
-                                height: 90,
+                                width: 110,
+                                height: 100,
                                 color: _themeController.isDarkMode.value
                                     ? const Color.fromARGB(255, 52, 52, 52)
                                     : const Color.fromARGB(255, 240, 240, 240),
@@ -190,41 +193,56 @@ class PropertyCard extends StatelessWidget {
                           ),
                         ),
                         const SizedBox(height: 8),
-                        SizedBox(
-                          height: 27,
-                          width: 90,
-                          child: TextButton(
-                            style: TextButton.styleFrom(
-                              backgroundColor: Color.fromRGBO(135, 102, 235, 1),
-                              foregroundColor: Colors.white,
-                              padding: const EdgeInsets.symmetric(vertical: 4),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(5),
-                              ),
-                            ),
-                            onPressed: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => PropertyDetailPage(
-                                    token: token,
-                                    property: property,
-                                    userEmail: userEmail,
-                                    userRole: userRole,
-                                    profileStatus: profileStatus,
+                        Row(
+                          children: [
+                            
+                            SizedBox(
+                              height: 27,
+                              width: 60,
+                              child: TextButton(
+                                style: TextButton.styleFrom(
+                                  backgroundColor: Color.fromRGBO(135, 102, 235, 1),
+                                  foregroundColor: Colors.white,
+                                  padding: const EdgeInsets.symmetric(vertical: 4),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(5),
                                   ),
                                 ),
-                              );
-                            },
-                            child: const Text(
-                              'View',
-                              style: TextStyle(
-                                fontWeight: FontWeight.w600,
-                                fontFamily: 'Poppins',
-                                fontSize: 11,
+                                onPressed: () {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) => PropertyDetailPage(
+                                        token: token,
+                                        property: property,
+                                        userEmail: userEmail,
+                                        userRole: userRole,
+                                        profileStatus: profileStatus,
+                                      ),
+                                    ),
+                                  );
+                                },
+                                child: const Text(
+                                  'View',
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.w600,
+                                    fontFamily: 'Poppins',
+                                    fontSize: 11,
+                                  ),
+                                ),
                               ),
                             ),
-                          ),
+                            const SizedBox(width: 2),
+                            IconButton(
+                              icon: Icon(
+                                isBookmarked ? Icons.bookmark : Icons.bookmark_border,
+                                color: isBookmarked ? Colors.amber : Colors.grey,
+                              ),
+                              onPressed: () {
+                                bookmarkProperty(property.id);
+                              },
+                            ),
+                          ],
                         ),
                       ],
                     ),
