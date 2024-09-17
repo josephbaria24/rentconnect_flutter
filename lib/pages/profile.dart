@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:get/get.dart';
 import 'package:jwt_decoder/jwt_decoder.dart';
 import 'package:line_awesome_flutter/line_awesome_flutter.dart';
@@ -15,6 +16,7 @@ import 'dart:convert'; // For JSON operations
 import 'package:http/http.dart' as http; // For HTTP requests
 import 'package:mime/mime.dart'; // For lookupMimeType
 import 'package:http_parser/http_parser.dart'; // For MediaType
+import 'package:skeletonizer/skeletonizer.dart';
 
 class ProfilePage extends StatefulWidget {
   final String token;
@@ -25,6 +27,7 @@ class ProfilePage extends StatefulWidget {
 }
 
 class _ProfilePageState extends State<ProfilePage> {
+  bool _loading = false;
   late String email;
   late String userId;
   File? _profileImage;
@@ -72,7 +75,7 @@ fetchUserProfileStatus();
 
   Future<void> _fetchUserProfile() async {
     final url = Uri.parse(
-        'http://192.168.1.17:3000/user/$userId'); // Adjust the endpoint if needed
+        'http://192.168.1.8:3000/user/$userId'); // Adjust the endpoint if needed
     try {
       final response = await http
           .get(url, headers: {'Authorization': 'Bearer ${widget.token}'});
@@ -92,7 +95,7 @@ fetchUserProfileStatus();
 
 
   Future<void> fetchUserProfileStatus() async {
-  final url = Uri.parse('http://192.168.1.17:3000/profile/checkProfileCompletion/$userId'); // Replace with your API endpoint
+  final url = Uri.parse('http://192.168.1.8:3000/profile/checkProfileCompletion/$userId'); // Replace with your API endpoint
   try {
     final response = await http.get(
       url,
@@ -150,7 +153,7 @@ fetchUserProfileStatus();
   Future<void> _uploadProfilePicture() async {
     if (_profileImage != null) {
       final url =
-          Uri.parse('http://192.168.1.17:3000/updateProfilePicture/$userId');
+          Uri.parse('http://192.168.1.8:3000/updateProfilePicture/$userId');
       var request = http.MultipartRequest('PATCH', url)
         ..headers['Authorization'] = 'Bearer ${widget.token}';
 
@@ -213,7 +216,30 @@ fetchUserProfileStatus();
   final themeController = Get.put(ThemeController()); // Get theme controller
 
 
-  @override
+
+void _refreshProfile() async {
+  setState(() {
+    _loading = true;
+  });
+
+  // Fetch profile data or perform your data fetching logic here
+  await _fetchUserProfile();
+
+  setState(() {
+    _loading = false;
+  });
+}
+
+Future<void> fetchProfileData() async {
+  // Simulate network delay
+  await Future.delayed(Duration(seconds: 2));
+  
+  // Fetch your data here
+}
+
+
+
+@override
 Widget build(BuildContext context) {
   return Obx(() => Scaffold(
         backgroundColor: themeController.isDarkMode.value
@@ -221,124 +247,172 @@ Widget build(BuildContext context) {
             : Color.fromRGBO(255, 255, 255, 1),
         body: SingleChildScrollView(
           padding: const EdgeInsets.all(25),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              // Dark mode toggle icon placed at the top-right corner
-              Align(
-                alignment: Alignment.topRight,
-                child: IconButton(
-                  icon: Icon(
-                    themeController.isDarkMode.value
-                        ? Icons.nights_stay_outlined
-                        : Icons.wb_sunny_outlined, // Moon for dark mode, sun for light mode
-                    color: themeController.isDarkMode.value
-                        ? const Color.fromARGB(255, 108, 151, 245)
-                        : const Color.fromARGB(255, 214, 182, 38),
+          child: Skeletonizer(
+            enabled: _loading,
+            enableSwitchAnimation: true,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                // Dark mode toggle icon placed at the top-right corner
+                Align(
+                  alignment: Alignment.topRight,
+                  child: IconButton(
+                    icon: Icon(
+                      themeController.isDarkMode.value
+                          ? Icons.nights_stay_outlined
+                          : Icons.wb_sunny_outlined, // Moon for dark mode, sun for light mode
+                      color: themeController.isDarkMode.value
+                          ? const Color.fromARGB(255, 108, 151, 245)
+                          : const Color.fromARGB(255, 214, 182, 38),
+                    ),
+                    onPressed: () {
+                      themeController.toggleTheme(
+                          !themeController.isDarkMode.value); // Toggle dark/light mode
+                    },
                   ),
-                  onPressed: () {
-                    themeController.toggleTheme(
-                        !themeController.isDarkMode.value); // Toggle dark/light mode
-                  },
                 ),
-              ),
-              // Rest of the UI components
-              Container(
-                height: 120,
-                width: 120,
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(100),
-                  color: themeController.isDarkMode.value
-                      ? const Color.fromARGB(255, 42, 43, 36)
-                      : Color.fromARGB(125, 42, 43, 36),
-                ),
-                child: Padding(
-                  padding: const EdgeInsets.all(4.0),
-                  child: Stack(
-                    alignment: Alignment.center,
-                    children: [
-                      SizedBox(
-                        width: 110,
-                        height: 110,
-                        child: ClipRRect(
-                          borderRadius: BorderRadius.circular(100),
-                          child: _profileImage != null
-                              ? Image.file(_profileImage!, fit: BoxFit.cover)
-                              : _profileImageUrl != null
-                                  ? Image.network(
-                                      '$_profileImageUrl',
-                                      fit: BoxFit.cover,
-                                    )
-                                  : Image.asset("assets/images/profile.png"),
+                // Rest of the UI components
+                Container(
+                  height: 120,
+                  width: 120,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(100),
+                    color: themeController.isDarkMode.value
+                        ? const Color.fromARGB(255, 42, 43, 36)
+                        : Color.fromARGB(125, 42, 43, 36),
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.all(4.0),
+                    child: Stack(
+                      alignment: Alignment.center,
+                      children: [
+                        SizedBox(
+                          width: 110,
+                          height: 110,
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(100),
+                            child: _profileImage != null
+                                ? Image.file(_profileImage!, fit: BoxFit.cover)
+                                : _profileImageUrl != null
+                                    ? Image.network(
+                                        '$_profileImageUrl',
+                                        fit: BoxFit.cover,
+                                      )
+                                    : Image.asset("assets/images/profile.png"),
+                          ),
                         ),
-                      ),
-                      Positioned(
-                        bottom: 2,
-                        right: 2,
-                        child: SizedBox(
-                          height: 30,
-                          width: 30,
-                          child: DecoratedBox(
-                            decoration: BoxDecoration(
-                              color: Colors.grey,
-                              borderRadius: BorderRadius.circular(10),
-                            ),
-                            child: IconButton(
-                              icon: Icon(
-                                Icons.camera_alt_rounded,
-                                color: const Color.fromARGB(255, 56, 56, 56),
-                                size: 17,
+                        Positioned(
+                          bottom: 2,
+                          right: 2,
+                          child: SizedBox(
+                            height: 30,
+                            width: 30,
+                            child: DecoratedBox(
+                              decoration: BoxDecoration(
+                                color: Colors.grey,
+                                borderRadius: BorderRadius.circular(10),
                               ),
-                              onPressed: _pickImage,
+                              child: IconButton(
+                                icon: Icon(
+                                  Icons.camera_alt_rounded,
+                                  color: const Color.fromARGB(255, 56, 56, 56),
+                                  size: 17,
+                                ),
+                                onPressed: _pickImage,
+                              ),
                             ),
                           ),
                         ),
+                      ],
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 10),
+                Text(
+                    '${userDetails?['profile']?['firstName'] ?? email} ${userDetails?['profile']?['lastName'] ?? ''}',
+                    style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                          fontWeight: FontWeight.bold,
+                          color: themeController.isDarkMode.value
+                              ? Colors.white
+                              : Colors.black,
+                        ),
+                  ),
+                Text(
+                  '$userId',
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        fontWeight: FontWeight.w500,
+                        color: themeController.isDarkMode.value
+                            ? const Color.fromARGB(255, 177, 177, 177)
+                            : Colors.black,
+                      ),
+                ),
+                const SizedBox(height: 20),
+                if (_hasImageChanged)
+                  SizedBox(
+                    width: 200,
+                    child: ElevatedButton(
+                      onPressed: _handleSave,
+                      child: _isUpdating
+                          ? GlobalLoadingIndicator()
+                          : Text(
+                              'Save Changes',
+                              style: TextStyle(
+                                  color: themeController.isDarkMode.value
+                                      ? const Color.fromARGB(255, 255, 255, 255)
+                                      : const Color.fromARGB(255, 0, 0, 0)),
+                            ),
+                    ),
+                  ),
+                SizedBox(height: 20),
+                if (userRole == 'landlord' && profileStatus == 'approved') ...[
+                  DeviceCard(
+                    title: "Listing",
+                    icon: SvgPicture.asset('assets/icons/listing.svg',
+                    color: themeController.isDarkMode.value? const Color.fromARGB(255, 109, 50, 248): const Color.fromARGB(255, 0, 0, 0)),
+                    textColor: themeController.isDarkMode.value
+                        ? Colors.white
+                        : Colors.black,
+                    onPress: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) =>
+                              CurrentListingPage(token: widget.token),
+                        ),
+                      );
+                    },
+                  ),
+                ] else if (userRole == 'occupant' && profileStatus == 'approved') ...[
+                  DeviceCard(
+                    icon: SvgPicture.asset('assets/icons/coloredhome.svg'
+                    ,height: 24,
+                    width: 24,),
+                    title: "My Home",
+                    
+                    textColor: themeController.isDarkMode.value
+                        ? Colors.white
+                        : Colors.black,
+                    onPress: () {
+                      // Navigate to "My Home" page
+                    },
+                  ),
+                ],
+                Padding(
+                  padding: const EdgeInsets.all(8.0),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Settings',
+                        style: TextStyle(color: Colors.grey[500]),
                       ),
                     ],
                   ),
                 ),
-              ),
-              const SizedBox(height: 10),
-              Text(
-                  '${userDetails?['profile']?['firstName'] ?? email} ${userDetails?['profile']?['lastName'] ?? ''}',
-                  style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                        fontWeight: FontWeight.bold,
-                        color: themeController.isDarkMode.value
-                            ? Colors.white
-                            : Colors.black,
-                      ),
-                ),
-              Text(
-                '$userId',
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      fontWeight: FontWeight.w500,
-                      color: themeController.isDarkMode.value
-                          ? const Color.fromARGB(255, 177, 177, 177)
-                          : Colors.black,
-                    ),
-              ),
-              const SizedBox(height: 20),
-              if (_hasImageChanged)
-                SizedBox(
-                  width: 200,
-                  child: ElevatedButton(
-                    onPressed: _handleSave,
-                    child: _isUpdating
-                        ? GlobalLoadingIndicator()
-                        : Text(
-                            'Save Changes',
-                            style: TextStyle(
-                                color: themeController.isDarkMode.value
-                                    ? const Color.fromARGB(255, 255, 255, 255)
-                                    : const Color.fromARGB(255, 0, 0, 0)),
-                          ),
-                  ),
-                ),
-              const SizedBox(height: 20),
-              if (userRole == 'landlord' && profileStatus == 'approved') ...[
+                const SizedBox(height: 2),
                 ProfileMenuWidget(
-                  title: "Listing",
-                  icon: LineAwesomeIcons.list_alt_solid,
+                  title: "Personal Information",
+                  icon: LineAwesomeIcons.user,
                   textColor: themeController.isDarkMode.value
                       ? Colors.white
                       : Colors.black,
@@ -347,87 +421,48 @@ Widget build(BuildContext context) {
                       context,
                       MaterialPageRoute(
                         builder: (context) =>
-                            CurrentListingPage(token: widget.token),
+                            ProfilePageChecker(token: widget.token),
                       ),
                     );
                   },
                 ),
-              ] else if (userRole == 'occupant' && profileStatus == 'approved') ...[
                 ProfileMenuWidget(
-                  title: "My Home",
-                  icon: Icons.home_outlined,
+                  title: "Account Settings",
+                  icon: LineAwesomeIcons.cog_solid,
+                  textColor: themeController.isDarkMode.value
+                      ? Colors.white
+                      : Colors.black,
+                  onPress: () {},
+                ),
+                ProfileMenuWidget(
+                  title: "About",
+                  icon: LineAwesomeIcons.info_solid,
                   textColor: themeController.isDarkMode.value
                       ? Colors.white
                       : Colors.black,
                   onPress: () {
-                    // Navigate to "My Home" page
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => AboutPage(token: widget.token),
+                      ),
+                    );
                   },
                 ),
-              ],
-              Padding(
-                padding: const EdgeInsets.all(8.0),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Settings',
-                      style: TextStyle(color: Colors.grey[500]),
-                    ),
-                  ],
+                ProfileMenuWidget(
+                  title: "Logout",
+                  icon: LineAwesomeIcons.sign_out_alt_solid,
+                  textColor: Colors.red,
+                  endIcon: false,
+                  onPress: _logout,
                 ),
-              ),
-              const SizedBox(height: 2),
-              ProfileMenuWidget(
-                title: "Personal Information",
-                icon: LineAwesomeIcons.user,
-                textColor: themeController.isDarkMode.value
-                    ? Colors.white
-                    : Colors.black,
-                onPress: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) =>
-                          ProfilePageChecker(token: widget.token),
-                    ),
-                  );
-                },
-              ),
-              ProfileMenuWidget(
-                title: "Account Settings",
-                icon: LineAwesomeIcons.cog_solid,
-                textColor: themeController.isDarkMode.value
-                    ? Colors.white
-                    : Colors.black,
-                onPress: () {},
-              ),
-              ProfileMenuWidget(
-                title: "About",
-                icon: LineAwesomeIcons.info_solid,
-                textColor: themeController.isDarkMode.value
-                    ? Colors.white
-                    : Colors.black,
-                onPress: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => AboutPage(token: widget.token),
-                    ),
-                  );
-                },
-              ),
-              ProfileMenuWidget(
-                title: "Logout",
-                icon: LineAwesomeIcons.sign_out_alt_solid,
-                textColor: Colors.red,
-                endIcon: false,
-                onPress: _logout,
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ));
 }
+
 
 }
 
@@ -478,46 +513,59 @@ class InfoCard extends StatelessWidget {
 
 
 class DeviceCard extends StatelessWidget {
-  const DeviceCard({
+    DeviceCard({
     Key? key,
-    required this.deviceName,
-    required this.batteryLevel,
+    required this.title,
+    required this.icon,
+    required this.onPress,
+    this.endIcon = true,
+    this.textColor,
   }) : super(key: key);
 
-  final String deviceName;
-  final int batteryLevel;
+  final String title;
+  final SvgPicture icon;
+  final VoidCallback onPress;
+  final bool endIcon;
+  final Color? textColor;
+  final ThemeController _themeController = Get.find<ThemeController>();
 
   @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.grey[900],
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(
-            deviceName,
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 16,
-              fontWeight: FontWeight.bold,
-            ),
+Widget build(BuildContext context) {
+  return Row(
+    mainAxisAlignment: MainAxisAlignment.start,
+    children: [
+      GestureDetector(
+        onTap: onPress,
+        child: Container(
+          padding: const EdgeInsets.all(16),
+          width: MediaQuery.of(context).size.width * 0.42,
+          decoration: BoxDecoration(
+            color: _themeController.isDarkMode.value? const Color.fromARGB(255, 36, 37, 43):Color.fromRGBO(235, 254, 114, 0.61),
+            borderRadius: BorderRadius.circular(17),
           ),
-          Text(
-            '$batteryLevel%',
-            style: const TextStyle(
-              color: Colors.greenAccent,
-              fontSize: 16,
-              fontWeight: FontWeight.bold,
-            ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.start,
+            children: [
+              Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: icon,
+              ),
+              Text(
+                title,
+                style: TextStyle(
+                  color: _themeController.isDarkMode.value ? Colors.white : Colors.black,
+                  fontSize: 16,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ],
           ),
-        ],
+        ),
       ),
-    );
-  }
+    ],
+  );
+}
+
 }
 
 class ProfileMenuWidget extends StatelessWidget {

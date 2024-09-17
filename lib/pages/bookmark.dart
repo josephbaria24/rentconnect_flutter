@@ -13,7 +13,7 @@ import 'package:rentcon/models/property.dart';
  // Make sure to import your theme controller
 
 Future<List<Property>> getBookmarkedProperties(String token, String userId) async {
-  final url = Uri.parse('http://192.168.1.17:3000/getUserBookmarks/$userId'); 
+  final url = Uri.parse('http://192.168.1.8:3000/getUserBookmarks/$userId'); 
 
   try {
     final response = await http.get(
@@ -113,7 +113,7 @@ class _BookmarkPageState extends State<BookmarkPage> {
                       final property = snapshot.data![index];
                       final imageUrl = property.photo.startsWith('http')
                           ? property.photo
-                          : 'http://192.168.1.17:3000/${property.photo}';
+                          : 'http://192.168.1.8:3000/${property.photo}';
 
                       return Card(
                         color: _themeController.isDarkMode.value ? Color.fromARGB(255, 36, 37, 43) : Colors.white,
@@ -121,7 +121,7 @@ class _BookmarkPageState extends State<BookmarkPage> {
                         margin: EdgeInsets.symmetric(vertical: 10.0, horizontal: 15.0),
                         child: ListTile(
                           title: Text(property.description, style: TextStyle(color: _themeController.isDarkMode.value ? Colors.white : Colors.black)),
-                          subtitle: Text('${property.address}',
+                          subtitle: Text('${property.street}, ${property.barangay}, ${property.city}',
                             style: TextStyle(
                               color: _themeController.isDarkMode.value ? Colors.white70 : Colors.black54,
                               fontFamily: 'Roboto',

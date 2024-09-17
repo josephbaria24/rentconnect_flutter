@@ -119,7 +119,7 @@ class _LoginPageState extends State<LoginPage> {
     return Scaffold(
       resizeToAvoidBottomInset: true,
       backgroundColor: _themeController.isDarkMode.value
-          ? Color.fromARGB(255, 19, 19, 19)
+          ? Color.fromARGB(255, 28, 29, 34)
           : Color.fromRGBO(252, 252, 252, 1),
       body: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 24.0),
@@ -149,7 +149,7 @@ class _LoginPageState extends State<LoginPage> {
                 ),
                 filled: false,
                 fillColor: _themeController.isDarkMode.value
-                    ? Color.fromARGB(255, 241, 241, 241)
+                    ? Color.fromARGB(255, 66, 66, 66)
                     : Color.fromRGBO(117, 117, 117, 1),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(8.0),
@@ -168,7 +168,7 @@ class _LoginPageState extends State<LoginPage> {
                   borderRadius: BorderRadius.circular(8.0),
                   borderSide: BorderSide(
                     color: _themeController.isDarkMode.value
-                        ? const Color.fromARGB(255, 133, 177, 139)
+                        ? const Color.fromARGB(255, 248, 248, 248)
                         : Colors.blue,
                     width: 2.0,
                   ),
@@ -207,7 +207,7 @@ class _LoginPageState extends State<LoginPage> {
                   borderRadius: BorderRadius.circular(8.0),
                   borderSide: BorderSide(
                     color: _themeController.isDarkMode.value
-                        ? Color.fromARGB(255, 133, 177, 139)
+                        ? Color.fromARGB(255, 238, 238, 238)
                         : Colors.blue,
                     width: 2.0,
                   ),
@@ -236,7 +236,7 @@ class _LoginPageState extends State<LoginPage> {
                     },
               style: ElevatedButton.styleFrom(
                 backgroundColor: _themeController.isDarkMode.value
-                    ? Color.fromARGB(255, 115, 212, 77)
+                    ? Color.fromRGBO(135, 102, 235, 1)
                     : Color.fromARGB(255, 5, 12, 0),
                 padding: const EdgeInsets.symmetric(
                     horizontal: 80.0, vertical: 12.0),
@@ -251,7 +251,7 @@ class _LoginPageState extends State<LoginPage> {
                   fontWeight: FontWeight.w700,
                   fontSize: 17.0,
                   color: _themeController.isDarkMode.value
-                      ? Color.fromARGB(255, 5, 5, 5)
+                      ? Color.fromARGB(255, 255, 254, 254)
                       : Color.fromRGBO(250, 250, 250, 1),
                 ),
               ),
@@ -284,8 +284,8 @@ class _LoginPageState extends State<LoginPage> {
                       fontWeight: FontWeight.bold,
                       fontSize: 14.0,
                       color: _themeController.isDarkMode.value
-                          ? Colors.green
-                          : Colors.blue,
+                          ? const Color.fromARGB(255, 213, 243, 45)
+                          : Color.fromRGBO(135, 102, 235, 1)
                     ),
                   ),
                 ),

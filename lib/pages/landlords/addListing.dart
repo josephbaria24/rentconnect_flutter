@@ -11,17 +11,19 @@ import 'package:mime/mime.dart';
 import 'package:rentcon/pages/landlords/roomCreation.dart';
 import 'package:rentcon/pages/map/propertyLocationPicker.dart';
 
-class PropertyDetailsPage extends StatefulWidget {
+class Addlisting extends StatefulWidget {
   final String token;
-  const PropertyDetailsPage({required this.token, Key? key}) : super(key: key);
+  const Addlisting({required this.token, Key? key}) : super(key: key);
 
   @override
-  _PropertyDetailsPageState createState() => _PropertyDetailsPageState();
+  _AddlistingState createState() => _AddlistingState();
 }
 
-class _PropertyDetailsPageState extends State<PropertyDetailsPage> {
+class _AddlistingState extends State<Addlisting> {
   TextEditingController descriptionController = TextEditingController();
-  TextEditingController addressController = TextEditingController();
+  TextEditingController streetController = TextEditingController();
+  TextEditingController barangayController = TextEditingController();
+  TextEditingController cityController = TextEditingController();
   TextEditingController amenitiesController = TextEditingController();
   DateTime? availableFromDate;
   File? _photo;
@@ -39,6 +41,76 @@ class _PropertyDetailsPageState extends State<PropertyDetailsPage> {
   final List<String> _propertyTypes = [
     'Apartment',
     'Boarding House',
+  ];
+
+  String selectedBarangay = '';
+  final List<String> barangayList = [
+    'Babuyan',
+    'Bacungan',
+    'Bagong Bayan',
+    'Bagong Pag-Asa',
+    'Bagong Sikat',
+    'Bagong Silang',
+    'Bahile',
+    'Bancao-bancao',
+    'Binduyan',
+    'Buenavista',
+    'Cabayugan',
+    'Concepcion',
+    'Inagawan',
+    'Inagawan Sub-Colony',
+    'Irawan',
+    'Iwahig',
+    'Kalipay',
+    'Kamuning',
+    'Langogan',
+    'Liwanag',
+    'Lucbuan',
+    'Luzviminda',
+    'Mabuhay',
+    'Macarascas',
+    'Magkakaibigan',
+    'Maligaya',
+    'Manalo',
+    'Mandaragat',
+    'Manggahan',
+    'Mangingisda',
+    'Maningning',
+    'Maoyon',
+    'Marufinas',
+    'Maruyogon',
+    'Masigla',
+    'Masikap',
+    'Masipag',
+    'Matahimik',
+    'Matiyaga',
+    'Maunlad',
+    'Milagrosa',
+    'Model',
+    'Montible',
+    'Napsan',
+    'New Panggangan',
+    'Pagkakaisa',
+    'Princesa',
+    'Salvacion',
+    'San Jose',
+    'San Manuel',
+    'San Miguel',
+    'San Pedro',
+    'San Rafael',
+    'Santa Cruz',
+    'Santa Lourdes',
+    'Santa Lucia',
+    'Santa Monica',
+    'San Isidro',
+    'Sicsican',
+    'Simpocan',
+    'Tagabinet',
+    'Tagburos',
+    'Tagumpay',
+    'Tanabag',
+    'Tanglaw',
+    'Tiniguiban',
   ];
 
   @override
@@ -123,14 +195,20 @@ class _PropertyDetailsPageState extends State<PropertyDetailsPage> {
   }
 
   Future<void> _submitProperty() async {
-    var request = http.MultipartRequest('POST', Uri.parse('http://192.168.1.17:3000/storeProperty'));
+    var request = http.MultipartRequest('POST', Uri.parse('http://192.168.1.8:3000/storeProperty'));
 
     request.fields['userId'] = userId;
     request.fields['description'] = descriptionController.text;
-    request.fields['address'] = addressController.text;
+
+    // Set the address fields
+    request.fields['street'] = streetController.text.trim();
+    request.fields['barangay'] = selectedBarangay;
+    request.fields['city'] = 'Puerto Princesa City';
+
     request.fields['availableFrom'] = availableFromDate?.toIso8601String() ?? '';
     request.fields['amenities'] = amenitiesController.text.split(',').join(',');
     request.fields['typeOfProperty'] = _typeOfProperty ?? '';
+
     var location = {
       'type': 'Point',
       'coordinates': [selectedLocation!.longitude, selectedLocation!.latitude]
@@ -274,9 +352,43 @@ class _PropertyDetailsPageState extends State<PropertyDetailsPage> {
               decoration: InputDecoration(labelText: 'Description'),
             ),
             TextField(
-              controller: addressController,
-              decoration: InputDecoration(labelText: 'Manual Address Input'),
+              controller: streetController,
+              decoration: InputDecoration(
+                labelText: 'Street',
+                hintText: 'Enter the street',
+              ),
             ),
+            SizedBox(height: 10),
+
+            // Barangay Dropdown
+            DropdownButtonFormField<String>(
+              decoration: InputDecoration(labelText: 'Barangay'),
+              value: selectedBarangay.isEmpty ? null : selectedBarangay,
+              items: barangayList.map((String barangay) {
+                return DropdownMenuItem<String>(
+                  value: barangay,
+                  child: Text(barangay),
+                );
+              }).toList(),
+              onChanged: (newValue) {
+                setState(() {
+                  selectedBarangay = newValue!;
+                });
+              },
+            ),
+            SizedBox(height: 10),
+
+            // City / Municipality (Static Field)
+            TextField(
+              controller: cityController,
+              enabled: false,
+              decoration: InputDecoration(
+                labelText: 'City',
+                hintText: 'Puerto Princesa City',
+              ),
+            ),
+            SizedBox(height: 20),
+
             TextField(
               controller: amenitiesController,
               decoration: InputDecoration(labelText: 'Amenities'),

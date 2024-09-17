@@ -37,7 +37,7 @@ class _NavigationMenuState extends State<NavigationMenu> {
   Color _getIconColor(int index) {
     return _selectedIndex == index
         ? themeController.isDarkMode.value
-            ? Color.fromRGBO(235, 254, 114, 1)
+            ? Color.fromRGBO(255, 255, 255, 1)
             : Color.fromRGBO(255, 255, 255, 1) 
         : themeController.isDarkMode.value
             ? Colors.grey // Adjust color for unselected icons in dark mode

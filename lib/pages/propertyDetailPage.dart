@@ -12,6 +12,7 @@ import 'package:rentcon/theme_controller.dart';
 import 'package:smooth_page_indicator/smooth_page_indicator.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
+
 class PropertyDetailPage extends StatefulWidget {
   final String token;
   final Property property;
@@ -43,7 +44,7 @@ class _PropertyDetailPageState extends State<PropertyDetailPage> {
   }
 
   Future<void> fetchRooms() async {
-    final response = await http.get(Uri.parse('http://192.168.1.17:3000/rooms/properties/${widget.property.id}/rooms'));
+    final response = await http.get(Uri.parse('http://192.168.1.8:3000/rooms/properties/${widget.property.id}/rooms'));
 
     if (response.statusCode == 200) {
       final data = jsonDecode(response.body);
@@ -327,14 +328,24 @@ void showRoomDetailsModal(BuildContext context, Map<String, dynamic> room) {
                 // Location and Description
                 SizedBox(height: 16),
                 Row(
-                  children: [
-                    Icon(Icons.location_pin, color: const Color.fromARGB(255, 252, 3, 3)),
-                    SizedBox(width: 8),
-                    Expanded(
-                      child: Text(widget.property.address),
-                    ),
-                  ],
-                ),
+                          children: [
+                            Icon(Icons.location_pin, color: const Color.fromARGB(255, 252, 3, 3)),
+                            SizedBox(width: 8),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(widget.property.street),
+                                  Text(widget.property.barangay),
+                                  Text(widget.property.city),
+                            
+
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+
                 SizedBox(height: 16),
                 Text(
                   'Description',

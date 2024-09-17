@@ -11,7 +11,7 @@ class GlobalLoadingIndicator extends StatelessWidget {
 final ThemeController _themeController = Get.find<ThemeController>();
   GlobalLoadingIndicator({
     this.size = 50.0, 
-    this.colors = const [ Color.fromARGB(255, 243, 200, 10), Color.fromARGB(255, 226, 9, 136), Color.fromARGB(255, 7, 179, 231)], // Default colors
+    this.colors = const [ Color.fromARGB(255, 255, 208, 0), Color.fromARGB(255, 255, 208, 0), Color.fromARGB(255, 255, 208, 0)], // Default colors
   });
 
   @override
@@ -21,7 +21,7 @@ final ThemeController _themeController = Get.find<ThemeController>();
         width: 50,
         height: 50,
         child: LoadingIndicator(
-          indicatorType: Indicator.lineScale,
+          indicatorType: Indicator.ballBeat,
           colors: colors,
           strokeWidth: 2,
           backgroundColor: const Color.fromARGB(0, 0, 0, 0),

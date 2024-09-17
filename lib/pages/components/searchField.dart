@@ -7,13 +7,16 @@ class SearchFieldWidget extends StatelessWidget {
   final Function(String) handleSearch;
   final VoidCallback performSearch;
   final VoidCallback showFilterDialog;
+  final bool isFilterApplied; // Add this property to track if a filter is applied
   final ThemeController _themeController = Get.find<ThemeController>();
+
   SearchFieldWidget({
     required this.searchController,
     required this.isDarkMode,
     required this.handleSearch,
     required this.performSearch,
     required this.showFilterDialog,
+    required this.isFilterApplied, // Initialize it in the constructor
   });
 
   @override
@@ -36,11 +39,11 @@ class SearchFieldWidget extends StatelessWidget {
         },
         decoration: InputDecoration(
           filled: true,
-          fillColor:  _themeController.isDarkMode.value ? Color.fromARGB(255, 36, 38, 43) : Colors.white,
+          fillColor: _themeController.isDarkMode.value ? Color.fromARGB(255, 36, 38, 43) : Colors.white,
           contentPadding: EdgeInsets.all(15),
           hintText: 'Search',
           hintStyle: TextStyle(
-            color:  _themeController.isDarkMode.value ? Colors.grey : Color(0xffDDDADA),
+            color: _themeController.isDarkMode.value ? Colors.grey : Color(0xffDDDADA),
             fontSize: 14,
           ),
           prefixIcon: GestureDetector(
@@ -49,7 +52,7 @@ class SearchFieldWidget extends StatelessWidget {
               padding: const EdgeInsets.all(12),
               child: Image.asset(
                 'assets/icons/search.png',
-                color:  _themeController.isDarkMode.value ? Colors.white : Colors.black,
+                color: _themeController.isDarkMode.value ? Colors.white : Colors.black,
                 width: 16.0,
                 height: 16.0,
               ),
@@ -73,7 +76,9 @@ class SearchFieldWidget extends StatelessWidget {
                       padding: const EdgeInsets.all(12),
                       child: Image.asset(
                         'assets/icons/filter.png',
-                        color:  _themeController.isDarkMode.value ? Colors.white : Colors.black,
+                        color: isFilterApplied // Dynamically change color based on filter status
+                            ? Colors.blue // Active filter color
+                            : (_themeController.isDarkMode.value ? Colors.white : Colors.black),
                         width: 20.0,
                         height: 20.0,
                       ),
@@ -92,6 +97,7 @@ class SearchFieldWidget extends StatelessWidget {
     );
   }
 }
+
 
  //SearchFieldWidget()
   // Container _searchField() {

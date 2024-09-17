@@ -6,6 +6,7 @@ import 'package:rentcon/theme_controller.dart';
 import '../propertyDetailPage.dart';
 import '../fullscreenImage.dart';
 import 'package:http/http.dart' as http;
+import 'package:skeletonizer/skeletonizer.dart';
 
 class PropertyCard extends StatelessWidget {
   final Property property;
@@ -33,7 +34,7 @@ class PropertyCard extends StatelessWidget {
   });
 
   Future<Map<String, String>> fetchUserProfileStatus() async {
-    final url = Uri.parse('http://192.168.1.17:3000/profile/checkProfileCompletion/$userId');
+    final url = Uri.parse('http://192.168.1.8:3000/profile/checkProfileCompletion/$userId');
     try {
       final response = await http.get(
         url,
@@ -56,24 +57,25 @@ class PropertyCard extends StatelessWidget {
       return {'profileStatus': 'none', 'userRole': 'none'};
     }
   }
+@override
+Widget build(BuildContext context) {
+  return FutureBuilder<Map<String, String>>(
+    future: fetchUserProfileStatus(),
+    builder: (context, snapshot) {
+      bool _loading = snapshot.connectionState == ConnectionState.waiting;
 
-  @override
-  Widget build(BuildContext context) {
-    return FutureBuilder<Map<String, String>>(
-      future: fetchUserProfileStatus(),
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return Center(child: CircularProgressIndicator());
-        } else if (snapshot.hasError) {
-          return Center(child: Text('Error fetching user data'));
-        } else {
-          final profileStatus = snapshot.data?['profileStatus'] ?? 'none';
-          final userRole = snapshot.data?['userRole'] ?? 'none';
+      if (snapshot.hasError) {
+        return Center(child: Text('Error fetching user data'));
+      } else {
+        final profileStatus = snapshot.data?['profileStatus'] ?? 'none';
+        final userRole = snapshot.data?['userRole'] ?? 'none';
 
-          // Check if the property is bookmarked
-          final isBookmarked = bookmarkedPropertyIds.contains(property.id);
+        // Check if the property is bookmarked
+        final isBookmarked = bookmarkedPropertyIds.contains(property.id);
 
-          return Card(
+        return Skeletonizer(
+          enabled: _loading,
+          child: Card(
             color: _themeController.isDarkMode.value
                 ? const Color.fromARGB(255, 36, 38, 43)
                 : const Color.fromARGB(255, 255, 255, 255),
@@ -103,62 +105,78 @@ class PropertyCard extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            property.typeOfProperty ?? 'Unknown Property Type',
-                            style: TextStyle(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 18,
-                              color: _themeController.isDarkMode.value
-                                  ? Colors.white
-                                  : Colors.black,
+                      child: SingleChildScrollView(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              property.typeOfProperty ?? 'Unknown Property Type',
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 18,
+                                color: _themeController.isDarkMode.value
+                                    ? Colors.white
+                                    : Colors.black,
+                              ),
                             ),
-                          ),
-                          const SizedBox(height: 8),
-                          Text(
-                            'Price range: ₱$priceRange',
-                            style: TextStyle(
-                              fontSize: 14,
-                              color: _themeController.isDarkMode.value
-                                  ? Colors.white70
-                                  : Colors.black54,
-                            ),
-                          ),
-                          const SizedBox(height: 4),
-                          Row(
-                            children: [
-                              Icon(
-                                Icons.location_on,
-                                size: 16,
+                            const SizedBox(height: 8),
+                            Text(
+                              'Price range: ₱$priceRange',
+                              style: TextStyle(
+                                fontSize: 14,
                                 color: _themeController.isDarkMode.value
                                     ? Colors.white70
                                     : Colors.black54,
                               ),
-                              const SizedBox(width: 4),
-                              Text(
-                                property.address,
-                                style: TextStyle(
-                                  fontSize: 14,
+                            ),
+                            const SizedBox(height: 4),
+                            Row(
+                              children: [
+                                Icon(
+                                  Icons.location_on,
+                                  size: 16,
                                   color: _themeController.isDarkMode.value
                                       ? Colors.white70
                                       : Colors.black54,
                                 ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 10),
-                          Text(
-                            property.description,
-                            style: TextStyle(
-                              fontSize: 14,
-                              color: _themeController.isDarkMode.value
-                                  ? Colors.white
-                                  : Colors.black,
+                                const SizedBox(width: 4),
+                                Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      property.street ?? '',
+                                      style: TextStyle(
+                                        fontSize: 14,
+                                        color: _themeController.isDarkMode.value
+                                            ? Colors.white70
+                                            : Colors.black54,
+                                      ),
+                                    ),
+                                    Text(
+                                      '${property.barangay ?? ''}',
+                                      style: TextStyle(
+                                        fontSize: 14,
+                                        color: _themeController.isDarkMode.value
+                                            ? Colors.white70
+                                            : Colors.black54,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ],
                             ),
-                          ),
-                        ],
+                            const SizedBox(height: 10),
+                            Text(
+                              property.description,
+                              style: TextStyle(
+                                fontSize: 14,
+                                color: _themeController.isDarkMode.value
+                                    ? Colors.white
+                                    : Colors.black,
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                     ),
                     const SizedBox(width: 12),
@@ -195,7 +213,6 @@ class PropertyCard extends StatelessWidget {
                         const SizedBox(height: 8),
                         Row(
                           children: [
-                            
                             SizedBox(
                               height: 27,
                               width: 60,
@@ -250,9 +267,12 @@ class PropertyCard extends StatelessWidget {
                 ),
               ),
             ),
-          );
-        }
-      },
-    );
-  }
+          ),
+        );
+      }
+    },
+  );
+}
+
+
 }

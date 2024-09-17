@@ -11,7 +11,7 @@ class PropertyService {
 
   Future<List<Property>> fetchProperties() async {
     try {
-      final response = await http.get(Uri.parse('http://192.168.1.17:3000/getAllProperties'));
+      final response = await http.get(Uri.parse('http://192.168.1.8:3000/getAllProperties'));
 
       if (response.statusCode == 200) {
         final Map<String, dynamic> json = jsonDecode(response.body);
@@ -33,7 +33,7 @@ class PropertyService {
   Future<List<dynamic>> fetchRooms(String propertyId) async {
     try {
       final response = await http.get(Uri.parse(
-          'http://192.168.1.17:3000/rooms/properties/$propertyId/rooms'));
+          'http://192.168.1.8:3000/rooms/properties/$propertyId/rooms'));
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         if (data['status']) {
@@ -61,10 +61,13 @@ class PropertyService {
     bool matchesDescription = property.description
             .toLowerCase()
             .contains(searchQuery) ||
-        property.address.toLowerCase().contains(searchQuery);
+        property.street.toLowerCase().contains(searchQuery.toLowerCase()) ||
+        property.barangay.toLowerCase().contains(searchQuery.toLowerCase()) ||
+        property.city.toLowerCase().contains(searchQuery.toLowerCase());
+
 
     print('Property Description: ${property.description}');
-    print('Property Address: ${property.address}');
+    print('Property Address: ${property.street}, ${property.barangay}, ${property.city}');
     print('Matches Description: $matchesDescription');
 
     if (!matchesDescription) continue;
@@ -116,7 +119,7 @@ class PropertyService {
 
     try {
       final response = await http.get(
-        Uri.parse('http://192.168.1.17:3000/getUserBookmarks/$userId'),
+        Uri.parse('http://192.168.1.8:3000/getUserBookmarks/$userId'),
         headers: {
           'Authorization': 'Bearer $token',
         },
@@ -138,7 +141,7 @@ class PropertyService {
   Future<String> fetchUserEmail(String userId) async {
     try {
       final response = await http
-          .get(Uri.parse('http://192.168.1.17:3000/getUserEmail/$userId'));
+          .get(Uri.parse('http://192.168.1.8:3000/getUserEmail/$userId'));
 
       if (response.statusCode == 200) {
         final Map<String, dynamic> json = jsonDecode(response.body);
@@ -157,7 +160,7 @@ class PropertyService {
 
     try {
       if (bookmarkedPropertyIds.contains(propertyId)) {
-        final removeUrl = Uri.parse('http://192.168.1.17:3000/removeBookmark');
+        final removeUrl = Uri.parse('http://192.168.1.8:3000/removeBookmark');
         await http.post(removeUrl,
             headers: {
               'Authorization': 'Bearer $token',
@@ -171,7 +174,7 @@ class PropertyService {
         bookmarkedPropertyIds.remove(propertyId);
         updateProperties(bookmarkedPropertyIds);
       } else {
-        final url = Uri.parse('http://192.168.1.17:3000/addBookmark');
+        final url = Uri.parse('http://192.168.1.8:3000/addBookmark');
         await http.post(url,
             headers: {
               'Authorization': 'Bearer $token',
@@ -219,7 +222,7 @@ class PropertyService {
 //   Future<List<dynamic>> fetchRooms(String propertyId) async {
 //     try {
 //       final response = await http.get(Uri.parse(
-//           'http://192.168.1.17:3000/rooms/properties/$propertyId/rooms'));
+//           'http://192.168.1.8:3000/rooms/properties/$propertyId/rooms'));
 //       if (response.statusCode == 200) {
 //         final data = jsonDecode(response.body);
 //         if (data['status']) {
@@ -292,7 +295,7 @@ class PropertyService {
 //     try {
 //       final response = await http.get(
 //         Uri.parse(
-//             'http://192.168.1.17:3000/getUserBookmarks/$userId'), // Adjust endpoint if necessary
+//             'http://192.168.1.8:3000/getUserBookmarks/$userId'), // Adjust endpoint if necessary
 //         headers: {
 //           'Authorization': 'Bearer ${widget.token}',
 //         },
@@ -315,7 +318,7 @@ class PropertyService {
 //   Future<String> fetchUserEmail(String userId) async {
 //     try {
 //       final response = await http
-//           .get(Uri.parse('http://192.168.1.17:3000/getUserEmail/$userId'));
+//           .get(Uri.parse('http://192.168.1.8:3000/getUserEmail/$userId'));
 
 //       if (response.statusCode == 200) {
 //         final Map<String, dynamic> json = jsonDecode(response.body);
@@ -337,7 +340,7 @@ class PropertyService {
 
 // // Function to bookmark a property
 //   Future<void> bookmarkProperty(String propertyId) async {
-//     final url = Uri.parse('http://192.168.1.17:3000/addBookmark');
+//     final url = Uri.parse('http://192.168.1.8:3000/addBookmark');
 //     final Map<String, dynamic> jwtDecodedToken =
 //         JwtDecoder.decode(widget.token);
 //     String userId = jwtDecodedToken['_id']?.toString() ?? 'Unknown user ID';
@@ -345,7 +348,7 @@ class PropertyService {
 //     try {
 //       if (bookmarkedPropertyIds.contains(propertyId)) {
 //         // If already bookmarked, remove it
-//         final removeUrl = Uri.parse('http://192.168.1.17:3000/removeBookmark');
+//         final removeUrl = Uri.parse('http://192.168.1.8:3000/removeBookmark');
 //         await http.post(removeUrl,
 //             headers: {
 //               'Authorization': 'Bearer ${widget.token}',

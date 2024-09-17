@@ -5,7 +5,9 @@ class Property {
   final String photo;
   final String? photo2;
   final String? photo3;
-  final String address;
+  final String street;
+  final String barangay;
+  final String city;
   final List<String> amenities;
   final DateTime availableFrom;
   final String status;
@@ -19,7 +21,9 @@ class Property {
     required this.photo,
     this.photo2,
     this.photo3,
-    required this.address,
+    required this.street,
+    required this.barangay,
+    required this.city,
     required this.amenities,
     required this.availableFrom,
     required this.status,
@@ -36,7 +40,9 @@ class Property {
       photo: json['photo'] as String,
       photo2: json['photo2'] as String?,
       photo3: json['photo3'] as String?,
-      address: json['address'] as String,
+      street: json['street'] as String,
+      barangay: json['barangay'] as String,
+      city: json['city'] as String,
       amenities: List<String>.from(json['amenities'] as List),
       availableFrom: DateTime.parse(json['availableFrom'] as String),
       status: json['status'] as String,

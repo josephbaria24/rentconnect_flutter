@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 
-class FilterDialog {
+class FilterDialog2 {
   final TextEditingController minPriceController;
   final TextEditingController maxPriceController;
   final VoidCallback applyFilters;
 
-  FilterDialog({
+  FilterDialog2({
     required this.minPriceController,
     required this.maxPriceController,
     required this.applyFilters,

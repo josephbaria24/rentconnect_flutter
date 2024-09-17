@@ -26,7 +26,7 @@ class _ProfileDetailsState extends State<ProfileDetails> {
   }
 
   Future<void> _fetchUserDetails() async {
-    final url = Uri.parse('http://192.168.1.17:3000/user/$userId'); // Your new endpoint
+    final url = Uri.parse('http://192.168.1.8:3000/user/$userId'); // Your new endpoint
     try {
       final response = await http.get(url, headers: {
         'Authorization': 'Bearer ${widget.token}',

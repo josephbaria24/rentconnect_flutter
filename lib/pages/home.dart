@@ -6,6 +6,7 @@ import 'package:http/http.dart' as http;
 import 'package:jwt_decoder/jwt_decoder.dart';
 import 'package:rentcon/config.dart';
 import 'package:rentcon/pages/components/property_card.dart';
+import 'package:rentcon/pages/components/rangeSlider.dart';
 import 'package:rentcon/pages/components/searchField.dart';
 import 'package:rentcon/pages/components/setupProfileButton.dart';
 import 'package:rentcon/pages/components/showFilterDialog.dart';
@@ -41,6 +42,9 @@ class _HomePageState extends State<HomePage> {
   String profileStatus = 'none'; // Default value
   String userRole = '';
   bool hasNewNotifications = true;
+  RangeValues _currentRange = RangeValues(100, 500); // Default range
+  bool isFilterApplied = false; // Tracks if the filter is applied
+
 
   List<String> notifications = [];
 
@@ -80,7 +84,7 @@ class _HomePageState extends State<HomePage> {
   }
 
 Future<void> fetchUserProfileStatus() async {
-  final url = Uri.parse('http://192.168.1.17:3000/profile/checkProfileCompletion/$userId'); // Replace with your API endpoint
+  final url = Uri.parse('http://192.168.1.8:3000/profile/checkProfileCompletion/$userId'); // Replace with your API endpoint
   try {
     final response = await http.get(
       url,
@@ -94,6 +98,10 @@ Future<void> fetchUserProfileStatus() async {
         profileStatus = jsonMap['profileStatus'] ?? 'none';
         userRole = jsonMap['userRole'] ?? 'none';  // Store the user role
       });
+      // Fetch notifications based on profile status and role
+      if (profileStatus == 'approved' || profileStatus == 'rejected') {
+        fetchNotifications();
+      }
     } else {
       print('Failed to fetch profile status');
     }
@@ -102,8 +110,9 @@ Future<void> fetchUserProfileStatus() async {
   }
 }
 
+
 Future<void> fetchUserProfileStatusForNotification() async {
-  final url = Uri.parse('http://192.168.1.17:3000/profile/checkProfileCompletion/$userId'); // Your API endpoint
+  final url = Uri.parse('http://192.168.1.8:3000/profile/checkProfileCompletion/$userId'); // Your API endpoint
   try {
     final response = await http.get(
       url,
@@ -173,7 +182,7 @@ Future<List<Property>> fetchProperties() async {
 Future<List<dynamic>> fetchRooms(String propertyId) async {
     try {
       final response = await http.get(Uri.parse(
-          'http://192.168.1.17:3000/rooms/properties/$propertyId/rooms'));
+          'http://192.168.1.8:3000/rooms/properties/$propertyId/rooms'));
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         if (data['status']) {
@@ -196,7 +205,10 @@ Future<List<Property>> filterProperties(List<Property> properties) async {
       bool matchesDescription = property.description
               .toLowerCase()
               .contains(searchQuery.toLowerCase()) ||
-          property.address.toLowerCase().contains(searchQuery.toLowerCase());
+          property.street.toLowerCase().contains(searchQuery.toLowerCase()) ||
+          property.barangay.toLowerCase().contains(searchQuery.toLowerCase()) ||
+          property.city.toLowerCase().contains(searchQuery.toLowerCase());
+
 
       if (!matchesDescription)
         continue; // Skip property if it doesn't match description
@@ -246,7 +258,7 @@ Future<void> fetchUserBookmarks() async {
     try {
       final response = await http.get(
         Uri.parse(
-            'http://192.168.1.17:3000/getUserBookmarks/$userId'), // Adjust endpoint if necessary
+            'http://192.168.1.8:3000/getUserBookmarks/$userId'), // Adjust endpoint if necessary
         headers: {
           'Authorization': 'Bearer ${widget.token}',
         },
@@ -269,7 +281,7 @@ Future<void> fetchUserBookmarks() async {
 Future<String> fetchUserEmail(String userId) async {
     try {
       final response = await http
-          .get(Uri.parse('http://192.168.1.17:3000/getUserEmail/$userId'));
+          .get(Uri.parse('http://192.168.1.8:3000/getUserEmail/$userId'));
 
       if (response.statusCode == 200) {
         final Map<String, dynamic> json = jsonDecode(response.body);
@@ -291,7 +303,7 @@ Future<void> _refreshProperties() async {
 
 // Function to bookmark a property
 Future<void> bookmarkProperty(String propertyId) async {
-    final url = Uri.parse('http://192.168.1.17:3000/addBookmark');
+    final url = Uri.parse('http://192.168.1.8:3000/addBookmark');
     final Map<String, dynamic> jwtDecodedToken =
         JwtDecoder.decode(widget.token);
     String userId = jwtDecodedToken['_id']?.toString() ?? 'Unknown user ID';
@@ -299,7 +311,7 @@ Future<void> bookmarkProperty(String propertyId) async {
     try {
       if (bookmarkedPropertyIds.contains(propertyId)) {
         // If already bookmarked, remove it
-        final removeUrl = Uri.parse('http://192.168.1.17:3000/removeBookmark');
+        final removeUrl = Uri.parse('http://192.168.1.8:3000/removeBookmark');
         await http.post(removeUrl,
             headers: {
               'Authorization': 'Bearer ${widget.token}',
@@ -374,38 +386,70 @@ void _handleSearch(String query) async {
           (propertiesFuture as Future<List<Property>>).then((properties) {
         return properties.where((property) {
           return property.description.toLowerCase().contains(searchQuery) ||
-              property.address.toLowerCase().contains(searchQuery);
+              property.street.toLowerCase().contains(searchQuery.toLowerCase()) ||
+              property.barangay.toLowerCase().contains(searchQuery.toLowerCase()) ||
+              property.city.toLowerCase().contains(searchQuery.toLowerCase());
+
         }).toList();
       }) as List<Property>;
     });
   }
 
-void _applyFilters() async {
-    final properties = await propertiesFuture;
-    final filtered = await filterProperties(properties);
+void _applyFilters() {
+  setState(() {
+    isFilterApplied = true;
+  });
+}
+void _clearFilters() {
+  setState(() {
+    _currentRange = RangeValues(100, 500); // Reset to default
+    isFilterApplied = false; // No filter applied
+  });
+}
 
-    // setState(() {
-    //   filteredProperties = filtered;
-    // });
+void _showFilterDialog(BuildContext context) {
+  showDialog(
+    context: context,
+    builder: (BuildContext context) {
+      return FilterDialog(
+        minPriceController: _minPriceController,
+        maxPriceController: _maxPriceController,
+        applyFilters: _applyFilters,
+        clearFilters: _clearFilters,
+        initialRange: _currentRange, // Pass the current range
+      );
+    },
+  );
+}
+
+
+
+Future<void> fetchNotifications() async {
+  if (userRole == 'landlord') {
+    final url = Uri.parse('http://192.168.1.8:3000/notifications/$userId'); // Your API endpoint for notifications
+
+    try {
+      final response = await http.get(
+        url,
+        headers: {
+          'Authorization': 'Bearer ${widget.token}',
+        },
+      );
+
+      if (response.statusCode == 200) {
+        final List<dynamic> data = jsonDecode(response.body);
+
+        setState(() {
+          notifications = data.map((notification) => notification['message'] as String).toList();
+          hasNewNotifications = notifications.isNotEmpty;
+        });
+      } else {
+        print('Failed to fetch notifications: ${response.statusCode}');
+      }
+    } catch (e) {
+      print('Error fetching notifications: $e');
+    }
   }
-
-
-
-
-Future<Map<String, dynamic>> fetchNotifications() async {
-  // Mock notifications, replace this with an API call to fetch actual notifications
-  final notifications = {
-    'Profile Status': profileStatus == 'approved'
-        ? 'Your profile has been approved!'
-        : 'Your profile is still under review.',
-    'Profile Status': profileStatus == 'rejected'
-        ? 'Your profile has been rejected! Please double check your provided information'
-        : 'Your profile is still under review.',
-        
-    'Other Notification': 'This is an example notification',
-  };
-
-  return notifications; // Return the notifications
 }
 
 
@@ -494,12 +538,10 @@ Widget build(BuildContext context) {
                           onPressed: () {
                             // Navigate to occupant-specific page
                           },
-                          icon: Icon(
-                            Icons.home, // House icon for occupant
-                            color: _themeController.isDarkMode.value
-                                ? Colors.white
-                                : Colors.black,
-                            size: 24,
+                          icon: SvgPicture.asset('assets/icons/coloredhome.svg',
+                             // House icon for occupant
+                            
+                            height: 24,
                           ),
                         )
                       : profileStatus == 'approved' && userRole == 'landlord'
@@ -557,18 +599,37 @@ Widget build(BuildContext context) {
           ),
             SizedBox(height: 1),
             SearchFieldWidget(
-              searchController: _searchController,
-              isDarkMode: _themeController.isDarkMode.value,
-              handleSearch: _handleSearch,
-              performSearch: _performSearch,
-              showFilterDialog: () {
-                FilterDialog(
-                  minPriceController: _minPriceController,
-                  maxPriceController: _maxPriceController,
-                  applyFilters: _applyFilters,
-                ).show(context);
-              },
-            ),
+            searchController: _searchController,
+            isDarkMode: _themeController.isDarkMode.value,
+            handleSearch: _handleSearch,
+            performSearch: _performSearch,
+            showFilterDialog: () {
+              showDialog(
+                context: context,
+                builder: (BuildContext context) {
+                  return FilterDialog(
+                    minPriceController: _minPriceController,
+                    maxPriceController: _maxPriceController,
+                    applyFilters: _applyFilters,
+                    initialRange: RangeValues(
+                      double.tryParse(_minPriceController.text) ?? 0.0,
+                      double.tryParse(_maxPriceController.text) ?? 10000.0,
+                    ),
+                    clearFilters: () {
+                      _minPriceController.text = '0';
+                      _maxPriceController.text = '10000';
+                      // Notify the dialog of the cleared filters
+                      setState(() {
+                        isFilterApplied = false; // Assuming you have this state to reflect the filter status
+                      });
+                    },
+                  );
+                },
+              );
+            },
+            isFilterApplied: isFilterApplied,
+          ),
+
             SizedBox(height: 10),
             Expanded(
               child: RefreshIndicator(
@@ -593,15 +654,14 @@ Widget build(BuildContext context) {
                           final property = properties[index];
                           final imageUrl = property.photo.startsWith('http')
                               ? property.photo
-                              : 'http://192.168.1.17:3000/${property.photo}';
+                              : 'http://192.168.1.8:3000/${property.photo}';
+
                           return FutureBuilder<List<dynamic>>(
                             future: fetchRooms(property.id),
                             builder: (context, roomsSnapshot) {
-                              if (roomsSnapshot.connectionState ==
-                                  ConnectionState.waiting) {
-                                return GlobalLoadingIndicator();
-                              } else if (roomsSnapshot.hasError ||
-                                  !roomsSnapshot.hasData) {
+                              if (roomsSnapshot.connectionState == ConnectionState.waiting) {
+                                return SizedBox.shrink(); // Just return an empty widget here
+                              } else if (roomsSnapshot.hasError || !roomsSnapshot.hasData) {
                                 return Center(child: Text('No rooms available.'));
                               }
                               final rooms = roomsSnapshot.data!;
@@ -611,20 +671,14 @@ Widget build(BuildContext context) {
                               return FutureBuilder<String>(
                                 future: fetchUserEmail(property.userId),
                                 builder: (context, userSnapshot) {
-                                  if (userSnapshot.connectionState ==
-                                      ConnectionState.waiting) {
-                                    return GlobalLoadingIndicator();
+                                  if (userSnapshot.connectionState == ConnectionState.waiting) {
+                                    return SizedBox.shrink(); // Just return an empty widget here
                                   } else if (userSnapshot.hasError) {
-                                    return Center(
-                                        child: Text(
-                                            'Error: ${userSnapshot.error}'));
-                                  } else if (!userSnapshot.hasData ||
-                                      userSnapshot.data!.isEmpty) {
-                                    return Center(
-                                        child: Text('No user email found.'));
+                                    return Center(child: Text('Error: ${userSnapshot.error}'));
+                                  } else if (!userSnapshot.hasData || userSnapshot.data!.isEmpty) {
+                                    return Center(child: Text('No user email found.'));
                                   } else {
                                     final userEmail = userSnapshot.data!;
-
                                     return PropertyCard(
                                       userId: userId,
                                       token: widget.token,
@@ -653,6 +707,7 @@ Widget build(BuildContext context) {
       ),
     );
   }
+
 
  
 

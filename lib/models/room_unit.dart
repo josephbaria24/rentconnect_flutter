@@ -9,6 +9,7 @@ class RoomUnit {
   final TextEditingController advanceController;
   final TextEditingController reservationDurationController;
   final TextEditingController reservationFeeController;
+  
   List<File?> roomPhotos; // For photo1, photo2, and photo3
 
   RoomUnit({
