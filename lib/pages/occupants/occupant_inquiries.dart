@@ -30,7 +30,7 @@ class _OccupantInquiriesState extends State<OccupantInquiries> {
   Future<List<Map<String, dynamic>>> fetchInquiries(String userId, String token) async {
     print('Fetching inquiries for userId: $userId'); // Debugging line
     final response = await http.get(
-      Uri.parse('http://192.168.1.6:3000/inquiries/occupant/$userId'),
+      Uri.parse('https://rentconnect-backend-nodejs.onrender.com/inquiries/occupant/$userId'),
       headers: {
         'Authorization': 'Bearer $token',
         'Content-Type': 'application/json',

@@ -87,7 +87,7 @@ class _CurrentListingPageState extends State<CurrentListingPage> {
   Future<void> fetchRooms(String propertyId) async {
     try {
       final response = await http.get(Uri.parse(
-          'http://192.168.1.6:3000/rooms/properties/$propertyId/rooms'));
+          'https://rentconnect-backend-nodejs.onrender.com/rooms/properties/$propertyId/rooms'));
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
@@ -113,7 +113,7 @@ class _CurrentListingPageState extends State<CurrentListingPage> {
   Future<void> deleteProperty(String propertyId) async {
     try {
       var response = await http.delete(
-        Uri.parse('http://192.168.1.6:3000/deleteProperty/$propertyId'),
+        Uri.parse('https://rentconnect-backend-nodejs.onrender.com/deleteProperty/$propertyId'),
         headers: {"Authorization": "Bearer ${widget.token}"},
       );
 
@@ -341,7 +341,7 @@ void showRoomDetailModal(BuildContext context, dynamic room) {
 Future<void> updateRoomDueDate(String roomId, DateTime dueDate) async {
   try {
     final response = await http.patch(
-      Uri.parse('http://192.168.1.6:3000/rooms/updateRoom/$roomId'), // Ensure the URL is correct
+      Uri.parse('https://rentconnect-backend-nodejs.onrender.com/rooms/updateRoom/$roomId'), // Ensure the URL is correct
       headers: <String, String>{
         'Content-Type': 'application/json; charset=UTF-8',
       },

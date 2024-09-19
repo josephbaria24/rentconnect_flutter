@@ -53,7 +53,7 @@ class _PropertyDetailPageState extends State<PropertyDetailPage> {
   }
 
   Future<void> fetchRooms() async {
-    final response = await http.get(Uri.parse('http://192.168.1.6:3000/rooms/properties/${widget.property.id}/rooms'));
+    final response = await http.get(Uri.parse('https://rentconnect-backend-nodejs.onrender.com/rooms/properties/${widget.property.id}/rooms'));
 
     if (response.statusCode == 200) {
       final data = jsonDecode(response.body);
@@ -69,7 +69,7 @@ class _PropertyDetailPageState extends State<PropertyDetailPage> {
 
 Future<void> fetchNotifications() async {
   final response = await http.get(
-    Uri.parse('http://192.168.1.6:3000/notifications'),
+    Uri.parse('https://rentconnect-backend-nodejs.onrender.com/notifications'),
     headers: {
       'Authorization': 'Bearer ${widget.token}', // Use the user's token for authentication
     },
@@ -249,7 +249,7 @@ void showRoomDetailsModal(BuildContext context, Map<String, dynamic> room) {
                         onPressed: () async {
                           // Create inquiry
                           final inquiryResponse = await http.post(
-                            Uri.parse('http://192.168.1.6:3000/inquiries/create'),
+                            Uri.parse('https://rentconnect-backend-nodejs.onrender.com/inquiries/create'),
                             headers: {
                               'Authorization': 'Bearer ${widget.token}', // Use the user's token for authentication
                               'Content-Type': 'application/json',
@@ -268,7 +268,7 @@ void showRoomDetailsModal(BuildContext context, Map<String, dynamic> room) {
 
                             // Send notification for reservation
                             final notificationResponse = await http.post(
-                              Uri.parse('http://192.168.1.6:3000/notification/create'),
+                              Uri.parse('https://rentconnect-backend-nodejs.onrender.com/notification/create'),
                               headers: {
                                 'Authorization': 'Bearer ${widget.token}',
                                 'Content-Type': 'application/json',
@@ -330,7 +330,7 @@ void showRoomDetailsModal(BuildContext context, Map<String, dynamic> room) {
                         onPressed: () async {
                           // Create inquiry
                           final inquiryResponse = await http.post(
-                            Uri.parse('http://192.168.1.6:3000/inquiries/create'),
+                            Uri.parse('https://rentconnect-backend-nodejs.onrender.com/inquiries/create'),
                             headers: {
                               'Authorization': 'Bearer ${widget.token}', // Use the user's token for authentication
                               'Content-Type': 'application/json',
@@ -349,7 +349,7 @@ void showRoomDetailsModal(BuildContext context, Map<String, dynamic> room) {
 
                             // Send notification for rent request
                             final notificationResponse = await http.post(
-                              Uri.parse('http://192.168.1.6:3000/notification/create'),
+                              Uri.parse('https://rentconnect-backend-nodejs.onrender.com/notification/create'),
                               headers: {
                                 'Authorization': 'Bearer ${widget.token}',
                                 'Content-Type': 'application/json',

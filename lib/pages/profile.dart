@@ -76,7 +76,7 @@ fetchUserProfileStatus();
 
   Future<void> _fetchUserProfile() async {
     final url = Uri.parse(
-        'http://192.168.1.6:3000/user/$userId'); // Adjust the endpoint if needed
+        'https://rentconnect-backend-nodejs.onrender.com/user/$userId'); // Adjust the endpoint if needed
     try {
       final response = await http
           .get(url, headers: {'Authorization': 'Bearer ${widget.token}'});
@@ -96,7 +96,7 @@ fetchUserProfileStatus();
 
 
   Future<void> fetchUserProfileStatus() async {
-  final url = Uri.parse('http://192.168.1.6:3000/profile/checkProfileCompletion/$userId'); // Replace with your API endpoint
+  final url = Uri.parse('https://rentconnect-backend-nodejs.onrender.com/profile/checkProfileCompletion/$userId'); // Replace with your API endpoint
   try {
     final response = await http.get(
       url,
@@ -154,7 +154,7 @@ fetchUserProfileStatus();
   Future<void> _uploadProfilePicture() async {
     if (_profileImage != null) {
       final url =
-          Uri.parse('http://192.168.1.6:3000/updateProfilePicture/$userId');
+          Uri.parse('https://rentconnect-backend-nodejs.onrender.com/updateProfilePicture/$userId');
       var request = http.MultipartRequest('PATCH', url)
         ..headers['Authorization'] = 'Bearer ${widget.token}';
 
