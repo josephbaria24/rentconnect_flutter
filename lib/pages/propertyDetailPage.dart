@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:fluttertoast/fluttertoast.dart';
 import 'package:get/get.dart';
+import 'package:jwt_decoder/jwt_decoder.dart';
 import 'package:line_awesome_flutter/line_awesome_flutter.dart';
 import 'package:rentcon/models/property.dart';
 import 'package:http/http.dart' as http;
@@ -34,17 +36,24 @@ class PropertyDetailPage extends StatefulWidget {
 
 class _PropertyDetailPageState extends State<PropertyDetailPage> {
   List<dynamic> rooms = [];
+  late String email;
+  late String userId;
   bool _showMap = false;
   final PageController _pageController = PageController();
   final ThemeController _themeController = Get.find<ThemeController>();
   @override
   void initState() {
     super.initState();
+    final Map<String, dynamic> jwtDecodedToken = JwtDecoder.decode(widget.token);
+
+    // Safely extracting 'email' from the decoded token
+    email = jwtDecodedToken['email']?.toString() ?? 'Unknown email';
+    userId = jwtDecodedToken['_id']?.toString() ?? 'Unknown email';
     fetchRooms();
   }
 
   Future<void> fetchRooms() async {
-    final response = await http.get(Uri.parse('http://192.168.1.8:3000/rooms/properties/${widget.property.id}/rooms'));
+    final response = await http.get(Uri.parse('http://192.168.1.6:3000/rooms/properties/${widget.property.id}/rooms'));
 
     if (response.statusCode == 200) {
       final data = jsonDecode(response.body);
@@ -58,6 +67,30 @@ class _PropertyDetailPageState extends State<PropertyDetailPage> {
     }
   }
 
+Future<void> fetchNotifications() async {
+  final response = await http.get(
+    Uri.parse('http://192.168.1.6:3000/notifications'),
+    headers: {
+      'Authorization': 'Bearer ${widget.token}', // Use the user's token for authentication
+    },
+  );
+
+  if (response.statusCode == 200) {
+    final data = jsonDecode(response.body);
+    // Assuming data is a list of notifications
+    // You can update your UI or store the notifications in the state
+    setState(() {
+      // Example: notifications = data['notifications'];
+    });
+  } else {
+    print('Failed to fetch notifications');
+  }
+}
+
+
+
+
+
 void showRoomDetailsModal(BuildContext context, Map<String, dynamic> room) {
   // Define a list of room photo URLs
   final List<String> roomPhotoUrls = [
@@ -68,88 +101,120 @@ void showRoomDetailsModal(BuildContext context, Map<String, dynamic> room) {
 
   // Create a PageController for the room photos
   final PageController _roomPageController = PageController();
+  final roomStatus = room['roomStatus']; // Get the room status
 
   showModalBottomSheet(
-  context: context,
-  isScrollControlled: true,
-  shape: const RoundedRectangleBorder(
-    borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-  ),
-  builder: (BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.all(16.0),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Room Photos Slider
-          roomPhotoUrls.isNotEmpty
-              ? Column(
-                  children: [
-                    Container(
-                      height: 180,
-                      child: PageView.builder(
+    context: context,
+    isScrollControlled: true,
+    shape: const RoundedRectangleBorder(
+      borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+    ),
+    builder: (BuildContext context) {
+      return Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Room Photos Slider
+            roomPhotoUrls.isNotEmpty
+                ? Column(
+                    children: [
+                      Container(
+                        height: 180,
+                        child: PageView.builder(
+                          controller: _roomPageController,
+                          itemCount: roomPhotoUrls.length,
+                          itemBuilder: (context, index) {
+                            return ClipRRect(
+                              borderRadius: BorderRadius.circular(10),
+                              child: Image.network(
+                                roomPhotoUrls[index],
+                                fit: BoxFit.cover,
+                              ),
+                            );
+                          },
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      SmoothPageIndicator(
                         controller: _roomPageController,
-                        itemCount: roomPhotoUrls.length,
-                        itemBuilder: (context, index) {
-                          return ClipRRect(
-                            borderRadius: BorderRadius.circular(10),
-                            child: Image.network(
-                              roomPhotoUrls[index],
-                              fit: BoxFit.cover,
-                            ),
-                          );
-                        },
+                        count: roomPhotoUrls.length,
+                        effect: ExpandingDotsEffect(
+                          activeDotColor: _themeController.isDarkMode.value
+                              ? const Color.fromARGB(255, 252, 252, 252)
+                              : const Color.fromARGB(255, 0, 0, 0),
+                          dotColor: Colors.grey,
+                          dotHeight: 10,
+                          dotWidth: 10,
+                          spacing: 10,
+                        ),
                       ),
-                    ),
-                    const SizedBox(height: 8),
-                    SmoothPageIndicator(
-                      controller: _roomPageController,
-                      count: roomPhotoUrls.length,
-                      effect: ExpandingDotsEffect(
-                        activeDotColor: _themeController.isDarkMode.value
-                            ? const Color.fromARGB(255, 252, 252, 252)
-                            : const Color.fromARGB(255, 0, 0, 0),
-                        dotColor: Colors.grey,
-                        dotHeight: 10,
-                        dotWidth: 10,
-                        spacing: 10,
-                      ),
-                    ),
-                  ],
-                )
-              : const Text('No photos available.'),
-          const SizedBox(height: 16),
-          Text(
-            'Room/Unit no. ${room['roomNumber']}',
-            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
-          ),
-          const SizedBox(height: 8),
-          Text('Price: ₱${room['price']} Monthly', style: const TextStyle(fontSize: 16)),
-          Text('Capacity: ${room['capacity']}', style: const TextStyle(fontSize: 16)),
-          Text('Deposit: ${room['deposit']}', style: const TextStyle(fontSize: 16)),
-          Text('Advance: ${room['advance']}', style: const TextStyle(fontSize: 16)),
-          Text('Reservation Duration: ${room['reservationDuration']} Days', style: const TextStyle(fontSize: 16)),
-          Text('Reservation Fee: ₱${room['reservationFee']}', style: const TextStyle(fontSize: 16)),
-          const SizedBox(height: 16),
+                    ],
+                  )
+                : const Text('No photos available.'),
+            const SizedBox(height: 16),
+            Text(
+              'Room/Unit no. ${room['roomNumber']}',
+              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+            ),
+            const SizedBox(height: 8),
+            Text('Price: ₱${room['price']} Monthly', style: const TextStyle(fontSize: 16)),
+            Text('Capacity: ${room['capacity']}', style: const TextStyle(fontSize: 16)),
+            Text('Deposit: ₱${room['deposit']}', style: const TextStyle(fontSize: 16)),
+            Text('Advance: ₱${room['advance']}', style: const TextStyle(fontSize: 16)),
+            Text('Reservation Duration: ${room['reservationDuration']} Days', style: const TextStyle(fontSize: 16)),
+            Text('Reservation Fee: ₱${room['reservationFee']}', style: const TextStyle(fontSize: 16)),
+            const SizedBox(height: 16),
 
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-            children: [
+            // Condition to show/hide buttons based on room status
+            if (roomStatus == 'reserved' || roomStatus == 'occupied') ...[
+              // Show a message if the room is reserved or occupied
+              Text(
+                'This room is currently ${roomStatus}.',
+                style: const TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 16),
+              Row(
+                children: [
+                  Expanded(
+                    child: ElevatedButton(
+                      onPressed: null, // Disable button
+                      child: const Text('Reserve'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.grey,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: ElevatedButton(
+                      onPressed: null, // Disable button
+                      child: const Text('Rent'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.grey,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ] else ...[
               // Case 1: Hide buttons if the user is a landlord and profile is approved
               if (widget.userRole == 'landlord' && widget.profileStatus == 'approved') ...[
                 const SizedBox.shrink(),
-              ] 
+              ]
               // Case 2: Show message to set up profile for 'none' role and 'none' status
               else if (widget.userRole == 'none' && widget.profileStatus == 'none') ...[
                 ElevatedButton(
                   onPressed: () {
-                    // Show message to user
-                    // ScaffoldMessenger.of(context).showSnackBar(
-                    //   const SnackBar(content: Text('Please set up your profile first!')),
-                     
-                    // );
-                     Navigator.push(context, MaterialPageRoute(builder: (context) => ProfilePageChecker(token: widget.token)));
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => ProfilePageChecker(token: widget.token),
+                      ),
+                    );
                   },
                   child: const Text('Please set up your profile first!'),
                   style: ElevatedButton.styleFrom(
@@ -157,14 +222,15 @@ void showRoomDetailsModal(BuildContext context, Map<String, dynamic> room) {
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                   ),
                 ),
-              ] 
+              ]
               // Case 3: Show message for pending profile verification
               else if (widget.userRole == 'none' && widget.profileStatus == 'pending') ...[
                 ElevatedButton(
                   onPressed: () {
-                    // Show message to user
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Please wait for your profile to be verified!')),
+                    Fluttertoast.showToast(
+                      msg: 'Please wait for your profile to be verified!',
+                      backgroundColor: Colors.orangeAccent,
+                      textColor: Colors.white,
                     );
                   },
                   child: const Text('Please wait for your profile to be verified!'),
@@ -173,178 +239,353 @@ void showRoomDetailsModal(BuildContext context, Map<String, dynamic> room) {
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                   ),
                 ),
-              ] 
+              ]
               // Case 4: Show Rent and Reserve buttons for eligible users
               else if (widget.userRole == 'occupant' && widget.profileStatus == 'approved') ...[
-                ElevatedButton(
-                  onPressed: () {
-                    // Handle reserve action
-                  },
-                  child: const Text('Reserve'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.blue,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                  ),
+                Row(
+                  children: [
+                    Expanded(
+                      child: ElevatedButton(
+                        onPressed: () async {
+                          // Create inquiry
+                          final inquiryResponse = await http.post(
+                            Uri.parse('http://192.168.1.6:3000/inquiries/create'),
+                            headers: {
+                              'Authorization': 'Bearer ${widget.token}', // Use the user's token for authentication
+                              'Content-Type': 'application/json',
+                            },
+                            body: jsonEncode({
+                              'roomId': '${room['_id']}',
+                              'userId': userId, // Assuming you have a userId field
+                              'status': 'pending',
+                              // Add any other relevant fields here
+                            }),
+                          );
+
+                          if (inquiryResponse.statusCode == 201) {
+                            final inquiryData = jsonDecode(inquiryResponse.body);
+                            final inquiryId = inquiryData['_id']; // Get the inquiryId
+
+                            // Send notification for reservation
+                            final notificationResponse = await http.post(
+                              Uri.parse('http://192.168.1.6:3000/notification/create'),
+                              headers: {
+                                'Authorization': 'Bearer ${widget.token}',
+                                'Content-Type': 'application/json',
+                              },
+                              body: jsonEncode({
+                                'userId': widget.property.userId, // Send notification to the landlord
+                                'message': 'Hi there! Your property has been reserved.',
+                                'roomId': '${room['_id']}',
+                                'roomNumber': '${room['roomNumber']}',
+                                'requesterEmail': '$email',
+                                'inquiryId': inquiryId, // Include inquiryId
+                              }),
+                            );
+
+                            if (notificationResponse.statusCode == 201) {
+                              Fluttertoast.showToast(
+                                fontSize: 15,
+                                msg: 'Reservation notification sent!',
+                                backgroundColor: const Color.fromARGB(255, 255, 255, 255),
+                                textColor: const Color.fromARGB(255, 0, 0, 0),
+                              );
+                              Navigator.pop(context); // Dismiss the modal
+                            } else {
+                              Fluttertoast.showToast(
+                                msg: 'Failed to send notification',
+                                backgroundColor: Colors.red,
+                                textColor: Colors.white,
+                              );
+                            }
+                          } else {
+                            Fluttertoast.showToast(
+                              msg: 'Failed to create inquiry',
+                              backgroundColor: Colors.red,
+                              textColor: Colors.white,
+                            );
+                          }
+                        },
+                        child: Text(
+                          'Reserve',
+                          style: TextStyle(
+                            color: _themeController.isDarkMode.value
+                                ? const Color.fromARGB(255, 0, 0, 0)
+                                : const Color.fromARGB(255, 0, 0, 0),
+                            fontFamily: 'Poppins',
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: _themeController.isDarkMode.value
+                              ? const Color.fromARGB(255, 235, 254, 114)
+                              : const Color.fromARGB(255, 235, 254, 114),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: ElevatedButton(
+                        onPressed: () async {
+                          // Create inquiry
+                          final inquiryResponse = await http.post(
+                            Uri.parse('http://192.168.1.6:3000/inquiries/create'),
+                            headers: {
+                              'Authorization': 'Bearer ${widget.token}', // Use the user's token for authentication
+                              'Content-Type': 'application/json',
+                            },
+                            body: jsonEncode({
+                              'roomId': '${room['_id']}',
+                              'userId': userId, // Assuming you have a userId field
+                              'status': 'pending',
+                              // Add any other relevant fields here
+                            }),
+                          );
+
+                          if (inquiryResponse.statusCode == 201) {
+                            final inquiryData = jsonDecode(inquiryResponse.body);
+                            final inquiryId = inquiryData['_id']; // Get the inquiryId
+
+                            // Send notification for rent request
+                            final notificationResponse = await http.post(
+                              Uri.parse('http://192.168.1.6:3000/notification/create'),
+                              headers: {
+                                'Authorization': 'Bearer ${widget.token}',
+                                'Content-Type': 'application/json',
+                              },
+                              body: jsonEncode({
+                                'userId': widget.property.userId, // Send notification to the landlord
+                                'message': 'Hi there! Your room property has been requested to rent.',
+                                'roomId': '${room['_id']}',
+                                'roomNumber': '${room['roomNumber']}',
+                                'requesterEmail': '$email',
+                                'inquiryId': inquiryId, // Include inquiryId
+                              }),
+                            );
+
+                            if (notificationResponse.statusCode == 201) {
+                              Fluttertoast.showToast(
+                                fontSize: 15,
+                                msg: 'Rent request notification sent!',
+                                backgroundColor: const Color.fromARGB(255, 255, 255, 255),
+                                textColor: const Color.fromARGB(255, 0, 0, 0),
+                              );
+                              Navigator.pop(context); // Dismiss the modal
+                            } else {
+                              Fluttertoast.showToast(
+                                msg: 'Failed to send request',
+                                backgroundColor: Colors.red,
+                                textColor: Colors.white,
+                              );
+                            }
+                          } else {
+                            Fluttertoast.showToast(
+                              msg: 'Failed to create inquiry',
+                              backgroundColor: Colors.red,
+                              textColor: Colors.white,
+                            );
+                          }
+                        },
+                        child: Text(
+                          'Rent',
+                          style: TextStyle(
+                            color: _themeController.isDarkMode.value
+                                ? const Color.fromARGB(255, 255, 255, 255)
+                                : Color.fromARGB(255, 255, 255, 255),
+                            fontFamily: 'Poppins',
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: _themeController.isDarkMode.value
+                              ? const Color.fromARGB(255, 135, 102, 235)
+                              : const Color.fromARGB(255, 135, 102, 235),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
-                ElevatedButton(
-                  onPressed: () {
-                    // Handle rent action
-                  },
-                  child: const Text('Rent'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.green,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                  ),
-                ),
-              ] 
-              // Case 5: If user is not eligible, show disabled buttons
-              else ...[
-                ElevatedButton(
-                  onPressed: null, // Disable button
-                  child: const Text('Reserve'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.grey,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                  ),
-                ),
-                ElevatedButton(
-                  onPressed: null, // Disable button
-                  child: const Text('Rent'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.grey,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                  ),
-                ),
-              ],
+              ]
             ],
-          ),
-          const SizedBox(height: 16),
-        ],
-      ),
-    );
-  },
-);
+            const SizedBox(height: 16),
+          ],
+        ),
+      );
+    },
+  );
 }
 
 
-  @override
-  Widget build(BuildContext context) {
-    // Hardcoded URLs for property photos
-    final photoUrls = [
-      widget.property.photo != null ? '${widget.property.photo}' : '',
-      widget.property.photo2 != null ? '${widget.property.photo2}' : '',
-      widget.property.photo3 != null ? '${widget.property.photo3}' : '',
-    ].where((url) => url.isNotEmpty).toList();
 
-    return Scaffold(
-      appBar: AppBar(
-        title: Text('Property Details', style: TextStyle(
-        
+
+@override
+Widget build(BuildContext context) {
+  print('$email');
+  print(widget.userEmail);
+  print(userId);
+
+
+  // Hardcoded URLs for property photos
+  final photoUrls = [
+    widget.property.photo != null ? '${widget.property.photo}' : '',
+    widget.property.photo2 != null ? '${widget.property.photo2}' : '',
+    widget.property.photo3 != null ? '${widget.property.photo3}' : '',
+  ].where((url) => url.isNotEmpty).toList();
+
+  return Scaffold(
+    appBar: AppBar(
+      title: Text(
+        'Property Details',
+        style: TextStyle(
           fontFamily: 'Poppins',
           fontWeight: FontWeight.w800,
-        ),),
-        leading: IconButton(
-          icon: Icon(Icons.arrow_back),
-          onPressed: () => Navigator.of(context).pop(),
         ),
       ),
-      body: Stack(
-        children: [
-          SingleChildScrollView(
-            padding: EdgeInsets.all(16.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Property Images
-                photoUrls.isNotEmpty
-                    ? Column(
-                        children: [
-                          Container(
-                            height: 250,
-                            child: PageView.builder(
-                              controller: _pageController,
-                              itemCount: photoUrls.length,
-                              itemBuilder: (context, index) {
-                                return ClipRRect(
-                                  borderRadius: BorderRadius.circular(10),
-                                  child: Image.network(
-                                    photoUrls[index],
-                                    fit: BoxFit.cover,
-                                  ),
-                                );
-                              },
-                            ),
-                          ),
-                          SizedBox(height: 8),
-                          SmoothPageIndicator(
+      leading: IconButton(
+        icon: Icon(Icons.arrow_back_ios_new_outlined),
+        onPressed: () => Navigator.of(context).pop(),
+      ),
+    ),
+    body: Stack(
+      children: [
+        SingleChildScrollView(
+          padding: EdgeInsets.all(16.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Property Images
+              photoUrls.isNotEmpty
+                  ? Column(
+                      children: [
+                        Container(
+                          height: 250,
+                          child: PageView.builder(
                             controller: _pageController,
-                            count: photoUrls.length,
-                            effect: ExpandingDotsEffect(
-                              activeDotColor: _themeController.isDarkMode.value ? Color.fromARGB(255, 253, 253, 253) : Color.fromARGB(255, 0, 0, 0),
-                              dotColor: const Color.fromARGB(255, 148, 146, 146),
-                              dotHeight: 10,
-                              dotWidth: 10,
-                              spacing: 10,
+                            itemCount: photoUrls.length,
+                            itemBuilder: (context, index) {
+                              return ClipRRect(
+                                borderRadius: BorderRadius.circular(10),
+                                child: Image.network(
+                                  photoUrls[index],
+                                  fit: BoxFit.cover,
+                                ),
+                              );
+                            },
+                          ),
+                        ),
+                        SizedBox(height: 8),
+                        SmoothPageIndicator(
+                          controller: _pageController,
+                          count: photoUrls.length,
+                          effect: ExpandingDotsEffect(
+                            activeDotColor: _themeController.isDarkMode.value
+                                ? Color.fromARGB(255, 253, 253, 253)
+                                : Color.fromARGB(255, 0, 0, 0),
+                            dotColor: const Color.fromARGB(255, 148, 146, 146),
+                            dotHeight: 10,
+                            dotWidth: 10,
+                            spacing: 10,
+                          ),
+                        ),
+                      ],
+                    )
+                  : Text('No photos available.'),
+              SizedBox(height: 16),
+
+              // Room/Unit Availability
+              Text(
+                'Room/Unit Available',
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+              ),
+              SizedBox(height: 8),
+              rooms.isEmpty
+                  ? Text('No rooms available.')
+                  : GridView.builder(
+                      shrinkWrap: true,
+                      physics: NeverScrollableScrollPhysics(),
+                      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                        crossAxisCount: 2,
+                        crossAxisSpacing: 8,
+                        mainAxisSpacing: 8,
+                        childAspectRatio: 1.0,
+                      ),
+                      itemCount: rooms.length,
+                      itemBuilder: (context, index) {
+                        final room = rooms[index];
+                        final roomPhoto1 = room['photo1'];
+                        final roomStatus = room['roomStatus']; // Get room status
+
+                        return GestureDetector(
+                          onTap: () {
+                            showRoomDetailsModal(context, room);
+                          },
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(10),
+                            child: Stack(
+                              children: [
+                                Column(
+                                  children: [
+                                    Expanded(
+                                      child: Image.network(
+                                        roomPhoto1,
+                                        fit: BoxFit.cover,
+                                        width: double.infinity,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                if (roomStatus == 'occupied' ||
+                                    roomStatus == 'reserved') // Condition to show the banner
+                                  Positioned(
+                                    top: 0,
+                                    left: 0,
+                                    right: 0,
+                                    child: Container(
+                                      color: roomStatus == 'occupied'
+                                          ? const Color.fromARGB(255, 255, 0, 0)
+                                          : Colors.orange,
+                                      padding: EdgeInsets.symmetric(
+                                          vertical: 4, horizontal: 8),
+                                      child: Text(
+                                        roomStatus == 'occupied'
+                                            ? 'Occupied'
+                                            : 'Reserved',
+                                        style: TextStyle(
+                                          color: Colors.white,
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 12,
+                                        ),
+                                        textAlign: TextAlign.center,
+                                      ),
+                                    ),
+                                  ),
+                              ],
                             ),
                           ),
-                        ],
-                      )
-                    : Text('No photos available.'),
-                SizedBox(height: 16),
-
-                // Room/Unit Availability
-                Text(
-                  'Room/Unit Available',
-                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-                ),
-                SizedBox(height: 8),
-                rooms.isEmpty
-                    ? Text('No rooms available.')
-                    : SizedBox(
-                        height: 80,
-                        child: ListView.builder(
-                          scrollDirection: Axis.horizontal,
-                          itemCount: rooms.length,
-                          itemBuilder: (context, index) {
-                            final room = rooms[index];
-                            final roomPhoto1 = '${room['photo1']}';
-
-                            return GestureDetector(
-                              onTap: () {
-                                showRoomDetailsModal(context, room);
-                              },
-                              child: Padding(
-                                padding: const EdgeInsets.symmetric(horizontal: 4.0),
-                                child: ClipRRect(
-                                  borderRadius: BorderRadius.circular(10),
-                                  child: Image.network(roomPhoto1, width: 60, fit: BoxFit.cover),
-                                ),
-                              ),
-                            );
-                          },
-                        ),
-                      ),
-
-                // Location and Description
-                SizedBox(height: 16),
-                Row(
-                          children: [
-                            Icon(Icons.location_pin, color: const Color.fromARGB(255, 252, 3, 3)),
-                            SizedBox(width: 8),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(widget.property.street),
-                                  Text(widget.property.barangay),
-                                  Text(widget.property.city),
-                            
-
-                                ],
-                              ),
-                            ),
-                          ],
-                        ),
+                        );
+                      },
+                    ),
+              // Location and Description
+              SizedBox(height: 16),
+              Row(
+                children: [
+                  Icon(Icons.location_pin,
+                      color: const Color.fromARGB(255, 252, 3, 3)),
+                  SizedBox(width: 8),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(widget.property.street),
+                        Text(widget.property.barangay),
+                        Text(widget.property.city),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
 
                 SizedBox(height: 16),
                 Text(
@@ -361,11 +602,32 @@ void showRoomDetailsModal(BuildContext context, Map<String, dynamic> room) {
                   style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
                 ),
                 SizedBox(height: 8),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                 Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
                   children: widget.property.amenities.isNotEmpty
-                      ? widget.property.amenities.map((amenity) {
-                          return Text('• $amenity');
+                      ? widget.property.amenities.map<Widget>((amenity) {
+                          return Container(
+                            width: (MediaQuery.of(context).size.width / 2) - 24, // Adjust size based on screen width
+                            padding: EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              color: _themeController.isDarkMode.value? const Color.fromARGB(255, 77, 78, 90) : Colors.grey[200],
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: Row(
+                              children: [
+                                Icon(Icons.check_circle, color: Colors.green),
+                                SizedBox(width: 8),
+                                Expanded(
+                                  child: Text(
+                                    amenity,
+                                    style: TextStyle(fontSize: 14),
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          );
                         }).toList()
                       : [Text('No amenities listed')],
                 )

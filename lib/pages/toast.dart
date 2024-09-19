@@ -71,11 +71,11 @@ class ToastNotification {
 
   Widget _buildToast(ToastType type, String content, IconData icon) =>
       ConstrainedBox(
-        constraints: BoxConstraints(maxHeight: 560, maxWidth: 360),
+        constraints: BoxConstraints(maxHeight: 540, maxWidth: 360),
         child: Container(
-          padding: EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+          padding: EdgeInsets.symmetric(horizontal: 14, vertical: 14),
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(4),
+            borderRadius: BorderRadius.circular(8),
             color: _getToastColor(type).backgroundColor,
           ),
           child: Row(
@@ -88,8 +88,9 @@ class ToastNotification {
                   content,
                   style: TextStyle(
                     color: _getToastColor(type).textColor,
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
+                    fontFamily: 'Poppins'
                   ),
                 ),
               ),

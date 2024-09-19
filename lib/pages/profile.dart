@@ -7,6 +7,7 @@ import 'package:rentcon/pages/about.dart';
 import 'package:rentcon/pages/global_loading_indicator.dart';
 import 'package:rentcon/pages/landlords/current_listing.dart';
 import 'package:rentcon/pages/login.dart';
+import 'package:rentcon/pages/occupants/occupant_inquiries.dart';
 import 'package:rentcon/pages/profileSection/profileChecker.dart';
 import 'package:rentcon/theme_controller.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -75,7 +76,7 @@ fetchUserProfileStatus();
 
   Future<void> _fetchUserProfile() async {
     final url = Uri.parse(
-        'http://192.168.1.8:3000/user/$userId'); // Adjust the endpoint if needed
+        'http://192.168.1.6:3000/user/$userId'); // Adjust the endpoint if needed
     try {
       final response = await http
           .get(url, headers: {'Authorization': 'Bearer ${widget.token}'});
@@ -95,7 +96,7 @@ fetchUserProfileStatus();
 
 
   Future<void> fetchUserProfileStatus() async {
-  final url = Uri.parse('http://192.168.1.8:3000/profile/checkProfileCompletion/$userId'); // Replace with your API endpoint
+  final url = Uri.parse('http://192.168.1.6:3000/profile/checkProfileCompletion/$userId'); // Replace with your API endpoint
   try {
     final response = await http.get(
       url,
@@ -153,7 +154,7 @@ fetchUserProfileStatus();
   Future<void> _uploadProfilePicture() async {
     if (_profileImage != null) {
       final url =
-          Uri.parse('http://192.168.1.8:3000/updateProfilePicture/$userId');
+          Uri.parse('http://192.168.1.6:3000/updateProfilePicture/$userId');
       var request = http.MultipartRequest('PATCH', url)
         ..headers['Authorization'] = 'Bearer ${widget.token}';
 
@@ -393,6 +394,7 @@ Widget build(BuildContext context) {
                         ? Colors.white
                         : Colors.black,
                     onPress: () {
+                      Navigator.push(context, MaterialPageRoute(builder: (context) => OccupantInquiries(userId: userId, token: widget.token)));
                       // Navigate to "My Home" page
                     },
                   ),

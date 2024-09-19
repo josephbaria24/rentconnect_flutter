@@ -1,6 +1,7 @@
 import 'dart:convert';
-
+import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:fluttertoast/fluttertoast.dart';
 import 'package:get/get.dart';
 import 'package:rentcon/navigation_menu.dart';
 import 'package:rentcon/theme_controller.dart';
@@ -8,6 +9,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'signup.dart';
 import 'package:http/http.dart' as http;
 import 'package:rentcon/config.dart';
+import 'toast.dart';
 
 class LoginPage extends StatefulWidget {
   @override
@@ -22,11 +24,13 @@ class _LoginPageState extends State<LoginPage> {
   bool _isLoggingIn = false; // New variable to track login status
   late SharedPreferences prefs;
   final ThemeController _themeController = Get.find<ThemeController>();
-
+  late FToast fToast; // Declare FToast
   @override
   void initState() {
     super.initState();
     initSharedPref();
+     fToast = FToast(); // Initialize FToast
+    fToast.init(context); // Pass the current context
   }
 
   void initSharedPref() async {
@@ -45,8 +49,16 @@ class _LoginPageState extends State<LoginPage> {
       };
 
       try {
+        // Check internet connection before making the request
+        final result = await InternetAddress.lookup('example.com');
+        if (result.isEmpty || result[0].rawAddress.isEmpty) {
+          // No internet connection
+          ToastNotification(fToast).warn('No internet connection. Please check your connection.');
+          return;
+        }
+
         var response = await http.post(
-          Uri.parse(login), 
+          Uri.parse(login),
           headers: {"Content-Type": "application/json"},
           body: jsonEncode(reqBody),
         );
@@ -56,7 +68,7 @@ class _LoginPageState extends State<LoginPage> {
 
         if (response.body.isEmpty) {
           print("Received an empty response from the server.");
-          showErrorMessage("Error", "No response from the server.");
+          ToastNotification(fToast).error('No response from the server.');
           return;
         }
 
@@ -65,7 +77,7 @@ class _LoginPageState extends State<LoginPage> {
           jsonResponse = jsonDecode(response.body);
         } catch (e) {
           print("Error decoding JSON: $e");
-          showErrorMessage("Error", "Invalid response format.");
+          ToastNotification(fToast).error('Invalid response format.');
           return;
         }
 
@@ -73,27 +85,37 @@ class _LoginPageState extends State<LoginPage> {
           var myToken = jsonResponse['token'];
           prefs.setString('token', myToken);
 
+          ToastNotification(fToast).success('Login successful!');
+
           Navigator.push(
             context,
             MaterialPageRoute(builder: (context) => NavigationMenu(token: myToken)),
           );
         } else {
           print("Login failed: ${jsonResponse['message']}");
-          showErrorMessage("Login Failed", jsonResponse['message'] ?? "Something went wrong.");
+          if (jsonResponse['message'] == 'Incorrect password') {
+            ToastNotification(fToast).error('Incorrect password.');
+          } else {
+            ToastNotification(fToast).error(jsonResponse['message'] ?? 'Something went wrong.');
+          }
         }
       } catch (error) {
-        print("Error during login: $error");
-        showErrorMessage("Error", "Failed to connect to the server.");
+        if (error is SocketException) {
+          // Handle no internet connection error
+          ToastNotification(fToast).warn('No internet connection. Please check your connection.');
+        } else {
+          print("Error during login: $error");
+          ToastNotification(fToast).error('Failed to connect to the server.');
+        }
       } finally {
         setState(() {
           _isLoggingIn = false; // Stop loading state
         });
       }
     } else {
-      showErrorMessage("Input Error", "Email and password cannot be empty.");
+      ToastNotification(fToast).warn('Email and password cannot be empty.');
     }
   }
-
   void showErrorMessage(String title, String message) {
     showDialog(
       context: context,
