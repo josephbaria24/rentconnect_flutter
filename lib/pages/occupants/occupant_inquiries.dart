@@ -1,7 +1,15 @@
 import 'dart:convert';
+import 'dart:ui';
+import 'package:blur/blur.dart';
+import 'package:flutter/cupertino.dart';
+import 'package:fluttertoast/fluttertoast.dart';
+import 'package:get/get.dart';
 import 'package:http/http.dart' as http;
 import 'package:flutter/material.dart';
 import 'package:jwt_decoder/jwt_decoder.dart';
+import 'package:rentcon/pages/components/glassmorphism.dart';
+import 'package:rentcon/theme_controller.dart';
+import 'package:shadcn_ui/shadcn_ui.dart';
 
 class OccupantInquiries extends StatefulWidget {
   final String userId;
@@ -16,7 +24,9 @@ class OccupantInquiries extends StatefulWidget {
 class _OccupantInquiriesState extends State<OccupantInquiries> {
   late String userId;
   late String email;
-  String requestStatus = 'Pending'; // Default request status for the dropdown
+  String requestStatus = 'Pending';
+    final ThemeController _themeController = Get.find<ThemeController>();
+
 
   @override
   void initState() {
@@ -26,11 +36,9 @@ class _OccupantInquiriesState extends State<OccupantInquiries> {
     userId = jwtDecodedToken['_id']?.toString() ?? 'Unknown ID';
   }
 
-  // Fetch occupant inquiries from the database
   Future<List<Map<String, dynamic>>> fetchInquiries(String userId, String token) async {
-    print('Fetching inquiries for userId: $userId'); // Debugging line
     final response = await http.get(
-      Uri.parse('https://rentconnect-backend-nodejs.onrender.com/inquiries/occupant/$userId'),
+      Uri.parse('http://192.168.1.13:3000/inquiries/occupant/$userId'),
       headers: {
         'Authorization': 'Bearer $token',
         'Content-Type': 'application/json',
@@ -38,155 +46,203 @@ class _OccupantInquiriesState extends State<OccupantInquiries> {
     );
 
     if (response.statusCode == 200) {
-      print('Inquiries fetched successfully'); // Debugging line
       final List<dynamic> data = jsonDecode(response.body);
       return data.map((inquiry) => inquiry as Map<String, dynamic>).toList();
     } else {
-      print('Failed to load inquiries: ${response.statusCode}'); // Debugging line
       throw Exception('Failed to load inquiries');
     }
   }
 
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text("My Inquiries"),
+@override
+Widget build(BuildContext context) {
+  return Scaffold(
+    backgroundColor: _themeController.isDarkMode.value? Color.fromARGB(255, 28, 29, 34):Colors.white,
+    appBar: AppBar(
+      backgroundColor: _themeController.isDarkMode.value? Color.fromARGB(255, 28, 29, 34):Colors.white,
+        title: const Text('My Home & Inquiries',
+        style: TextStyle(
+          fontFamily: 'GeistSans',
+          fontWeight: FontWeight.bold
+        ),),
+        leading: GestureDetector(
+          onTap: () {
+            Navigator.pop(context);
+          },
+          child: const Icon(Icons.arrow_back_ios_new_outlined),
+        ),
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
+    body: Padding(
+      
+      padding: const EdgeInsets.all(25.0),
+      child: SingleChildScrollView(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Top Dropdown Menu
-            Container(
-              decoration: BoxDecoration(
-                color: Colors.grey[850],
-                borderRadius: BorderRadius.circular(12.0),
-              ),
-              padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-              child: Row(
-                children: [
-                  Icon(Icons.home, color: Colors.white),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: DropdownButtonHideUnderline(
-                      child: DropdownButton<String>(
-                        dropdownColor: Colors.grey[850],
-                        value: requestStatus,
-                        icon: const Icon(Icons.arrow_drop_down, color: Colors.white),
-                        style: const TextStyle(color: Colors.white),
-                        onChanged: (String? newValue) {
-                          setState(() {
-                            requestStatus = newValue!;
-                          });
-                        },
-                        items: <String>['Pending', 'Approved', 'Rejected']
-                            .map<DropdownMenuItem<String>>((String value) {
-                          return DropdownMenuItem<String>(
-                            value: value,
-                            child: Text(value),
-                          );
-                        }).toList(),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
+          children: [            
+            FutureBuilder<List<Map<String, dynamic>>>(
+              future: fetchInquiries(widget.userId, widget.token),
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const Center(child: CircularProgressIndicator());
+                } else if (snapshot.hasError) {
+                  return Center(child: Text('Error: ${snapshot.error}'));
+                } else if (snapshot.hasData && snapshot.data != null) {
+                  final inquiries = snapshot.data!;
 
-            const SizedBox(height: 20),
+                  if (inquiries.isEmpty) {
+                    return const Center(child: Text('No inquiries found.'));
+                  }
 
-            // Expanded list of inquiries
-            Expanded(
-              child: FutureBuilder<List<Map<String, dynamic>>>(
-                future: fetchInquiries(widget.userId, widget.token), // Fetch inquiries
-                builder: (context, snapshot) {
-                  if (snapshot.connectionState == ConnectionState.waiting) {
-                    return const Center(child: CircularProgressIndicator());
-                  } else if (snapshot.hasError) {
-                    print('Error fetching inquiries: ${snapshot.error}'); // Debugging line
-                    return Center(child: Text('Error: ${snapshot.error}'));
-                  } else if (snapshot.hasData && snapshot.data != null) {
-                    final inquiries = snapshot.data!;
+                  return ListView.builder(
+                    physics: const NeverScrollableScrollPhysics(),
+                    shrinkWrap: true,
+                    itemCount: inquiries.length,
+                    itemBuilder: (context, index) {
+                      final inquiry = inquiries[index];
+                      final roomDetails = inquiry['roomId'];
 
-                    if (inquiries.isEmpty) {
-                      print('No inquiries found'); // Debugging line
-                      return const Center(child: Text('No inquiries found.'));
-                    }
+                      if (roomDetails == null) {
+                        return const Center(child: Text('Invalid room information.'));
+                      }
 
-                    return GridView.builder(
-                      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                        crossAxisCount: 1,
-                        crossAxisSpacing: 16,
-                        mainAxisSpacing: 16,
-                        childAspectRatio: 1.2, // Adjusted for card size with image
-                      ),
-                      itemCount: inquiries.length, // Adjusted for dynamic inquiries
-                      itemBuilder: (context, index) {
-                        final inquiry = inquiries[index];
-                        final roomDetails = inquiry['roomId']; // roomId now contains room details
+                      final String? roomPhotoUrl = roomDetails['photo1'] ??
+                          roomDetails['photo2'] ??
+                          roomDetails['photo3'];
+                      final String defaultPhoto = 'https://via.placeholder.com/150';
 
-                        if (roomDetails == null) {
-                          print('Error: roomDetails is null for inquiry: $inquiry'); // Debugging line
-                          return const Center(child: Text('Invalid room information.'));
-                        }
-
-                        // Select the first available photo from photo1, photo2, or photo3
-                        final String? roomPhotoUrl = roomDetails['photo1'] ?? roomDetails['photo2'] ?? roomDetails['photo3'];
-                        final String defaultPhoto = 'https://via.placeholder.com/150'; // Placeholder image
-
-                        return Card(
-                          color: Colors.grey[850],
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
+                      return Padding(
+                        padding: const EdgeInsets.all(8.0),
+                        child: ShadCard(
+                          backgroundColor: _themeController.isDarkMode.value? Color.fromARGB(255, 36, 38, 43): Colors.grey,
+                          border: Border(),
+                          width: 350,
+                          
+                          title: Text(
+                            'Room: ${roomDetails['roomNumber']}',
+                            style: TextStyle(
+                              fontFamily: 'GeistSans',
+                            ),
+                          ),
+                          description: Text(
+                            'Request Status: ${inquiry['status']}\nPrice: ₱${roomDetails['price']}',
+                            style: TextStyle(
+                              fontFamily: 'GeistSans'
+                            ),
                           ),
                           child: Padding(
-                            padding: const EdgeInsets.all(16.0),
+                            padding: const EdgeInsets.symmetric(vertical: 16),
                             child: Column(
-                              mainAxisAlignment: MainAxisAlignment.start,
+                              mainAxisSize: MainAxisSize.min,
+                              crossAxisAlignment: CrossAxisAlignment.stretch,
                               children: [
-                                Icon(Icons.pending_actions, size: 40, color: Colors.purpleAccent),
-                                const SizedBox(height: 8),
-                                Text(
-                                  'Request Status: ${inquiry['status']}',
-                                  style: const TextStyle(fontSize: 16, color: Colors.white, fontWeight: FontWeight.bold),
-                                ),
-                                const SizedBox(height: 8),
-                                Text(
-                                  'Room: ${roomDetails['roomNumber']}',
-                                  style: TextStyle(color: Colors.grey[400]),
-                                ),
-                                Text(
-                                  'Price: ₱${roomDetails['price']}',
-                                  style: TextStyle(color: Colors.grey[400]),
-                                ),
-                                const SizedBox(height: 8),
-                                // Display the room photo at the bottom
                                 Image.network(
                                   roomPhotoUrl ?? defaultPhoto,
                                   fit: BoxFit.cover,
-                                  height: 100, // Fixed height for the image
-                                  width: double.infinity, // Takes up the card's width
+                                  height: 150,
+                                  width: 300,
                                   errorBuilder: (context, error, stackTrace) {
-                                    return const Icon(Icons.error, color: Colors.red);
+                                    return const Icon(Icons.error,
+                                        color: Color.fromARGB(255, 190, 5, 51));
                                   },
+                                ),
+                                const SizedBox(height: 16),
+                                Text(
+                                  'Request Type: ${inquiry['requestType']}',
+                                  style: const TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.bold,
+                                  ),
                                 ),
                               ],
                             ),
                           ),
-                        );
-                      },
-                    );
-                  } else {
-                    return const Center(child: Text('No inquiries found.'));
-                  }
-                },
-              ),
+                          
+                          footer: inquiry['status'] == 'pending'
+                              ? Row(
+                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    ShadButton.outline(
+                                      backgroundColor: _themeController.isDarkMode.value? Colors.white: Color.fromARGB(255, 10, 0, 40),
+                                      child: Text('Cancel',
+                                      style: TextStyle(
+                                        color: _themeController.isDarkMode.value 
+                                          ? Colors.black 
+                                          : Colors.white,
+                                      ),),
+                                      onPressed: () async {
+                                        final confirmCancel = await showCupertinoDialog<bool>(
+                                          context: context,
+                                          builder: (context) => CupertinoAlertDialog(
+                                            title: const Text('Cancel Reservation'),
+                                            content: const Text(
+                                                'Are you sure you want to cancel this reservation?'),
+                                            actions: [
+                                              CupertinoDialogAction(
+                                                onPressed: () => Navigator.pop(context, false),
+                                                child: const Text('No'),
+                                              ),
+                                              CupertinoDialogAction(
+                                                onPressed: () => Navigator.pop(context, true),
+                                                isDestructiveAction: true,
+                                                child: const Text('Yes'),
+                                              ),
+                                            ],
+                                          ),
+                                        );
+                        
+                                        if (confirmCancel == true) {
+                                          final cancelResponse = await http.delete(
+                                            Uri.parse(
+                                                'http://192.168.1.13:3000/inquiries/delete/${inquiry['_id']}'),
+                                            headers: {
+                                              'Authorization': 'Bearer ${widget.token}',
+                                            },
+                                          );
+                        
+                                          if (cancelResponse.statusCode == 200) {
+                                            Fluttertoast.showToast(
+                                              msg: 'Request canceled successfully',
+                                              backgroundColor: Colors.green,
+                                              textColor: Colors.white,
+                                            );
+                                            setState(() {});
+                                          } else {
+                                            Fluttertoast.showToast(
+                                              msg: 'Failed to cancel request',
+                                              backgroundColor: Colors.red,
+                                              textColor: Colors.white,
+                                            );
+                                          }
+                                        }
+                                      },
+                                    ),
+                                    // ShadButton(
+                                    //   child: const Text('Deploy'),
+                                    //   onPressed: () {
+                                    //     // Action for deploying
+                                    //   },
+                                    // ),
+                                  ],
+                                  
+                                )
+                                
+                              : null,
+                              
+                        ),
+                      );
+                    },
+                  );
+                } else {
+                  return const Center(child: Text('No inquiries found.'));
+                }
+              },
             ),
           ],
         ),
+        
       ),
-    );
-  }
+    ),
+  );
+}
+
+
 }

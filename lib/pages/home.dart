@@ -1,14 +1,17 @@
 import 'dart:convert';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:get/get.dart';
 import 'package:http/http.dart' as http;
 import 'package:jwt_decoder/jwt_decoder.dart';
 import 'package:rentcon/config.dart';
+import 'package:rentcon/pages/components/notification_stream.dart';
 import 'package:rentcon/pages/components/property_card.dart';
 import 'package:rentcon/pages/components/rangeSlider.dart';
 import 'package:rentcon/pages/components/searchField.dart';
 import 'package:rentcon/pages/components/setupProfileButton.dart';
+import 'package:rentcon/pages/components/shadNotif.dart';
 import 'package:rentcon/pages/components/showFilterDialog.dart';
 import 'package:rentcon/pages/fullscreenImage.dart';
 import 'package:rentcon/navigation_menu.dart';
@@ -17,6 +20,8 @@ import 'package:rentcon/pages/landlords/current_listing.dart';
 import 'package:rentcon/pages/occupants/occupant_inquiries.dart';
 import 'package:rentcon/pages/propertyDetailPage.dart';
 import 'package:rentcon/pages/search_result.dart';
+import 'package:rentcon/pages/services/socket_service.dart';
+import 'package:shadcn_ui/shadcn_ui.dart';
 import 'toast.dart';
 import 'package:rentcon/theme_controller.dart';
 import '../models/property.dart';
@@ -32,6 +37,7 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
+
   late String email;
   late String userId;
   late Future<List<Property>> propertiesFuture;
@@ -46,8 +52,9 @@ class _HomePageState extends State<HomePage> {
   RangeValues _currentRange = RangeValues(100, 500); // Default range
   bool isFilterApplied = false; // Tracks if the filter is applied
 
-  List<dynamic> notifications = [];
 
+  List<dynamic> notifications = [];
+  
   late TextEditingController _searchController;
   final TextEditingController _minPriceController = TextEditingController();
   final TextEditingController _maxPriceController = TextEditingController();
@@ -56,7 +63,8 @@ class _HomePageState extends State<HomePage> {
   @override
   void initState() {
     super.initState();
-
+     
+    // Set up a listener for notifications
     _searchController = TextEditingController();
     ftoast = FToast(); // Initialize FToast
     ftoast.init(context);
@@ -73,6 +81,31 @@ class _HomePageState extends State<HomePage> {
       });
     });
     fetchUserProfileStatus();
+    // Connect
+    
+  }
+Stream<List<dynamic>> notificationStream = NotificationStream().stream.cast<List<dynamic>>();
+
+
+
+    void _showNewNotificationDialog(dynamic notificationData) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text('New Notification'),
+          content: Text('You have a new inquiry: ${notificationData['message']}'),
+          actions: <Widget>[
+            TextButton(
+              child: Text('Close'),
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+            ),
+          ],
+        );
+      },
+    );
   }
 
   @override
@@ -80,12 +113,19 @@ class _HomePageState extends State<HomePage> {
     _searchController.dispose();
     _minPriceController.dispose();
     _maxPriceController.dispose();
+  
     super.dispose();
   }
 
+
+
+
+
+
+
   Future<void> fetchUserProfileStatus() async {
     final url = Uri.parse(
-        'https://rentconnect-backend-nodejs.onrender.com/profile/checkProfileCompletion/$userId'); // Replace with your API endpoint
+        'http://192.168.1.13:3000/profile/checkProfileCompletion/$userId'); // Replace with your API endpoint
     try {
       final response = await http.get(
         url,
@@ -113,7 +153,7 @@ class _HomePageState extends State<HomePage> {
 
   Future<void> fetchUserProfileStatusForNotification() async {
     final url = Uri.parse(
-        'https://rentconnect-backend-nodejs.onrender.com/profile/checkProfileCompletion/$userId'); // Your API endpoint
+        'http://192.168.1.13:3000/profile/checkProfileCompletion/$userId'); // Your API endpoint
     try {
       final response = await http.get(
         url,
@@ -184,7 +224,7 @@ class _HomePageState extends State<HomePage> {
   Future<List<dynamic>> fetchRooms(String propertyId) async {
     try {
       final response = await http.get(Uri.parse(
-          'https://rentconnect-backend-nodejs.onrender.com/rooms/properties/$propertyId/rooms'));
+          'http://192.168.1.13:3000/rooms/properties/$propertyId/rooms'));
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         if (data['status']) {
@@ -196,6 +236,8 @@ class _HomePageState extends State<HomePage> {
     }
     return []; // Return an empty list if an error occurs or no rooms are found
   }
+
+
 
   Future<List<Property>> filterProperties(List<Property> properties) async {
     double? minPrice = double.tryParse(_minPriceController.text);
@@ -259,7 +301,7 @@ class _HomePageState extends State<HomePage> {
     try {
       final response = await http.get(
         Uri.parse(
-            'https://rentconnect-backend-nodejs.onrender.com/getUserBookmarks/$userId'), // Adjust endpoint if necessary
+            'http://192.168.1.13:3000/getUserBookmarks/$userId'), // Adjust endpoint if necessary
         headers: {
           'Authorization': 'Bearer ${widget.token}',
         },
@@ -278,11 +320,14 @@ class _HomePageState extends State<HomePage> {
     }
   }
 
+
+
+
   // Fetch user email from API
   Future<String> fetchUserEmail(String userId) async {
     try {
       final response = await http.get(Uri.parse(
-          'https://rentconnect-backend-nodejs.onrender.com/getUserEmail/$userId'));
+          'http://192.168.1.13:3000/getUserEmail/$userId'));
 
       if (response.statusCode == 200) {
         final Map<String, dynamic> json = jsonDecode(response.body);
@@ -302,19 +347,18 @@ class _HomePageState extends State<HomePage> {
     });
   }
 
-// Function to bookmark a property
+
+
+
   Future<void> bookmarkProperty(String propertyId) async {
-    final url = Uri.parse(
-        'https://rentconnect-backend-nodejs.onrender.com/addBookmark');
-    final Map<String, dynamic> jwtDecodedToken =
-        JwtDecoder.decode(widget.token);
+    final url = Uri.parse('http://192.168.1.13:3000/addBookmark');
+    final Map<String, dynamic> jwtDecodedToken = JwtDecoder.decode(widget.token);
     String userId = jwtDecodedToken['_id']?.toString() ?? 'Unknown user ID';
 
     try {
       if (bookmarkedPropertyIds.contains(propertyId)) {
         // If already bookmarked, remove it
-        final removeUrl = Uri.parse(
-            'https://rentconnect-backend-nodejs.onrender.com/removeBookmark');
+        final removeUrl = Uri.parse('http://192.168.1.13:3000/removeBookmark');
         await http.post(removeUrl,
             headers: {
               'Authorization': 'Bearer ${widget.token}',
@@ -332,8 +376,8 @@ class _HomePageState extends State<HomePage> {
               .toList();
         });
 
-        // Show custom toast for removal
-        toast.warn('Property removed from bookmarks!');
+        // Show Cupertino alert for removal
+        _showCupertinoAlertDialog('Property removed from bookmarks!');
       } else {
         // If not bookmarked, add it
         await http.post(url,
@@ -350,18 +394,41 @@ class _HomePageState extends State<HomePage> {
           bookmarkedPropertyIds.add(propertyId); // Update local state
         });
 
-        // Show custom toast for addition
-        toast.success('Property added to bookmarks!');
+        // Show Cupertino alert for addition
+        _showCupertinoAlertDialog('Property added to bookmarks!');
       }
 
       // Refresh properties to reflect changes immediately
       await _refreshProperties();
     } catch (error) {
       print('Error toggling bookmark: $error');
-      // Show error message with a custom toast
-      toast.error('Failed to toggle bookmark');
+      // Show error message with a custom Cupertino alert
+      _showCupertinoAlertDialog('Failed to toggle bookmark');
     }
   }
+
+  // Function to show Cupertino alert dialog
+  void _showCupertinoAlertDialog(String message) {
+    showCupertinoDialog(
+      context: context,
+      builder: (context) {
+        return CupertinoAlertDialog(
+          title: const Text('Notification'),
+          content: Text(message),
+          actions: <Widget>[
+            CupertinoDialogAction(
+              onPressed: () {
+                Navigator.of(context).pop(); // Close the dialog
+              },
+              isDefaultAction: true,
+              child: const Text('OK'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
 
   void _performSearch() async {
     final query = _searchController.text;
@@ -374,6 +441,11 @@ class _HomePageState extends State<HomePage> {
         context,
         MaterialPageRoute(
           builder: (context) => SearchResultPage(
+            userEmail: email,
+            userRole: userRole,
+            profileStatus: profileStatus,
+            token: widget.token,
+            userId: userId,
             query: query,
             properties: matchingProperties,
           ),
@@ -433,7 +505,7 @@ class _HomePageState extends State<HomePage> {
     try {
       final response = await http.get(
         Uri.parse(
-            'https://rentconnect-backend-nodejs.onrender.com/notification/unread/$userId'),
+            'http://192.168.1.13:3000/notification/unread/$userId'),
         headers: {
           'Authorization': 'Bearer $token',
           'Content-Type': 'application/json',
@@ -467,55 +539,47 @@ class _HomePageState extends State<HomePage> {
     }
   }
 
-  void _showNotificationsModal(List<dynamic> notifications) {
-    showModalBottomSheet(
-      context: context,
-      builder: (BuildContext context) {
-        return Column(
-          children: [
-            if (notifications.isEmpty)
-              Center(child: Text('No notifications available.'))
-            else
-              Expanded(
-                child: ListView.builder(
-                  itemCount: notifications.length,
-                  itemBuilder: (context, index) {
-                    final notification = notifications[index];
-                    final status = notification['status'] ??
-                        'No status available'; // Handle null status
+void _showNotificationsModal(List<dynamic> notifications) {
+  showCupertinoModalPopup(
+    context: context,
+    builder: (BuildContext context) {
+      // Get the current theme's brightness
+      final isDarkMode = _themeController.isDarkMode.value;
 
-                    return ListTile(
-                      title: Text(notification['message'] ??
-                          'No message available'), // Handle null message
-                      subtitle: Text('Status: $status'),
-                      onTap: () {
-                        // Optionally mark as read when tapped
-                        if (status == 'unread') {
-                          _markNotificationAsRead(notification['_id']);
-                        }
-                      },
-                    );
+      return CupertinoActionSheet(
+        title: const Text('Notifications'),
+        message: notifications.isEmpty
+            ? const Text('No notifications available.')
+            : null,
+        actions: notifications.isNotEmpty
+            ? notifications.map((notification) {
+                final status = notification['status'] ?? 'No status available';
+
+                return CupertinoActionSheetAction(
+                  onPressed: () {
+                    // Optionally mark as read when tapped
+                    if (status == 'unread') {
+                      _markNotificationAsRead(notification['_id']);
+                    }
+                    Navigator.pop(context); // Close the modal
                   },
-                ),
-              ),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              children: [
-                ElevatedButton(
-                  onPressed: _markAllAsRead,
-                  child: Text('Mark All as Read'),
-                ),
-                ElevatedButton(
-                  onPressed: _clearNotifications,
-                  child: Text('Clear All'),
-                ),
-              ],
-            ),
-          ],
-        );
-      },
-    );
-  }
+                  child: Text(notification['message'] ?? 'No message available'),
+                );
+              }).toList()
+            : [],
+        cancelButton: CupertinoActionSheetAction(
+          onPressed: () {
+            Navigator.pop(context); // Close the modal
+          },
+          isDefaultAction: true,
+          child: const Text('Close'),
+        ),
+      );
+    },
+  );
+}
+
+
 
   Future<void> _markAllAsRead() async {
     setState(() {
@@ -535,7 +599,7 @@ class _HomePageState extends State<HomePage> {
     try {
       final response = await http.delete(
         Uri.parse(
-            'https://rentconnect-backend-nodejs.onrender.com/notification/clear/$userId'),
+            'http://192.168.1.13:3000/notification/clear/$userId'),
         headers: {
           'Authorization': 'Bearer ${widget.token}',
         },
@@ -558,7 +622,7 @@ class _HomePageState extends State<HomePage> {
   Future<void> _markNotificationAsRead(String notificationId) async {
     final response = await http.patch(
       Uri.parse(
-          'https://rentconnect-backend-nodejs.onrender.com/notification/$notificationId/read'),
+          'http://192.168.1.13:3000/notification/$notificationId/read'),
       headers: {
         'Authorization': 'Bearer ${widget.token}',
         'Content-Type': 'application/json',
@@ -572,7 +636,7 @@ class _HomePageState extends State<HomePage> {
     }
   }
 
-  @override
+ @override
   Widget build(BuildContext context) {
     print('Notifications fetched: ${notifications}');
     ftoast = FToast();
@@ -582,34 +646,34 @@ class _HomePageState extends State<HomePage> {
 
     return Scaffold(
       backgroundColor: _themeController.isDarkMode.value
-          ? Color.fromARGB(255, 28, 29, 34) // 67, 66, 73
+          ? Color.fromARGB(255, 28, 29, 34)
           : Color.fromRGBO(255, 255, 255, 1),
       body: Padding(
         padding: EdgeInsets.symmetric(horizontal: 10.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            SizedBox(height: 27),
+            SizedBox(height: 35),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
                 Padding(
-                  padding: const EdgeInsets.fromLTRB(15,0,0,0),
+                  padding: const EdgeInsets.fromLTRB(15, 0, 0, 0),
                   child: Text(
                     "Home",
                     style: TextStyle(
                       fontSize: 20.0,
-                      fontWeight: FontWeight.w600,
+                      fontWeight: FontWeight.w800,
                       fontFamily: 'Poppins',
                       color: _themeController.isDarkMode.value
                           ? Colors.white
-                          : Colors.black,
+                          : const Color.fromARGB(255, 10, 0, 40),
                     ),
                   ),
                 ),
                 profileStatus == null
-                    ? GlobalLoadingIndicator() // Show loading spinner until status is fetched
+                    ? GlobalLoadingIndicator()
                     : profileStatus == 'none'
                         ? Setupprofilebutton(
                             token: widget.token,
@@ -617,50 +681,53 @@ class _HomePageState extends State<HomePage> {
                         : SizedBox.shrink(),
                 Row(
                   children: [
-                    // Conditionally display either house or listing icon
                     profileStatus == 'approved' && userRole == 'occupant'
-                        ? IconButton(
-                            onPressed: () {
-                              Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                      builder: (context) => OccupantInquiries(
-                                          userId: userId,
-                                          token: widget.token)));
-                            },
-                            icon: SvgPicture.asset(
-                              'assets/icons/coloredhome.svg',
-                              // House icon for occupant
-
-                              height: 24,
+                        ? ShadTooltip(
+                           builder: (context) => const Text('See your inquiries'),
+                          child: IconButton(
+                              onPressed: () {
+                                Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                        builder: (context) => OccupantInquiries(
+                                            userId: userId, token: widget.token)));
+                              },
+                              icon: SvgPicture.asset(
+                                'assets/icons/occupanthome.svg',
+                                color: _themeController.isDarkMode.value
+                                    ? const Color.fromARGB(255, 255, 255, 255)
+                                    : const Color.fromARGB(255, 10, 0, 40),
+                                height: 24,
+                              ),
                             ),
-                          )
+                        )
                         : profileStatus == 'approved' && userRole == 'landlord'
-                            ? IconButton(
-                                onPressed: () {
-                                  Navigator.push(
-                                      context,
-                                      MaterialPageRoute(
-                                          builder: (context) =>
-                                              CurrentListingPage(
-                                                  token: widget.token)));
-                                },
-                                icon: SvgPicture.asset(
-                                  'assets/icons/listing.svg', // Listing icon for landlord
-                                  color: _themeController.isDarkMode.value
-                                      ? const Color.fromARGB(255, 255, 255, 255)
-                                      : Colors.black,
-                                  height: 24,
+                            ? ShadTooltip(
+                               builder: (context) => const Text('See Your Listing'),
+                              child: IconButton(
+                                  onPressed: () {
+                                    Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                            builder: (context) => CurrentListingPage(
+                                                token: widget.token)));
+                                  },
+                                  icon: SvgPicture.asset(
+                                    'assets/icons/listing2.svg',
+                                    color: _themeController.isDarkMode.value
+                                        ? const Color.fromARGB(255, 255, 255, 255)
+                                        : const Color.fromARGB(255, 10, 0, 40),
+                                    height: 24,
+                                  ),
                                 ),
-                              )
+                            )
                             : SizedBox.shrink(),
-                    // Notification Icon with Badge
-                    Padding(
+                     Padding(
                       padding: EdgeInsets.fromLTRB(0, 0, 10, 0),
                       child: SizedBox( height: 37, width: 38,
                         child: DecoratedBox(
                           decoration: BoxDecoration(
-                           color: _themeController.isDarkMode.value? const Color.fromARGB(139, 75, 76, 97) :const Color.fromARGB(255, 56, 56, 56) ,
+                           color: _themeController.isDarkMode.value? const Color.fromARGB(139, 75, 76, 97) :const Color.fromARGB(255, 10, 0, 40) ,
                             borderRadius: BorderRadius.circular(10)
                           ),
                           child: FutureBuilder<List<dynamic>>(
@@ -695,19 +762,35 @@ class _HomePageState extends State<HomePage> {
                                 return Stack(
                                   children: [
                                     IconButton(
-                                      onPressed: () {
-                                        _showNotificationsModal(notifications);
-                                      },
-                                      icon: SvgPicture.asset(
-                                        'assets/icons/bell3.svg',
-                                        color: _themeController.isDarkMode.value
-                                            ? const Color.fromARGB(
-                                                255, 255, 255, 255)
-                                            : const Color.fromARGB(255, 255, 255, 255),
-                                        height: 24,
-                                        width: 24,
-                                      ),
+                                    onPressed: () {
+                                      showDialog(
+                                        context: context,
+                                        builder: (BuildContext context) {
+                                          return Dialog(
+                                            shape: RoundedRectangleBorder(
+                                              borderRadius: BorderRadius.circular(16),
+                                            ),
+                                            child: SizedBox(
+                                              width: 380,
+                                              child: CardNotifications(
+                                                userId: userId,
+                                                token: widget.token,
+                                              ),
+                                            ),
+                                          );
+                                        },
+                                      );
+                                    },
+                                    icon: SvgPicture.asset(
+                                      'assets/icons/bell3.svg',
+                                      color: _themeController.isDarkMode.value
+                                          ? const Color.fromARGB(255, 255, 255, 255)
+                                          : const Color.fromARGB(255, 255, 255, 255),
+                                      height: 24,
+                                      width: 24,
                                     ),
+                                  ),
+
                                     if (hasNewNotifications) // Check if there are new notifications
                                       Positioned(
                                         right: 4,
@@ -739,128 +822,124 @@ class _HomePageState extends State<HomePage> {
                 ),
               ],
             ),
-            SizedBox(height: 1),
-            SearchFieldWidget(
-              searchController: _searchController,
-              isDarkMode: _themeController.isDarkMode.value,
-              handleSearch: _handleSearch,
-              performSearch: _performSearch,
-              showFilterDialog: () {
-                showDialog(
-                  context: context,
-                  builder: (BuildContext context) {
-                    return FilterDialog(
-                      minPriceController: _minPriceController,
-                      maxPriceController: _maxPriceController,
-                      applyFilters: _applyFilters,
-                      initialRange: RangeValues(
-                        double.tryParse(_minPriceController.text) ?? 0.0,
-                        double.tryParse(_maxPriceController.text) ?? 10000.0,
-                      ),
-                      clearFilters: () {
-                        _minPriceController.text = '0';
-                        _maxPriceController.text = '10000';
-                        // Notify the dialog of the cleared filters
-                        setState(() {
-                          isFilterApplied =
-                              false; // Assuming you have this state to reflect the filter status
-                        });
+          SizedBox(height: 1),
+          SearchFieldWidget(
+            searchController: _searchController,
+            isDarkMode: _themeController.isDarkMode.value,
+            handleSearch: _handleSearch,
+            performSearch: _performSearch,
+            showFilterDialog: () {
+              showDialog(
+                context: context,
+                builder: (BuildContext context) {
+                  return FilterDialog(
+                    minPriceController: _minPriceController,
+                    maxPriceController: _maxPriceController,
+                    applyFilters: _applyFilters,
+                    initialRange: RangeValues(
+                      double.tryParse(_minPriceController.text) ?? 0.0,
+                      double.tryParse(_maxPriceController.text) ?? 10000.0,
+                    ),
+                    clearFilters: () {
+                      _minPriceController.text = '0';
+                      _maxPriceController.text = '10000';
+                      setState(() {
+                        isFilterApplied = false;
+                      });
+                    },
+                  );
+                },
+              );
+            },
+            isFilterApplied: isFilterApplied,
+          ),
+          SizedBox(height: 1),
+          Expanded(
+            child: RefreshIndicator(
+              onRefresh: _refreshProperties,
+              child: FutureBuilder<List<Property>>(
+                future: propertiesFuture,
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return GlobalLoadingIndicator();
+                  } else if (snapshot.hasError) {
+                    return Center(child: Text('Error: ${snapshot.error}'));
+                  } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
+                    return Center(child: Text('No properties available.'));
+                  } else {
+                    final properties = searchQuery.isEmpty
+                        ? snapshot.data!
+                        : filteredProperties;
+
+                    return ListView.builder(
+                      itemCount: properties.length,
+                      itemBuilder: (context, index) {
+                        final property = properties[index];
+                        final imageUrl = property.photo.startsWith('http')
+                            ? property.photo
+                            : 'http://192.168.1.13:3000/${property.photo}';
+
+                        return FutureBuilder<List<dynamic>>(
+                          future: fetchRooms(property.id),
+                          builder: (context, roomsSnapshot) {
+                            if (roomsSnapshot.connectionState ==
+                                ConnectionState.waiting) {
+                              return SizedBox.shrink();
+                            } else if (roomsSnapshot.hasError ||
+                                !roomsSnapshot.hasData) {
+                              return Center(child: Text('No rooms available.'));
+                            }
+                            final rooms = roomsSnapshot.data!;
+                            final priceRange = rooms.isNotEmpty
+                                ? '${rooms.map((r) => r['price']).reduce((a, b) => a < b ? a : b)} - ${rooms.map((r) => r['price']).reduce((a, b) => a > b ? a : b)}'
+                                : 'N/A';
+                            return FutureBuilder<String>(
+                              future: fetchUserEmail(property.userId),
+                              builder: (context, userSnapshot) {
+                                if (userSnapshot.connectionState ==
+                                    ConnectionState.waiting) {
+                                  return SizedBox.shrink();
+                                } else if (userSnapshot.hasError) {
+                                  return Center(
+                                      child: Text(
+                                          'Error: ${userSnapshot.error}'));
+                                } else if (!userSnapshot.hasData ||
+                                    userSnapshot.data!.isEmpty) {
+                                  return Center(
+                                      child: Text('No user email found.'));
+                                } else {
+                                  final userEmail = userSnapshot.data!;
+                                  return PropertyCard(
+                                    userId: userId,
+                                    token: widget.token,
+                                    property: property,
+                                    userEmail: userEmail,
+                                    imageUrl: imageUrl,
+                                    bookmarkedPropertyIds:
+                                        bookmarkedPropertyIds,
+                                    bookmarkProperty: bookmarkProperty,
+                                    priceRange: priceRange,
+                                    isDarkMode:
+                                        _themeController.isDarkMode.value,
+                                  );
+                                }
+                              },
+                            );
+                          },
+                        );
                       },
                     );
-                  },
-                );
-              },
-              isFilterApplied: isFilterApplied,
-            ),
-            SizedBox(height: 10),
-            Expanded(
-              child: RefreshIndicator(
-                onRefresh: _refreshProperties,
-                child: FutureBuilder<List<Property>>(
-                  future: propertiesFuture,
-                  builder: (context, snapshot) {
-                    if (snapshot.connectionState == ConnectionState.waiting) {
-                      return GlobalLoadingIndicator();
-                    } else if (snapshot.hasError) {
-                      return Center(child: Text('Error: ${snapshot.error}'));
-                    } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
-                      return Center(child: Text('No properties available.'));
-                    } else {
-                      final properties = searchQuery.isEmpty
-                          ? snapshot.data!
-                          : filteredProperties;
-
-                      return ListView.builder(
-                        itemCount: properties.length,
-                        itemBuilder: (context, index) {
-                          final property = properties[index];
-                          final imageUrl = property.photo.startsWith('http')
-                              ? property.photo
-                              : 'https://rentconnect-backend-nodejs.onrender.com/${property.photo}';
-
-                          return FutureBuilder<List<dynamic>>(
-                            future: fetchRooms(property.id),
-                            builder: (context, roomsSnapshot) {
-                              if (roomsSnapshot.connectionState ==
-                                  ConnectionState.waiting) {
-                                return SizedBox
-                                    .shrink(); // Just return an empty widget here
-                              } else if (roomsSnapshot.hasError ||
-                                  !roomsSnapshot.hasData) {
-                                return Center(
-                                    child: Text('No rooms available.'));
-                              }
-                              final rooms = roomsSnapshot.data!;
-                              final priceRange = rooms.isNotEmpty
-                                  ? '${rooms.map((r) => r['price']).reduce((a, b) => a < b ? a : b)} - ${rooms.map((r) => r['price']).reduce((a, b) => a > b ? a : b)}'
-                                  : 'N/A';
-                              return FutureBuilder<String>(
-                                future: fetchUserEmail(property.userId),
-                                builder: (context, userSnapshot) {
-                                  if (userSnapshot.connectionState ==
-                                      ConnectionState.waiting) {
-                                    return SizedBox
-                                        .shrink(); // Just return an empty widget here
-                                  } else if (userSnapshot.hasError) {
-                                    return Center(
-                                        child: Text(
-                                            'Error: ${userSnapshot.error}'));
-                                  } else if (!userSnapshot.hasData ||
-                                      userSnapshot.data!.isEmpty) {
-                                    return Center(
-                                        child: Text('No user email found.'));
-                                  } else {
-                                    final userEmail = userSnapshot.data!;
-                                    return PropertyCard(
-                                      userId: userId,
-                                      token: widget.token,
-                                      property: property,
-                                      userEmail: userEmail,
-                                      imageUrl: imageUrl,
-                                      bookmarkedPropertyIds:
-                                          bookmarkedPropertyIds,
-                                      bookmarkProperty: bookmarkProperty,
-                                      priceRange: priceRange,
-                                      isDarkMode:
-                                          _themeController.isDarkMode.value,
-                                    );
-                                  }
-                                },
-                              );
-                            },
-                          );
-                        },
-                      );
-                    }
-                  },
-                ),
+                  }
+                },
               ),
             ),
-          ],
-        ),
+          ),
+        ],
       ),
-    );
-  }
+    ),
+  );
+}
+
 }
 
 // Controller for the search field

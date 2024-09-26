@@ -4,6 +4,7 @@ import 'package:get/get.dart';
 import 'package:jwt_decoder/jwt_decoder.dart';
 import 'package:line_awesome_flutter/line_awesome_flutter.dart';
 import 'package:rentcon/pages/about.dart';
+import 'package:rentcon/pages/account_settings.dart';
 import 'package:rentcon/pages/global_loading_indicator.dart';
 import 'package:rentcon/pages/landlords/current_listing.dart';
 import 'package:rentcon/pages/login.dart';
@@ -76,7 +77,7 @@ fetchUserProfileStatus();
 
   Future<void> _fetchUserProfile() async {
     final url = Uri.parse(
-        'https://rentconnect-backend-nodejs.onrender.com/user/$userId'); // Adjust the endpoint if needed
+        'http://192.168.1.13:3000/user/$userId'); // Adjust the endpoint if needed
     try {
       final response = await http
           .get(url, headers: {'Authorization': 'Bearer ${widget.token}'});
@@ -96,7 +97,7 @@ fetchUserProfileStatus();
 
 
   Future<void> fetchUserProfileStatus() async {
-  final url = Uri.parse('https://rentconnect-backend-nodejs.onrender.com/profile/checkProfileCompletion/$userId'); // Replace with your API endpoint
+  final url = Uri.parse('http://192.168.1.13:3000/profile/checkProfileCompletion/$userId'); // Replace with your API endpoint
   try {
     final response = await http.get(
       url,
@@ -118,23 +119,31 @@ fetchUserProfileStatus();
   }
 }
 
-
-  Future<void> _logout() async {
-  final prefs = await SharedPreferences.getInstance();
+Future<void> _logout() async {
+  SharedPreferences prefs = await SharedPreferences.getInstance();
   
   // Clear all relevant user data
-  await prefs.remove('token'); // Remove token
-  // Add other data removal if necessary, e.g., user info, settings
+  await prefs.clear(); // Use clear to remove all stored data
 
-  print('Logged out, token removed from SharedPreferences');
+  // You can also clear specific values if needed:
+   await prefs.remove('token'); 
+   await prefs.remove('userId');
+   await prefs.remove('email');
+  
+  print('Logged out, all session data removed from SharedPreferences');
 
-  // Ensure the navigation stack is cleared and user is redirected to login page
+  // If your app has any in-memory user/session data, make sure to reset them here
+  // For example:
+  // themeController.reset();  // Reset any in-memory state (e.g., theme, user settings)
+
+  // Ensure the navigation stack is cleared and user is redirected to the login page
   Navigator.pushAndRemoveUntil(
     context,
     MaterialPageRoute(builder: (context) => LoginPage()), // Replace with your actual login page widget
-    (route) => false, // Remove all other routes
+    (route) => false, // Remove all other routes to ensure no back navigation
   );
 }
+
 
 
   Future<void> _pickImage() async {
@@ -154,7 +163,7 @@ fetchUserProfileStatus();
   Future<void> _uploadProfilePicture() async {
     if (_profileImage != null) {
       final url =
-          Uri.parse('https://rentconnect-backend-nodejs.onrender.com/updateProfilePicture/$userId');
+          Uri.parse('http://192.168.1.13:3000/updateProfilePicture/$userId');
       var request = http.MultipartRequest('PATCH', url)
         ..headers['Authorization'] = 'Bearer ${widget.token}';
 
@@ -231,12 +240,6 @@ void _refreshProfile() async {
   });
 }
 
-Future<void> fetchProfileData() async {
-  // Simulate network delay
-  await Future.delayed(Duration(seconds: 2));
-  
-  // Fetch your data here
-}
 
 
 
@@ -254,24 +257,36 @@ Widget build(BuildContext context) {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
+                SizedBox(height: 10,),
                 // Dark mode toggle icon placed at the top-right corner
                 Align(
-                  alignment: Alignment.topRight,
-                  child: IconButton(
-                    icon: Icon(
-                      themeController.isDarkMode.value
-                          ? Icons.nights_stay_outlined
-                          : Icons.wb_sunny_outlined, // Moon for dark mode, sun for light mode
-                      color: themeController.isDarkMode.value
-                          ? const Color.fromARGB(255, 108, 151, 245)
-                          : const Color.fromARGB(255, 214, 182, 38),
+                    alignment: Alignment.topRight,
+                    child: Transform.scale(
+                      scale: 0.8, // Adjust the scale to match iOS switch size
+                      child: Switch(
+                        value: themeController.isDarkMode.value, // Reflect current mode
+                        onChanged: (bool value) {
+                          themeController.toggleTheme(value); // Toggle dark/light mode
+                        },
+                        activeColor: const Color.fromARGB(255, 108, 151, 245), // Active thumb color for dark mode
+                        inactiveThumbColor: const Color.fromARGB(255, 214, 182, 38), // Thumb color for light mode
+
+                        // Set thumbIcon property using your WidgetStateProperty for custom icon behavior
+                        thumbIcon: WidgetStateProperty.resolveWith<Icon?>(
+                          (Set<WidgetState> states) {
+                            if (states.contains(WidgetState.selected)) {
+                              return const Icon(Icons.nights_stay, color: Colors.black,); // Moon icon for dark mode
+                            }
+                            return const Icon(Icons.wb_sunny); // Sun icon for light mode
+                          },
+                        ),
+
+                        activeTrackColor: Colors.blue.withOpacity(0.2), // Track color when active
+                        inactiveTrackColor: Colors.yellow.withOpacity(0.2), // Track color when inactive
+                      ),
                     ),
-                    onPressed: () {
-                      themeController.toggleTheme(
-                          !themeController.isDarkMode.value); // Toggle dark/light mode
-                    },
                   ),
-                ),
+
                 // Rest of the UI components
                 Container(
                   height: 120,
@@ -333,6 +348,7 @@ Widget build(BuildContext context) {
                     '${userDetails?['profile']?['firstName'] ?? email} ${userDetails?['profile']?['lastName'] ?? ''}',
                     style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                           fontWeight: FontWeight.bold,
+                          fontFamily: 'GeistSans',
                           color: themeController.isDarkMode.value
                               ? Colors.white
                               : Colors.black,
@@ -368,11 +384,12 @@ Widget build(BuildContext context) {
                 if (userRole == 'landlord' && profileStatus == 'approved') ...[
                   DeviceCard(
                     title: "Listing",
-                    icon: SvgPicture.asset('assets/icons/listing.svg',
-                    color: themeController.isDarkMode.value? const Color.fromARGB(255, 109, 50, 248): const Color.fromARGB(255, 0, 0, 0)),
+                    icon: SvgPicture.asset('assets/icons/listing2.svg',
+                    height: 24,
+                    color: themeController.isDarkMode.value? const Color.fromARGB(255, 109, 50, 248): const Color.fromARGB(255, 253, 1, 77)),
                     textColor: themeController.isDarkMode.value
                         ? Colors.white
-                        : Colors.black,
+                        : const Color.fromARGB(255, 255, 255, 255),
                     onPress: () {
                       Navigator.push(
                         context,
@@ -385,7 +402,8 @@ Widget build(BuildContext context) {
                   ),
                 ] else if (userRole == 'occupant' && profileStatus == 'approved') ...[
                   DeviceCard(
-                    icon: SvgPicture.asset('assets/icons/coloredhome.svg'
+                    icon: SvgPicture.asset('assets/icons/occupanthome.svg',
+                    color: themeController.isDarkMode.value? const Color.fromARGB(255, 255, 255, 255): Colors.white
                     ,height: 24,
                     width: 24,),
                     title: "My Home",
@@ -430,15 +448,24 @@ Widget build(BuildContext context) {
                 ),
                 ProfileMenuWidget(
                   title: "Account Settings",
-                  icon: LineAwesomeIcons.cog_solid,
+                  icon: Icons.settings,
+                  
                   textColor: themeController.isDarkMode.value
                       ? Colors.white
-                      : Colors.black,
-                  onPress: () {},
+                      : const Color.fromARGB(255, 0, 0, 0),
+                  onPress: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) =>
+                            AccountSettings(token: widget.token),
+                      ),
+                    );
+                  },
                 ),
                 ProfileMenuWidget(
                   title: "About",
-                  icon: LineAwesomeIcons.info_solid,
+                  icon: Icons.info_outline_rounded,
                   textColor: themeController.isDarkMode.value
                       ? Colors.white
                       : Colors.black,
@@ -453,7 +480,7 @@ Widget build(BuildContext context) {
                 ),
                 ProfileMenuWidget(
                   title: "Logout",
-                  icon: LineAwesomeIcons.sign_out_alt_solid,
+                  icon: Icons.logout_rounded,
                   textColor: Colors.red,
                   endIcon: false,
                   onPress: _logout,
@@ -542,7 +569,7 @@ Widget build(BuildContext context) {
           padding: const EdgeInsets.all(16),
           width: MediaQuery.of(context).size.width * 0.42,
           decoration: BoxDecoration(
-            color: _themeController.isDarkMode.value? const Color.fromARGB(255, 36, 37, 43):Color.fromRGBO(235, 254, 114, 0.61),
+            color: _themeController.isDarkMode.value? const Color.fromARGB(255, 36, 37, 43):Color.fromARGB(255, 10, 0, 40),
             borderRadius: BorderRadius.circular(17),
           ),
           child: Row(
@@ -555,7 +582,7 @@ Widget build(BuildContext context) {
               Text(
                 title,
                 style: TextStyle(
-                  color: _themeController.isDarkMode.value ? Colors.white : Colors.black,
+                  color: _themeController.isDarkMode.value ? Colors.white : const Color.fromARGB(255, 255, 255, 255),
                   fontSize: 16,
                   fontWeight: FontWeight.w500,
                 ),
@@ -620,7 +647,7 @@ class ProfileMenuWidget extends StatelessWidget {
           
               .textTheme
               .bodyMedium
-              ?.copyWith(fontWeight: FontWeight.w400, fontSize: 15)
+              ?.copyWith(fontWeight: FontWeight.w500, fontSize: 16, fontFamily: 'GeistSans')
               ?.apply(color: textColor ?? Colors.white),
         ),
         trailing: endIcon

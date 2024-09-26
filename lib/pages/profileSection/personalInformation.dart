@@ -46,7 +46,7 @@ class _PersonalInformationState extends State<PersonalInformation> {
   }
 
 Future<void> _checkProfileCompletion() async {
-  final url = Uri.parse('https://rentconnect-backend-nodejs.onrender.com/profile/checkProfileCompletion/$userId');
+  final url = Uri.parse('http://192.168.1.13:3000/profile/checkProfileCompletion/$userId');
   try {
     final response = await http.get(url, headers: {'Authorization': 'Bearer ${widget.token}'});
     if (response.statusCode == 200) {
@@ -73,6 +73,8 @@ Future<void> _submitProfileAndId() async {
     // Set isProfileComplete to false and profileStatus to pending
     _isProfileComplete = false; // Profile is incomplete until admin approval
     await _updateProfileCompletion();
+    await _updateRole();
+
     if (_validIdImage != null) {
       await _uploadValidId();
     } else {
@@ -115,7 +117,7 @@ void _showThankYouModal() {
 
 
 Future<void> _updateProfileCompletion() async {
-  final url = Uri.parse('https://rentconnect-backend-nodejs.onrender.com/profile/updateProfile');
+  final url = Uri.parse('http://192.168.1.13:3000/profile/updateProfile');
   try {
     final response = await http.patch(
       url,
@@ -151,7 +153,7 @@ Future<void> _updateProfileCompletion() async {
 
 
   Future<void> _updateRole() async {
-    final url = Uri.parse('https://rentconnect-backend-nodejs.onrender.com/updateProfile');
+    final url = Uri.parse('http://192.168.1.13:3000/updateUserInfo');
     try {
       final response = await http.patch(
         url,
@@ -183,7 +185,7 @@ Future<void> _updateProfileCompletion() async {
     if (_validIdImage != null) {
       var request = http.MultipartRequest(
         'PATCH',
-        Uri.parse('https://rentconnect-backend-nodejs.onrender.com/profile/uploadValidId')
+        Uri.parse('http://192.168.1.13:3000/profile/uploadValidId')
       );
       request.fields['userId'] = userId;
       String mimeType = lookupMimeType(_validIdImage!.path) ?? 'application/octet-stream';

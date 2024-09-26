@@ -1,47 +1,127 @@
 import 'dart:convert';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'login.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:http/http.dart' as http;
+import 'package:shadcn_ui/shadcn_ui.dart'; // Importing Shadcn UI
+import 'login.dart';
 import 'package:rentcon/config.dart';
-
+import 'package:shadcn_flutter/shadcn_flutter.dart' as shadcnui;
 
 class SignUpPage extends StatefulWidget {
   @override
   _RegistrationState createState() => _RegistrationState();
-  
-  }
-//const SignUpPage({super.key});
-class _RegistrationState extends State<SignUpPage> {
+}
 
+class _RegistrationState extends State<SignUpPage> {
   TextEditingController emailController = TextEditingController();
-  TextEditingController passworController = TextEditingController();
+  TextEditingController passwordController = TextEditingController();
+  TextEditingController confirmPasswordController = TextEditingController(); // Added confirm password controller
   bool _isNotValidate = false;
+  bool _isLoading = false; // Loading state
+  bool obscure = true;
+  bool obscureConfirm = true; // For confirm password visibility toggle
+
+@override
+void initState() {
+  super.initState();
+  
+  // Set the status bar color to match your app's theme
+  SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle(
+    statusBarColor: const Color.fromARGB(255, 255, 255, 255), // Set to your desired color
+    statusBarIconBrightness: Brightness.dark, // Choose Brightness.light for light icons or Brightness.dark for dark icons
+  ));
+}
+
+
 
   void registerUser() async {
-    if(emailController.text.isNotEmpty && passworController.text.isNotEmpty) {
-      
-      var regBody = {
-        "email":emailController.text,
-        "password":passworController.text
-      };
+    setState(() {
+      _isLoading = true; // Start loading
+    });
 
-      var response = await http.post(Uri.parse(registration),
-      headers: {"Content-Type":"application/json"},
-      body: jsonEncode(regBody)
-      );
-      var jsonResponse = jsonDecode(response.body);
-      print(jsonResponse['status']);
+    if (emailController.text.isNotEmpty &&
+        passwordController.text.isNotEmpty &&
+        confirmPasswordController.text.isNotEmpty) {
+      if (passwordController.text == confirmPasswordController.text) {
+        var regBody = {
+          "email": emailController.text,
+          "password": passwordController.text,
+        };
 
-      if(jsonResponse['status']){
-        Navigator.push(context, MaterialPageRoute(builder: (context) => LoginPage()));
-      }else{
-        print("Something went wrong");
+        var response = await http.post(
+          Uri.parse(registration),
+          headers: {"Content-Type": "application/json"},
+          body: jsonEncode(regBody),
+        );
+        var jsonResponse = jsonDecode(response.body);
+        print(jsonResponse['status']);
+
+        if (jsonResponse['status']) {
+          // Show success dialog
+          _showSuccessDialog();
+        } else {
+          print("Something went wrong");
+        }
+      } else {
+        _showErrorDialog('Passwords do not match.'); // Show error if passwords don't match
       }
-    }else {
-      setState(() {
-        _isNotValidate = true;
-      });
+    } else {
+      // Show Cupertino dialog if fields are empty
+      _showErrorDialog('Please fill in all fields.');
     }
+
+    setState(() {
+      _isLoading = false; // Stop loading
+    });
+  }
+
+  void _showErrorDialog(String message) {
+    showCupertinoDialog(
+      context: context,
+      builder: (context) {
+        return CupertinoAlertDialog(
+          title: const Text('Error'),
+          content: Text(message),
+          actions: <Widget>[
+            CupertinoDialogAction(
+              onPressed: () {
+                Navigator.of(context).pop(); // Close the dialog
+              },
+              isDefaultAction: true,
+              child: const Text('OK'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  // Success dialog
+  void _showSuccessDialog() {
+    showCupertinoDialog(
+      context: context,
+      builder: (context) {
+        return CupertinoAlertDialog(
+          title: const Text('Success'),
+          content: const Text('Your account has been created successfully.'),
+          actions: <Widget>[
+            CupertinoDialogAction(
+              onPressed: () {
+                Navigator.of(context).pop(); // Close the dialog
+                Navigator.pushReplacement(
+                  context,
+                  MaterialPageRoute(builder: (context) => LoginPage()),
+                );
+              },
+              isDefaultAction: true,
+              child: const Text('Go to Login'),
+            ),
+          ],
+        );
+      },
+    );
   }
 
   @override
@@ -50,13 +130,14 @@ class _RegistrationState extends State<SignUpPage> {
       backgroundColor: Colors.white,
       body: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 24.0),
-        child: SingleChildScrollView(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: <Widget>[
-            SizedBox(height: 150,),
+            SvgPicture.asset("assets/icons/signup.svg", 
+            height: 100,),
+            
             const Text(
-              'Sign Up to RentConnect',
+              'Sign Up',
               style: TextStyle(
                 fontFamily: 'Poppins',
                 fontWeight: FontWeight.bold,
@@ -64,112 +145,115 @@ class _RegistrationState extends State<SignUpPage> {
                 color: Colors.black,
               ),
             ),
-
-            // const SizedBox(height: 20.0),
-            // TextField(
-            //   decoration: InputDecoration(
-            //     labelText: 'Firstname',
-            //     filled: true,
-            //     fillColor: Colors.grey[200],
-            //     border: OutlineInputBorder(
-            //       borderRadius: BorderRadius.circular(8.0),
-            //       borderSide: BorderSide.none,
-            //     ),
-            //   ),
-            // ),
-            // const SizedBox(height: 10.0),
-            // TextField(
-            //   decoration: InputDecoration(
-            //     labelText: 'Lastname',
-            //     filled: true,
-            //     fillColor: Colors.grey[200],
-            //     border: OutlineInputBorder(
-            //       borderRadius: BorderRadius.circular(8.0),
-            //       borderSide: BorderSide.none,
-            //     ),
-            //   ),
-            // ),
-            // const SizedBox(height: 10.0),
-            // TextField(
-            //   decoration: InputDecoration(
-            //     labelText: 'Username',
-            //     filled: true,
-            //     fillColor: Colors.grey[200],
-            //     border: OutlineInputBorder(
-            //       borderRadius: BorderRadius.circular(8.0),
-            //       borderSide: BorderSide.none,
-            //     ),
-            //   ),
-            // ),
-
-
             const SizedBox(height: 10.0),
-            TextField(
-              controller: emailController,
-              keyboardType: TextInputType.text,
-              decoration: InputDecoration(
-                labelText: 'Email',
-                filled: true,
-                fillColor: Colors.grey[200],
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(8.0),
-                  borderSide: BorderSide.none,
+            ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 350),
+              child: ShadInput(
+                cursorColor: Colors.black,
+                style: TextStyle(
+                  color: Colors.black
                 ),
-                errorStyle: TextStyle(color: const Color.fromARGB(255, 255, 0, 0)),
-                errorText: _isNotValidate ? "Enter Proper Info" : null,
-                
+                controller: emailController, // Added controller
+                placeholder: const Text('Email'),
+                keyboardType: TextInputType.emailAddress,
+                prefix: const Padding(
+                  padding: EdgeInsets.all(4.0),
+                  child: ShadImage.square(
+                      size: 16, LucideIcons.mail, color: Color.fromARGB(255, 25, 22, 32)),
+                ),
               ),
             ),
-
             const SizedBox(height: 10.0),
-            TextField(
-              controller: passworController,
-              keyboardType: TextInputType.text,
-              obscureText: true,
-              decoration: InputDecoration(
-                errorStyle: TextStyle(color: const Color.fromARGB(255, 255, 0, 0)),
-                errorText: _isNotValidate ? "Enter Proper Info" : null,
-                labelText: 'Password',
-                filled: true,
-                fillColor: Colors.grey[200],
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(8.0),
-                  borderSide: BorderSide.none,
+            ShadInput(
+              cursorColor: Colors.black,
+              style: TextStyle(
+                  color: Colors.black
                 ),
-                suffixIcon: const Icon(Icons.visibility),
+              controller: passwordController, // Added controller
+              placeholder: const Text('Password'),
+              obscureText: obscure,
+              prefix: const Padding(
+                padding: EdgeInsets.all(4.0),
+                child: ShadImage.square(
+                    size: 16, LucideIcons.lock, color: Color.fromARGB(255, 25, 22, 32)),
+              ),
+              suffix: ShadButton(
+                width: 24,
+                height: 24,
+                padding: EdgeInsets.zero,
+                decoration: const ShadDecoration(
+                  secondaryBorder: ShadBorder.none,
+                  secondaryFocusedBorder: ShadBorder.none,
+                ),
+                icon: ShadImage.square(
+                  size: 16,
+                  obscure ? LucideIcons.eyeOff : LucideIcons.eye,
+                ),
+                onPressed: () {
+                  setState(() => obscure = !obscure);
+                },
+              ),
+            ),
+            const SizedBox(height: 10.0),
+            ShadInput(
+              cursorColor: Colors.black,
+              style: TextStyle(
+                  color: Colors.black
+                ),
+              controller: confirmPasswordController, // Confirm password controller
+              placeholder: const Text('Confirm Password'),
+              obscureText: obscureConfirm,
+              prefix: const Padding(
+                padding: EdgeInsets.all(4.0),
+                child: ShadImage.square(
+                    size: 16, LucideIcons.lock, color: Color.fromARGB(255, 25, 22, 32)),
+              ),
+              suffix: ShadButton(
+                width: 24,
+                height: 24,
+                padding: EdgeInsets.zero,
+                decoration: const ShadDecoration(
+                  secondaryBorder: ShadBorder.none,
+                  secondaryFocusedBorder: ShadBorder.none,
+                ),
+                icon: ShadImage.square(
+                  size: 16,
+                  obscureConfirm ? LucideIcons.eyeOff : LucideIcons.eye,
+                ),
+                onPressed: () {
+                  setState(() => obscureConfirm = !obscureConfirm);
+                },
               ),
             ),
             const SizedBox(height: 20.0),
-            ElevatedButton(
-              onPressed: () => {
-                registerUser()
-                // Navigator.push(context,
-                //  MaterialPageRoute(builder: (context) => const LoginPage()),
-                //  );
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFFFF3D57),
-                padding: const EdgeInsets.symmetric(horizontal: 40.0, vertical: 12.0),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8.0),
-                ),
-              ),
-              child: const Text(
-                'Sign Up',
-                style: TextStyle(
-                  fontFamily: 'Poppins',
-                  fontWeight: FontWeight.w500,
-                  fontSize: 16.0,
-                  color: Colors.white,
-                ),
-              ),
+        
+            // ShadButton for Sign Up
+            ShadButton(
+              backgroundColor: Color.fromARGB(255, 10, 0, 40),
+              height: 40,
+              width: 159,
+              onPressed: _isLoading ? null : registerUser,
+              child: _isLoading
+                  ? Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        SizedBox.square(
+                          dimension: 20,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        ),
+                        const SizedBox(width: 8), // Spacing between icon and text
+                        const Text('Signing up'),
+                      ],
+                    )
+                  : const Text('Sign Up', style: TextStyle(fontFamily: 'Poppins', color: Colors.white)),
             ),
+        
             const SizedBox(height: 20.0),
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: <Widget>[
                 const Text(
-                  "Don't have an account?",
+                  "Already have an account?",
                   style: TextStyle(
                     fontFamily: 'Poppins',
                     fontWeight: FontWeight.w400,
@@ -181,26 +265,24 @@ class _RegistrationState extends State<SignUpPage> {
                 GestureDetector(
                   onTap: () {
                     Navigator.push(context,
-                    MaterialPageRoute(builder: (context) =>  LoginPage()),
-                    );
+                        MaterialPageRoute(builder: (context) => LoginPage()));
                   },
                   child: const Text(
-                    'Sign Up',
+                    'Login',
                     style: TextStyle(
                       fontFamily: 'Poppins',
                       fontWeight: FontWeight.bold,
                       fontSize: 14.0,
-                      color: Color(0xFFFF3D57),
+                      color: Color.fromARGB(255, 25, 22, 32),
                     ),
                   ),
                 ),
               ],
             ),
+            const SizedBox(height: 20.0),
           ],
         ),
       ),
-      ),
     );
   }
-
 }

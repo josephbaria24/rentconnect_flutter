@@ -12,17 +12,17 @@ import 'package:rentcon/models/room_unit.dart';
 import 'package:rentcon/theme_controller.dart';
 import 'package:shadcn_ui/shadcn_ui.dart';
 
-class RoomCreationPage extends StatefulWidget {
+class Addingroom extends StatefulWidget {
   final String token;
   final String propertyId;
 
-  const RoomCreationPage({required this.token, required this.propertyId, Key? key}) : super(key: key);
+  const Addingroom({required this.token, required this.propertyId, Key? key}) : super(key: key);
 
   @override
-  _RoomCreationPageState createState() => _RoomCreationPageState();
+  _AddingroomState createState() => _AddingroomState();
 }
 
-class _RoomCreationPageState extends State<RoomCreationPage> {
+class _AddingroomState extends State<Addingroom> {
   final List<RoomUnit> roomUnits = [];
   final ImagePicker _picker = ImagePicker();
   late String email;
@@ -111,103 +111,81 @@ class _RoomCreationPageState extends State<RoomCreationPage> {
     }
   }
 
-  Future<void> _deleteProperty() async {
-    try {
-      final response = await http.delete(
-        Uri.parse('http://192.168.1.13:3000/deleteProperty/${widget.propertyId}'),
-      );
-
-      if (response.statusCode == 200) {
-        print("Property ID for deletion: ${widget.propertyId}");
-        print("Property deleted successfully.");
-      } else {
-        print("Failed to delete property with status code: ${response.statusCode}");
-      }
-    } catch (error) {
-      print("Error occurred while deleting property: $error");
-    }
-  }
 
 @override
 Widget build(BuildContext context) {
-  return WillPopScope(
-    onWillPop: () async {
-      await _deleteProperty(); // Delete the property when navigating back
-      return true; // Allow the back navigation to proceed
-    },
-    child: Scaffold(
-      appBar: AppBar(
-        title: Text('Add Rooms'),
-      ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: ListView(
-          children: [
-            ...roomUnits.asMap().entries.map((entry) {
-              int index = entry.key;
-              RoomUnit room = entry.value;
-              return RoomUnitWidget(
-                room: room,
-                roomIndex: index, // Pass the index here
-                onImageSelected: (image, index) {
-                  setState(() {
-                    room.roomPhotos[index] = image;
-                  });
-                },
-              );
-            }).toList(),
-            ShadButton(
-              backgroundColor: _themeController.isDarkMode.value
-                  ? const Color.fromARGB(255, 255, 255, 255)
-                  : const Color.fromARGB(255, 13, 0, 40),
-              onPressed: _addRoom,
-              child: Row(
-                children: [
-                  Text(
-                    'Add Room',
-                    style: TextStyle(
-                      color: _themeController.isDarkMode.value
-                          ? const Color.fromARGB(255, 0, 0, 0)
-                          : const Color.fromARGB(255, 255, 255, 255),
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  Icon(
-                    Icons.add_home,
-                    color: _themeController.isDarkMode.value
-                        ? const Color.fromARGB(255, 0, 0, 0)
-                        : const Color.fromARGB(255, 255, 255, 255),
-                  ),
-                ],
-              ),
-            ),
-            SizedBox(height: 20),
-            if (roomUnits.isNotEmpty)
-              ShadButton(
-                backgroundColor: _themeController.isDarkMode.value
-                    ? const Color.fromARGB(255, 255, 255, 255)
-                    : const Color.fromARGB(255, 255, 0, 85),
-                onPressed: _submitRooms,
-                child: Text(
-                  'Submit Room',
+  return Scaffold(
+    appBar: AppBar(
+      title: Text('Add Rooms'),
+    ),
+    body: Padding(
+      padding: const EdgeInsets.all(16.0),
+      child: ListView(
+        children: [
+          ...roomUnits.asMap().entries.map((entry) {
+            int index = entry.key;
+            RoomUnit room = entry.value;
+            return RoomUnitWidget(
+              room: room,
+              roomIndex: index, // Pass the index here
+              onImageSelected: (image, index) {
+                setState(() {
+                  room.roomPhotos[index] = image;
+                });
+              },
+            );
+          }).toList(),
+          ShadButton(
+            backgroundColor: _themeController.isDarkMode.value
+                ? const Color.fromARGB(255, 255, 255, 255)
+                : const Color.fromARGB(255, 13, 0, 40),
+            onPressed: _addRoom,
+            child: Row(
+              children: [
+                Text(
+                  'Add Room',
                   style: TextStyle(
                     color: _themeController.isDarkMode.value
                         ? const Color.fromARGB(255, 0, 0, 0)
                         : const Color.fromARGB(255, 255, 255, 255),
                   ),
                 ),
-              ),
-            if (roomUnits.isEmpty)
-              Padding(
-                padding: const EdgeInsets.symmetric(vertical: 16.0),
-                child: Text(
-                  'Please add at least one room before submitting.',
-                  style: TextStyle(color: Colors.red),
-                  textAlign: TextAlign.center,
+                const SizedBox(width: 8),
+                Icon(
+                  Icons.add_home,
+                  color: _themeController.isDarkMode.value
+                      ? const Color.fromARGB(255, 0, 0, 0)
+                      : const Color.fromARGB(255, 255, 255, 255),
+                ),
+              ],
+            ),
+          ),
+          SizedBox(height: 20),
+          if (roomUnits.isNotEmpty)
+            ShadButton(
+              backgroundColor: _themeController.isDarkMode.value
+                  ? const Color.fromARGB(255, 255, 255, 255)
+                  : const Color.fromARGB(255, 255, 0, 85),
+              onPressed: _submitRooms,
+              child: Text(
+                'Submit Room',
+                style: TextStyle(
+                  color: _themeController.isDarkMode.value
+                      ? const Color.fromARGB(255, 0, 0, 0)
+                      : const Color.fromARGB(255, 255, 255, 255),
                 ),
               ),
-          ],
-        ),
+            ),
+          if (roomUnits.isEmpty)
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 16.0),
+              child: Text(
+                'Please add at least one room before submitting.',
+                style: TextStyle(color: Colors.red),
+                textAlign: TextAlign.center,
+              ),
+            ),
+        ],
       ),
     ),
   );

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:rentcon/models/property.dart';
 import 'package:rentcon/theme_controller.dart';
+import 'package:shadcn_ui/shadcn_ui.dart';
 import '../propertyDetailPage.dart';
 import '../fullscreenImage.dart';
 import 'package:http/http.dart' as http;
@@ -34,7 +35,7 @@ class PropertyCard extends StatelessWidget {
   });
 
   Future<Map<String, String>> fetchUserProfileStatus() async {
-    final url = Uri.parse('https://rentconnect-backend-nodejs.onrender.com/profile/checkProfileCompletion/$userId');
+    final url = Uri.parse('http://192.168.1.13:3000/profile/checkProfileCompletion/$userId');
     try {
       final response = await http.get(
         url,
@@ -80,7 +81,7 @@ Widget build(BuildContext context) {
                 ? const Color.fromARGB(255, 36, 38, 43)
                 : const Color.fromARGB(255, 255, 255, 255),
             elevation: 5.0,
-            margin: const EdgeInsets.symmetric(vertical: 10.0, horizontal: 10.0),
+            margin: const EdgeInsets.symmetric(vertical: 5.0, horizontal: 10.0),
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(12),
             ),
@@ -218,7 +219,7 @@ Widget build(BuildContext context) {
                               width: 60,
                               child: TextButton(
                                 style: TextButton.styleFrom(
-                                  backgroundColor: Color.fromRGBO(135, 102, 235, 1),
+                                  backgroundColor: Color.fromRGBO(124, 0, 254, 1),
                                   foregroundColor: Colors.white,
                                   padding: const EdgeInsets.symmetric(vertical: 4),
                                   shape: RoundedRectangleBorder(
@@ -250,14 +251,18 @@ Widget build(BuildContext context) {
                               ),
                             ),
                             const SizedBox(width: 2),
-                            IconButton(
-                              icon: Icon(
-                                isBookmarked ? Icons.bookmark : Icons.bookmark_border,
-                                color: isBookmarked ? Colors.amber : Colors.grey,
+                            ShadTooltip(
+                               builder: (context) => const Text('Save property'),
+                              child: IconButton(
+                                icon: Icon(
+                                  isBookmarked ? Icons.favorite : Icons.favorite_border_outlined,
+                                  color: isBookmarked ? const Color.fromARGB(255, 255, 7, 90) : Colors.grey,
+                                ),
+                                onPressed: () {
+                                  
+                                  bookmarkProperty(property.id);
+                                },
                               ),
-                              onPressed: () {
-                                bookmarkProperty(property.id);
-                              },
                             ),
                           ],
                         ),

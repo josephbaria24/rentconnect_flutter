@@ -1,15 +1,19 @@
 import 'dart:convert';
 import 'dart:io';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:get/get.dart';
 import 'package:rentcon/navigation_menu.dart';
 import 'package:rentcon/theme_controller.dart';
+
 import 'package:shared_preferences/shared_preferences.dart';
 import 'signup.dart';
 import 'package:http/http.dart' as http;
 import 'package:rentcon/config.dart';
 import 'toast.dart';
+import 'package:shadcn_ui/shadcn_ui.dart'; // Import Shadcn UI
 
 class LoginPage extends StatefulWidget {
   @override
@@ -19,18 +23,18 @@ class LoginPage extends StatefulWidget {
 class _LoginPageState extends State<LoginPage> {
   TextEditingController emailController = TextEditingController();
   TextEditingController passwordController = TextEditingController();
-  bool _isNotValidate = false;
   bool _obscurePassword = true;
   bool _isLoggingIn = false; // New variable to track login status
   late SharedPreferences prefs;
-  final ThemeController _themeController = Get.find<ThemeController>();
-  late FToast fToast; // Declare FToast
+  final themeController = Get.find<ThemeController>();
+  late FToast fToast;
+
   @override
   void initState() {
     super.initState();
     initSharedPref();
-     fToast = FToast(); // Initialize FToast
-    fToast.init(context); // Pass the current context
+    fToast = FToast();
+    fToast.init(context);
   }
 
   void initSharedPref() async {
@@ -49,14 +53,14 @@ class _LoginPageState extends State<LoginPage> {
       };
 
       try {
-        // Check internet connection before making the request
+        // Check for internet connection
         final result = await InternetAddress.lookup('example.com');
         if (result.isEmpty || result[0].rawAddress.isEmpty) {
-          // No internet connection
           ToastNotification(fToast).warn('No internet connection. Please check your connection.');
           return;
         }
 
+        // Make the login request
         var response = await http.post(
           Uri.parse(login),
           headers: {"Content-Type": "application/json"},
@@ -72,211 +76,146 @@ class _LoginPageState extends State<LoginPage> {
           return;
         }
 
-        var jsonResponse;
-        try {
-          jsonResponse = jsonDecode(response.body);
-        } catch (e) {
-          print("Error decoding JSON: $e");
-          ToastNotification(fToast).error('Invalid response format.');
-          return;
-        }
-
+        var jsonResponse = jsonDecode(response.body);
         if (jsonResponse['status'] == true) {
           var myToken = jsonResponse['token'];
+
+          // Clear any old session data
+          await prefs.clear();
+
+          // Store the new token
           prefs.setString('token', myToken);
 
-          ToastNotification(fToast).success('Login successful!');
+          // Reset the login form
+          emailController.clear();
+          passwordController.clear();
 
-          Navigator.push(
+          // Navigate to the main app screen
+          ToastNotification(fToast).success('Login successful!');
+          Navigator.pushAndRemoveUntil(
             context,
             MaterialPageRoute(builder: (context) => NavigationMenu(token: myToken)),
+            (route) => false,  // Clear the backstack to avoid returning to login
           );
         } else {
-          print("Login failed: ${jsonResponse['message']}");
-          if (jsonResponse['message'] == 'Incorrect password') {
-            ToastNotification(fToast).error('Incorrect password.');
-          } else {
-            ToastNotification(fToast).error(jsonResponse['message'] ?? 'Something went wrong.');
-          }
+          ToastNotification(fToast).error(jsonResponse['message'] ?? 'Login failed.');
         }
       } catch (error) {
-        if (error is SocketException) {
-          // Handle no internet connection error
-          ToastNotification(fToast).warn('No internet connection. Please check your connection.');
-        } else {
-          print("Error during login: $error");
-          ToastNotification(fToast).error('Failed to connect to the server.');
-        }
+        ToastNotification(fToast).error('Failed to connect to the server.');
       } finally {
         setState(() {
           _isLoggingIn = false; // Stop loading state
         });
       }
     } else {
-      ToastNotification(fToast).warn('Email and password cannot be empty.');
+      // Show Cupertino dialog if fields are empty
+      showCupertinoDialog(
+        context: context,
+        builder: (context) {
+          return CupertinoAlertDialog(
+            title: const Text('Error'),
+            content: const Text('Email and password cannot be empty.'),
+            actions: <Widget>[
+              CupertinoDialogAction(
+                onPressed: () {
+                  Navigator.of(context).pop(); // Close the dialog
+                },
+                isDefaultAction: true,
+                child: const Text('OK'),
+              ),
+            ],
+          );
+        },
+      );
     }
-  }
-  void showErrorMessage(String title, String message) {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: Text(title),
-          content: Text(message),
-          actions: [
-            TextButton(
-              child: Text("OK"),
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
-            ),
-          ],
-        );
-      },
-    );
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       resizeToAvoidBottomInset: true,
-      backgroundColor: _themeController.isDarkMode.value
-          ? Color.fromARGB(255, 28, 29, 34)
+      backgroundColor
           : Color.fromRGBO(252, 252, 252, 1),
       body: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 24.0),
+        padding: const EdgeInsets.symmetric(horizontal: 30.0),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: <Widget>[
+            SvgPicture.asset('assets/icons/login.svg',
+            height: 100,),
             Text(
-              'Login to RentConnect',
+              'Login',
               style: TextStyle(
                 fontFamily: 'Poppins',
                 fontWeight: FontWeight.bold,
-                fontSize: 24.0,
-                color: _themeController.isDarkMode.value
-                    ? Color.fromARGB(255, 255, 255, 255)
+                fontSize: 30.0,
+                color
                     : Color.fromRGBO(5, 5, 5, 1),
               ),
             ),
             const SizedBox(height: 40.0),
-            TextField(
+            ShadInput(
+              cursorColor: Colors.black,
+              style: TextStyle(
+                color: themeController.isDarkMode.value? const Color.fromARGB(255, 0, 0, 0): Colors.black,
+              ),
               controller: emailController,
-              decoration: InputDecoration(
-                labelText: 'Email',
-                floatingLabelStyle: TextStyle(
-                  color: _themeController.isDarkMode.value
-                      ? const Color.fromARGB(255, 255, 255, 255)
-                      : const Color.fromARGB(255, 148, 148, 148),
-                ),
-                filled: false,
-                fillColor: _themeController.isDarkMode.value
-                    ? Color.fromARGB(255, 66, 66, 66)
-                    : Color.fromRGBO(117, 117, 117, 1),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(8.0),
-                  borderSide: BorderSide.none,
-                ),
-                enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(8.0),
-                  borderSide: BorderSide(
-                    color: _themeController.isDarkMode.value
-                        ? const Color.fromARGB(255, 253, 253, 253)
-                        : const Color.fromARGB(255, 56, 55, 55),
-                    width: 1.0,
-                  ),
-                ),
-                focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(8.0),
-                  borderSide: BorderSide(
-                    color: _themeController.isDarkMode.value
-                        ? const Color.fromARGB(255, 248, 248, 248)
-                        : Colors.blue,
-                    width: 2.0,
-                  ),
-                ),
+              placeholder: const Text('Email'),
+              keyboardType: TextInputType.emailAddress,
+              prefix: const Padding(
+                padding: EdgeInsets.all(3.0),
+                child: ShadImage.square(size: 16, LucideIcons.mail, color: Color.fromARGB(255,25, 22, 32),),
               ),
             ),
-            const SizedBox(height: 20.0),
-            TextField(
+             SizedBox(height: 10.0),
+            ShadInput(
+              cursorColor: Colors.black,
+              style: TextStyle(
+                color: themeController.isDarkMode.value? const Color.fromARGB(255, 0, 0, 0): Colors.black,
+              ),
               controller: passwordController,
               obscureText: _obscurePassword,
-              decoration: InputDecoration(
-                labelText: 'Password',
-                floatingLabelStyle: TextStyle(
-                  color: _themeController.isDarkMode.value
-                      ? const Color.fromARGB(255, 255, 255, 255)
-                      : const Color.fromARGB(255, 148, 148, 148),
+              placeholder: const Text('Password'),
+              prefix: const Padding(
+                padding: EdgeInsets.all(4.0),
+                child: ShadImage.square(size: 16, LucideIcons.lock, color: Color.fromARGB(255,25, 22, 32)),
+              ),
+              suffix: ShadButton(
+                width: 24,
+                height: 24,
+                padding: EdgeInsets.zero,
+                decoration: const ShadDecoration(
+                  secondaryBorder: ShadBorder.none,
+                  secondaryFocusedBorder: ShadBorder.none,
                 ),
-                filled: false,
-                fillColor: _themeController.isDarkMode.value
-                    ? Color.fromARGB(255, 241, 241, 241)
-                    : Color.fromRGBO(117, 117, 117, 1),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(8.0),
-                  borderSide: BorderSide.none,
+                icon: ShadImage.square(
+                  size: 16,
+                  _obscurePassword ? LucideIcons.eyeOff : LucideIcons.eye,
                 ),
-                enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(8.0),
-                  borderSide: BorderSide(
-                    color: _themeController.isDarkMode.value
-                        ? const Color.fromARGB(255, 253, 253, 253)
-                        : const Color.fromARGB(255, 56, 55, 55),
-                    width: 1.0,
-                  ),
-                ),
-                focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(8.0),
-                  borderSide: BorderSide(
-                    color: _themeController.isDarkMode.value
-                        ? Color.fromARGB(255, 238, 238, 238)
-                        : Colors.blue,
-                    width: 2.0,
-                  ),
-                ),
-                suffixIcon: IconButton(
-                  icon: Icon(
-                    _obscurePassword ? Icons.visibility : Icons.visibility_off,
-                    color: _themeController.isDarkMode.value
-                        ? Color.fromARGB(255, 214, 214, 214)
-                        : Color.fromRGBO(83, 83, 83, 1),
-                  ),
-                  onPressed: () {
-                    setState(() {
-                      _obscurePassword = !_obscurePassword;
-                    });
-                  },
-                ),
+                onPressed: () {
+                  setState(() => _obscurePassword = !_obscurePassword);
+                },
               ),
             ),
             const SizedBox(height: 40.0),
-            ElevatedButton(
-              onPressed: _isLoggingIn
-                  ? null
-                  : () {
-                      loginUser();
-                    },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: _themeController.isDarkMode.value
-                    ? Color.fromRGBO(135, 102, 235, 1)
-                    : Color.fromARGB(255, 5, 12, 0),
-                padding: const EdgeInsets.symmetric(
-                    horizontal: 80.0, vertical: 12.0),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8.0),
-                ),
-              ),
-              child: Text(
-                _isLoggingIn ? 'Logging in...' : 'Login',
-                style: TextStyle(
-                  fontFamily: 'Poppins',
-                  fontWeight: FontWeight.w700,
-                  fontSize: 17.0,
-                  color: _themeController.isDarkMode.value
-                      ? Color.fromARGB(255, 255, 254, 254)
-                      : Color.fromRGBO(250, 250, 250, 1),
-                ),
-              ),
+            ShadButton(
+              backgroundColor: Color.fromARGB(255, 10, 0, 40),
+              height: 40,
+              width: 150,
+              onPressed: _isLoggingIn ? null : loginUser,
+              child: _isLoggingIn
+                  ? Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        SizedBox.square(
+                          dimension: 20,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        ),
+                        const SizedBox(width: 8),
+                        const Text('Logging in...'),
+                      ],
+                    )
+                  : const Text('Login', style: TextStyle(fontFamily: 'Poppins', color: Colors.white)),
             ),
             const SizedBox(height: 20.0),
             Row(
@@ -305,9 +244,8 @@ class _LoginPageState extends State<LoginPage> {
                       fontFamily: 'Poppins',
                       fontWeight: FontWeight.bold,
                       fontSize: 14.0,
-                      color: _themeController.isDarkMode.value
-                          ? const Color.fromARGB(255, 213, 243, 45)
-                          : Color.fromRGBO(135, 102, 235, 1)
+                      color
+                          : Color.fromRGBO(25, 22, 32, 1),
                     ),
                   ),
                 ),

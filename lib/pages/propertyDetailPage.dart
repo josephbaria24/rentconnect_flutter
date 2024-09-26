@@ -1,3 +1,6 @@
+// ignore_for_file: prefer_const_constructors
+
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:get/get.dart';
@@ -53,7 +56,7 @@ class _PropertyDetailPageState extends State<PropertyDetailPage> {
   }
 
   Future<void> fetchRooms() async {
-    final response = await http.get(Uri.parse('https://rentconnect-backend-nodejs.onrender.com/rooms/properties/${widget.property.id}/rooms'));
+    final response = await http.get(Uri.parse('http://192.168.1.13:3000/rooms/properties/${widget.property.id}/rooms'));
 
     if (response.statusCode == 200) {
       final data = jsonDecode(response.body);
@@ -69,7 +72,7 @@ class _PropertyDetailPageState extends State<PropertyDetailPage> {
 
 Future<void> fetchNotifications() async {
   final response = await http.get(
-    Uri.parse('https://rentconnect-backend-nodejs.onrender.com/notifications'),
+    Uri.parse('http://192.168.1.13:3000/notifications'),
     headers: {
       'Authorization': 'Bearer ${widget.token}', // Use the user's token for authentication
     },
@@ -89,8 +92,6 @@ Future<void> fetchNotifications() async {
 
 
 
-
-
 void showRoomDetailsModal(BuildContext context, Map<String, dynamic> room) {
   // Define a list of room photo URLs
   final List<String> roomPhotoUrls = [
@@ -102,6 +103,9 @@ void showRoomDetailsModal(BuildContext context, Map<String, dynamic> room) {
   // Create a PageController for the room photos
   final PageController _roomPageController = PageController();
   final roomStatus = room['roomStatus']; // Get the room status
+
+  // Check if there is a pending request for this occupant
+  final bool hasPendingRequest = room['pendingRequest'] ?? false; // Assume a backend response includes 'pendingRequest'
 
   showModalBottomSheet(
     context: context,
@@ -167,22 +171,33 @@ void showRoomDetailsModal(BuildContext context, Map<String, dynamic> room) {
             Text('Reservation Fee: ₱${room['reservationFee']}', style: const TextStyle(fontSize: 16)),
             const SizedBox(height: 16),
 
-            // Condition to show/hide buttons based on room status
             if (roomStatus == 'reserved' || roomStatus == 'occupied') ...[
-              // Show a message if the room is reserved or occupied
               Text(
                 'This room is currently ${roomStatus}.',
                 style: const TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 16),
+            ] else if (hasPendingRequest) ...[
+              // If occupant already has a pending request, show a message and disable buttons
+              Text(
+                'You have a pending request. Please wait for it to be approved or rejected before making another request.',
+                style: const TextStyle(color: Colors.orange, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 16),
+            ] else if (widget.userRole == 'occupant' && widget.profileStatus == 'approved') ...[
               Row(
                 children: [
                   Expanded(
                     child: ElevatedButton(
-                      onPressed: null, // Disable button
-                      child: const Text('Reserve'),
+                      onPressed: () {
+                        _showReservationConfirmation(context, room, _themeController); // Call confirmation dialog
+                      },
+                      child:  Text('Reserve',
+                      style: TextStyle(
+                       color:  _themeController.isDarkMode.value?Colors.black: Colors.white
+                      ),),
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.grey,
+                        backgroundColor:  _themeController.isDarkMode.value? const Color.fromARGB(255, 255, 255, 255): Colors.black,
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                       ),
                     ),
@@ -190,226 +205,190 @@ void showRoomDetailsModal(BuildContext context, Map<String, dynamic> room) {
                   const SizedBox(width: 8),
                   Expanded(
                     child: ElevatedButton(
-                      onPressed: null, // Disable button
-                      child: const Text('Rent'),
+                      onPressed: () {
+                        _showRentConfirmation(context, room, _themeController); // Send rent request
+                      },
+                      child: Text('Rent', style: TextStyle(
+                        color: _themeController.isDarkMode.value?Colors.black: Colors.white
+                      ),),
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.grey,
+                        backgroundColor: _themeController.isDarkMode.value? const Color.fromARGB(255, 255, 255, 255): Colors.black,
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                       ),
                     ),
                   ),
                 ],
               ),
-            ] else ...[
-              // Case 1: Hide buttons if the user is a landlord and profile is approved
-              if (widget.userRole == 'landlord' && widget.profileStatus == 'approved') ...[
-                const SizedBox.shrink(),
-              ]
-              // Case 2: Show message to set up profile for 'none' role and 'none' status
-              else if (widget.userRole == 'none' && widget.profileStatus == 'none') ...[
-                ElevatedButton(
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => ProfilePageChecker(token: widget.token),
-                      ),
-                    );
-                  },
-                  child: const Text('Please set up your profile first!'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.orange,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                  ),
-                ),
-              ]
-              // Case 3: Show message for pending profile verification
-              else if (widget.userRole == 'none' && widget.profileStatus == 'pending') ...[
-                ElevatedButton(
-                  onPressed: () {
-                    Fluttertoast.showToast(
-                      msg: 'Please wait for your profile to be verified!',
-                      backgroundColor: Colors.orangeAccent,
-                      textColor: Colors.white,
-                    );
-                  },
-                  child: const Text('Please wait for your profile to be verified!'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.orangeAccent,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                  ),
-                ),
-              ]
-              // Case 4: Show Rent and Reserve buttons for eligible users
-              else if (widget.userRole == 'occupant' && widget.profileStatus == 'approved') ...[
-                Row(
-                  children: [
-                    Expanded(
-                      child: ElevatedButton(
-                        onPressed: () async {
-                          // Create inquiry
-                          final inquiryResponse = await http.post(
-                            Uri.parse('https://rentconnect-backend-nodejs.onrender.com/inquiries/create'),
-                            headers: {
-                              'Authorization': 'Bearer ${widget.token}', // Use the user's token for authentication
-                              'Content-Type': 'application/json',
-                            },
-                            body: jsonEncode({
-                              'roomId': '${room['_id']}',
-                              'userId': userId, // Assuming you have a userId field
-                              'status': 'pending',
-                              // Add any other relevant fields here
-                            }),
-                          );
+            ]
+          ],
+        ),
+      );
+    },
+  );
+}
 
-                          if (inquiryResponse.statusCode == 201) {
-                            final inquiryData = jsonDecode(inquiryResponse.body);
-                            final inquiryId = inquiryData['_id']; // Get the inquiryId
+void _sendReserveRequest(BuildContext context, Map<String, dynamic> room) async {
+  // Check if there is a pending request before proceeding
+  final checkResponse = await http.get(
+    Uri.parse('http://192.168.1.13:3000/inquiries/check-pending?userId=$userId&roomId=${room['_id']}'),
+    headers: {
+      'Authorization': 'Bearer ${widget.token}',
+    },
+  );
 
-                            // Send notification for reservation
-                            final notificationResponse = await http.post(
-                              Uri.parse('https://rentconnect-backend-nodejs.onrender.com/notification/create'),
-                              headers: {
-                                'Authorization': 'Bearer ${widget.token}',
-                                'Content-Type': 'application/json',
-                              },
-                              body: jsonEncode({
-                                'userId': widget.property.userId, // Send notification to the landlord
-                                'message': 'Hi there! Your property has been reserved.',
-                                'roomId': '${room['_id']}',
-                                'roomNumber': '${room['roomNumber']}',
-                                'requesterEmail': '$email',
-                                'inquiryId': inquiryId, // Include inquiryId
-                              }),
-                            );
+  if (checkResponse.statusCode == 200) {
+    final checkData = jsonDecode(checkResponse.body);
+    final bool hasPendingRequest = checkData['hasPendingRequest'] ?? false;
 
-                            if (notificationResponse.statusCode == 201) {
-                              Fluttertoast.showToast(
-                                fontSize: 15,
-                                msg: 'Reservation notification sent!',
-                                backgroundColor: const Color.fromARGB(255, 255, 255, 255),
-                                textColor: const Color.fromARGB(255, 0, 0, 0),
-                              );
-                              Navigator.pop(context); // Dismiss the modal
-                            } else {
-                              Fluttertoast.showToast(
-                                msg: 'Failed to send notification',
-                                backgroundColor: Colors.red,
-                                textColor: Colors.white,
-                              );
-                            }
-                          } else {
-                            Fluttertoast.showToast(
-                              msg: 'Failed to create inquiry',
-                              backgroundColor: Colors.red,
-                              textColor: Colors.white,
-                            );
-                          }
-                        },
-                        child: Text(
-                          'Reserve',
-                          style: TextStyle(
-                            color: _themeController.isDarkMode.value
-                                ? const Color.fromARGB(255, 0, 0, 0)
-                                : const Color.fromARGB(255, 0, 0, 0),
-                            fontFamily: 'Poppins',
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: _themeController.isDarkMode.value
-                              ? const Color.fromARGB(255, 235, 254, 114)
-                              : const Color.fromARGB(255, 235, 254, 114),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: ElevatedButton(
-                        onPressed: () async {
-                          // Create inquiry
-                          final inquiryResponse = await http.post(
-                            Uri.parse('https://rentconnect-backend-nodejs.onrender.com/inquiries/create'),
-                            headers: {
-                              'Authorization': 'Bearer ${widget.token}', // Use the user's token for authentication
-                              'Content-Type': 'application/json',
-                            },
-                            body: jsonEncode({
-                              'roomId': '${room['_id']}',
-                              'userId': userId, // Assuming you have a userId field
-                              'status': 'pending',
-                              // Add any other relevant fields here
-                            }),
-                          );
+    if (hasPendingRequest) {
+      Fluttertoast.showToast(
+        msg: 'You already have a pending request for this room.',
+        backgroundColor: Colors.orange,
+        textColor: Colors.white,
+      );
+    } else {
+      // Proceed with sending the request
+      final inquiryResponse = await http.post(
+        Uri.parse('http://192.168.1.13:3000/inquiries/create'),
+        headers: {
+          'Authorization': 'Bearer ${widget.token}',
+          'Content-Type': 'application/json',
+        },
+        body: jsonEncode({
+          'roomId': '${room['_id']}',
+          'userId': userId,
+          'requestType': 'reservation',
+          'status': 'pending',
+        }),
+      );
 
-                          if (inquiryResponse.statusCode == 201) {
-                            final inquiryData = jsonDecode(inquiryResponse.body);
-                            final inquiryId = inquiryData['_id']; // Get the inquiryId
+      if (inquiryResponse.statusCode == 201) {
+        Fluttertoast.showToast(
+          msg: 'Reservation request sent!',
+          textColor:_themeController.isDarkMode.value?const Color.fromARGB(255, 0, 0, 0): const Color.fromARGB(255, 255, 255, 255),
+          backgroundColor: _themeController.isDarkMode.value?Colors.white: const Color.fromARGB(255, 0, 0, 0),
+        );
+        // Disable further requests
+        setState(() {
+          room['pendingRequest'] = true; // Mark room as having a pending request
+        });
+      } else {
+        Fluttertoast.showToast(
+          msg: 'Failed to send request',
+          backgroundColor: Colors.red,
+        );
+      }
+    }
+  } else {
+    Fluttertoast.showToast(
+      msg: 'Failed to check request status',
+      backgroundColor: Colors.red,
+    );
+  }
+}
 
-                            // Send notification for rent request
-                            final notificationResponse = await http.post(
-                              Uri.parse('https://rentconnect-backend-nodejs.onrender.com/notification/create'),
-                              headers: {
-                                'Authorization': 'Bearer ${widget.token}',
-                                'Content-Type': 'application/json',
-                              },
-                              body: jsonEncode({
-                                'userId': widget.property.userId, // Send notification to the landlord
-                                'message': 'Hi there! Your room property has been requested to rent.',
-                                'roomId': '${room['_id']}',
-                                'roomNumber': '${room['roomNumber']}',
-                                'requesterEmail': '$email',
-                                'inquiryId': inquiryId, // Include inquiryId
-                              }),
-                            );
 
-                            if (notificationResponse.statusCode == 201) {
-                              Fluttertoast.showToast(
-                                fontSize: 15,
-                                msg: 'Rent request notification sent!',
-                                backgroundColor: const Color.fromARGB(255, 255, 255, 255),
-                                textColor: const Color.fromARGB(255, 0, 0, 0),
-                              );
-                              Navigator.pop(context); // Dismiss the modal
-                            } else {
-                              Fluttertoast.showToast(
-                                msg: 'Failed to send request',
-                                backgroundColor: Colors.red,
-                                textColor: Colors.white,
-                              );
-                            }
-                          } else {
-                            Fluttertoast.showToast(
-                              msg: 'Failed to create inquiry',
-                              backgroundColor: Colors.red,
-                              textColor: Colors.white,
-                            );
-                          }
-                        },
-                        child: Text(
-                          'Rent',
-                          style: TextStyle(
-                            color: _themeController.isDarkMode.value
-                                ? const Color.fromARGB(255, 255, 255, 255)
-                                : Color.fromARGB(255, 255, 255, 255),
-                            fontFamily: 'Poppins',
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: _themeController.isDarkMode.value
-                              ? const Color.fromARGB(255, 135, 102, 235)
-                              : const Color.fromARGB(255, 135, 102, 235),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ]
+void _sendRentRequest(BuildContext context, Map<String, dynamic> room) async {
+  // Check if there is a pending request before proceeding
+  final checkResponse = await http.get(
+    Uri.parse('http://192.168.1.13:3000/inquiries/check-pending?userId=$userId&roomId=${room['_id']}'),
+    headers: {
+      'Authorization': 'Bearer ${widget.token}',
+    },
+  );
+
+  if (checkResponse.statusCode == 200) {
+    final checkData = jsonDecode(checkResponse.body);
+    final bool hasPendingRequest = checkData['hasPendingRequest'] ?? false;
+
+    if (hasPendingRequest) {
+      Fluttertoast.showToast(
+        msg: 'You already have a pending request for this room.',
+        backgroundColor: Colors.orange,
+        textColor: Colors.white,
+      );
+    } else {
+      // Proceed with sending the request
+      final inquiryResponse = await http.post(
+        Uri.parse('http://192.168.1.13:3000/inquiries/create'),
+        headers: {
+          'Authorization': 'Bearer ${widget.token}',
+          'Content-Type': 'application/json',
+        },
+        body: jsonEncode({
+          'roomId': '${room['_id']}',
+          'userId': userId,
+          'requestType': 'rent',
+          'status': 'pending',
+        }),
+      );
+
+      if (inquiryResponse.statusCode == 201) {
+        Fluttertoast.showToast(
+          msg: 'Rent request sent!',
+          backgroundColor: _themeController.isDarkMode.value?Colors.white: const Color.fromARGB(255, 0, 0, 0),
+        );
+        // Disable further requests
+        setState(() {
+          room['pendingRequest'] = true; // Mark room as having a pending request
+        });
+      } else {
+        Fluttertoast.showToast(
+          msg: 'Failed to send request',
+          backgroundColor: Colors.red,
+        );
+      }
+    }
+  } else {
+    Fluttertoast.showToast(
+      msg: 'Failed to check request status',
+      backgroundColor: Colors.red,
+    );
+  }
+}
+
+
+
+void _showReservationConfirmation(BuildContext context, Map<String, dynamic> room, ThemeController themeController) {
+  showCupertinoDialog(
+    context: context,
+    builder: (BuildContext context) {
+      return CupertinoTheme(
+        data: CupertinoThemeData(
+          brightness: themeController.isDarkMode.value ? Brightness.dark : Brightness.light,
+        ),
+        child: CupertinoAlertDialog(
+          title: const Text('Confirm Reservation'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('Room/Unit no. ${room['roomNumber']}'),
+              Text('Reservation Fee: ₱${room['reservationFee']}'),
+              Text('Reservation Duration: ${room['reservationDuration']} Days'),
+              const SizedBox(height: 16),
+              const Text(
+                'Warning: The reservation fee is non-refundable.',
+                style: TextStyle(color: CupertinoColors.systemRed, fontWeight: FontWeight.bold),
+              ),
             ],
-            const SizedBox(height: 16),
+          ),
+          actions: [
+            CupertinoDialogAction(
+              onPressed: () {
+                Navigator.pop(context); // Cancel button
+              },
+              isDefaultAction: true,
+              child: const Text('Cancel'),
+            ),
+            CupertinoDialogAction(
+              onPressed: () {
+                Navigator.pop(context);
+                _sendReserveRequest(context, room); // Proceed to send rent request
+              },
+              isDestructiveAction: true,
+              child: const Text('Send Reserve Request'),
+            ),
           ],
         ),
       );
@@ -419,15 +398,105 @@ void showRoomDetailsModal(BuildContext context, Map<String, dynamic> room) {
 
 
 
+void _showRentConfirmation(BuildContext context, Map<String, dynamic> room, ThemeController themeController) {
+  showCupertinoDialog(
+    context: context,
+    builder: (BuildContext context) {
+      return CupertinoTheme(
+        data: CupertinoThemeData(
+          brightness: themeController.isDarkMode.value ? Brightness.dark : Brightness.light,
+        ),
+        child: CupertinoAlertDialog(
+          title: const Text('Confirm Reservation'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('Room/Unit no. ${room['roomNumber']}'),
+              const SizedBox(height: 16),
+            ],
+          ),
+          actions: [
+            CupertinoDialogAction(
+              onPressed: () {
+                Navigator.pop(context); // Cancel button
+              },
+              isDefaultAction: true,
+              child: const Text('Cancel'),
+            ),
+            CupertinoDialogAction(
+              onPressed: () {
+                Navigator.pop(context);
+                _sendRentRequest(context, room); // Proceed to send rent request
+              },
+              isDestructiveAction: true,
+              child: const Text('Send Rent Request'),
+            ),
+          ],
+        ),
+      );
+    },
+  );
+}
+
+
+
+// Function to allow occupant to cancel reservation request before landlord approves
+void _allowCancellation(BuildContext context, Map<String, dynamic> room) {
+  setState(() {
+    room['reservationStatus'] = 'pending'; // Update status to 'pending'
+  });
+
+  ElevatedButton(
+    onPressed: () async {
+      await _cancelReserveRequest(context, room);
+    },
+    child: const Text('Cancel Reservation'),
+  );
+}
+
+// Function to cancel reservation request
+Future<void> _cancelReserveRequest(BuildContext context, Map<String, dynamic> room) async {
+  // Logic for canceling the reservation request...
+  final response = await http.post(
+    Uri.parse('http://192.168.1.13:3000/inquiries/cancel'),
+    headers: {
+      'Authorization': 'Bearer ${widget.token}',
+      'Content-Type': 'application/json',
+    },
+    body: jsonEncode({
+      'roomId': '${room['_id']}',
+      'userId': userId,
+    }),
+  );
+
+  if (response.statusCode == 200) {
+    Fluttertoast.showToast(
+      msg: 'Reservation canceled',
+      backgroundColor: Colors.green,
+    );
+    setState(() {
+      room['reservationStatus'] = null; // Reset reservation status
+    });
+  } else {
+    Fluttertoast.showToast(
+      msg: 'Failed to cancel reservation',
+      backgroundColor: Colors.red,
+    );
+  }
+}
+
+// Function to send rent request
+
+
+
+
 
 @override
 Widget build(BuildContext context) {
   print('$email');
   print(widget.userEmail);
   print(userId);
-
-
-  // Hardcoded URLs for property photos
   final photoUrls = [
     widget.property.photo != null ? '${widget.property.photo}' : '',
     widget.property.photo2 != null ? '${widget.property.photo2}' : '',
@@ -544,7 +613,7 @@ Widget build(BuildContext context) {
                                     right: 0,
                                     child: Container(
                                       color: roomStatus == 'occupied'
-                                          ? const Color.fromARGB(255, 255, 0, 0)
+                                          ? const Color.fromARGB(255, 253, 1, 64)
                                           : Colors.orange,
                                       padding: EdgeInsets.symmetric(
                                           vertical: 4, horizontal: 8),
@@ -692,3 +761,333 @@ Widget build(BuildContext context) {
     );
   }
 }
+
+
+
+
+
+// void showRoomDetailsModal(BuildContext context, Map<String, dynamic> room) {
+//   // Define a list of room photo URLs
+//   final List<String> roomPhotoUrls = [
+//     room['photo1'] != null ? '${room['photo1']}' : '',
+//     room['photo2'] != null ? '${room['photo2']}' : '',
+//     room['photo3'] != null ? '${room['photo3']}' : '',
+//   ].where((url) => url.isNotEmpty).toList();
+
+//   // Create a PageController for the room photos
+//   final PageController _roomPageController = PageController();
+//   final roomStatus = room['roomStatus']; // Get the room status
+
+//   showModalBottomSheet(
+//     context: context,
+//     isScrollControlled: true,
+//     shape: const RoundedRectangleBorder(
+//       borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+//     ),
+//     builder: (BuildContext context) {
+//       return Padding(
+//         padding: const EdgeInsets.all(16.0),
+//         child: Column(
+//           mainAxisSize: MainAxisSize.min,
+//           crossAxisAlignment: CrossAxisAlignment.start,
+//           children: [
+//             // Room Photos Slider
+//             roomPhotoUrls.isNotEmpty
+//                 ? Column(
+//                     children: [
+//                       Container(
+//                         height: 180,
+//                         child: PageView.builder(
+//                           controller: _roomPageController,
+//                           itemCount: roomPhotoUrls.length,
+//                           itemBuilder: (context, index) {
+//                             return ClipRRect(
+//                               borderRadius: BorderRadius.circular(10),
+//                               child: Image.network(
+//                                 roomPhotoUrls[index],
+//                                 fit: BoxFit.cover,
+//                               ),
+//                             );
+//                           },
+//                         ),
+//                       ),
+//                       const SizedBox(height: 8),
+//                       SmoothPageIndicator(
+//                         controller: _roomPageController,
+//                         count: roomPhotoUrls.length,
+//                         effect: ExpandingDotsEffect(
+//                           activeDotColor: _themeController.isDarkMode.value
+//                               ? const Color.fromARGB(255, 252, 252, 252)
+//                               : const Color.fromARGB(255, 0, 0, 0),
+//                           dotColor: Colors.grey,
+//                           dotHeight: 10,
+//                           dotWidth: 10,
+//                           spacing: 10,
+//                         ),
+//                       ),
+//                     ],
+//                   )
+//                 : const Text('No photos available.'),
+//             const SizedBox(height: 16),
+//             Text(
+//               'Room/Unit no. ${room['roomNumber']}',
+//               style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+//             ),
+//             const SizedBox(height: 8),
+//             Text('Price: ₱${room['price']} Monthly', style: const TextStyle(fontSize: 16)),
+//             Text('Capacity: ${room['capacity']}', style: const TextStyle(fontSize: 16)),
+//             Text('Deposit: ₱${room['deposit']}', style: const TextStyle(fontSize: 16)),
+//             Text('Advance: ₱${room['advance']}', style: const TextStyle(fontSize: 16)),
+//             Text('Reservation Duration: ${room['reservationDuration']} Days', style: const TextStyle(fontSize: 16)),
+//             Text('Reservation Fee: ₱${room['reservationFee']}', style: const TextStyle(fontSize: 16)),
+//             const SizedBox(height: 16),
+
+//             // Condition to show/hide buttons based on room status
+//             if (roomStatus == 'reserved' || roomStatus == 'occupied') ...[
+//               // Show a message if the room is reserved or occupied
+//               Text(
+//                 'This room is currently ${roomStatus}.',
+//                 style: const TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
+//               ),
+//               const SizedBox(height: 16),
+//               Row(
+//                 children: [
+//                   Expanded(
+//                     child: ElevatedButton(
+//                       onPressed: null, // Disable button
+//                       child: const Text('Reserve'),
+//                       style: ElevatedButton.styleFrom(
+//                         backgroundColor: Colors.grey,
+//                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+//                       ),
+//                     ),
+//                   ),
+//                   const SizedBox(width: 8),
+//                   Expanded(
+//                     child: ElevatedButton(
+//                       onPressed: null, // Disable button
+//                       child: const Text('Rent'),
+//                       style: ElevatedButton.styleFrom(
+//                         backgroundColor: Colors.grey,
+//                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+//                       ),
+//                     ),
+//                   ),
+//                 ],
+//               ),
+//             ] else ...[
+//               // Case 1: Hide buttons if the user is a landlord and profile is approved
+//               if (widget.userRole == 'landlord' && widget.profileStatus == 'approved') ...[
+//                 const SizedBox.shrink(),
+//               ]
+//               // Case 2: Show message to set up profile for 'none' role and 'none' status
+//               else if (widget.userRole == 'none' && widget.profileStatus == 'none') ...[
+//                 ElevatedButton(
+//                   onPressed: () {
+//                     Navigator.push(
+//                       context,
+//                       MaterialPageRoute(
+//                         builder: (context) => ProfilePageChecker(token: widget.token),
+//                       ),
+//                     );
+//                   },
+//                   child: const Text('Please set up your profile first!'),
+//                   style: ElevatedButton.styleFrom(
+//                     backgroundColor: Colors.orange,
+//                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+//                   ),
+//                 ),
+//               ]
+//               // Case 3: Show message for pending profile verification
+//               else if (widget.userRole == 'none' && widget.profileStatus == 'pending') ...[
+//                 ElevatedButton(
+//                   onPressed: () {
+//                     Fluttertoast.showToast(
+//                       msg: 'Please wait for your profile to be verified!',
+//                       backgroundColor: Colors.orangeAccent,
+//                       textColor: Colors.white,
+//                     );
+//                   },
+//                   child: const Text('Please wait for your profile to be verified!'),
+//                   style: ElevatedButton.styleFrom(
+//                     backgroundColor: Colors.orangeAccent,
+//                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+//                   ),
+//                 ),
+//               ]
+//               // Case 4: Show Rent and Reserve buttons for eligible users
+//               else if (widget.userRole == 'occupant' && widget.profileStatus == 'approved') ...[
+//                 Row(
+//                   children: [
+//                     Expanded(
+//                       child: ElevatedButton(
+//                         onPressed: () async {
+//                           // Create inquiry
+//                           final inquiryResponse = await http.post(
+//                             Uri.parse('http://192.168.1.13:3000/inquiries/create'),
+//                             headers: {
+//                               'Authorization': 'Bearer ${widget.token}', // Use the user's token for authentication
+//                               'Content-Type': 'application/json',
+//                             },
+//                             body: jsonEncode({
+//                               'roomId': '${room['_id']}',
+//                               'userId': userId, // Assuming you have a userId field
+//                               'status': 'pending',
+//                               // Add any other relevant fields here
+//                             }),
+//                           );
+
+//                           if (inquiryResponse.statusCode == 201) {
+//                             final inquiryData = jsonDecode(inquiryResponse.body);
+//                             final inquiryId = inquiryData['_id']; // Get the inquiryId
+
+//                             // Send notification for reservation
+//                             final notificationResponse = await http.post(
+//                               Uri.parse('http://192.168.1.13:3000/notification/create'),
+//                               headers: {
+//                                 'Authorization': 'Bearer ${widget.token}',
+//                                 'Content-Type': 'application/json',
+//                               },
+//                               body: jsonEncode({
+//                                 'userId': widget.property.userId, // Send notification to the landlord
+//                                 'message': 'Hi there! Your property has been reserved.',
+//                                 'roomId': '${room['_id']}',
+//                                 'roomNumber': '${room['roomNumber']}',
+//                                 'requesterEmail': '$email',
+//                                 'inquiryId': inquiryId, // Include inquiryId
+//                               }),
+//                             );
+
+//                             if (notificationResponse.statusCode == 201) {
+//                               Fluttertoast.showToast(
+//                                 fontSize: 15,
+//                                 msg: 'Reservation notification sent!',
+//                                 backgroundColor: const Color.fromARGB(255, 255, 255, 255),
+//                                 textColor: const Color.fromARGB(255, 0, 0, 0),
+//                               );
+//                               Navigator.pop(context); // Dismiss the modal
+//                             } else {
+//                               Fluttertoast.showToast(
+//                                 msg: 'Failed to send notification',
+//                                 backgroundColor: Colors.red,
+//                                 textColor: Colors.white,
+//                               );
+//                             }
+//                           } else {
+//                             Fluttertoast.showToast(
+//                               msg: 'Failed to create inquiry',
+//                               backgroundColor: Colors.red,
+//                               textColor: Colors.white,
+//                             );
+//                           }
+//                         },
+//                         child: Text(
+//                           'Reserve',
+//                           style: TextStyle(
+//                             color: _themeController.isDarkMode.value
+//                                 ? const Color.fromARGB(255, 0, 0, 0)
+//                                 : const Color.fromARGB(255, 0, 0, 0),
+//                             fontFamily: 'Poppins',
+//                             fontWeight: FontWeight.w600,
+//                           ),
+//                         ),
+//                         style: ElevatedButton.styleFrom(
+//                           backgroundColor: _themeController.isDarkMode.value
+//                               ? const Color.fromARGB(255, 235, 254, 114)
+//                               : const Color.fromARGB(255, 235, 254, 114),
+//                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+//                         ),
+//                       ),
+//                     ),
+//                     const SizedBox(width: 8),
+//                     Expanded(
+//                       child: ElevatedButton(
+//                         onPressed: () async {
+//                           // Create inquiry
+//                           final inquiryResponse = await http.post(
+//                             Uri.parse('http://192.168.1.13:3000/inquiries/create'),
+//                             headers: {
+//                               'Authorization': 'Bearer ${widget.token}', // Use the user's token for authentication
+//                               'Content-Type': 'application/json',
+//                             },
+//                             body: jsonEncode({
+//                               'roomId': '${room['_id']}',
+//                               'userId': userId, // Assuming you have a userId field
+//                               'status': 'pending',
+//                               // Add any other relevant fields here
+//                             }),
+//                           );
+
+//                           if (inquiryResponse.statusCode == 201) {
+//                             final inquiryData = jsonDecode(inquiryResponse.body);
+//                             final inquiryId = inquiryData['_id']; // Get the inquiryId
+
+//                             // Send notification for rent request
+//                             final notificationResponse = await http.post(
+//                               Uri.parse('http://192.168.1.13:3000/notification/create'),
+//                               headers: {
+//                                 'Authorization': 'Bearer ${widget.token}',
+//                                 'Content-Type': 'application/json',
+//                               },
+//                               body: jsonEncode({
+//                                 'userId': widget.property.userId, // Send notification to the landlord
+//                                 'message': 'Hi there! Your room property has been requested to rent.',
+//                                 'roomId': '${room['_id']}',
+//                                 'roomNumber': '${room['roomNumber']}',
+//                                 'requesterEmail': '$email',
+//                                 'inquiryId': inquiryId, // Include inquiryId
+//                               }),
+//                             );
+
+//                             if (notificationResponse.statusCode == 201) {
+//                               Fluttertoast.showToast(
+//                                 fontSize: 15,
+//                                 msg: 'Rent request notification sent!',
+//                                 backgroundColor: const Color.fromARGB(255, 255, 255, 255),
+//                                 textColor: const Color.fromARGB(255, 0, 0, 0),
+//                               );
+//                               Navigator.pop(context); // Dismiss the modal
+//                             } else {
+//                               Fluttertoast.showToast(
+//                                 msg: 'Failed to send request',
+//                                 backgroundColor: Colors.red,
+//                                 textColor: Colors.white,
+//                               );
+//                             }
+//                           } else {
+//                             Fluttertoast.showToast(
+//                               msg: 'Failed to create inquiry',
+//                               backgroundColor: Colors.red,
+//                               textColor: Colors.white,
+//                             );
+//                           }
+//                         },
+//                         child: Text(
+//                           'Rent',
+//                           style: TextStyle(
+//                             color: _themeController.isDarkMode.value
+//                                 ? const Color.fromARGB(255, 255, 255, 255)
+//                                 : Color.fromARGB(255, 255, 255, 255),
+//                             fontFamily: 'Poppins',
+//                             fontWeight: FontWeight.w600,
+//                           ),
+//                         ),
+//                         style: ElevatedButton.styleFrom(
+//                           backgroundColor: _themeController.isDarkMode.value
+//                               ? const Color.fromARGB(255, 135, 102, 235)
+//                               : const Color.fromARGB(255, 135, 102, 235),
+//                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+//                         ),
+//                       ),
+//                     ),
+//                   ],
+//                 ),
+//               ]
+//             ],
+//             const SizedBox(height: 16),
+//           ],
+//         ),
+//       );
+//     },
+//   );
+// }

@@ -7,8 +7,8 @@ import 'package:rentcon/pages/profile.dart';
 import 'package:rentcon/pages/trends.dart';
 import 'package:jwt_decoder/jwt_decoder.dart';
 import 'package:rentcon/theme_controller.dart';
-import 'package:curved_navigation_bar/curved_navigation_bar.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:google_nav_bar/google_nav_bar.dart';
 
 class NavigationMenu extends StatefulWidget {
   final String token;
@@ -37,11 +37,11 @@ class _NavigationMenuState extends State<NavigationMenu> {
   Color _getIconColor(int index) {
     return _selectedIndex == index
         ? themeController.isDarkMode.value
-            ? Color.fromRGBO(255, 255, 255, 1)
-            : Color.fromRGBO(255, 255, 255, 1) 
+            ? const Color.fromRGBO(255, 255, 255, 1)
+            :  Color.fromARGB(255, 255, 7, 90)
         : themeController.isDarkMode.value
-            ? Colors.grey // Adjust color for unselected icons in dark mode
-            : Color.fromRGBO(218, 218, 218, 1); // Adjust color for unselected icons in light mode
+            ? Colors.grey
+            : const Color.fromARGB(176, 136, 136, 136);
   }
 
   @override
@@ -51,50 +51,85 @@ class _NavigationMenuState extends State<NavigationMenu> {
     return Scaffold(
       backgroundColor: themeController.isDarkMode.value
           ? const Color.fromARGB(255, 255, 255, 255)
-          : const Color.fromARGB(255, 0, 0, 0),
-      bottomNavigationBar: Obx(
-        () => CurvedNavigationBar(
-          animationDuration: const Duration(milliseconds: 350),
-          buttonBackgroundColor: themeController.isDarkMode.value ? const Color.fromARGB(255, 49, 50, 58) : Colors.black,
+          : const Color.fromARGB(255, 255, 255, 255),
+      bottomNavigationBar: Container(
+          constraints: BoxConstraints(minHeight: 60), // Use minimum height constraint
           color: themeController.isDarkMode.value
-              ? const Color.fromARGB(248, 36, 38, 43)
-              : const Color.fromARGB(255, 0, 0, 0),
-          height: 60.0,
-          backgroundColor: themeController.isDarkMode.value
               ? const Color.fromARGB(255, 28, 29, 34)
               : const Color.fromARGB(255, 255, 255, 255),
-          items: <Widget>[
-            SvgPicture.asset(
-              'assets/icons/home2.svg',
-              color: _getIconColor(0),
-            ),
-            SvgPicture.asset(
-              'assets/icons/bookmark.svg',
-              color: _getIconColor(1),
-            ),
-            SvgPicture.asset(
-              'assets/icons/analytic.svg',
-              color: _getIconColor(2),
-              height: 35,
-              width: 35,
-            ),
-            SvgPicture.asset(
-              'assets/icons/messagel.svg',
-              color: _getIconColor(3),
-            ),
-            SvgPicture.asset(
-              'assets/icons/person.svg',
-              color: _getIconColor(4),
-              height: 24,
-              width: 24,
-            ),
-          ],
-          onTap: (index) {
-            setState(() {
-              _selectedIndex = index;
-            });
-            controller.selectedIndex.value = index;
-          },
+          child: Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: GNav(
+            tabBorderRadius: 15,
+            color: themeController.isDarkMode.value ?  Colors.white : Colors.black,
+            backgroundColor: themeController.isDarkMode.value ? const Color.fromARGB(255, 28, 29, 34) : const Color.fromARGB(255, 255, 255, 255),
+            rippleColor: Color.fromARGB(255, 255, 7, 90),
+            hoverColor: Color.fromARGB(255, 255, 7, 90),
+            iconSize: 24,
+            haptic: true,
+            activeColor: themeController.isDarkMode.value? const Color.fromARGB(255, 255, 255, 255): Color.fromARGB(255, 255, 255, 255),
+            tabBackgroundColor: themeController.isDarkMode.value ? const Color.fromARGB(195, 255, 7, 90) : const Color.fromARGB(255, 10, 0, 40),
+            gap: 8,
+            padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 10),
+            selectedIndex: _selectedIndex,
+            onTabChange: (index) {
+              setState(() {
+                _selectedIndex = index;
+              });
+              controller.selectedIndex.value = index;
+            },
+            tabs: [
+              GButton(
+                icon: Icons.home_filled,
+                iconActiveColor: _getIconColor(0),
+                text: 'Home',
+                leading: SvgPicture.asset(
+                  'assets/icons/home2.svg',
+                  color: _getIconColor(0),
+                ),
+              ),
+              GButton(
+                icon: Icons.favorite_border,
+                iconActiveColor: _getIconColor(1),
+                text: 'Saved',
+                leading: SvgPicture.asset(
+                  'assets/icons/fave.svg',
+                  color: _getIconColor(1),
+                ),
+              ),
+              GButton(
+                icon: Icons.pie_chart_outline,
+                iconActiveColor: _getIconColor(2),
+                text: 'Trends',
+                leading: SvgPicture.asset(
+                  'assets/icons/analytic.svg',
+                  color: _getIconColor(2),
+                  height: 24,
+                  width: 24,
+                ),
+              ),
+              GButton(
+                icon: Icons.message_outlined,
+                iconActiveColor: _getIconColor(3),
+                text: 'Inbox',
+                leading: SvgPicture.asset(
+                  'assets/icons/messagel.svg',
+                  color: _getIconColor(3),
+                ),
+              ),
+              GButton(
+                icon: Icons.person_2_outlined,
+                iconActiveColor: _getIconColor(4),
+                text: 'Profile',
+                leading: SvgPicture.asset(
+                  'assets/icons/person.svg',
+                  color: _getIconColor(4),
+                  height: 24,
+                  width: 24,
+                ),
+              ),
+            ],
+          ),
         ),
       ),
       body: Obx(() => controller.screens[controller.selectedIndex.value]),

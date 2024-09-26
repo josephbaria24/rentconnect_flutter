@@ -9,7 +9,6 @@ class Property {
   final String barangay;
   final String city;
   final List<String> amenities;
-  final DateTime availableFrom;
   final String status;
   final Map<String, dynamic>? location; // Add location field
   final String? typeOfProperty; // Add typeOfProperty field
@@ -25,7 +24,6 @@ class Property {
     required this.barangay,
     required this.city,
     required this.amenities,
-    required this.availableFrom,
     required this.status,
     this.location, 
     this.typeOfProperty, 
@@ -44,7 +42,7 @@ class Property {
       barangay: json['barangay'] as String,
       city: json['city'] as String,
       amenities: List<String>.from(json['amenities'] as List),
-      availableFrom: DateTime.parse(json['availableFrom'] as String),
+    
       status: json['status'] as String,
       location: json['location'] as Map<String, dynamic>?, // Parse location field
       typeOfProperty: json['typeOfProperty'] as String?, // Parse typeOfProperty field
