@@ -90,7 +90,7 @@ class ToastNotification {
                     color: _getToastColor(type).textColor,
                     fontSize: 14,
                     fontWeight: FontWeight.w500,
-                    fontFamily: 'Poppins'
+                    fontFamily: 'GeistSans'
                   ),
                 ),
               ),

@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 class Property {
   final String id;
   final String userId;
@@ -31,21 +33,26 @@ class Property {
   });
 
   factory Property.fromJson(Map<String, dynamic> json) {
-    return Property(
-      id: json['_id'] as String,
-      userId: json['userId'] as String,
-      description: json['description'] as String,
-      photo: json['photo'] as String,
-      photo2: json['photo2'] as String?,
-      photo3: json['photo3'] as String?,
-      street: json['street'] as String,
-      barangay: json['barangay'] as String,
-      city: json['city'] as String,
-      amenities: List<String>.from(json['amenities'] as List),
-    
-      status: json['status'] as String,
-      location: json['location'] as Map<String, dynamic>?, // Parse location field
-      typeOfProperty: json['typeOfProperty'] as String?, // Parse typeOfProperty field
-    );
-  }
+  // Decode the JSON string in amenities
+  List<String> amenitiesList = List<String>.from(jsonDecode(json['amenities'][0]) as List);
+
+  // Print the parsed amenities
+  print('Parsed amenities: $amenitiesList');
+
+  return Property(
+    id: json['_id'] as String,
+    userId: json['userId'] as String,
+    description: json['description'] as String,
+    photo: json['photo'] as String,
+    photo2: json['photo2'] as String?,
+    photo3: json['photo3'] as String?,
+    street: json['street'] as String,
+    barangay: json['barangay'] as String,
+    city: json['city'] as String,
+    amenities: amenitiesList, // Use the parsed amenities list
+    status: json['status'] as String,
+    location: json['location'] as Map<String, dynamic>?, // Parse location field
+    typeOfProperty: json['typeOfProperty'] as String?, // Parse typeOfProperty field
+  );
+}
 }

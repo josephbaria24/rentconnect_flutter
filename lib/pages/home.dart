@@ -125,7 +125,7 @@ Stream<List<dynamic>> notificationStream = NotificationStream().stream.cast<List
 
   Future<void> fetchUserProfileStatus() async {
     final url = Uri.parse(
-        'http://192.168.1.13:3000/profile/checkProfileCompletion/$userId'); // Replace with your API endpoint
+        'http://192.168.1.31:3000/profile/checkProfileCompletion/$userId'); // Replace with your API endpoint
     try {
       final response = await http.get(
         url,
@@ -153,7 +153,7 @@ Stream<List<dynamic>> notificationStream = NotificationStream().stream.cast<List
 
   Future<void> fetchUserProfileStatusForNotification() async {
     final url = Uri.parse(
-        'http://192.168.1.13:3000/profile/checkProfileCompletion/$userId'); // Your API endpoint
+        'http://192.168.1.31:3000/profile/checkProfileCompletion/$userId'); // Your API endpoint
     try {
       final response = await http.get(
         url,
@@ -224,7 +224,7 @@ Stream<List<dynamic>> notificationStream = NotificationStream().stream.cast<List
   Future<List<dynamic>> fetchRooms(String propertyId) async {
     try {
       final response = await http.get(Uri.parse(
-          'http://192.168.1.13:3000/rooms/properties/$propertyId/rooms'));
+          'http://192.168.1.31:3000/rooms/properties/$propertyId/rooms'));
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         if (data['status']) {
@@ -301,7 +301,7 @@ Stream<List<dynamic>> notificationStream = NotificationStream().stream.cast<List
     try {
       final response = await http.get(
         Uri.parse(
-            'http://192.168.1.13:3000/getUserBookmarks/$userId'), // Adjust endpoint if necessary
+            'http://192.168.1.31:3000/getUserBookmarks/$userId'), // Adjust endpoint if necessary
         headers: {
           'Authorization': 'Bearer ${widget.token}',
         },
@@ -327,7 +327,7 @@ Stream<List<dynamic>> notificationStream = NotificationStream().stream.cast<List
   Future<String> fetchUserEmail(String userId) async {
     try {
       final response = await http.get(Uri.parse(
-          'http://192.168.1.13:3000/getUserEmail/$userId'));
+          'http://192.168.1.31:3000/getUserEmail/$userId'));
 
       if (response.statusCode == 200) {
         final Map<String, dynamic> json = jsonDecode(response.body);
@@ -351,14 +351,14 @@ Stream<List<dynamic>> notificationStream = NotificationStream().stream.cast<List
 
 
   Future<void> bookmarkProperty(String propertyId) async {
-    final url = Uri.parse('http://192.168.1.13:3000/addBookmark');
+    final url = Uri.parse('http://192.168.1.31:3000/addBookmark');
     final Map<String, dynamic> jwtDecodedToken = JwtDecoder.decode(widget.token);
     String userId = jwtDecodedToken['_id']?.toString() ?? 'Unknown user ID';
 
     try {
       if (bookmarkedPropertyIds.contains(propertyId)) {
         // If already bookmarked, remove it
-        final removeUrl = Uri.parse('http://192.168.1.13:3000/removeBookmark');
+        final removeUrl = Uri.parse('http://192.168.1.31:3000/removeBookmark');
         await http.post(removeUrl,
             headers: {
               'Authorization': 'Bearer ${widget.token}',
@@ -505,7 +505,7 @@ Stream<List<dynamic>> notificationStream = NotificationStream().stream.cast<List
     try {
       final response = await http.get(
         Uri.parse(
-            'http://192.168.1.13:3000/notification/unread/$userId'),
+            'http://192.168.1.31:3000/notification/unread/$userId'),
         headers: {
           'Authorization': 'Bearer $token',
           'Content-Type': 'application/json',
@@ -599,7 +599,7 @@ void _showNotificationsModal(List<dynamic> notifications) {
     try {
       final response = await http.delete(
         Uri.parse(
-            'http://192.168.1.13:3000/notification/clear/$userId'),
+            'http://192.168.1.31:3000/notification/clear/$userId'),
         headers: {
           'Authorization': 'Bearer ${widget.token}',
         },
@@ -622,7 +622,7 @@ void _showNotificationsModal(List<dynamic> notifications) {
   Future<void> _markNotificationAsRead(String notificationId) async {
     final response = await http.patch(
       Uri.parse(
-          'http://192.168.1.13:3000/notification/$notificationId/read'),
+          'http://192.168.1.31:3000/notification/$notificationId/read'),
       headers: {
         'Authorization': 'Bearer ${widget.token}',
         'Content-Type': 'application/json',
@@ -636,308 +636,323 @@ void _showNotificationsModal(List<dynamic> notifications) {
     }
   }
 
- @override
-  Widget build(BuildContext context) {
-    print('Notifications fetched: ${notifications}');
-    ftoast = FToast();
-    ftoast.init(context);
-    toast = ToastNotification(ftoast);
-    final NavigationController controller = Get.find<NavigationController>();
+@override
+Widget build(BuildContext context) {
+  print('Notifications fetched: ${notifications}');
+  ftoast = FToast();
+  ftoast.init(context);
+  toast = ToastNotification(ftoast);
+  final NavigationController controller = Get.find<NavigationController>();
 
-    return Scaffold(
-      backgroundColor: _themeController.isDarkMode.value
-          ? Color.fromARGB(255, 28, 29, 34)
-          : Color.fromRGBO(255, 255, 255, 1),
-      body: Padding(
-        padding: EdgeInsets.symmetric(horizontal: 10.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            SizedBox(height: 35),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              crossAxisAlignment: CrossAxisAlignment.center,
+  return Scaffold(
+    appBar: AppBar(
+        backgroundColor: _themeController.isDarkMode.value
+            ? Color.fromARGB(255, 28, 29, 34)
+            : Colors.white,
+        title: Padding(
+          padding: const EdgeInsets.only(left: 14.0),
+          child: Text(
+            'Home',
+            style: TextStyle(
+              fontSize: 20.0,
+              fontWeight: FontWeight.w800,
+              fontFamily: 'GeistSans',
+              color: _themeController.isDarkMode.value
+                  ? Colors.white
+                  : const Color.fromARGB(255, 10, 0, 40),
+            ),
+          ),
+        ),
+        actions: [
+          // Profile status check and corresponding widgets
+          profileStatus == null
+              ? GlobalLoadingIndicator()
+              : profileStatus == 'none'
+                  ? Padding(
+                    padding: const EdgeInsets.only(right:8.0),
+                    child: Setupprofilebutton(
+                        token: widget.token,
+                      ),
+                  )
+                  : SizedBox.shrink(),
+
+          // Row for the inquiry and listing buttons
+          Padding(
+            padding: const EdgeInsets.only(right: 12.0),
+            child: Row(
               children: [
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(15, 0, 0, 0),
-                  child: Text(
-                    "Home",
-                    style: TextStyle(
-                      fontSize: 20.0,
-                      fontWeight: FontWeight.w800,
-                      fontFamily: 'Poppins',
-                      color: _themeController.isDarkMode.value
-                          ? Colors.white
-                          : const Color.fromARGB(255, 10, 0, 40),
-                    ),
-                  ),
-                ),
-                profileStatus == null
-                    ? GlobalLoadingIndicator()
-                    : profileStatus == 'none'
-                        ? Setupprofilebutton(
-                            token: widget.token,
-                          )
-                        : SizedBox.shrink(),
-                Row(
-                  children: [
-                    profileStatus == 'approved' && userRole == 'occupant'
+                profileStatus == 'approved' && userRole == 'occupant'
+                    ? ShadTooltip(
+                        builder: (context) => const Text('See your inquiries'),
+                        child: IconButton(
+                          onPressed: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => OccupantInquiries(
+                                  userId: userId,
+                                  token: widget.token,
+                                ),
+                              ),
+                            );
+                          },
+                          icon: SvgPicture.asset(
+                            'assets/icons/occupanthome.svg',
+                            color: _themeController.isDarkMode.value
+                                ? const Color.fromARGB(255, 255, 255, 255)
+                                : const Color.fromARGB(255, 10, 0, 40),
+                            height: 24,
+                          ),
+                        ),
+                      )
+                    : profileStatus == 'approved' && userRole == 'landlord'
                         ? ShadTooltip(
-                           builder: (context) => const Text('See your inquiries'),
-                          child: IconButton(
+                            builder: (context) => const Text('See Your Listing'),
+                            child: IconButton(
                               onPressed: () {
                                 Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                        builder: (context) => OccupantInquiries(
-                                            userId: userId, token: widget.token)));
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => CurrentListingPage(
+                                      token: widget.token,
+                                    ),
+                                  ),
+                                );
                               },
                               icon: SvgPicture.asset(
-                                'assets/icons/occupanthome.svg',
+                                'assets/icons/listing2.svg',
                                 color: _themeController.isDarkMode.value
                                     ? const Color.fromARGB(255, 255, 255, 255)
                                     : const Color.fromARGB(255, 10, 0, 40),
                                 height: 24,
                               ),
                             ),
-                        )
-                        : profileStatus == 'approved' && userRole == 'landlord'
-                            ? ShadTooltip(
-                               builder: (context) => const Text('See Your Listing'),
-                              child: IconButton(
+                          )
+                        : SizedBox.shrink(),
+                Padding(
+                  padding: EdgeInsets.fromLTRB(0, 0, 10, 0),
+                  child: SizedBox(
+                    height: 37,
+                    width: 38,
+                    child: DecoratedBox(
+                      decoration: BoxDecoration(
+                        color: _themeController.isDarkMode.value
+                            ? const Color.fromARGB(139, 75, 76, 97)
+                            : const Color.fromARGB(255, 10, 0, 40),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: FutureBuilder<List<dynamic>>(
+                        future: fetchNotifications(userId, widget.token),
+                        builder: (context, snapshot) {
+                          if (snapshot.connectionState == ConnectionState.waiting) {
+                            return GlobalLoadingIndicator();
+                          } else if (snapshot.hasError) {
+                            return IconButton(
+                              onPressed: () {
+                                ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                                  content: Text('Failed to load notifications'),
+                                ));
+                              },
+                              icon: SvgPicture.asset(
+                                'assets/icons/bell3.svg',
+                                color: _themeController.isDarkMode.value
+                                    ? const Color.fromARGB(255, 255, 255, 255)
+                                    : const Color.fromARGB(255, 255, 255, 255),
+                                height: 20,
+                                width: 20,
+                              ),
+                            );
+                          } else {
+                            final notifications = snapshot.data ?? [];
+                            final hasNewNotifications = notifications.isNotEmpty;
+            
+                            return Stack(
+                              children: [
+                                IconButton(
                                   onPressed: () {
-                                    Navigator.push(
-                                        context,
-                                        MaterialPageRoute(
-                                            builder: (context) => CurrentListingPage(
-                                                token: widget.token)));
-                                  },
-                                  icon: SvgPicture.asset(
-                                    'assets/icons/listing2.svg',
-                                    color: _themeController.isDarkMode.value
-                                        ? const Color.fromARGB(255, 255, 255, 255)
-                                        : const Color.fromARGB(255, 10, 0, 40),
-                                    height: 24,
-                                  ),
-                                ),
-                            )
-                            : SizedBox.shrink(),
-                     Padding(
-                      padding: EdgeInsets.fromLTRB(0, 0, 10, 0),
-                      child: SizedBox( height: 37, width: 38,
-                        child: DecoratedBox(
-                          decoration: BoxDecoration(
-                           color: _themeController.isDarkMode.value? const Color.fromARGB(139, 75, 76, 97) :const Color.fromARGB(255, 10, 0, 40) ,
-                            borderRadius: BorderRadius.circular(10)
-                          ),
-                          child: FutureBuilder<List<dynamic>>(
-                            future: fetchNotifications(userId, widget.token),
-                            builder: (context, snapshot) {
-                              if (snapshot.connectionState ==
-                                  ConnectionState.waiting) {
-                                return GlobalLoadingIndicator();
-                              } else if (snapshot.hasError) {
-                                return IconButton(
-                                  onPressed: () {
-                                    ScaffoldMessenger.of(context)
-                                        .showSnackBar(SnackBar(
-                                      content:
-                                          Text('Failed to load notifications'),
-                                    ));
+                                    showDialog(
+                                      context: context,
+                                      builder: (BuildContext context) {
+                                        return Dialog(
+                                          shape: RoundedRectangleBorder(
+                                            borderRadius: BorderRadius.circular(16),
+                                          ),
+                                          child: SizedBox(
+                                            width: 380,
+                                            child: CardNotifications(
+                                              userId: userId,
+                                              token: widget.token,
+                                            ),
+                                          ),
+                                        );
+                                      },
+                                    );
                                   },
                                   icon: SvgPicture.asset(
                                     'assets/icons/bell3.svg',
                                     color: _themeController.isDarkMode.value
                                         ? const Color.fromARGB(255, 255, 255, 255)
                                         : const Color.fromARGB(255, 255, 255, 255),
-                                    height: 20,
-                                    width: 20,
+                                    height: 24,
+                                    width: 24,
                                   ),
-                                );
-                              } else {
-                                final notifications = snapshot.data ?? [];
-                                final hasNewNotifications =
-                                    notifications.isNotEmpty;
-                        
-                                return Stack(
-                                  children: [
-                                    IconButton(
-                                    onPressed: () {
-                                      showDialog(
-                                        context: context,
-                                        builder: (BuildContext context) {
-                                          return Dialog(
-                                            shape: RoundedRectangleBorder(
-                                              borderRadius: BorderRadius.circular(16),
-                                            ),
-                                            child: SizedBox(
-                                              width: 380,
-                                              child: CardNotifications(
-                                                userId: userId,
-                                                token: widget.token,
-                                              ),
-                                            ),
-                                          );
-                                        },
-                                      );
-                                    },
-                                    icon: SvgPicture.asset(
-                                      'assets/icons/bell3.svg',
-                                      color: _themeController.isDarkMode.value
-                                          ? const Color.fromARGB(255, 255, 255, 255)
-                                          : const Color.fromARGB(255, 255, 255, 255),
-                                      height: 24,
-                                      width: 24,
-                                    ),
-                                  ),
-
-                                    if (hasNewNotifications) // Check if there are new notifications
-                                      Positioned(
-                                        right: 4,
-                                        top: 2,
-                                        child: Container(
-                                          padding: EdgeInsets.all(3),
-                                          decoration: BoxDecoration(
-                                            color: Colors.red,
-                                            shape: BoxShape.circle,
-                                          ),
-                                          child: Text(
-                                            notifications.length.toString(),
-                                            style: TextStyle(
-                                              color: Colors.white,
-                                              fontSize: 12,
-                                            ),
-                                          ),
+                                ),
+                                if (hasNewNotifications) // Check if there are new notifications
+                                  Positioned(
+                                    right: 4,
+                                    top: 2,
+                                    child: Container(
+                                      padding: EdgeInsets.all(3),
+                                      decoration: BoxDecoration(
+                                        color: Colors.red,
+                                        shape: BoxShape.circle,
+                                      ),
+                                      child: Text(
+                                        notifications.length.toString(),
+                                        style: TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 12,
                                         ),
                                       ),
-                                  ],
-                                );
-                              }
-                            },
-                          ),
-                        ),
+                                    ),
+                                  ),
+                              ],
+                            );
+                          }
+                        },
                       ),
                     ),
-                  ],
+                  ),
                 ),
               ],
-            ),
-          SizedBox(height: 1),
-          SearchFieldWidget(
-            searchController: _searchController,
-            isDarkMode: _themeController.isDarkMode.value,
-            handleSearch: _handleSearch,
-            performSearch: _performSearch,
-            showFilterDialog: () {
-              showDialog(
-                context: context,
-                builder: (BuildContext context) {
-                  return FilterDialog(
-                    minPriceController: _minPriceController,
-                    maxPriceController: _maxPriceController,
-                    applyFilters: _applyFilters,
-                    initialRange: RangeValues(
-                      double.tryParse(_minPriceController.text) ?? 0.0,
-                      double.tryParse(_maxPriceController.text) ?? 10000.0,
-                    ),
-                    clearFilters: () {
-                      _minPriceController.text = '0';
-                      _maxPriceController.text = '10000';
-                      setState(() {
-                        isFilterApplied = false;
-                      });
-                    },
-                  );
-                },
-              );
-            },
-            isFilterApplied: isFilterApplied,
-          ),
-          SizedBox(height: 1),
-          Expanded(
-            child: RefreshIndicator(
-              onRefresh: _refreshProperties,
-              child: FutureBuilder<List<Property>>(
-                future: propertiesFuture,
-                builder: (context, snapshot) {
-                  if (snapshot.connectionState == ConnectionState.waiting) {
-                    return GlobalLoadingIndicator();
-                  } else if (snapshot.hasError) {
-                    return Center(child: Text('Error: ${snapshot.error}'));
-                  } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
-                    return Center(child: Text('No properties available.'));
-                  } else {
-                    final properties = searchQuery.isEmpty
-                        ? snapshot.data!
-                        : filteredProperties;
-
-                    return ListView.builder(
-                      itemCount: properties.length,
-                      itemBuilder: (context, index) {
-                        final property = properties[index];
-                        final imageUrl = property.photo.startsWith('http')
-                            ? property.photo
-                            : 'http://192.168.1.13:3000/${property.photo}';
-
-                        return FutureBuilder<List<dynamic>>(
-                          future: fetchRooms(property.id),
-                          builder: (context, roomsSnapshot) {
-                            if (roomsSnapshot.connectionState ==
-                                ConnectionState.waiting) {
-                              return SizedBox.shrink();
-                            } else if (roomsSnapshot.hasError ||
-                                !roomsSnapshot.hasData) {
-                              return Center(child: Text('No rooms available.'));
-                            }
-                            final rooms = roomsSnapshot.data!;
-                            final priceRange = rooms.isNotEmpty
-                                ? '${rooms.map((r) => r['price']).reduce((a, b) => a < b ? a : b)} - ${rooms.map((r) => r['price']).reduce((a, b) => a > b ? a : b)}'
-                                : 'N/A';
-                            return FutureBuilder<String>(
-                              future: fetchUserEmail(property.userId),
-                              builder: (context, userSnapshot) {
-                                if (userSnapshot.connectionState ==
-                                    ConnectionState.waiting) {
-                                  return SizedBox.shrink();
-                                } else if (userSnapshot.hasError) {
-                                  return Center(
-                                      child: Text(
-                                          'Error: ${userSnapshot.error}'));
-                                } else if (!userSnapshot.hasData ||
-                                    userSnapshot.data!.isEmpty) {
-                                  return Center(
-                                      child: Text('No user email found.'));
-                                } else {
-                                  final userEmail = userSnapshot.data!;
-                                  return PropertyCard(
-                                    userId: userId,
-                                    token: widget.token,
-                                    property: property,
-                                    userEmail: userEmail,
-                                    imageUrl: imageUrl,
-                                    bookmarkedPropertyIds:
-                                        bookmarkedPropertyIds,
-                                    bookmarkProperty: bookmarkProperty,
-                                    priceRange: priceRange,
-                                    isDarkMode:
-                                        _themeController.isDarkMode.value,
-                                  );
-                                }
-                              },
-                            );
-                          },
-                        );
-                      },
-                    );
-                  }
-                },
-              ),
             ),
           ),
         ],
       ),
+
+    backgroundColor: _themeController.isDarkMode.value
+        ? Color.fromARGB(255, 28, 29, 34)
+        : Color.fromRGBO(255, 255, 255, 1),
+    body: Padding(
+      padding: EdgeInsets.symmetric(horizontal: 10.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+        SearchFieldWidget(
+          searchController: _searchController,
+          isDarkMode: _themeController.isDarkMode.value,
+          handleSearch: _handleSearch,
+          performSearch: _performSearch,
+          showFilterDialog: () {
+            showDialog(
+              context: context,
+              builder: (BuildContext context) {
+                return FilterDialog(
+                  minPriceController: _minPriceController,
+                  maxPriceController: _maxPriceController,
+                  applyFilters: _applyFilters,
+                  initialRange: RangeValues(
+                    double.tryParse(_minPriceController.text) ?? 0.0,
+                    double.tryParse(_maxPriceController.text) ?? 10000.0,
+                  ),
+                  clearFilters: () {
+                    _minPriceController.text = '0';
+                    _maxPriceController.text = '10000';
+                    setState(() {
+                      isFilterApplied = false;
+                    });
+                  },
+                );
+              },
+            );
+          },
+          isFilterApplied: isFilterApplied,
+        ),
+        SizedBox(height: 10),
+        Expanded(
+          child: RefreshIndicator(
+            onRefresh: _refreshProperties,
+            child: FutureBuilder<List<Property>>(
+              future: propertiesFuture,
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return GlobalLoadingIndicator();
+                } else if (snapshot.hasError) {
+                  return Center(child: Text('Error: ${snapshot.error}'));
+                } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
+                  return Center(child: Text('No properties available.'));
+                } else {
+                  final properties = searchQuery.isEmpty
+                      ? snapshot.data!
+                      : filteredProperties;
+
+                  return ListView.builder(
+                    itemCount: properties.length,
+                    itemBuilder: (context, index) {
+                      final property = properties[index];
+                      final imageUrl = property.photo.startsWith('http')
+                          ? property.photo
+                          : 'http://192.168.1.31:3000/${property.photo}';
+
+                      return FutureBuilder<List<dynamic>>(
+                        future: fetchRooms(property.id),
+                        builder: (context, roomsSnapshot) {
+                          if (roomsSnapshot.connectionState ==
+                              ConnectionState.waiting) {
+                            return SizedBox.shrink();
+                          } else if (roomsSnapshot.hasError ||
+                              !roomsSnapshot.hasData) {
+                            return Center(child: Text('No rooms available.'));
+                          }
+                          final rooms = roomsSnapshot.data!;
+                          final priceRange = rooms.isNotEmpty
+                              ? '${rooms.map((r) => r['price']).reduce((a, b) => a < b ? a : b)} - ${rooms.map((r) => r['price']).reduce((a, b) => a > b ? a : b)}'
+                              : 'N/A';
+                          return FutureBuilder<String>(
+                            future: fetchUserEmail(property.userId),
+                            builder: (context, userSnapshot) {
+                              if (userSnapshot.connectionState ==
+                                  ConnectionState.waiting) {
+                                return SizedBox.shrink();
+                              } else if (userSnapshot.hasError) {
+                                return Center(
+                                    child: Text(
+                                        'Error: ${userSnapshot.error}'));
+                              } else if (!userSnapshot.hasData ||
+                                  userSnapshot.data!.isEmpty) {
+                                return Center(
+                                    child: Text('No user email found.'));
+                              } else {
+                                final userEmail = userSnapshot.data!;
+                                return PropertyCard(
+                                  userId: userId,
+                                  token: widget.token,
+                                  property: property,
+                                  userEmail: userEmail,
+                                  imageUrl: imageUrl,
+                                  bookmarkedPropertyIds:
+                                      bookmarkedPropertyIds,
+                                  bookmarkProperty: bookmarkProperty,
+                                  priceRange: priceRange,
+                                  isDarkMode:
+                                      _themeController.isDarkMode.value,
+                                );
+                              }
+                            },
+                          );
+                        },
+                      );
+                    },
+                  );
+                }
+              },
+            ),
+          ),
+        ),
+      ],
     ),
-  );
+  ),
+);
 }
 
 }

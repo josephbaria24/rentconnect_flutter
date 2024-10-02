@@ -234,7 +234,7 @@ class _AddlistingState extends State<Addlisting> {
   }
 
   Future<void> _submitProperty() async {
-    var request = http.MultipartRequest('POST', Uri.parse('http://192.168.1.13:3000/storeProperty'));
+    var request = http.MultipartRequest('POST', Uri.parse('http://192.168.1.31:3000/storeProperty'));
 
     request.fields['userId'] = userId;
     request.fields['description'] = descriptionController.text;
@@ -418,10 +418,18 @@ void _showIncompleteFieldsDialog() {
 @override
 Widget build(BuildContext context) {
   return Scaffold(
+    backgroundColor: _themeController.isDarkMode.value? Color.fromARGB(255, 28, 29, 34) : Colors.white ,
     appBar: AppBar(
-      title: Text('Property Details'),
+      scrolledUnderElevation: 0,
+      backgroundColor: _themeController.isDarkMode.value? Color.fromARGB(255, 28, 29, 34) : Colors.white ,
+      title: Text('Setup Your Property',
+      style: TextStyle(
+        fontFamily: 'GeistSans',
+        fontWeight: FontWeight.bold
+      ),),
     ),
     body: Padding(
+      
       padding: const EdgeInsets.all(16.0),
       child: ListView(
         children: [

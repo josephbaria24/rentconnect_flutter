@@ -35,7 +35,7 @@ class PropertyCard extends StatelessWidget {
   });
 
   Future<Map<String, String>> fetchUserProfileStatus() async {
-    final url = Uri.parse('http://192.168.1.13:3000/profile/checkProfileCompletion/$userId');
+    final url = Uri.parse('http://192.168.1.31:3000/profile/checkProfileCompletion/$userId');
     try {
       final response = await http.get(
         url,
@@ -244,7 +244,7 @@ Widget build(BuildContext context) {
                                   'View',
                                   style: TextStyle(
                                     fontWeight: FontWeight.w600,
-                                    fontFamily: 'Poppins',
+                                    fontFamily: 'GeistSans',
                                     fontSize: 11,
                                   ),
                                 ),

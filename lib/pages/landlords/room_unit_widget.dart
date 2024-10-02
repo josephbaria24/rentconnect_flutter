@@ -139,45 +139,44 @@ class _RoomUnitWidgetState extends State<RoomUnitWidget> {
                   color: _themeController.isDarkMode.value ? Colors.white : Colors.black,
                 ),
               ),
-             ShadSelect<String>(
-              
-                placeholder: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text('Select Deposit',
+             Theme(
+                data: Theme.of(context).copyWith(
+                  iconTheme: IconThemeData(
+                    color: _themeController.isDarkMode.value ? Colors.white : Colors.black, // Change the icon color based on theme
+                  ),
+                ),
+                child: ShadSelect<String>(
+                  placeholder: Text(
+                    'Select Deposit',
                     style: TextStyle(
                       fontSize: 16,
                       fontFamily: 'GeistSans',
-                      //fontWeight: FontWeight.normal,
-                      color: _themeController.isDarkMode.value ? Colors.white : const Color.fromARGB(255, 87, 87, 87),
-                    ),),
-                    SizedBox(width: 1,),
-                    Icon(Icons.arrow_drop_down_outlined, size: 24,)
-                  ],
-                ),
-                options: [
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(32, 0, 6, 0),
-                    
+                      color: _themeController.isDarkMode.value ? Colors.white : const Color.fromARGB(255, 70, 69, 69),
+                    ),
                   ),
-                  ...depositDurations.entries.map((e) =>
-                      ShadOption(value: e.key, child: Text(e.value))).toList(),
-                ],
-                selectedOptionBuilder: (context, value) =>
-                    Text(depositDurations[value]!,
+                  options: [
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(32, 0, 6, 0),
+                    ),
+                    ...depositDurations.entries.map((e) =>
+                        ShadOption(value: e.key, child: Text(e.value))).toList(),
+                  ],
+                  selectedOptionBuilder: (context, value) => Text(
+                    depositDurations[value]!,
                     style: TextStyle(
-                    fontSize: 16,
-                    fontFamily: 'GeistSans',
-                    //fontWeight: FontWeight.normal,
-                    color: _themeController.isDarkMode.value ? Colors.white : Colors.black,
-                  ),),
-                onChanged: (newValue) {
-                  setState(() {
-                    widget.room.depositController.text = newValue!;
-                  });
-                },
+                      fontSize: 16,
+                      fontFamily: 'GeistSans',
+                      color: _themeController.isDarkMode.value ? Colors.white : Colors.black,
+                    ),
+                  ),
+                  onChanged: (newValue) {
+                    setState(() {
+                      widget.room.depositController.text = newValue!;
+                    });
+                  },
+                ),
               ),
+
 
               Text(
                 'Advance Payment',

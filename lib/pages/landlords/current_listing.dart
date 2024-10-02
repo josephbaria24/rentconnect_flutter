@@ -1,9 +1,11 @@
 // ignore_for_file: prefer_const_constructors
 
 import 'dart:convert';
+import 'dart:typed_data';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:image_gallery_saver/image_gallery_saver.dart';
 import 'package:intl/intl.dart';
 import 'package:jwt_decoder/jwt_decoder.dart';
 import 'package:http/http.dart' as http;
@@ -51,6 +53,8 @@ class _CurrentListingPageState extends State<CurrentListingPage> {
     email = jwtDecodedToken['email']?.toString() ?? 'Unknown email';
     getPropertyList(userId);
     _loading = true;
+    fetchRoomInquiries;
+    
   }
 
   Future<void> getPropertyList(String userId) async {
@@ -97,7 +101,7 @@ class _CurrentListingPageState extends State<CurrentListingPage> {
   Future<void> fetchUserProfile(String userId) async {
     try {
       final response =
-          await http.get(Uri.parse('http://192.168.1.13:3000/user/$userId'));
+          await http.get(Uri.parse('http://192.168.1.31:3000/user/$userId'));
       if (response.statusCode == 200) {
         final user = json.decode(response.body);
         setState(() {
@@ -116,7 +120,7 @@ class _CurrentListingPageState extends State<CurrentListingPage> {
   Future<void> fetchRoomInquiries(String roomId) async {
     try {
       final response = await http
-          .get(Uri.parse('http://192.168.1.13:3000/inquiries/rooms/$roomId'));
+          .get(Uri.parse('http://192.168.1.31:3000/inquiries/rooms/$roomId'));
       if (response.statusCode == 200) {
         final inquiries = json.decode(response.body);
         setState(() {
@@ -137,10 +141,12 @@ class _CurrentListingPageState extends State<CurrentListingPage> {
     }
   }
 
+
+
   Future<void> fetchRooms(String propertyId) async {
     try {
       final response = await http.get(Uri.parse(
-          'http://192.168.1.13:3000/rooms/properties/$propertyId/rooms'));
+          'http://192.168.1.31:3000/rooms/properties/$propertyId/rooms'));
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
@@ -176,39 +182,44 @@ class _CurrentListingPageState extends State<CurrentListingPage> {
       print('Error fetching rooms for property $propertyId: $e');
     }
   }
-//  Future<void> fetchRooms(String propertyId) async {
-//     try {
-//       final response = await http.get(Uri.parse('http://192.168.1.13:3000/rooms/properties/$propertyId/rooms'));
 
-//       if (response.statusCode == 200) {
-//         final data = jsonDecode(response.body);
-//         print('Fetch rooms response data: $data');
 
-//         if (data['status']) {
-//           setState(() {
-//             propertyRooms[propertyId] = data['rooms'] ?? [];
-//           });
+Future<void> updateRoomStatus(String roomId, String newStatus) async {
+  final url = Uri.parse('http://192.168.1.31:3000/rooms/updateRoom/$roomId'); // Replace with your backend URL
+  final headers = {
+    'Content-Type': 'application/json',
+    'Authorization': 'Bearer your_jwt_token' // Add your JWT token if required
+  };
 
-//           // Fetch inquiries for each room in the fetched property
-//           for (var room in data['rooms']) {
-//             String roomId = room['_id'];
-//             await fetchRoomInquiries(roomId); // Fetch inquiries for the room
-//           }
-//         } else {
-//           print('Failed to fetch rooms for property $propertyId. Status: ${data['status']}');
-//         }
-//       } else {
-//         print('Failed to load rooms for property $propertyId. Status code: ${response.statusCode}');
-//       }
-//     } catch (e) {
-//       print('Error fetching rooms for property $propertyId: $e');
-//     }
-//   }
+  final updateData = {
+    'roomStatus': newStatus,
+  };
+
+  try {
+    final response = await http.patch(
+      url,
+      headers: headers,
+      body: json.encode(updateData),
+    );
+
+    if (response.statusCode == 200) {
+      // Handle successful response
+      final responseData = json.decode(response.body);
+      print('Room updated successfully: ${responseData['room']}');
+    } else {
+      // Handle error response
+      final errorData = json.decode(response.body);
+      print('Failed to update room: ${errorData['error']}');
+    }
+  } catch (error) {
+    print('Error updating room: $error');
+  }
+}
 
   Future<void> deleteProperty(String propertyId) async {
     try {
       var response = await http.delete(
-        Uri.parse('http://192.168.1.13:3000/deleteProperty/$propertyId'),
+        Uri.parse('http://192.168.1.31:3000/deleteProperty/$propertyId'),
         headers: {"Authorization": "Bearer ${widget.token}"},
       );
 
@@ -271,177 +282,455 @@ class _CurrentListingPageState extends State<CurrentListingPage> {
     await getPropertyList(userId);
   }
 
-  void showRoomDetailPopover(BuildContext context, dynamic room) {
-    showDialog(
-      context: context,
-      barrierDismissible: true,
-      builder: (context) {
-        int selectedDay = room['dueDate'] != null
-            ? DateTime.parse(room['dueDate']).day
-            : 5; // Default to the 5th day
-        DateTime? _selectedDueDate;
 
-        void calculateDueDate() {
-          DateTime today = DateTime.now();
-          _selectedDueDate = DateTime(today.year, today.month, selectedDay);
 
-          // If the selected day has already passed this month, move to next month
-          if (today.day > selectedDay) {
-            _selectedDueDate =
-                DateTime(today.year, today.month + 1, selectedDay);
-          }
-        }
+Future<String?> fetchProofOfReservation(String roomId) async {
+  try {
+    // Example API call to fetch payment details
+    var response = await http.get(Uri.parse('http://192.168.1.31:3000/payment/room/$roomId/proofOfReservation'));
+    if (response.statusCode == 200) {
+      var data = jsonDecode(response.body);
+      return data['proofOfReservation']; // Ensure the key matches your backend response
+    } else {
+      // Handle error, return null if not available
+      return null;
+    }
+  } catch (e) {
+    // Handle any errors during the request
+    return null;
+  }
+}
 
-        calculateDueDate();
+// Function to save the image
+Future<void> saveImage(String imageUrl) async {
+  try {
+    // Fetch the image data from the URL
+    final response = await http.get(Uri.parse(imageUrl));
 
-        List<String> photos = [
-          (room['photo1'] as String?)?.toString() ?? '',
-          (room['photo2'] as String?)?.toString() ?? '',
-          (room['photo3'] as String?)?.toString() ?? '',
-        ].where((photo) => photo.isNotEmpty).toList();
+    if (response.statusCode == 200) {
+      // Convert the response body to Uint8List
+      final Uint8List imageBytes = response.bodyBytes;
 
-        PageController pageController = PageController();
+      // Save the image
+      final result = await ImageGallerySaver.saveImage(imageBytes);
 
-        return Dialog(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(20),
+      // Show a toast or Snackbar to inform the user that the image has been saved
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Image saved to gallery!')),
+      );
+    } else {
+      // Handle error if the response is not 200
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to fetch image.')),
+      );
+    }
+  } catch (e) {
+    // Handle exceptions
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Error saving image: $e')),
+    );
+  }
+}
+
+void showFullscreenImage(BuildContext context, String imageUrl) {
+  showDialog(
+    context: context,
+    builder: (context) {
+      return Dialog(
+        backgroundColor: Colors.black,
+        child: GestureDetector(
+          onTap: () {
+            Navigator.of(context).pop(); // Close the fullscreen image on tap
+          },
+          child: Container(
+            constraints: BoxConstraints(
+              minHeight: MediaQuery.of(context).size.height * 0.5,
+              maxHeight: MediaQuery.of(context).size.height * 0.9, // Limit height to 90% of screen
+            ),
+            child: Image.network(
+              imageUrl,
+              fit: BoxFit.contain,
+              loadingBuilder: (context, child, loadingProgress) {
+                if (loadingProgress == null) return child; // If loading complete
+                return Center(child: CircularProgressIndicator()); // Show loading indicator
+              },
+              errorBuilder: (context, error, stackTrace) {
+                return Center(child: Text('Error loading image', style: TextStyle(color: Colors.white)));
+              },
+            ),
           ),
-          child: StatefulBuilder(
-            builder: (BuildContext context, StateSetter setState) {
-              return Padding(
-                padding: EdgeInsets.all(16),
-                child: SingleChildScrollView(
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: CrossAxisAlignment.start,
+        ),
+      );
+    },
+  );
+}
+
+
+
+void showRoomDetailPopover(BuildContext context, dynamic room, Map<String, dynamic> userProfiles) {
+  showDialog(
+    context: context,
+    barrierDismissible: true,
+    builder: (context) {
+      int selectedDay = room['dueDate'] != null
+          ? DateTime.parse(room['dueDate']).day
+          : 5; // Default to the 5th day
+      DateTime? _selectedDueDate;
+
+      void calculateDueDate() {
+        DateTime today = DateTime.now();
+        _selectedDueDate = DateTime(today.year, today.month, selectedDay);
+
+        // If the selected day has already passed this month, move to next month
+        if (today.day > selectedDay) {
+          _selectedDueDate = DateTime(today.year, today.month + 1, selectedDay);
+        }
+      }
+
+      calculateDueDate();
+
+      List<String> photos = [
+        (room['photo1'] as String?)?.toString() ?? '',
+        (room['photo2'] as String?)?.toString() ?? '',
+        (room['photo3'] as String?)?.toString() ?? '',
+      ].where((photo) => photo.isNotEmpty).toList();
+
+      PageController pageController = PageController();
+
+      bool hasOccupants = room['occupantUsers'] != null && room['occupantUsers'].isNotEmpty;
+      bool isReserved = room['roomStatus'] == 'reserved';
+      bool isOccupied = room['roomStatus'] == 'occupied';
+
+      // Function to save image to device
+      Future<void> saveImage(String imageUrl) async {
+        try {
+          final response = await http.get(Uri.parse(imageUrl));
+
+          if (response.statusCode == 200) {
+            final Uint8List imageBytes = response.bodyBytes;
+            final result = await ImageGallerySaver.saveImage(imageBytes);
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text('Image saved to gallery!')),
+            );
+          } else {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text('Failed to fetch image.')),
+            );
+          }
+        } catch (e) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Error saving image: $e')),
+          );
+        }
+      }
+
+      // Show full-screen image
+      void showFullscreenImage(BuildContext context, String imageUrl) {
+        showDialog(
+          context: context,
+          builder: (context) {
+            return Dialog(
+              backgroundColor: Colors.black,
+              child: GestureDetector(
+                onTap: () {
+                  Navigator.of(context).pop(); // Close the fullscreen image on tap
+                },
+                child: Container(
+                  constraints: BoxConstraints(
+                    maxHeight: MediaQuery.of(context).size.height * 0.4, // Limit height to 90% of screen
+                  ),
+                  child: Stack(
+                    alignment: Alignment.center,
                     children: [
-                      SizedBox(
-                        height: 150,
-                        child: photos.isNotEmpty
-                            ? PageView.builder(
-                                controller: pageController,
-                                itemCount: photos.length,
-                                itemBuilder: (context, index) {
-                                  return Padding(
-                                    padding: const EdgeInsets.symmetric(
-                                        vertical: 8.0),
-                                    child: ClipRRect(
-                                      borderRadius: BorderRadius.circular(12),
-                                      child: FadeInImage.assetNetwork(
-                                        placeholder:
-                                            'assets/images/placeholder.webp',
-                                        image: photos[index],
-                                        fit: BoxFit.cover,
-                                      ),
-                                    ),
-                                  );
-                                },
-                              )
-                            : Center(child: Text("No photos available")),
-                      ),
-                      if (photos.isNotEmpty)
-                        Center(
-                          child: SmoothPageIndicator(
-                            controller: pageController,
-                            count: photos.length,
-                            effect: ExpandingDotsEffect(
-                              dotHeight: 8,
-                              dotWidth: 8,
-                              activeDotColor: Theme.of(context).brightness ==
-                                      Brightness.dark
-                                  ? Colors.white
-                                  : Colors.black,
-                              dotColor: Colors.grey,
-                            ),
-                          ),
-                        ),
-                      SizedBox(height: 10),
-                      Text(
-                        'Room No. ${room['roomNumber']?.toString() ?? 'Unknown'}',
-                        style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 20,
-                            fontFamily: 'GeistSans'),
-                      ),
-                      SizedBox(height: 5),
-                      Text(
-                        'Capacity: ${room['capacity']?.toString() ?? 'N/A'}',
-                        style: TextStyle(fontSize: 16, fontFamily: 'GeistSans'),
-                      ),
-                      Text(
-                        'Occupants: ${room['occupantUsers']?.map((userId) {
-                              var profile = userProfiles[userId];
-                              return profile != null
-                                  ? '${profile['firstName']} ${profile['lastName']}'
-                                  : 'N/A';
-                            }).join(', ') ?? 'N/A'}',
-                        style: TextStyle(fontSize: 16, fontFamily: 'GeistSans'),
-                      ),
-                      SizedBox(height: 10),
-                      Row(
-                        children: [
-                          Icon(Icons.calendar_today, size: 20),
-                          SizedBox(width: 5),
-                          DropdownButton<int>(
-                            value: selectedDay,
-                            items: List.generate(31, (index) {
-                              return DropdownMenuItem<int>(
-                                value: index + 1,
-                                child: Text('Day ${index + 1}'),
-                              );
-                            }),
-                            onChanged: (int? newDay) {
-                              setState(() {
-                                selectedDay = newDay!;
-                                calculateDueDate();
-                              });
-                            },
-                          ),
-                          Text(
-                            'Next Due Date: ${DateFormat.yMd().format(_selectedDueDate!)}',
-                            style: TextStyle(
-                                fontSize: 12,
-                                color: const Color.fromARGB(255, 3, 13, 22)),
-                          ),
-                          SizedBox(width: 2),
-                          ShadButton(
-                            height: 23,
-                            width: 22,
-                            onPressed: () {
-                              updateRoomDueDate(room['_id'], _selectedDueDate!);
-                              Navigator.pop(context);
-                            },
-                            icon: const Icon(
-                              Icons.check,
-                              size: 16,
-                            ),
-                          ),
-                        ],
-                      ),
-                      SizedBox(height: 10),
-                      ShadButton(
-                        height: 33,
-                        onPressed: () {
-                          Navigator.pop(context);
+                      Image.network(
+                        imageUrl,
+                        fit: BoxFit.contain,
+                        loadingBuilder: (context, child, loadingProgress) {
+                          if (loadingProgress == null) return child; // If loading complete
+                          return Center(child: CircularProgressIndicator()); // Show loading indicator
                         },
-                        child: Text('Close'),
+                        errorBuilder: (context, error, stackTrace) {
+                          return Center(child: Text('Error loading image', style: TextStyle(color: Colors.white)));
+                        },
+                      ),
+                      Positioned(
+                        top: 5,
+                        right: 10,
+                        child: IconButton(
+                          icon: Icon(Icons.download, color: Colors.white),
+                          onPressed: () {
+                            saveImage(imageUrl);
+                          },
+                        ),
                       ),
                     ],
                   ),
                 ),
+              ),
+            );
+          },
+        );
+      }
+
+      return Dialog(
+        backgroundColor: Theme.of(context).brightness == Brightness.dark
+            ? const Color.fromARGB(255, 41, 43, 53)
+            : Colors.white,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
+        ),
+        child: Container(
+          constraints: BoxConstraints(
+              maxHeight: MediaQuery.of(context).size.height * 0.7), // Limits the height to 80% of screen
+          child: StatefulBuilder(
+            builder: (BuildContext context, StateSetter setState) {
+              return Padding(
+                padding: const EdgeInsets.all(14),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    // Row for Room Number and Close Button
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          'Room No. ${room['roomNumber']?.toString() ?? 'Unknown'}',
+                          style: const TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 20,
+                              fontFamily: 'GeistSans'),
+                        ),
+                        ShadButton.ghost(
+                          backgroundColor: Colors.white,
+                          height: 33,
+                          onPressed: () {
+                            Navigator.pop(context);
+                          },
+                          icon: Icon(
+                            Icons.close,
+                            color: Theme.of(context).brightness == Brightness.dark
+                                ? Colors.white
+                                : Colors.black,
+                          ),
+                        ),
+                      ],
+                    ),
+    
+                    // Scrollable Content
+                    Expanded(
+                      child: Scrollbar(
+                        thickness: 7,
+                        radius: Radius.circular(20),
+                        thumbVisibility: true, // Makes the scrollbar always visible
+                        child: Padding(
+                          padding: const EdgeInsets.only(right: 10.0),
+                          child: SingleChildScrollView(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                SizedBox(
+                                  height: 150,
+                                  child: photos.isNotEmpty
+                                      ? PageView.builder(
+                                          controller: pageController,
+                                          itemCount: photos.length,
+                                          itemBuilder: (context, index) {
+                                            return GestureDetector(
+                                              onTap: () {
+                                                // Show full-screen image with save option
+                                                showFullscreenImage(context, photos[index]);
+                                              },
+                                              child: Padding(
+                                                padding:
+                                                    const EdgeInsets.symmetric(vertical: 8.0),
+                                                child: ClipRRect(
+                                                  borderRadius: BorderRadius.circular(12),
+                                                  child: FadeInImage.assetNetwork(
+                                                    placeholder:
+                                                        'assets/images/placeholder.webp',
+                                                    image: photos[index],
+                                                    fit: BoxFit.cover,
+                                                  ),
+                                                ),
+                                              ),
+                                            );
+                                          },
+                                        )
+                                      : const Center(child: Text("No photos available")),
+                                ),
+                                if (photos.isNotEmpty)
+                                  Center(
+                                    child: SmoothPageIndicator(
+                                      controller: pageController,
+                                      count: photos.length,
+                                      effect: ExpandingDotsEffect(
+                                        dotHeight: 8,
+                                        dotWidth: 8,
+                                        activeDotColor:
+                                            Theme.of(context).brightness == Brightness.dark
+                                                ? Colors.white
+                                                : Colors.black,
+                                        dotColor: Colors.grey,
+                                      ),
+                                    ),
+                                  ),
+                                const SizedBox(height: 10),
+
+                                // Proof of Reservation when Reserved
+                                if (isReserved) ...[
+                                  Text(
+                                    'Reservation Details',
+                                    style: TextStyle(
+                                        fontSize: 18, fontWeight: FontWeight.bold),
+                                  ),
+                                  const SizedBox(height: 5),
+                                  Text('Reservation Fee: ₱${room['reservationFee'] ?? 'N/A'}'),
+                                  Text('Duration of Reservation: ${room['reservationDuration'] ?? 'N/A'} days'),
+                                  const SizedBox(height: 10),
+                                  Text('Proof of Reservation:', style: TextStyle(fontWeight: FontWeight.bold)),
+                                  FutureBuilder<String?>(
+                                    future: fetchProofOfReservation(room['_id']),
+                                    builder: (context, snapshot) {
+                                      if (snapshot.connectionState == ConnectionState.waiting) {
+                                        return Container(
+                                          height: 100,
+                                          alignment: Alignment.center,
+                                          child: CircularProgressIndicator(),
+                                        );
+                                      } else if (snapshot.hasError) {
+                                        return Container(
+                                          height: 100,
+                                          decoration: BoxDecoration(
+                                            border: Border.all(color: Colors.grey),
+                                            borderRadius: BorderRadius.circular(8),
+                                          ),
+                                          child: Center(
+                                            child: Text('Error fetching proof of reservation', style: TextStyle(color: Colors.red)),
+                                          ),
+                                        );
+                                      } else if (snapshot.hasData && snapshot.data != null && snapshot.data!.isNotEmpty) {
+                                        return GestureDetector(
+                                          onTap: () {
+                                            // Show full-screen image with save option
+                                            showFullscreenImage(context, snapshot.data!);
+                                          },
+                                          child: Image.network(
+                                            snapshot.data!,
+                                            height: 100,
+                                            fit: BoxFit.cover,
+                                          ),
+                                        );
+                                      } else {
+                                        return Container(
+                                          height: 100,
+                                          decoration: BoxDecoration(
+                                            border: Border.all(color: Colors.grey),
+                                            borderRadius: BorderRadius.circular(8),
+                                          ),
+                                          child: Center(
+                                            child: Text('No Proof of Reservation Available', style: TextStyle(color: Colors.grey)),
+                                          ),
+                                        );
+                                      }
+                                    },
+                                  ),
+                                  const SizedBox(height: 10),
+                                  ShadButton(
+                                    child: const Text('Mark as Occupied'),
+                                    onPressed: () {
+                                      updateRoomStatus(room['_id'], 'occupied');
+                                      Navigator.pop(context);
+                                    },
+                                  ),
+                                  
+                                ],
+
+                                // Proof of Payment when Occupied
+                                if (isOccupied) ...[
+                                  Text(
+                                    'Payment Details',
+                                    style: TextStyle(
+                                        fontSize: 18, fontWeight: FontWeight.bold),
+                                  ),
+                                  const SizedBox(height: 5),
+                                  Text('Due Date: ${_selectedDueDate != null ? DateFormat('MMMM dd, yyyy').format(_selectedDueDate!) : 'N/A'}'),
+                                  Text('Total Amount: ₱${room['price'] ?? 'N/A'}'),
+                                  const SizedBox(height: 10),
+                                  Text('Proof of Payment:', style: TextStyle(fontWeight: FontWeight.bold)),
+                                  FutureBuilder<String?>(
+                                    future: fetchProofOfReservation(room['_id']),
+                                    builder: (context, snapshot) {
+                                      if (snapshot.connectionState == ConnectionState.waiting) {
+                                        return Container(
+                                          height: 100,
+                                          alignment: Alignment.center,
+                                          child: CircularProgressIndicator(),
+                                        );
+                                      } else if (snapshot.hasError) {
+                                        return Container(
+                                          height: 100,
+                                          decoration: BoxDecoration(
+                                            border: Border.all(color: Colors.grey),
+                                            borderRadius: BorderRadius.circular(8),
+                                          ),
+                                          child: Center(
+                                            child: Text('Error fetching proof of payment', style: TextStyle(color: Colors.red)),
+                                          ),
+                                        );
+                                      } else if (snapshot.hasData && snapshot.data != null && snapshot.data!.isNotEmpty) {
+                                        return GestureDetector(
+                                          onTap: () {
+                                            // Show full-screen image with save option
+                                            showFullscreenImage(context, snapshot.data!);
+                                          },
+                                          child: Image.network(
+                                            snapshot.data!,
+                                            height: 100,
+                                            fit: BoxFit.cover,
+                                          ),
+                                        );
+                                      } else {
+                                        return Container(
+                                          height: 100,
+                                          decoration: BoxDecoration(
+                                            border: Border.all(color: Colors.grey),
+                                            borderRadius: BorderRadius.circular(8),
+                                          ),
+                                          child: Center(
+                                            child: Text('No Proof of Payment Available', style: TextStyle(color: Colors.grey)),
+                                          ),
+                                        );
+                                      }
+                                    },
+                                  ),
+                                ],
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
               );
             },
           ),
-        );
-      },
-    );
-  }
+        ),
+      );
+    },
+  );
+}
+
+
+
+
+
 
   Future<void> updateRoomDueDate(String roomId, DateTime dueDate) async {
     try {
       final response = await http.patch(
         Uri.parse(
-            'http://192.168.1.13:3000/rooms/updateRoom/$roomId'), // Ensure the URL is correct
+            'http://192.168.1.31:3000/rooms/updateRoom/$roomId'), // Ensure the URL is correct
         headers: <String, String>{
           'Content-Type': 'application/json; charset=UTF-8',
         },
@@ -467,7 +756,7 @@ class _CurrentListingPageState extends State<CurrentListingPage> {
   Future<void> updateInquiryStatus(
       String inquiryId, String newStatus, String token) async {
     final url = Uri.parse(
-        'http://192.168.1.13:3000/inquiries/update/$inquiryId'); // Match your backend route
+        'http://192.168.1.31:3000/inquiries/update/$inquiryId'); // Match your backend route
 
     try {
       final response = await http.patch(
@@ -530,7 +819,7 @@ class _CurrentListingPageState extends State<CurrentListingPage> {
     };
 
     final response = await http.patch(
-      Uri.parse('http://192.168.1.13:3000/inquiries/update/$inquiryId'),
+      Uri.parse('http://192.168.1.31:3000/inquiries/update/$inquiryId'),
       headers: {
         'Content-Type': 'application/json',
         'Authorization': 'Bearer $token',
@@ -550,7 +839,7 @@ class _CurrentListingPageState extends State<CurrentListingPage> {
   Future<void> rejectAndDeleteInquiry(String inquiryId, String token) async {
     try {
       final response = await http.delete(
-        Uri.parse('http://192.168.1.13:3000/inquiries/delete/$inquiryId'),
+        Uri.parse('http://192.168.1.31:3000/inquiries/delete/$inquiryId'),
         headers: {
           'Authorization': 'Bearer $token',
           'Content-Type': 'application/json'
@@ -628,11 +917,14 @@ class _CurrentListingPageState extends State<CurrentListingPage> {
 
   @override
   Widget build(BuildContext context) {
+    
     return Scaffold(
+      
       backgroundColor: _themeController.isDarkMode.value
           ? Color.fromARGB(255, 28, 29, 34)
           : Colors.white,
       appBar: AppBar(
+        scrolledUnderElevation: 0,
         backgroundColor: _themeController.isDarkMode.value
             ? const Color.fromARGB(255, 28, 29, 34)
             : Colors.white,
@@ -641,7 +933,7 @@ class _CurrentListingPageState extends State<CurrentListingPage> {
           style: TextStyle(
             color:
                 _themeController.isDarkMode.value ? Colors.white : Colors.black,
-            fontFamily: 'Poppins',
+            fontFamily: 'GeistSans',
             fontWeight: FontWeight.w600,
           ),
         ),
@@ -891,7 +1183,7 @@ class _CurrentListingPageState extends State<CurrentListingPage> {
                                                           onTap: () =>
                                                               showRoomDetailPopover(
                                                                   context,
-                                                                  room),
+                                                                  room, userProfiles),
                                                           child: Padding(
                                                             padding:
                                                                 const EdgeInsets
@@ -951,7 +1243,7 @@ class _CurrentListingPageState extends State<CurrentListingPage> {
                                                                             'Capacity: ${room['capacity']?.toString() ?? 'N/A'}',
                                                                             style:
                                                                                 TextStyle(
-                                                                              fontFamily: 'Poppins',
+                                                                              fontFamily: 'GeistSans',
                                                                               fontSize: 12,
                                                                               fontWeight: FontWeight.w600,
                                                                               color: _themeController.isDarkMode.value ? const Color.fromARGB(255, 255, 255, 255) : const Color.fromARGB(255, 0, 0, 0),
@@ -962,7 +1254,7 @@ class _CurrentListingPageState extends State<CurrentListingPage> {
                                                                               Text(
                                                                                 'Room Status: ',
                                                                                 style: TextStyle(
-                                                                                  fontFamily: 'Poppins',
+                                                                                  fontFamily: 'GeistSans',
                                                                                   fontSize: 12,
                                                                                   fontWeight: FontWeight.w600,
                                                                                   color: _themeController.isDarkMode.value ? const Color.fromARGB(255, 255, 255, 255) : const Color.fromARGB(255, 0, 0, 0),
@@ -977,7 +1269,7 @@ class _CurrentListingPageState extends State<CurrentListingPage> {
                                                                                 child: Text(
                                                                                   '${room['roomStatus']?.toString().toUpperCase() ?? 'N/A'}',
                                                                                   style: TextStyle(
-                                                                                    fontFamily: 'Poppins',
+                                                                                    fontFamily: 'GeistSans',
                                                                                     fontWeight: FontWeight.w800,
                                                                                     fontSize: 12,
                                                                                     color: const Color.fromARGB(255, 5, 5, 5),
@@ -1125,6 +1417,7 @@ class _CurrentListingPageState extends State<CurrentListingPage> {
                                                                                                   setState(() {
                                                                                                     responseBody = jsonEncode(responseBody); // Use responseBody to store the JSON data
                                                                                                   });
+                                                                                                   await fetchRoomInquiries(roomId);
                                                                                                 } catch (error) {
                                                                                                   print('Error: $error');
                                                                                                 }

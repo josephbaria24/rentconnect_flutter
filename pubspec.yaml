@@ -63,6 +63,9 @@ dependencies:
   shadcn_flutter: ^0.0.20
   shadcn_ui: ^0.9.7
   socket_io_client: ^2.0.3+1
+  image_gallery_saver: ^2.0.3
+  permission_handler: ^11.3.1
+
 
 
 

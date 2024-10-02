@@ -37,7 +37,7 @@ class _AccountSettingsState extends State<AccountSettings> {
   }
 
   Future<void> _updateEmail(String newEmail) async {
-    final url = Uri.parse('http://192.168.1.13:3000/updateUserInfo');
+    final url = Uri.parse('http://192.168.1.31:3000/updateUserInfo');
     try {
       final response = await http.patch(
         url,
@@ -76,7 +76,7 @@ class _AccountSettingsState extends State<AccountSettings> {
   }
 
   Future<void> _updatePassword(String currentPassword, String newPassword) async {
-    final url = Uri.parse('http://192.168.1.13:3000/updatePassword');
+    final url = Uri.parse('http://192.168.1.31:3000/updatePassword');
     try {
       final response = await http.patch(
         url,
@@ -148,156 +148,233 @@ class _AccountSettingsState extends State<AccountSettings> {
       },
     );
   }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Account Settings',
+@override
+Widget build(BuildContext context) {
+  return Scaffold(
+    appBar: AppBar(
+      title: const Text(
+        'Account Settings',
         style: TextStyle(
           fontFamily: 'GeistSans',
-          fontWeight: FontWeight.bold
-        ),),
-        leading: GestureDetector(
-          onTap: () {
-            Navigator.pop(context);
-          },
-          child: const Icon(Icons.arrow_back_ios_new_outlined),
+          fontWeight: FontWeight.bold,
         ),
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(20.0),
-        child: ShadTabs<String>(    
-          value: _selectedTab, // Use the selected tab state variable here
-          onChanged: (newTab) {
-            setState(() {
-              _selectedTab = newTab; // Update the selected tab when the user changes tabs
-            });
-          },
-          tabBarConstraints: const BoxConstraints(maxWidth: 400),
-          contentConstraints: const BoxConstraints(maxWidth: 400),
-          tabs: [
-            ShadTab(
-              value: 'account',
-              child: Text('Account', style: 
-              TextStyle(
-                color:  _themeController.isDarkMode.value ? const Color.fromARGB(255, 0, 0, 0): const Color.fromARGB(255, 0, 0, 0),
-              ),),
-              content: ShadCard(
-                backgroundColor: _themeController.isDarkMode.value ? const Color.fromARGB(255, 0, 0, 0): const Color.fromARGB(255, 255, 255, 255),
-                title:  Text('Account', style: TextStyle(
-                  color:  _themeController.isDarkMode.value ? const Color.fromARGB(255, 255, 255, 255): const Color.fromARGB(255, 0, 0, 0),
-                ),),
-                description: const Text(
-                    "Make changes to your account here. Click save when you're done."),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const SizedBox(height: 16),
-                    ShadInputFormField(
-                      prefix: Icon(Icons.mail_outlined),
-                      label: Text('Email', style: TextStyle(
-                        color:  _themeController.isDarkMode.value ? Colors.white : const Color.fromARGB(255, 0, 0, 0),
-                      ),),
-                      initialValue: '$email',
-                      onChanged: (value) {
-                        setState(() {
-                          email = value;
-                        });
-                      },
-                      style: TextStyle(
-                        color: _themeController.isDarkMode.value ? Colors.white : Colors.black, // Set input text color
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    ShadButton(
-                      child: const Text('Update Email'),
-                      onPressed: () => _showConfirmationDialog(
-                        title: 'Confirm Email Update',
-                        content: 'Are you sure you want to update your email?',
-                        onConfirm: () => _updateEmail(email),
-                      ),
-                    ),
-                  ],
+      leading: GestureDetector(
+        onTap: () {
+          Navigator.pop(context);
+        },
+        child: const Icon(Icons.arrow_back_ios_new_outlined),
+      ),
+    ),
+    resizeToAvoidBottomInset: true, // This helps to avoid overflow when keyboard appears
+    body: SingleChildScrollView( // Wrap the body in a scroll view
+      padding: const EdgeInsets.all(20.0),
+      child: Column(
+        children: [
+          ShadTabs<String>(
+            value: _selectedTab, // Use the selected tab state variable here
+            onChanged: (newTab) {
+              setState(() {
+                _selectedTab = newTab; // Update the selected tab when the user changes tabs
+              });
+            },
+            tabBarConstraints: const BoxConstraints(maxWidth: 400),
+            contentConstraints: const BoxConstraints(maxWidth: 400),
+            tabs: [
+              ShadTab(
+                value: 'account',
+                child: Text(
+                  'Account',
+                  style: TextStyle(
+                    color: _themeController.isDarkMode.value
+                        ? const Color.fromARGB(255, 255, 255, 255)
+                        : const Color.fromARGB(255, 255, 255, 255),
+                  ),
                 ),
-              ),
-            ),
-            ShadTab(
-              value: 'password',
-              child: const Text('Password'),
-              content: ShadCard(
-                backgroundColor: _themeController.isDarkMode.value ? const Color.fromARGB(255, 0, 0, 0): const Color.fromARGB(255, 255, 255, 255),
-                title: Text('Password', style: TextStyle(
-                  color:  _themeController.isDarkMode.value ? const Color.fromARGB(255, 255, 255, 255): const Color.fromARGB(255, 0, 0, 0),
-                ),),
-                description: const Text(
-                    "Change your password here. After saving, you'll be logged out."),
-                child: Column(
-                  children: [
-                    const SizedBox(height: 16),
-                    ShadInputFormField(
-                      label: Text('Current password', style: TextStyle(
-                        color:  _themeController.isDarkMode.value ? Colors.white : const Color.fromARGB(255, 0, 0, 0),
-                      ),),
-                      obscureText: obscure,
-                      prefix: const Padding(
-                        padding: EdgeInsets.all(4.0),
-                        child: ShadImage.square(size: 16, LucideIcons.lock),
-                      ),
-                      suffix: ShadButton(
-                        width: 24,
-                        height: 24,
-                        padding: EdgeInsets.zero,
-                        decoration: const ShadDecoration(
-                          secondaryBorder: ShadBorder.none,
-                          secondaryFocusedBorder: ShadBorder.none,
+                content: ShadCard(
+                  backgroundColor: _themeController.isDarkMode.value
+                      ? const Color.fromARGB(255, 0, 0, 0)
+                      : const Color.fromARGB(255, 255, 255, 255),
+                  title: Text(
+                    'Account',
+                    style: TextStyle(
+                      color: _themeController.isDarkMode.value
+                          ? const Color.fromARGB(255, 255, 255, 255)
+                          : const Color.fromARGB(255, 0, 0, 0),
+                    ),
+                  ),
+                  description: const Text(
+                    "Make changes to your account here. Click save when you're done.",
+                  ),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const SizedBox(height: 16),
+                      ShadInputFormField(
+                        cursorColor: _themeController.isDarkMode.value
+                            ? Colors.white
+                            : Colors.black,
+                        prefix: const Icon(Icons.mail_outlined),
+                        label: Text(
+                          'Email',
+                          style: TextStyle(
+                            color: _themeController.isDarkMode.value
+                                ? Colors.white
+                                : const Color.fromARGB(255, 0, 0, 0),
+                          ),
                         ),
-                        icon: ShadImage.square(
-                          size: 16,
-                          obscure ? LucideIcons.eyeOff : LucideIcons.eye,
-                        ),
-                        onPressed: () {
+                        initialValue: '$email',
+                        onChanged: (value) {
                           setState(() {
-                            obscure = !obscure;
+                            email = value;
                           });
                         },
+                        style: TextStyle(
+                          color: _themeController.isDarkMode.value
+                              ? Colors.white
+                              : Colors.black, // Set input text color
+                        ),
                       ),
-                      style: TextStyle(
-                        color: _themeController.isDarkMode.value ? Colors.white : Colors.black, // Set input text color
+                      const SizedBox(height: 8),
+                      ShadButton(
+                        backgroundColor: _themeController.isDarkMode.value
+                            ? Colors.white
+                            : const Color.fromARGB(255, 0, 1, 40),
+                        child: Text(
+                          'Update Email',
+                          style: TextStyle(
+                            color: _themeController.isDarkMode.value
+                                ? Colors.black
+                                : const Color.fromARGB(255, 255, 255, 255),
+                          ),
+                        ),
+                        onPressed: () => _showConfirmationDialog(
+                          title: 'Confirm Email Update',
+                          content: 'Are you sure you want to update your email?',
+                          onConfirm: () => _updateEmail(email),
+                        ),
                       ),
-                      onChanged: (value) {
-                        _currentPassword = value;
-                      },
-                    ),
-                    const SizedBox(height: 8),
-                    ShadInputFormField(
-                      label: Text('New password', style: TextStyle(
-                        color:  _themeController.isDarkMode.value ? Colors.white : const Color.fromARGB(255, 0, 0, 0),
-                      ),),
-                      obscureText: obscure,
-                      style: TextStyle(
-                        color: _themeController.isDarkMode.value ? Colors.white : Colors.black, // Set input text color
-                      ),
-                      onChanged: (value) {
-                        _newPassword = value;
-                      },
-                    ),
-                    const SizedBox(height: 8),
-                    ShadButton(
-                      child: const Text('Update Password'),
-                      onPressed: () => _showConfirmationDialog(
-                        title: 'Confirm Password Update',
-                        content: 'Are you sure you want to update your password?',
-                        onConfirm: () => _updatePassword(_currentPassword!, _newPassword!),
-                      ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
-            ),
-          ],
-        ),
+              ShadTab(
+                value: 'password',
+                child: const Text('Password'),
+                content: ShadCard(
+                  backgroundColor: _themeController.isDarkMode.value
+                      ? const Color.fromARGB(255, 0, 0, 0)
+                      : const Color.fromARGB(255, 255, 255, 255),
+                  title: Text(
+                    'Password',
+                    style: TextStyle(
+                      color: _themeController.isDarkMode.value
+                          ? const Color.fromARGB(255, 255, 255, 255)
+                          : const Color.fromARGB(255, 0, 0, 0),
+                    ),
+                  ),
+                  description: const Text(
+                    "Change your password here. After saving, you'll be logged out.",
+                  ),
+                  child: Column(
+                    children: [
+                      const SizedBox(height: 16),
+                      ShadInputFormField(
+                        cursorColor: _themeController.isDarkMode.value
+                            ? Colors.white
+                            : Colors.black,
+                        label: Text(
+                          'Current password',
+                          style: TextStyle(
+                            color: _themeController.isDarkMode.value
+                                ? Colors.white
+                                : const Color.fromARGB(255, 0, 0, 0),
+                          ),
+                        ),
+                        obscureText: obscure,
+                        prefix: const Padding(
+                          padding: EdgeInsets.all(4.0),
+                          child: ShadImage.square(size: 16, LucideIcons.lock),
+                        ),
+                        suffix: ShadButton(
+                          width: 24,
+                          height: 24,
+                          padding: EdgeInsets.zero,
+                          decoration: const ShadDecoration(
+                            secondaryBorder: ShadBorder.none,
+                            secondaryFocusedBorder: ShadBorder.none,
+                          ),
+                          icon: ShadImage.square(
+                            size: 16,
+                            obscure ? LucideIcons.eyeOff : LucideIcons.eye,
+                          ),
+                          onPressed: () {
+                            setState(() {
+                              obscure = !obscure;
+                            });
+                          },
+                        ),
+                        style: TextStyle(
+                          color: _themeController.isDarkMode.value
+                              ? Colors.white
+                              : Colors.black, // Set input text color
+                        ),
+                        onChanged: (value) {
+                          _currentPassword = value;
+                        },
+                      ),
+                      const SizedBox(height: 8),
+                      ShadInputFormField(
+                        cursorColor: _themeController.isDarkMode.value
+                            ? Colors.white
+                            : Colors.black,
+                        label: Text(
+                          'New password',
+                          style: TextStyle(
+                            color: _themeController.isDarkMode.value
+                                ? Colors.white
+                                : const Color.fromARGB(255, 0, 0, 0),
+                          ),
+                        ),
+                        obscureText: obscure,
+                        style: TextStyle(
+                          color: _themeController.isDarkMode.value
+                              ? Colors.white
+                              : Colors.black, // Set input text color
+                        ),
+                        onChanged: (value) {
+                          _newPassword = value;
+                        },
+                      ),
+                      const SizedBox(height: 8),
+                      ShadButton(
+                        backgroundColor: _themeController.isDarkMode.value
+                            ? Colors.white
+                            : const Color.fromARGB(255, 0, 1, 40),
+                        child: Text(
+                          'Update Password',
+                          style: TextStyle(
+                            color: _themeController.isDarkMode.value
+                                ? Colors.black
+                                : const Color.fromARGB(255, 255, 255, 255),
+                          ),
+                        ),
+                        onPressed: () => _showConfirmationDialog(
+                          title: 'Confirm Password Update',
+                          content: 'Are you sure you want to update your password?',
+                          onConfirm: () => _updatePassword(_currentPassword!, _newPassword!),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
       ),
-    );
-  }
+    ),
+  );
+}
+
 }

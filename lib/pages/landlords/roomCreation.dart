@@ -56,7 +56,7 @@ class _RoomCreationPageState extends State<RoomCreationPage> {
   }
 
   void _submitRooms() async {
-    var request = http.MultipartRequest('POST', Uri.parse('http://192.168.1.13:3000/rooms/createRoom'));
+    var request = http.MultipartRequest('POST', Uri.parse('http://192.168.1.31:3000/rooms/createRoom'));
 
     // Prepare data for all rooms
     for (int i = 0; i < roomUnits.length; i++) {
@@ -114,7 +114,7 @@ class _RoomCreationPageState extends State<RoomCreationPage> {
   Future<void> _deleteProperty() async {
     try {
       final response = await http.delete(
-        Uri.parse('http://192.168.1.13:3000/deleteProperty/${widget.propertyId}'),
+        Uri.parse('http://192.168.1.31:3000/deleteProperty/${widget.propertyId}'),
       );
 
       if (response.statusCode == 200) {

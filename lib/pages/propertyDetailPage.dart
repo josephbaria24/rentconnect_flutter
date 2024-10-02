@@ -14,6 +14,7 @@ import 'package:latlong2/latlong.dart';
 import 'package:rentcon/pages/profileSection/personalInformation.dart';
 import 'package:rentcon/pages/profileSection/profileChecker.dart';
 import 'package:rentcon/theme_controller.dart';
+import 'package:skeletonizer/skeletonizer.dart';
 import 'package:smooth_page_indicator/smooth_page_indicator.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
@@ -44,6 +45,8 @@ class _PropertyDetailPageState extends State<PropertyDetailPage> {
   bool _showMap = false;
   final PageController _pageController = PageController();
   final ThemeController _themeController = Get.find<ThemeController>();
+  bool _loadingRooms = true;
+
   @override
   void initState() {
     super.initState();
@@ -55,24 +58,32 @@ class _PropertyDetailPageState extends State<PropertyDetailPage> {
     fetchRooms();
   }
 
-  Future<void> fetchRooms() async {
-    final response = await http.get(Uri.parse('http://192.168.1.13:3000/rooms/properties/${widget.property.id}/rooms'));
+Future<void> fetchRooms() async {
+  setState(() {
+    _loadingRooms = true;  // Start loading
+  });
 
-    if (response.statusCode == 200) {
-      final data = jsonDecode(response.body);
-      if (data['status']) {
-        setState(() {
-          rooms = data['rooms'];
-        });
-      }
-    } else {
-      print('Failed to load rooms');
+  final response = await http.get(Uri.parse('http://192.168.1.31:3000/rooms/properties/${widget.property.id}/rooms'));
+
+  if (response.statusCode == 200) {
+    final data = jsonDecode(response.body);
+    if (data['status']) {
+      setState(() {
+        rooms = data['rooms'];
+      });
     }
+  } else {
+    print('Failed to load rooms');
   }
+
+  setState(() {
+    _loadingRooms = false;  // Stop loading
+  });
+}
 
 Future<void> fetchNotifications() async {
   final response = await http.get(
-    Uri.parse('http://192.168.1.13:3000/notifications'),
+    Uri.parse('http://192.168.1.31:3000/notifications'),
     headers: {
       'Authorization': 'Bearer ${widget.token}', // Use the user's token for authentication
     },
@@ -230,7 +241,7 @@ void showRoomDetailsModal(BuildContext context, Map<String, dynamic> room) {
 void _sendReserveRequest(BuildContext context, Map<String, dynamic> room) async {
   // Check if there is a pending request before proceeding
   final checkResponse = await http.get(
-    Uri.parse('http://192.168.1.13:3000/inquiries/check-pending?userId=$userId&roomId=${room['_id']}'),
+    Uri.parse('http://192.168.1.31:3000/inquiries/check-pending?userId=$userId&roomId=${room['_id']}'),
     headers: {
       'Authorization': 'Bearer ${widget.token}',
     },
@@ -249,7 +260,7 @@ void _sendReserveRequest(BuildContext context, Map<String, dynamic> room) async 
     } else {
       // Proceed with sending the request
       final inquiryResponse = await http.post(
-        Uri.parse('http://192.168.1.13:3000/inquiries/create'),
+        Uri.parse('http://192.168.1.31:3000/inquiries/create'),
         headers: {
           'Authorization': 'Bearer ${widget.token}',
           'Content-Type': 'application/json',
@@ -291,7 +302,7 @@ void _sendReserveRequest(BuildContext context, Map<String, dynamic> room) async 
 void _sendRentRequest(BuildContext context, Map<String, dynamic> room) async {
   // Check if there is a pending request before proceeding
   final checkResponse = await http.get(
-    Uri.parse('http://192.168.1.13:3000/inquiries/check-pending?userId=$userId&roomId=${room['_id']}'),
+    Uri.parse('http://192.168.1.31:3000/inquiries/check-pending?userId=$userId&roomId=${room['_id']}'),
     headers: {
       'Authorization': 'Bearer ${widget.token}',
     },
@@ -310,7 +321,7 @@ void _sendRentRequest(BuildContext context, Map<String, dynamic> room) async {
     } else {
       // Proceed with sending the request
       final inquiryResponse = await http.post(
-        Uri.parse('http://192.168.1.13:3000/inquiries/create'),
+        Uri.parse('http://192.168.1.31:3000/inquiries/create'),
         headers: {
           'Authorization': 'Bearer ${widget.token}',
           'Content-Type': 'application/json',
@@ -459,7 +470,7 @@ void _allowCancellation(BuildContext context, Map<String, dynamic> room) {
 Future<void> _cancelReserveRequest(BuildContext context, Map<String, dynamic> room) async {
   // Logic for canceling the reservation request...
   final response = await http.post(
-    Uri.parse('http://192.168.1.13:3000/inquiries/cancel'),
+    Uri.parse('http://192.168.1.31:3000/inquiries/cancel'),
     headers: {
       'Authorization': 'Bearer ${widget.token}',
       'Content-Type': 'application/json',
@@ -489,14 +500,30 @@ Future<void> _cancelReserveRequest(BuildContext context, Map<String, dynamic> ro
 // Function to send rent request
 
 
+final Map<String, IconData> amenityIcons = {
+  'WiFi': Icons.wifi,
+  'Parking': Icons.local_parking,
+  'Pool': Icons.pool,
+  'Study lounge': LineAwesomeIcons.book_open_solid,
+  'Gym': Icons.fitness_center,
+  'Air Conditioning': Icons.ac_unit,
+  'Laundry': Icons.local_laundry_service,
+  'Pets Allowed': Icons.pets,
+  'Elevator': Icons.elevator,
+  'CCTV': Icons.videocam,
+  // Add more amenities and their respective icons here
+};
 
 
 
 @override
 Widget build(BuildContext context) {
+  print(widget.property.amenities); // Ensure amenities data is being passed correctly
+
   print('$email');
   print(widget.userEmail);
   print(userId);
+  
   final photoUrls = [
     widget.property.photo != null ? '${widget.property.photo}' : '',
     widget.property.photo2 != null ? '${widget.property.photo2}' : '',
@@ -504,11 +531,14 @@ Widget build(BuildContext context) {
   ].where((url) => url.isNotEmpty).toList();
 
   return Scaffold(
+    backgroundColor: _themeController.isDarkMode.value? Color.fromARGB(255, 28, 29, 34): Colors.white,
     appBar: AppBar(
+      backgroundColor: _themeController.isDarkMode.value? Color.fromARGB(255, 28, 29, 34): Colors.white,
+      scrolledUnderElevation: 0.0,
       title: Text(
         'Property Details',
         style: TextStyle(
-          fontFamily: 'Poppins',
+          fontFamily: 'GeistSans',
           fontWeight: FontWeight.w800,
         ),
       ),
@@ -518,6 +548,7 @@ Widget build(BuildContext context) {
       ),
     ),
     body: Stack(
+      
       children: [
         SingleChildScrollView(
           padding: EdgeInsets.all(16.0),
@@ -569,79 +600,96 @@ Widget build(BuildContext context) {
                 style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
               ),
               SizedBox(height: 8),
-              rooms.isEmpty
-                  ? Text('No rooms available.')
-                  : GridView.builder(
-                      shrinkWrap: true,
-                      physics: NeverScrollableScrollPhysics(),
-                      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                        crossAxisCount: 2,
-                        crossAxisSpacing: 8,
-                        mainAxisSpacing: 8,
-                        childAspectRatio: 1.0,
-                      ),
-                      itemCount: rooms.length,
-                      itemBuilder: (context, index) {
-                        final room = rooms[index];
-                        final roomPhoto1 = room['photo1'];
-                        final roomStatus = room['roomStatus']; // Get room status
-
-                        return GestureDetector(
-                          onTap: () {
-                            showRoomDetailsModal(context, room);
-                          },
-                          child: ClipRRect(
-                            borderRadius: BorderRadius.circular(10),
-                            child: Stack(
-                              children: [
-                                Column(
-                                  children: [
-                                    Expanded(
-                                      child: Image.network(
-                                        roomPhoto1,
-                                        fit: BoxFit.cover,
-                                        width: double.infinity,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                                if (roomStatus == 'occupied' ||
-                                    roomStatus == 'reserved') // Condition to show the banner
-                                  Positioned(
-                                    top: 0,
-                                    left: 0,
-                                    right: 0,
-                                    child: Container(
-                                      color: roomStatus == 'occupied'
-                                          ? const Color.fromARGB(255, 253, 1, 64)
-                                          : Colors.orange,
-                                      padding: EdgeInsets.symmetric(
-                                          vertical: 4, horizontal: 8),
-                                      child: Text(
-                                        roomStatus == 'occupied'
-                                            ? 'Occupied'
-                                            : 'Reserved',
-                                        style: TextStyle(
-                                          color: Colors.white,
-                                          fontWeight: FontWeight.bold,
-                                          fontSize: 12,
-                                        ),
-                                        textAlign: TextAlign.center,
-                                      ),
-                                    ),
-                                  ),
-                              ],
+              Skeletonizer(
+                enabled: _loadingRooms, // Use the loading state
+                child: rooms.isEmpty
+                    ? GridView.builder(
+                        shrinkWrap: true,
+                        physics: NeverScrollableScrollPhysics(),
+                        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: 2,
+                          crossAxisSpacing: 8,
+                          mainAxisSpacing: 8,
+                          childAspectRatio: 1.0,
+                        ),
+                        itemCount: _loadingRooms ? 4 : 0, // Show 4 skeleton items when loading
+                        itemBuilder: (context, index) {
+                          return Container(
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(10),
+                              color: Colors.grey[300], // Skeleton box color
                             ),
+                          );
+                        },
+                      )
+                    : rooms.isEmpty
+                        ? Text('No rooms available.')
+                        : GridView.builder(
+                            shrinkWrap: true,
+                            physics: NeverScrollableScrollPhysics(),
+                            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                              crossAxisCount: 2,
+                              crossAxisSpacing: 8,
+                              mainAxisSpacing: 8,
+                              childAspectRatio: 1.0,
+                            ),
+                            itemCount: rooms.length,
+                            itemBuilder: (context, index) {
+                              final room = rooms[index];
+                              final roomPhoto1 = room['photo1'];
+                              final roomStatus = room['roomStatus'];
+
+                              return GestureDetector(
+                                onTap: () {
+                                  showRoomDetailsModal(context, room);
+                                },
+                                child: ClipRRect(
+                                  borderRadius: BorderRadius.circular(10),
+                                  child: Stack(
+                                    children: [
+                                      Column(
+                                        children: [
+                                          Expanded(
+                                            child: Image.network(
+                                              roomPhoto1,
+                                              fit: BoxFit.cover,
+                                              width: double.infinity,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                      if (roomStatus == 'occupied' || roomStatus == 'reserved')
+                                        Positioned(
+                                          top: 0,
+                                          left: 0,
+                                          right: 0,
+                                          child: Container(
+                                            color: roomStatus == 'occupied'
+                                                ? const Color.fromARGB(255, 253, 1, 64)
+                                                : Colors.orange,
+                                            padding: EdgeInsets.symmetric(vertical: 4, horizontal: 8),
+                                            child: Text(
+                                              roomStatus == 'occupied' ? 'Occupied' : 'Reserved',
+                                              style: TextStyle(
+                                                color: Colors.white,
+                                                fontWeight: FontWeight.bold,
+                                                fontSize: 12,
+                                              ),
+                                              textAlign: TextAlign.center,
+                                            ),
+                                          ),
+                                        ),
+                                    ],
+                                  ),
+                                ),
+                              );
+                            },
                           ),
-                        );
-                      },
-                    ),
-              // Location and Description
+              ),
               SizedBox(height: 16),
               Row(
                 children: [
-                  Icon(Icons.location_pin,
-                      color: const Color.fromARGB(255, 252, 3, 3)),
+                  Icon(Icons.location_pin, color: const Color.fromARGB(255, 252, 3, 3)),
                   SizedBox(width: 8),
                   Expanded(
                     child: Column(
@@ -655,439 +703,124 @@ Widget build(BuildContext context) {
                   ),
                 ],
               ),
+              SizedBox(height: 16),
+              Text(
+                'Description',
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+              ),
+              SizedBox(height: 8),
+              Text(widget.property.description),
 
-                SizedBox(height: 16),
-                Text(
-                  'Description',
-                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-                ),
-                SizedBox(height: 8),
-                Text(widget.property.description),
-
-                // Amenities
-                SizedBox(height: 16),
-                Text(
-                  'Amenities',
-                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-                ),
-                SizedBox(height: 8),
-                 Wrap(
-                  spacing: 8,
-                  runSpacing: 8,
-                  children: widget.property.amenities.isNotEmpty
-                      ? widget.property.amenities.map<Widget>((amenity) {
-                          return Container(
-                            width: (MediaQuery.of(context).size.width / 2) - 24, // Adjust size based on screen width
-                            padding: EdgeInsets.all(8),
-                            decoration: BoxDecoration(
-                              color: _themeController.isDarkMode.value? const Color.fromARGB(255, 77, 78, 90) : Colors.grey[200],
-                              borderRadius: BorderRadius.circular(10),
-                            ),
-                            child: Row(
-                              children: [
-                                Icon(Icons.check_circle, color: Colors.green),
-                                SizedBox(width: 8),
-                                Expanded(
-                                  child: Text(
-                                    amenity,
-                                    style: TextStyle(fontSize: 14),
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          );
-                        }).toList()
-                      : [Text('No amenities listed')],
-                )
-              ],
-            ),
-          ),
-
-          // Show Map Location
-          if (_showMap && widget.property.location != null)
-            Positioned(
-              bottom: 16,
-              right: 40,
-              child: ClipRRect(
-                
-                borderRadius: BorderRadius.circular(40),
-                child: Container(
-                 
-                  width: 300,
-                  height: 300,
-                  child: FlutterMap(
-                    options: MapOptions(
-                      initialCenter: LatLng(
-                        widget.property.location!['coordinates'][1],
-                        widget.property.location!['coordinates'][0],
-                      ),
-                      initialZoom: 15.0,
-                    ),
-                    children: [
-                      TileLayer(
-                        urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-                      ),
-                      MarkerLayer(
-                        markers: [
-                          Marker(
-                            width: 40,
-                            height: 40,
-                            point: LatLng(
-                              widget.property.location!['coordinates'][1],
-                              widget.property.location!['coordinates'][0],
-                            ),
-                            child: Icon(Icons.location_pin, color: Colors.red, size: 40),
+              // Amenities
+              SizedBox(height: 16),
+              Text(
+                'Amenities',
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+              ),
+              SizedBox(height: 8),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: widget.property.amenities.isNotEmpty
+                    ? widget.property.amenities.map<Widget>((amenity) {
+                        return Container(
+                          width: (MediaQuery.of(context).size.width / 2) - 24, // Adjust size based on screen width
+                          padding: EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: _themeController.isDarkMode.value
+                                ? const Color.fromARGB(255, 77, 78, 90)
+                                : Colors.grey[200],
+                            borderRadius: BorderRadius.circular(10),
                           ),
-                        ],
-                      ),
-                    ],
+                          child: Row(
+                            children: [
+                              Icon(
+                                amenityIcons[amenity] ?? Icons.check_circle, // Use the appropriate icon, fallback to check_circle
+                                color: amenityIcons.containsKey(amenity)
+                                    ? Theme.of(context).iconTheme.color
+                                    : Colors.green, // Use default green if no custom icon
+                              ),
+                              SizedBox(width: 8),
+                              Expanded(
+                                child: Text(
+                                  amenity,
+                                  style: TextStyle(fontSize: 14),
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                            ],
+                          ),
+                        );
+                      }).toList()
+                    : [Text('No amenities listed')],
+              )
+            ],
+          ),
+        ),
+
+        // Show Map Location
+        if (_showMap && widget.property.location != null)
+          Positioned(
+            bottom: 16,
+            right: 40,
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(40),
+              child: Container(
+                width: 300,
+                height: 300,
+                child: FlutterMap(
+                  options: MapOptions(
+                    initialCenter: LatLng(
+                      widget.property.location!['coordinates'][1],
+                      widget.property.location!['coordinates'][0],
+                    ),
+                    initialZoom: 15.0,
                   ),
+                  children: [
+                    TileLayer(
+                      urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                    ),
+                    MarkerLayer(
+                      markers: [
+                        Marker(
+                          width: 40,
+                          height: 40,
+                          point: LatLng(
+                            widget.property.location!['coordinates'][1],
+                            widget.property.location!['coordinates'][0],
+                          ),
+                          child: Icon(Icons.location_pin, color: Colors.red, size: 40),
+                        ),
+                      ],
+                    ),
+                  ],
                 ),
               ),
             ),
-        ],
+          ),
+      ],
+    ),
+    floatingActionButton: FloatingActionButton(
+      backgroundColor: const Color.fromARGB(255, 255, 255, 255),
+      onPressed: () {
+        setState(() {
+          _showMap = !_showMap;
+        });
+      },
+      child: SvgPicture.asset(
+        _showMap ? 'assets/icons/close.svg' : 'assets/icons/location.svg',
+        color: const Color.fromARGB(255, 0, 0, 0),
+        width: 36,
+        height: 36,
       ),
-      floatingActionButton: FloatingActionButton(
-        backgroundColor: const Color.fromARGB(255, 255, 255, 255),
-        onPressed: () {
-          setState(() {
-            _showMap = !_showMap;
-          });
-        },
-        child: SvgPicture.asset(_showMap ? 'assets/icons/close.svg' : 'assets/icons/location.svg', color:  const Color.fromARGB(255, 0, 0, 0), width: 36, height: 36,),
-      ),
-      floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
-    );
-  }
+    ),
+    floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
+  );
+}
+
 }
 
 
 
 
 
-// void showRoomDetailsModal(BuildContext context, Map<String, dynamic> room) {
-//   // Define a list of room photo URLs
-//   final List<String> roomPhotoUrls = [
-//     room['photo1'] != null ? '${room['photo1']}' : '',
-//     room['photo2'] != null ? '${room['photo2']}' : '',
-//     room['photo3'] != null ? '${room['photo3']}' : '',
-//   ].where((url) => url.isNotEmpty).toList();
-
-//   // Create a PageController for the room photos
-//   final PageController _roomPageController = PageController();
-//   final roomStatus = room['roomStatus']; // Get the room status
-
-//   showModalBottomSheet(
-//     context: context,
-//     isScrollControlled: true,
-//     shape: const RoundedRectangleBorder(
-//       borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-//     ),
-//     builder: (BuildContext context) {
-//       return Padding(
-//         padding: const EdgeInsets.all(16.0),
-//         child: Column(
-//           mainAxisSize: MainAxisSize.min,
-//           crossAxisAlignment: CrossAxisAlignment.start,
-//           children: [
-//             // Room Photos Slider
-//             roomPhotoUrls.isNotEmpty
-//                 ? Column(
-//                     children: [
-//                       Container(
-//                         height: 180,
-//                         child: PageView.builder(
-//                           controller: _roomPageController,
-//                           itemCount: roomPhotoUrls.length,
-//                           itemBuilder: (context, index) {
-//                             return ClipRRect(
-//                               borderRadius: BorderRadius.circular(10),
-//                               child: Image.network(
-//                                 roomPhotoUrls[index],
-//                                 fit: BoxFit.cover,
-//                               ),
-//                             );
-//                           },
-//                         ),
-//                       ),
-//                       const SizedBox(height: 8),
-//                       SmoothPageIndicator(
-//                         controller: _roomPageController,
-//                         count: roomPhotoUrls.length,
-//                         effect: ExpandingDotsEffect(
-//                           activeDotColor: _themeController.isDarkMode.value
-//                               ? const Color.fromARGB(255, 252, 252, 252)
-//                               : const Color.fromARGB(255, 0, 0, 0),
-//                           dotColor: Colors.grey,
-//                           dotHeight: 10,
-//                           dotWidth: 10,
-//                           spacing: 10,
-//                         ),
-//                       ),
-//                     ],
-//                   )
-//                 : const Text('No photos available.'),
-//             const SizedBox(height: 16),
-//             Text(
-//               'Room/Unit no. ${room['roomNumber']}',
-//               style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
-//             ),
-//             const SizedBox(height: 8),
-//             Text('Price: ₱${room['price']} Monthly', style: const TextStyle(fontSize: 16)),
-//             Text('Capacity: ${room['capacity']}', style: const TextStyle(fontSize: 16)),
-//             Text('Deposit: ₱${room['deposit']}', style: const TextStyle(fontSize: 16)),
-//             Text('Advance: ₱${room['advance']}', style: const TextStyle(fontSize: 16)),
-//             Text('Reservation Duration: ${room['reservationDuration']} Days', style: const TextStyle(fontSize: 16)),
-//             Text('Reservation Fee: ₱${room['reservationFee']}', style: const TextStyle(fontSize: 16)),
-//             const SizedBox(height: 16),
-
-//             // Condition to show/hide buttons based on room status
-//             if (roomStatus == 'reserved' || roomStatus == 'occupied') ...[
-//               // Show a message if the room is reserved or occupied
-//               Text(
-//                 'This room is currently ${roomStatus}.',
-//                 style: const TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
-//               ),
-//               const SizedBox(height: 16),
-//               Row(
-//                 children: [
-//                   Expanded(
-//                     child: ElevatedButton(
-//                       onPressed: null, // Disable button
-//                       child: const Text('Reserve'),
-//                       style: ElevatedButton.styleFrom(
-//                         backgroundColor: Colors.grey,
-//                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-//                       ),
-//                     ),
-//                   ),
-//                   const SizedBox(width: 8),
-//                   Expanded(
-//                     child: ElevatedButton(
-//                       onPressed: null, // Disable button
-//                       child: const Text('Rent'),
-//                       style: ElevatedButton.styleFrom(
-//                         backgroundColor: Colors.grey,
-//                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-//                       ),
-//                     ),
-//                   ),
-//                 ],
-//               ),
-//             ] else ...[
-//               // Case 1: Hide buttons if the user is a landlord and profile is approved
-//               if (widget.userRole == 'landlord' && widget.profileStatus == 'approved') ...[
-//                 const SizedBox.shrink(),
-//               ]
-//               // Case 2: Show message to set up profile for 'none' role and 'none' status
-//               else if (widget.userRole == 'none' && widget.profileStatus == 'none') ...[
-//                 ElevatedButton(
-//                   onPressed: () {
-//                     Navigator.push(
-//                       context,
-//                       MaterialPageRoute(
-//                         builder: (context) => ProfilePageChecker(token: widget.token),
-//                       ),
-//                     );
-//                   },
-//                   child: const Text('Please set up your profile first!'),
-//                   style: ElevatedButton.styleFrom(
-//                     backgroundColor: Colors.orange,
-//                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-//                   ),
-//                 ),
-//               ]
-//               // Case 3: Show message for pending profile verification
-//               else if (widget.userRole == 'none' && widget.profileStatus == 'pending') ...[
-//                 ElevatedButton(
-//                   onPressed: () {
-//                     Fluttertoast.showToast(
-//                       msg: 'Please wait for your profile to be verified!',
-//                       backgroundColor: Colors.orangeAccent,
-//                       textColor: Colors.white,
-//                     );
-//                   },
-//                   child: const Text('Please wait for your profile to be verified!'),
-//                   style: ElevatedButton.styleFrom(
-//                     backgroundColor: Colors.orangeAccent,
-//                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-//                   ),
-//                 ),
-//               ]
-//               // Case 4: Show Rent and Reserve buttons for eligible users
-//               else if (widget.userRole == 'occupant' && widget.profileStatus == 'approved') ...[
-//                 Row(
-//                   children: [
-//                     Expanded(
-//                       child: ElevatedButton(
-//                         onPressed: () async {
-//                           // Create inquiry
-//                           final inquiryResponse = await http.post(
-//                             Uri.parse('http://192.168.1.13:3000/inquiries/create'),
-//                             headers: {
-//                               'Authorization': 'Bearer ${widget.token}', // Use the user's token for authentication
-//                               'Content-Type': 'application/json',
-//                             },
-//                             body: jsonEncode({
-//                               'roomId': '${room['_id']}',
-//                               'userId': userId, // Assuming you have a userId field
-//                               'status': 'pending',
-//                               // Add any other relevant fields here
-//                             }),
-//                           );
-
-//                           if (inquiryResponse.statusCode == 201) {
-//                             final inquiryData = jsonDecode(inquiryResponse.body);
-//                             final inquiryId = inquiryData['_id']; // Get the inquiryId
-
-//                             // Send notification for reservation
-//                             final notificationResponse = await http.post(
-//                               Uri.parse('http://192.168.1.13:3000/notification/create'),
-//                               headers: {
-//                                 'Authorization': 'Bearer ${widget.token}',
-//                                 'Content-Type': 'application/json',
-//                               },
-//                               body: jsonEncode({
-//                                 'userId': widget.property.userId, // Send notification to the landlord
-//                                 'message': 'Hi there! Your property has been reserved.',
-//                                 'roomId': '${room['_id']}',
-//                                 'roomNumber': '${room['roomNumber']}',
-//                                 'requesterEmail': '$email',
-//                                 'inquiryId': inquiryId, // Include inquiryId
-//                               }),
-//                             );
-
-//                             if (notificationResponse.statusCode == 201) {
-//                               Fluttertoast.showToast(
-//                                 fontSize: 15,
-//                                 msg: 'Reservation notification sent!',
-//                                 backgroundColor: const Color.fromARGB(255, 255, 255, 255),
-//                                 textColor: const Color.fromARGB(255, 0, 0, 0),
-//                               );
-//                               Navigator.pop(context); // Dismiss the modal
-//                             } else {
-//                               Fluttertoast.showToast(
-//                                 msg: 'Failed to send notification',
-//                                 backgroundColor: Colors.red,
-//                                 textColor: Colors.white,
-//                               );
-//                             }
-//                           } else {
-//                             Fluttertoast.showToast(
-//                               msg: 'Failed to create inquiry',
-//                               backgroundColor: Colors.red,
-//                               textColor: Colors.white,
-//                             );
-//                           }
-//                         },
-//                         child: Text(
-//                           'Reserve',
-//                           style: TextStyle(
-//                             color: _themeController.isDarkMode.value
-//                                 ? const Color.fromARGB(255, 0, 0, 0)
-//                                 : const Color.fromARGB(255, 0, 0, 0),
-//                             fontFamily: 'Poppins',
-//                             fontWeight: FontWeight.w600,
-//                           ),
-//                         ),
-//                         style: ElevatedButton.styleFrom(
-//                           backgroundColor: _themeController.isDarkMode.value
-//                               ? const Color.fromARGB(255, 235, 254, 114)
-//                               : const Color.fromARGB(255, 235, 254, 114),
-//                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-//                         ),
-//                       ),
-//                     ),
-//                     const SizedBox(width: 8),
-//                     Expanded(
-//                       child: ElevatedButton(
-//                         onPressed: () async {
-//                           // Create inquiry
-//                           final inquiryResponse = await http.post(
-//                             Uri.parse('http://192.168.1.13:3000/inquiries/create'),
-//                             headers: {
-//                               'Authorization': 'Bearer ${widget.token}', // Use the user's token for authentication
-//                               'Content-Type': 'application/json',
-//                             },
-//                             body: jsonEncode({
-//                               'roomId': '${room['_id']}',
-//                               'userId': userId, // Assuming you have a userId field
-//                               'status': 'pending',
-//                               // Add any other relevant fields here
-//                             }),
-//                           );
-
-//                           if (inquiryResponse.statusCode == 201) {
-//                             final inquiryData = jsonDecode(inquiryResponse.body);
-//                             final inquiryId = inquiryData['_id']; // Get the inquiryId
-
-//                             // Send notification for rent request
-//                             final notificationResponse = await http.post(
-//                               Uri.parse('http://192.168.1.13:3000/notification/create'),
-//                               headers: {
-//                                 'Authorization': 'Bearer ${widget.token}',
-//                                 'Content-Type': 'application/json',
-//                               },
-//                               body: jsonEncode({
-//                                 'userId': widget.property.userId, // Send notification to the landlord
-//                                 'message': 'Hi there! Your room property has been requested to rent.',
-//                                 'roomId': '${room['_id']}',
-//                                 'roomNumber': '${room['roomNumber']}',
-//                                 'requesterEmail': '$email',
-//                                 'inquiryId': inquiryId, // Include inquiryId
-//                               }),
-//                             );
-
-//                             if (notificationResponse.statusCode == 201) {
-//                               Fluttertoast.showToast(
-//                                 fontSize: 15,
-//                                 msg: 'Rent request notification sent!',
-//                                 backgroundColor: const Color.fromARGB(255, 255, 255, 255),
-//                                 textColor: const Color.fromARGB(255, 0, 0, 0),
-//                               );
-//                               Navigator.pop(context); // Dismiss the modal
-//                             } else {
-//                               Fluttertoast.showToast(
-//                                 msg: 'Failed to send request',
-//                                 backgroundColor: Colors.red,
-//                                 textColor: Colors.white,
-//                               );
-//                             }
-//                           } else {
-//                             Fluttertoast.showToast(
-//                               msg: 'Failed to create inquiry',
-//                               backgroundColor: Colors.red,
-//                               textColor: Colors.white,
-//                             );
-//                           }
-//                         },
-//                         child: Text(
-//                           'Rent',
-//                           style: TextStyle(
-//                             color: _themeController.isDarkMode.value
-//                                 ? const Color.fromARGB(255, 255, 255, 255)
-//                                 : Color.fromARGB(255, 255, 255, 255),
-//                             fontFamily: 'Poppins',
-//                             fontWeight: FontWeight.w600,
-//                           ),
-//                         ),
-//                         style: ElevatedButton.styleFrom(
-//                           backgroundColor: _themeController.isDarkMode.value
-//                               ? const Color.fromARGB(255, 135, 102, 235)
-//                               : const Color.fromARGB(255, 135, 102, 235),
-//                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-//                         ),
-//                       ),
-//                     ),
-//                   ],
-//                 ),
-//               ]
-//             ],
-//             const SizedBox(height: 16),
-//           ],
-//         ),
-//       );
-//     },
-//   );
-// }

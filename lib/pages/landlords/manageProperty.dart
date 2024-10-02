@@ -47,7 +47,7 @@ class _ManagepropertyState extends State<Manageproperty> {
   }
 
   Future<void> fetchRooms() async {
-    final response = await http.get(Uri.parse('http://192.168.1.13:3000/rooms/properties/${widget.property.id}/rooms'));
+    final response = await http.get(Uri.parse('http://192.168.1.31:3000/rooms/properties/${widget.property.id}/rooms'));
 
     if (response.statusCode == 200) {
       final data = jsonDecode(response.body);
@@ -228,7 +228,7 @@ class _ManagepropertyState extends State<Manageproperty> {
     return Scaffold(
       appBar: AppBar(
         title: Text('Manage Room', style: TextStyle(
-          fontFamily: 'Poppins',
+          fontFamily: 'GeistSans',
           fontWeight: FontWeight.w800,
         )),
         leading: IconButton(
