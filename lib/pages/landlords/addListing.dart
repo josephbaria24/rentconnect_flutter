@@ -722,11 +722,27 @@ Widget build(BuildContext context) {
           ),
           Row(
             children: [
-              _buildPhotoBox(1, _legalDocPhoto, _selectLegalDocPhoto),
+              Column(
+                children: [
+                  Text('Business Permit'),
+                  _buildPhotoBox(1, _legalDocPhoto, _selectLegalDocPhoto),
+                ],
+              ),
               SizedBox(width: 10),
-              _buildPhotoBox(2, _legalDocPhoto2, _selectLegalDocPhoto),
+              Column(
+                children: [
+                  Text('FSIC'),
+                  _buildPhotoBox(2, _legalDocPhoto2, _selectLegalDocPhoto),
+                  SizedBox(width: 10),
+                ],
+              ),
               SizedBox(width: 10),
-              _buildPhotoBox(3, _legalDocPhoto3, _selectLegalDocPhoto),
+              Column(
+                children: [
+                  Text('other permit'),
+                  _buildPhotoBox(3, _legalDocPhoto3, _selectLegalDocPhoto),
+                ],
+              ),
             ],
           ),
           SizedBox(height: 20),
@@ -799,7 +815,11 @@ bool _areFieldsFilled() {
             && _typeOfProperty != null 
             && _photo != null 
             && _legalDocPhoto != null // Example condition
-            && selectedBarangay != null; // Example condition
+            && selectedBarangay != null // Example condition
+            && descriptionController != null
+            && streetController != null
+            && amenitiesController != null
+            && descriptionController != null;
           }
 
           // Function to show Cupertino Dialog

@@ -1,10 +1,14 @@
+// ignore_for_file: prefer_const_constructors, prefer_const_literals_to_create_immutables
+
 import 'dart:async';
 import 'dart:convert';
+import 'package:flare_flutter/flare_actor.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:http/http.dart' as http;
+import 'package:rive/rive.dart';
 import 'package:shadcn_ui/shadcn_ui.dart';
 import 'login.dart';
 import 'package:rentcon/config.dart';
@@ -33,53 +37,111 @@ class _RegistrationState extends State<SignUpPage> {
     ));
   }
 
-  void registerUser() async {
-    setState(() {
-      _isLoading = true; // Start loading
-    });
+void registerUser() async {
+  setState(() {
+    _isLoading = true; // Start loading
+  });
 
-    if (emailController.text.isNotEmpty &&
-        passwordController.text.isNotEmpty &&
-        confirmPasswordController.text.isNotEmpty) {
-      if (passwordController.text == confirmPasswordController.text) {
-        try {
-          var regBody = {
-            "email": emailController.text.trim(),
-            "password": passwordController.text.trim(),
-          };
+  if (emailController.text.isNotEmpty &&
+      passwordController.text.isNotEmpty &&
+      confirmPasswordController.text.isNotEmpty) {
+    if (passwordController.text == confirmPasswordController.text) {
+      try {
+        var regBody = {
+          "email": emailController.text.trim(),
+          "password": passwordController.text.trim(),
+        };
 
-          var response = await http.post(
-            Uri.parse(registration), // Ensure this URL is correct
-            headers: {"Content-Type": "application/json"},
-            body: jsonEncode(regBody),
-          );
+        var response = await http.post(
+          Uri.parse(registration), // Ensure this URL is correct
+          headers: {"Content-Type": "application/json"},
+          body: jsonEncode(regBody),
+        );
 
-          if (response.statusCode == 200) {
-            var jsonResponse = jsonDecode(response.body);
-            if (jsonResponse['status']) {
-              // Success: Show OTP dialog
-              _showOtpDialog(emailController.text.trim());
-            } else {
-              _showErrorDialog(jsonResponse['error'] ?? "Registration failed. Please try again.");
-            }
+        // Handle the response
+        if (response.statusCode == 200) {
+          var jsonResponse = jsonDecode(response.body);
+          if (jsonResponse['status']) {
+            // Success: Show OTP dialog
+            _showOtpDialog(emailController.text.trim());
           } else {
-            _showErrorDialog("Server error: ${response.statusCode}. Please try again.");
+            // Handle error cases
+            String errorMessage = jsonResponse['error'] ?? "Registration failed. Please try again.";
+            _handleRegistrationError(errorMessage);
           }
-        } catch (error) {
-          _showErrorDialog("Error: $error. Please check your connection.");
+        } else if (response.statusCode == 400) {
+          // Handle specific client-side errors
+          var jsonResponse = jsonDecode(response.body);
+          String errorMessage = jsonResponse['error'] ?? "Registration failed. Please try again.";
+          _handleRegistrationError(errorMessage);
+        } else {
+          _showErrorDialog("Server error: ${response.statusCode}. Please try again.");
         }
-      } else {
-        _showErrorDialog('Passwords do not match.');
+      } catch (error) {
+        _showErrorDialog("Error: $error. Please check your connection.");
       }
     } else {
-      _showErrorDialog('Please fill in all fields.');
+      _showErrorDialog('Passwords do not match.');
     }
-
-    setState(() {
-      _isLoading = false; // Stop loading
-    });
+  } else {
+    _showErrorDialog('Please fill in all fields.');
   }
 
+  setState(() {
+    _isLoading = false; // Stop loading
+  });
+}
+
+void _handleRegistrationError(String errorMessage) {
+  if (errorMessage.contains("Email already registered")) {
+    _showEmailExistsDialog();
+  } else {
+    _showErrorDialog(errorMessage);
+  }
+}
+
+void _showEmailExistsDialog() {
+  showCupertinoDialog(
+    context: context,
+    builder: (context) {
+      return CupertinoAlertDialog(
+        title: const Text('Email Exists'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min, // Ensure the column size is minimized
+          children: [
+            Container(
+              width: 100,
+              height: 100,
+              child: RiveAnimation.asset(
+                "assets/flares/alert_icon.riv", // The correct Rive file path
+                animations: ['show'],    // The animation name in the Rive file
+              ),
+            ),
+            const SizedBox(height: 16), // Add some space between the animation and the text
+            const Text('This email is already registered. Would you like to go to the login page?'),
+          ],
+        ),
+        actions: <Widget>[
+          CupertinoDialogAction(
+            onPressed: () {
+              Navigator.of(context).pushReplacement(
+                MaterialPageRoute(builder: (context) => LoginPage()),
+              ); // Navigate to login page
+            },
+            isDefaultAction: true,
+            child: const Text('Go to Login'),
+          ),
+          CupertinoDialogAction(
+            onPressed: () {
+              Navigator.of(context).pop(); // Close the dialog
+            },
+            child: const Text('Cancel'),
+          ),
+        ],
+      );
+    },
+  );
+}
   void _showErrorDialog(String message) {
     showCupertinoDialog(
       context: context,
@@ -220,31 +282,80 @@ void _showOtpDialog(String email) {
   );
 }
 
+Future<bool> verifyOtp(String email, String otp, String hash) async {
+  try {
+    var response = await http.post(
+      Uri.parse('http://192.168.1.31:3000/verify-email-otp'), // Replace with your verification endpoint
+      headers: {"Content-Type": "application/json"},
+      body: jsonEncode({
+        'email': email,
+        'otp': otp,
+        'hash': hash,
+      }),
+    );
 
-  Future<bool> verifyOtp(String email, String otp, String hash) async {
-    try {
-      var response = await http.post(
-        Uri.parse('http://192.168.1.31:3000/verify-email-otp'), // Replace with your verification endpoint
-        headers: {"Content-Type": "application/json"},
-        body: jsonEncode({
-          'email': email,
-          'otp': otp,
-          'hash': hash, // Include hash if necessary
-        }),
-      );
+    if (response.statusCode == 200) {
+      var jsonResponse = jsonDecode(response.body);
+      if (jsonResponse['status'] == true) {
+        // Show Cupertino success dialog with animated check
+        await _showSuccessDialog();
 
-      if (response.statusCode == 200) {
-        var jsonResponse = jsonDecode(response.body);
-        return jsonResponse['status'] == true; // Adjust based on your backend response
+        // Navigate to login after showing dialog
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => LoginPage()),
+        );
+
+        return true;
       } else {
-        _showErrorDialog("Server error: ${response.statusCode}. Please try again.");
+        _showErrorDialog("Invalid OTP. Please try again.");
         return false;
       }
-    } catch (error) {
-      _showErrorDialog("Error: $error. Please check your connection.");
+    } else {
+      _showErrorDialog("Server error: ${response.statusCode}. Please try again.");
       return false;
     }
+  } catch (error) {
+    _showErrorDialog("Error: $error. Please check your connection.");
+    return false;
   }
+}
+
+
+
+
+Future<void> _showSuccessDialog() async {
+  return showCupertinoDialog<void>(
+    context: context,
+    builder: (BuildContext context) {
+      return CupertinoAlertDialog(
+        title: Text('Success'),
+        content: Column(
+          children: [
+            Container(
+              width: 100,
+              height: 100,
+              child: RiveAnimation.asset(
+                "assets/flares/checkmark_circle.riv", // The correct Rive file path
+                animations: ['Animation 1'],    // The animation name in the Rive file
+              ),
+            ),
+            SizedBox(height: 10),
+            Text('Email verified successfully!'),
+          ],
+        ),
+        actions: <Widget>[
+          CupertinoDialogAction(
+            child: Text('OK'),
+            onPressed: () {
+              Navigator.of(context).pop(); // Close the dialog
+            },
+          ),
+        ],
+      );
+    },
+  );
+}
 
   @override
   Widget build(BuildContext context) {
@@ -299,6 +410,7 @@ void _showOtpDialog(String email) {
               ),
             ),
             const SizedBox(height: 10.0),
+            
             ShadInput(
               cursorColor: Colors.black,
               style: const TextStyle(color: Colors.black),
@@ -359,7 +471,14 @@ void _showOtpDialog(String email) {
                     'Log in',
                     style: TextStyle(color: Colors.black),
                   ),
+                  
                 ),
+              //    TextButton(
+              //   child: Text('Show Success Dialog'),
+              //   onPressed: () {
+              //     _showSuccessDialog();
+              //   },
+              // ),
               ],
             ),
           ],

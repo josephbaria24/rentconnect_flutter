@@ -15,7 +15,7 @@ import 'package:shadcn_ui/shadcn_ui.dart';
 class RoomCreationPage extends StatefulWidget {
   final String token;
   final String propertyId;
-
+  
   const RoomCreationPage({required this.token, required this.propertyId, Key? key}) : super(key: key);
 
   @override
@@ -28,6 +28,7 @@ class _RoomCreationPageState extends State<RoomCreationPage> {
   late String email;
   late String userId;
   final ThemeController _themeController = Get.find<ThemeController>();
+   int _expandedRoomIndex = -1;
 
   @override
   void initState() {
@@ -39,21 +40,23 @@ class _RoomCreationPageState extends State<RoomCreationPage> {
     print("Decoded token: email = $email, userId = $userId");
   }
 
-  void _addRoom() {
-    setState(() {
-      roomUnits.add(RoomUnit(
-        priceController: TextEditingController(),
-        roomNumberController: TextEditingController(),
-        capacityController: TextEditingController(),
-        depositController: TextEditingController(),
-        advanceController: TextEditingController(),
-        reservationDurationController: TextEditingController(),
-        reservationFeeController: TextEditingController(),
-        roomPhotos: [null, null, null], // Initialize with 3 null values
-      ));
-    });
-    print("Added room: Total rooms now = ${roomUnits.length}");
-  }
+void _addRoom() {
+  setState(() {
+    roomUnits.add(RoomUnit(
+      priceController: TextEditingController(),
+      roomNumberController: TextEditingController(),
+      capacityController: TextEditingController(),
+      depositController: TextEditingController(),
+      advanceController: TextEditingController(),
+      reservationDurationController: TextEditingController(),
+      reservationFeeController: TextEditingController(),
+      roomPhotos: [null, null, null], // Initialize with 3 null values
+    ));
+    // Automatically expand the newly added room
+    _expandedRoomIndex = roomUnits.length - 1; 
+  });
+  print("Added room: Total rooms now = ${roomUnits.length}");
+}
 
   void _submitRooms() async {
     var request = http.MultipartRequest('POST', Uri.parse('http://192.168.1.31:3000/rooms/createRoom'));
@@ -127,6 +130,13 @@ class _RoomCreationPageState extends State<RoomCreationPage> {
       print("Error occurred while deleting property: $error");
     }
   }
+ // Your existing initState and other methods...
+
+  void _removeRoom(int index) {
+    setState(() {
+      roomUnits.removeAt(index); // Remove the room at the specified index
+    });
+  }
 
 @override
 Widget build(BuildContext context) {
@@ -148,12 +158,20 @@ Widget build(BuildContext context) {
               RoomUnit room = entry.value;
               return RoomUnitWidget(
                 room: room,
+                onRemove: _removeRoom,
                 roomIndex: index, // Pass the index here
                 onImageSelected: (image, index) {
                   setState(() {
                     room.roomPhotos[index] = image;
                   });
                 },
+                onExpand: (int expandedIndex) {
+                  setState(() {
+                    // If the same room is clicked, collapse it, else expand the new one
+                    _expandedRoomIndex = _expandedRoomIndex == expandedIndex ? -1 : expandedIndex;
+                  });
+                },
+                isExpanded: _expandedRoomIndex == index, // Check if the current index is expanded
               );
             }).toList(),
             ShadButton(

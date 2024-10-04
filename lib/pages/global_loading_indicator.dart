@@ -11,7 +11,7 @@ class GlobalLoadingIndicator extends StatelessWidget {
 final ThemeController _themeController = Get.find<ThemeController>();
   GlobalLoadingIndicator({
     this.size = 50.0, 
-    this.colors = const [ Color.fromARGB(255, 255, 208, 0), Color.fromARGB(255, 255, 208, 0), Color.fromARGB(255, 255, 208, 0)], // Default colors
+    this.colors = const [ Color.fromARGB(255, 255, 0, 76), Color.fromARGB(255, 255, 0, 76), Color.fromARGB(255, 255, 0, 76)], // Default colors
   });
 
   @override

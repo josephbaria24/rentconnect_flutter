@@ -45,6 +45,8 @@ class _CurrentListingPageState extends State<CurrentListingPage> {
   final ThemeController _themeController = Get.find<ThemeController>();
   bool _loading = true; // Added state for loading
   String _sortOption = 'None';
+  bool showAllRooms = false;
+
   @override
   void initState() {
     super.initState();
@@ -856,35 +858,6 @@ void showRoomDetailPopover(BuildContext context, dynamic room, Map<String, dynam
     }
   }
 
-  void _markPropertiesOrRooms() {
-    // Implement your logic to mark properties or rooms here
-    // You can display a dialog to confirm the action if necessary
-    showDialog(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: Text('Mark Property/Room'),
-          content:
-              Text('Would you like to mark the selected property or room?'),
-          actions: [
-            TextButton(
-              onPressed: () {
-                // Add your marking logic here
-                Navigator.of(context).pop(); // Close the dialog
-              },
-              child: Text('Yes'),
-            ),
-            TextButton(
-              onPressed: () {
-                Navigator.of(context).pop(); // Close the dialog
-              },
-              child: Text('No'),
-            ),
-          ],
-        );
-      },
-    );
-  }
 
   void _deletePropertiesOrRooms() {
     // Implement your logic to delete properties or rooms here
@@ -917,7 +890,7 @@ void showRoomDetailPopover(BuildContext context, dynamic room, Map<String, dynam
 
   @override
   Widget build(BuildContext context) {
-    
+    final List rooms = [];
     return Scaffold(
       
       backgroundColor: _themeController.isDarkMode.value
@@ -948,30 +921,7 @@ void showRoomDetailPopover(BuildContext context, dynamic room, Map<String, dynam
             Navigator.pop(context);
           },
         ),
-        actions: [
-          PopupMenuButton<String>(
-            icon: Icon(
-              Icons.more_vert, // Changed icon for more options
-              color: _themeController.isDarkMode.value
-                  ? Colors.white
-                  : Colors.black,
-            ),
-            onSelected: (value) {
-              if (value == 'mark') {
-                // Handle mark action
-                _markPropertiesOrRooms();
-              } else if (value == 'delete') {
-                // Handle delete action
-                _deletePropertiesOrRooms();
-              }
-            },
-            itemBuilder: (context) => [
-              PopupMenuItem(value: 'mark', child: Text('Mark Property/Room')),
-              PopupMenuItem(
-                  value: 'delete', child: Text('Delete Property/Room')),
-            ],
-          ),
-        ],
+        
       ),
       body: RefreshIndicator(
         onRefresh: _refresh,
@@ -1027,89 +977,87 @@ void showRoomDetailPopover(BuildContext context, dynamic room, Map<String, dynam
                                           CrossAxisAlignment.start,
                                       children: [
                                         Row(
-                                          crossAxisAlignment:
-                                              CrossAxisAlignment.start,
-                                          children: [
-                                            Expanded(
-                                              child: Column(
-                                                crossAxisAlignment:
-                                                    CrossAxisAlignment.start,
-                                                children: [
-                                                  Text(
-                                                    item['typeOfProperty'] ??
-                                                        'Unknown Property Type',
-                                                    style: TextStyle(
-                                                      fontWeight:
-                                                          FontWeight.bold,
-                                                      fontSize: 18,
-                                                      color: _themeController
-                                                              .isDarkMode.value
-                                                          ? Colors.white
-                                                          : Colors.black,
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        children: [
+                                          Expanded(
+                                            child: Column(
+                                              crossAxisAlignment: CrossAxisAlignment.start,
+                                              children: [
+                                                // Property Type
+                                                Text(
+                                                  item['typeOfProperty'] ?? 'Unknown Property Type',
+                                                  style: TextStyle(
+                                                    fontWeight: FontWeight.bold,
+                                                    fontSize: 18,
+                                                    color: _themeController.isDarkMode.value
+                                                        ? Colors.white
+                                                        : Colors.black,
+                                                  ),
+                                                ),
+                                                const SizedBox(height: 8),
+
+                                                // Location Row
+                                                Row(
+                                                  children: [
+                                                    Icon(
+                                                      Icons.location_on,
+                                                      size: 16,
+                                                      color: _themeController.isDarkMode.value
+                                                          ? const Color.fromARGB(255, 255, 0, 0)
+                                                          : const Color.fromARGB(255, 255, 0, 0),
                                                     ),
-                                                  ),
-                                                  const SizedBox(height: 8),
-                                                  Row(
-                                                    children: [
-                                                      Icon(
-                                                        Icons.location_on,
-                                                        size: 16,
-                                                        color: _themeController
-                                                                .isDarkMode
-                                                                .value
-                                                            ? const Color
-                                                                .fromARGB(
-                                                                255, 255, 0, 0)
-                                                            : const Color
-                                                                .fromARGB(
-                                                                255, 255, 0, 0),
+                                                    const SizedBox(width: 4),
+                                                    Text(
+                                                      '${item['street'] ?? 'No Address'}',
+                                                      style: TextStyle(
+                                                        fontSize: 14,
+                                                        color: _themeController.isDarkMode.value
+                                                            ? Colors.white70
+                                                            : Colors.black54,
                                                       ),
-                                                      const SizedBox(width: 4),
-                                                      Text(
-                                                        '${item['street'] ?? 'No Address'}',
-                                                        style: TextStyle(
-                                                          fontSize: 14,
-                                                          color: _themeController
-                                                                  .isDarkMode
-                                                                  .value
-                                                              ? Colors.white70
-                                                              : Colors.black54,
-                                                        ),
-                                                      ),
-                                                    ],
-                                                  ),
-                                                  const SizedBox(height: 10),
-                                                  Text(
-                                                    item['description'] ??
-                                                        'No Description',
-                                                    style: TextStyle(
-                                                      fontSize: 14,
-                                                      color: _themeController
-                                                              .isDarkMode.value
-                                                          ? Colors.white
-                                                          : Colors.black,
                                                     ),
+                                                  ],
+                                                ),
+                                                const SizedBox(height: 10),
+
+                                                // Description
+                                                Text(
+                                                  item['description'] ?? 'No Description',
+                                                  style: TextStyle(
+                                                    fontSize: 14,
+                                                    color: _themeController.isDarkMode.value
+                                                        ? Colors.white
+                                                        : Colors.black,
                                                   ),
-                                                ],
-                                              ),
+                                                ),
+                                                const SizedBox(height: 12),
+
+                                                // Image (Placed after text elements)
+                                                ClipRRect(
+                                                  borderRadius: BorderRadius.circular(10),
+                                                  child: Image.network(
+                                                    photoUrl,
+                                                    width: double.infinity, // Make image take full width
+                                                    height: 180, // Adjust height based on your design
+                                                    fit: BoxFit.cover,
+                                                  ),
+                                                ),
+                                              ],
                                             ),
-                                            const SizedBox(width: 12),
-                                            ClipRRect(
-                                              borderRadius:
-                                                  BorderRadius.circular(10),
-                                              child: Image.network(
-                                                photoUrl,
-                                                width: 110,
-                                                height: 100,
-                                                fit: BoxFit.cover,
-                                              ),
-                                            ),
-                                          ],
-                                        ),
+                                          ),
+                                        ],
+                                      ),
+                                      SizedBox(height: 10,),
+                                      Divider(
+                                        thickness: 1.5, // Adjust thickness
+                                        color: const Color.fromARGB(255, 177, 177, 177), // Adjust color
+                                      ),
+
                                         const SizedBox(height: 10),
                                         Row(
                                           mainAxisAlignment:
                                               MainAxisAlignment.spaceBetween,
+                                          
                                           children: [
                                             Text(
                                               'Room/Unit Available',
