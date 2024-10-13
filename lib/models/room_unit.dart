@@ -7,7 +7,7 @@ class RoomUnit {
   final TextEditingController capacityController;
   final TextEditingController depositController;
   final TextEditingController advanceController;
-  final TextEditingController reservationDurationController;
+  //final TextEditingController reservationDurationController;
   final TextEditingController reservationFeeController;
   
   List<File?> roomPhotos; // For photo1, photo2, and photo3
@@ -18,7 +18,7 @@ class RoomUnit {
     required this.capacityController,
     required this.depositController,
     required this.advanceController,
-    required this.reservationDurationController,
+    //required this.reservationDurationController,
     required this.reservationFeeController,
     required this.roomPhotos, // Expecting up to 3 room photos
   });
@@ -31,7 +31,7 @@ class RoomUnit {
       'capacity': capacityController.text,
       'deposit': depositController.text,
       'advancePayment': advanceController.text,
-      'reservationDuration': reservationDurationController.text,
+      //'reservationDuration': reservationDurationController.text,
       'reservationFee': reservationFeeController.text,
       'photo1': roomPhotos.isNotEmpty && roomPhotos[0] != null ? roomPhotos[0] : null,
       'photo2': roomPhotos.length > 1 && roomPhotos[1] != null ? roomPhotos[1] : null,

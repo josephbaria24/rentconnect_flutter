@@ -125,7 +125,7 @@ Stream<List<dynamic>> notificationStream = NotificationStream().stream.cast<List
 
   Future<void> fetchUserProfileStatus() async {
     final url = Uri.parse(
-        'http://192.168.1.31:3000/profile/checkProfileCompletion/$userId'); // Replace with your API endpoint
+        'http://192.168.1.19:3000/profile/checkProfileCompletion/$userId'); // Replace with your API endpoint
     try {
       final response = await http.get(
         url,
@@ -153,7 +153,7 @@ Stream<List<dynamic>> notificationStream = NotificationStream().stream.cast<List
 
   Future<void> fetchUserProfileStatusForNotification() async {
     final url = Uri.parse(
-        'http://192.168.1.31:3000/profile/checkProfileCompletion/$userId'); // Your API endpoint
+        'http://192.168.1.19:3000/profile/checkProfileCompletion/$userId'); // Your API endpoint
     try {
       final response = await http.get(
         url,
@@ -224,7 +224,7 @@ Stream<List<dynamic>> notificationStream = NotificationStream().stream.cast<List
   Future<List<dynamic>> fetchRooms(String propertyId) async {
     try {
       final response = await http.get(Uri.parse(
-          'http://192.168.1.31:3000/rooms/properties/$propertyId/rooms'));
+          'http://192.168.1.19:3000/rooms/properties/$propertyId/rooms'));
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         if (data['status']) {
@@ -301,7 +301,7 @@ Stream<List<dynamic>> notificationStream = NotificationStream().stream.cast<List
     try {
       final response = await http.get(
         Uri.parse(
-            'http://192.168.1.31:3000/getUserBookmarks/$userId'), // Adjust endpoint if necessary
+            'http://192.168.1.19:3000/getUserBookmarks/$userId'), // Adjust endpoint if necessary
         headers: {
           'Authorization': 'Bearer ${widget.token}',
         },
@@ -327,7 +327,7 @@ Stream<List<dynamic>> notificationStream = NotificationStream().stream.cast<List
   Future<String> fetchUserEmail(String userId) async {
     try {
       final response = await http.get(Uri.parse(
-          'http://192.168.1.31:3000/getUserEmail/$userId'));
+          'http://192.168.1.19:3000/getUserEmail/$userId'));
 
       if (response.statusCode == 200) {
         final Map<String, dynamic> json = jsonDecode(response.body);
@@ -351,14 +351,14 @@ Stream<List<dynamic>> notificationStream = NotificationStream().stream.cast<List
 
 
   Future<void> bookmarkProperty(String propertyId) async {
-    final url = Uri.parse('http://192.168.1.31:3000/addBookmark');
+    final url = Uri.parse('http://192.168.1.19:3000/addBookmark');
     final Map<String, dynamic> jwtDecodedToken = JwtDecoder.decode(widget.token);
     String userId = jwtDecodedToken['_id']?.toString() ?? 'Unknown user ID';
 
     try {
       if (bookmarkedPropertyIds.contains(propertyId)) {
         // If already bookmarked, remove it
-        final removeUrl = Uri.parse('http://192.168.1.31:3000/removeBookmark');
+        final removeUrl = Uri.parse('http://192.168.1.19:3000/removeBookmark');
         await http.post(removeUrl,
             headers: {
               'Authorization': 'Bearer ${widget.token}',
@@ -505,7 +505,7 @@ Stream<List<dynamic>> notificationStream = NotificationStream().stream.cast<List
     try {
       final response = await http.get(
         Uri.parse(
-            'http://192.168.1.31:3000/notification/unread/$userId'),
+            'http://192.168.1.19:3000/notification/unread/$userId'),
         headers: {
           'Authorization': 'Bearer $token',
           'Content-Type': 'application/json',
@@ -599,7 +599,7 @@ void _showNotificationsModal(List<dynamic> notifications) {
     try {
       final response = await http.delete(
         Uri.parse(
-            'http://192.168.1.31:3000/notification/clear/$userId'),
+            'http://192.168.1.19:3000/notification/clear/$userId'),
         headers: {
           'Authorization': 'Bearer ${widget.token}',
         },
@@ -622,7 +622,7 @@ void _showNotificationsModal(List<dynamic> notifications) {
   Future<void> _markNotificationAsRead(String notificationId) async {
     final response = await http.patch(
       Uri.parse(
-          'http://192.168.1.31:3000/notification/$notificationId/read'),
+          'http://192.168.1.19:3000/notification/$notificationId/read'),
       headers: {
         'Authorization': 'Bearer ${widget.token}',
         'Content-Type': 'application/json',
@@ -646,6 +646,7 @@ Widget build(BuildContext context) {
 
   return Scaffold(
     appBar: AppBar(
+      scrolledUnderElevation: 0,
         backgroundColor: _themeController.isDarkMode.value
             ? Color.fromARGB(255, 28, 29, 34)
             : Colors.white,
@@ -871,6 +872,8 @@ Widget build(BuildContext context) {
         SizedBox(height: 10),
         Expanded(
           child: RefreshIndicator(
+            color: Colors.black,
+        backgroundColor: Colors.white,
             onRefresh: _refreshProperties,
             child: FutureBuilder<List<Property>>(
               future: propertiesFuture,
@@ -892,7 +895,7 @@ Widget build(BuildContext context) {
                       final property = properties[index];
                       final imageUrl = property.photo.startsWith('http')
                           ? property.photo
-                          : 'http://192.168.1.31:3000/${property.photo}';
+                          : 'http://192.168.1.19:3000/${property.photo}';
 
                       return FutureBuilder<List<dynamic>>(
                         future: fetchRooms(property.id),

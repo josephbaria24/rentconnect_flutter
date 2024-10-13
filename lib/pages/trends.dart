@@ -4,6 +4,7 @@ import 'package:jwt_decoder/jwt_decoder.dart';
 import 'package:rentcon/pages/charts/barchart.dart';
 import 'package:rentcon/theme_controller.dart';
 import 'package:fl_chart/fl_chart.dart';
+import 'package:shadcn_ui/shadcn_ui.dart';
  // Ensure this is the correct path for BarChartSample2
 
 class TrendPage extends StatefulWidget {
@@ -18,7 +19,7 @@ class _TrendPageState extends State<TrendPage> {
   late String email;
   final themeController = Get.find<ThemeController>();
   late List<int> sampleData; // Sample data to use for charts
-
+  final ThemeController _themeController = Get.find<ThemeController>();
   @override
   void initState() {
     super.initState();
@@ -37,6 +38,10 @@ class _TrendPageState extends State<TrendPage> {
       backgroundColor: themeController.isDarkMode.value ? Color.fromRGBO(28, 29, 34, 1) : Colors.white,
       appBar: AppBar(
         title: Text('Trend Data for $email'),
+        leading: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 11.0, horizontal: 12.0),
+          
+        ),
       ),
       body: Padding(
         padding: const EdgeInsets.all(8.0),

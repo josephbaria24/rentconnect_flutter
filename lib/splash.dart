@@ -16,7 +16,7 @@ class _SplashScreenState extends State<SplashScreen> {
   }
 
   _navigatetoindex() async {
-    await Future.delayed(Duration(milliseconds: 1800), () {});
+    await Future.delayed(Duration(milliseconds: 1000), () {});
     Navigator.push(context, MaterialPageRoute(builder: (context) => IndexPage()));
   }
 

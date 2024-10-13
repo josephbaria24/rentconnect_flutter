@@ -21,7 +21,7 @@ final ThemeController _themeController = Get.find<ThemeController>();
         width: 50,
         height: 50,
         child: LoadingIndicator(
-          indicatorType: Indicator.ballBeat,
+          indicatorType: Indicator.pacman,
           colors: colors,
           strokeWidth: 2,
           backgroundColor: const Color.fromARGB(0, 0, 0, 0),

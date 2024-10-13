@@ -68,7 +68,7 @@ class _NavigationMenuState extends State<NavigationMenu> {
             iconSize: 24,
             haptic: true,
             activeColor: themeController.isDarkMode.value? const Color.fromARGB(255, 255, 255, 255): Color.fromARGB(255, 255, 255, 255),
-            tabBackgroundColor: themeController.isDarkMode.value ? const Color.fromARGB(195, 255, 7, 90) : const Color.fromARGB(255, 10, 0, 40),
+            tabBackgroundColor: themeController.isDarkMode.value ? const Color.fromARGB(195, 255, 7, 90) : const Color.fromARGB(255, 42, 36, 59),
             gap: 8,
             padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 10),
             selectedIndex: _selectedIndex,
@@ -155,6 +155,7 @@ class NavigationController extends GetxController {
       TrendPage(token: token),
       MessagePage(token: token),
       ProfilePage(token: token),
+      
     ]);
   }
 }

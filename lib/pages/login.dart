@@ -137,129 +137,345 @@ void showErrorDialog(String message) {
   );
 }
 
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      resizeToAvoidBottomInset: true,
-      backgroundColor: Color.fromRGBO(252, 252, 252, 1),
-      body: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 30.0),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
+void _showForgotPasswordDialog(BuildContext context) {
+  final TextEditingController emailController = TextEditingController();
+  bool _isSubmitting = false;
+
+  showCupertinoDialog(
+    context: context,
+    builder: (context) {
+      return CupertinoAlertDialog(
+        title: Text('Forgot Password'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
           children: <Widget>[
-            SvgPicture.asset('assets/icons/login.svg', height: 100),
-            Text(
-              'Login',
-              style: TextStyle(
-                fontFamily: 'GeistSans',
-                fontWeight: FontWeight.bold,
-                fontSize: 30.0,
-                color: Color.fromRGBO(5, 5, 5, 1),
-              ),
-            ),
-            const SizedBox(height: 40.0),
-            ShadInput(
-              cursorColor: Colors.black,
-              style: TextStyle(
-                color: themeController.isDarkMode.value ? const Color.fromARGB(255, 0, 0, 0) : Colors.black,
-              ),
+            Text('Please enter your email address. We will send you a link to reset your password.'),
+            SizedBox(height: 10),
+            CupertinoTextField(
               controller: emailController,
-              placeholder: const Text('Email'),
+              placeholder: 'Email',
               keyboardType: TextInputType.emailAddress,
-              prefix: const Padding(
-                padding: EdgeInsets.all(3.0),
-                child: ShadImage.square(size: 16, LucideIcons.mail, color: Color.fromARGB(255, 25, 22, 32)),
+              padding: EdgeInsets.symmetric(vertical: 12.0, horizontal: 16.0),
+              decoration: BoxDecoration(
+                border: Border.all(color: CupertinoColors.systemGrey, width: 1.0),
+                borderRadius: BorderRadius.circular(8.0),
               ),
-            ),
-            SizedBox(height: 10.0),
-            ShadInput(
-              cursorColor: Colors.black,
-              style: TextStyle(
-                color: themeController.isDarkMode.value ? const Color.fromARGB(255, 0, 0, 0) : Colors.black,
-              ),
-              controller: passwordController,
-              obscureText: _obscurePassword,
-              placeholder: const Text('Password'),
-              prefix: const Padding(
-                padding: EdgeInsets.all(4.0),
-                child: ShadImage.square(size: 16, LucideIcons.lock, color: Color.fromARGB(255, 25, 22, 32)),
-              ),
-              suffix: ShadButton(
-                width: 24,
-                height: 24,
-                padding: EdgeInsets.zero,
-                decoration: const ShadDecoration(
-                  secondaryBorder: ShadBorder.none,
-                  secondaryFocusedBorder: ShadBorder.none,
-                ),
-                icon: ShadImage.square(
-                  size: 16,
-                  _obscurePassword ? LucideIcons.eyeOff : LucideIcons.eye,
-                ),
-                onPressed: () {
-                  setState(() => _obscurePassword = !_obscurePassword);
-                },
-              ),
-            ),
-            const SizedBox(height: 40.0),
-            ShadButton(
-              backgroundColor: Color.fromARGB(255, 10, 0, 40),
-              height: 40,
-              width: 150,
-              onPressed: _isLoggingIn ? null : loginUser,
-              child: _isLoggingIn
-                  ? Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        SizedBox.square(
-                          dimension: 20,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        ),
-                        const SizedBox(width: 8),
-                        const Text(
-                          'Logging in...',
-                          style: TextStyle(color: Colors.white),
-                        ),
-                      ],
-                    )
-                  : const Text('Login', style: TextStyle(fontFamily: 'GeistSans', color: Colors.white)),
-            ),
-            const SizedBox(height: 20.0),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: <Widget>[
-                const Text(
-                  "Don't have an account?",
-                  style: TextStyle(
-                    fontFamily: 'GeistSans',
-                    fontWeight: FontWeight.w400,
-                    fontSize: 14.0,
-                    color: Colors.grey,
-                  ),
-                ),
-                const SizedBox(width: 5.0),
-                GestureDetector(
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (context) => SignUpPage()),
-                    );
-                  },
-                  child: Text(
-                    'Sign Up',
-                    style: TextStyle(
-                      fontFamily: 'GeistSans',
-                      fontWeight: FontWeight.bold,
-                      fontSize: 14.0,
-                      color: Color.fromRGBO(25, 22, 32, 1),
-                    ),
-                  ),
-                ),
-              ],
             ),
           ],
         ),
-      ),
+        actions: <Widget>[
+          CupertinoDialogAction(
+            onPressed: () {
+              Navigator.of(context).pop();
+            },
+            child: Text('Cancel'),
+          ),
+          CupertinoDialogAction(
+            onPressed: _isSubmitting
+                ? null
+                : () async {
+                    setState(() {
+                      _isSubmitting = true;
+                    });
+
+                    // Call your backend API to send the reset link
+                    final response = await _sendPasswordResetEmail(emailController.text);
+
+                    setState(() {
+                      _isSubmitting = false;
+                    });
+
+                    if (response) {
+                      Navigator.of(context).pop(); // Close the dialog
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text('Reset link sent to ${emailController.text}.')),
+                      );
+                    } else {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text('Failed to send reset link.')),
+                      );
+                    }
+                  },
+            child: _isSubmitting
+                ? CupertinoActivityIndicator() // Shows a loading indicator
+                : Text('Send Reset Link'),
+          ),
+        ],
+      );
+    },
+  );
+}
+Future<bool> _sendPasswordResetEmail(String email) async {
+  // Replace with your actual endpoint and logic
+  try {
+    final response = await http.post(
+      Uri.parse('http://192.168.1.19:3000/forgot-password'), // Update with your API endpoint
+      headers: <String, String>{
+        'Content-Type': 'application/json; charset=UTF-8',
+      },
+      body: jsonEncode(<String, String>{
+        'email': email,
+      }),
     );
+
+    if (response.statusCode == 200) {
+      return true; // Successfully sent reset link
+    } else {
+      return false; // Failed to send reset link
+    }
+  } catch (e) {
+    print(e);
+    return false; // Error occurred
   }
+}
+
+
+
+void _showErrorDialog(BuildContext context, String message) {
+  showCupertinoDialog(
+    context: context,
+    builder: (context) {
+      return CupertinoAlertDialog(
+        title: const Text('Error'),
+        content: Text(message),
+        actions: <Widget>[
+          CupertinoDialogAction(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Close'),
+          ),
+        ],
+      );
+    },
+  );
+}
+
+void _resetPassword(String email) {
+  // Your logic to send password reset email
+  // For example, call your API here
+  print('Reset link sent to: $email'); // Replace with actual logic
+}
+
+
+
+@override
+Widget build(BuildContext context) {
+  return Scaffold(
+    resizeToAvoidBottomInset: true,
+    backgroundColor: Color.fromRGBO(252, 252, 252, 1),
+    body: SafeArea(
+      child: SingleChildScrollView(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 30.0),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: <Widget>[
+              SizedBox(height: 20,),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.start,
+                children: [
+                  Container(
+                    height: 30,
+                    child: Image.asset('assets/icons/ren.png'),
+                  ),
+                  Text(
+                    'RentConnect',
+                    style: TextStyle(
+                      fontFamily: 'geistsans',
+                      fontWeight: FontWeight.w700,
+                      color: Colors.black
+                    ),
+                  ),
+                ],
+              ),
+              SizedBox(height: 70,),
+              SvgPicture.asset('assets/icons/login.svg', height: 100),
+              Text(
+                'Login',
+                style: TextStyle(
+                  fontFamily: 'GeistSans',
+                  fontWeight: FontWeight.bold,
+                  fontSize: 30.0,
+                  color: Color.fromRGBO(5, 5, 5, 1),
+                ),
+              ),
+              const SizedBox(height: 10.0),
+              ShadInput(
+                cursorColor: Colors.black,
+                style: TextStyle(
+                  color: themeController.isDarkMode.value ? const Color.fromARGB(255, 0, 0, 0) : Colors.black,
+                ),
+                controller: emailController,
+                placeholder: const Text('Email'),
+                keyboardType: TextInputType.emailAddress,
+                prefix: const Padding(
+                  padding: EdgeInsets.all(3.0),
+                  child: ShadImage.square(size: 16, LucideIcons.mail, color: Color.fromARGB(255, 25, 22, 32)),
+                ),
+              ),
+              SizedBox(height: 10.0),
+              ShadInput(
+                cursorColor: Colors.black,
+                style: TextStyle(
+                  color: themeController.isDarkMode.value ? const Color.fromARGB(255, 0, 0, 0) : Colors.black,
+                ),
+                controller: passwordController,
+                obscureText: _obscurePassword,
+                placeholder: const Text('Password'),
+                prefix: const Padding(
+                  padding: EdgeInsets.all(4.0),
+                  child: ShadImage.square(size: 16, LucideIcons.lock, color: Color.fromARGB(255, 25, 22, 32)),
+                ),
+                suffix: ShadButton(
+                  width: 24,
+                  height: 24,
+                  padding: EdgeInsets.zero,
+                  decoration: const ShadDecoration(
+                    secondaryBorder: ShadBorder.none,
+                    secondaryFocusedBorder: ShadBorder.none,
+                  ),
+                  icon: ShadImage.square(
+                    size: 16,
+                    _obscurePassword ? LucideIcons.eyeOff : LucideIcons.eye,
+                  ),
+                  onPressed: () {
+                    setState(() => _obscurePassword = !_obscurePassword);
+                  },
+                ),
+              ),
+              SizedBox(height: 4,),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.start,
+                children: [
+                  GestureDetector(
+                    onTap: () {
+                     _showForgotPasswordDialog(context);
+                    },
+                    child: const Text(
+                      'Forgot Password?',
+                      style: TextStyle(
+                        fontFamily: 'GeistSans',
+                        fontWeight: FontWeight.w500,
+                        fontSize: 13.0,
+                        color: Color.fromRGBO(95, 95, 95, 1),
+                      ),
+                      textAlign: TextAlign.left,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 20.0),
+              ShadButton(
+                backgroundColor: Color.fromARGB(255, 10, 0, 40),
+                height: 40,
+                width: 150,
+                onPressed: _isLoggingIn ? null : loginUser,
+                child: _isLoggingIn
+                    ? Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          SizedBox.square(
+                            dimension: 20,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          ),
+                          const SizedBox(width: 8),
+                          const Text(
+                            'Logging in...',
+                            style: TextStyle(color: Colors.white),
+                          ),
+                        ],
+                      )
+                    : const Text('Login', style: TextStyle(fontFamily: 'GeistSans', color: Colors.white)),
+              ),
+              const SizedBox(height: 20.0),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: <Widget>[
+                  const Text(
+                    "Don't have an account?",
+                    style: TextStyle(
+                      fontFamily: 'GeistSans',
+                      fontWeight: FontWeight.w400,
+                      fontSize: 14.0,
+                      color:Color.fromARGB(255, 97, 97, 97),
+                    ),
+                  ),
+                  const SizedBox(width: 5.0),
+                  GestureDetector(
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (context) => SignUpPage()),
+                      );
+                    },
+                    child: Text(
+                      'Sign Up',
+                      style: TextStyle(
+                        fontFamily: 'GeistSans',
+                        fontWeight: FontWeight.bold,
+                        fontSize: 14.0,
+                        color: Color.fromRGBO(25, 22, 32, 1),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 150),
+              Wrap(
+                alignment: WrapAlignment.center,
+                children: <Widget>[
+                  const Text(
+                    "By signing up, you agree to our ",
+                    style: TextStyle(
+                      fontFamily: 'GeistSans',
+                      fontWeight: FontWeight.w400,
+                      fontSize: 12.0,
+                      color: Color.fromARGB(255, 97, 97, 97),
+                    ),
+                  ),
+                  GestureDetector(
+                    onTap: () {
+                      // Navigate to Terms of Service page
+                    },
+                    child: const Text(
+                      'Terms of Service',
+                      style: TextStyle(
+                        fontFamily: 'GeistSans',
+                        fontWeight: FontWeight.bold,
+                        fontSize: 12.0,
+                        color: Color.fromRGBO(25, 22, 32, 1),
+                      ),
+                    ),
+                  ),
+                  const Text(
+                    ' and ',
+                    style: TextStyle(
+                      fontFamily: 'GeistSans',
+                      fontWeight: FontWeight.w400,
+                      fontSize: 12.0,
+                      color: Color.fromARGB(255, 97, 97, 97),
+                    ),
+                  ),
+                  GestureDetector(
+                    onTap: () {
+                      // Navigate to Privacy Policy page
+                    },
+                    child: const Text(
+                      'Privacy Policy',
+                      style: TextStyle(
+                        fontFamily: 'GeistSans',
+                        fontWeight: FontWeight.bold,
+                        fontSize: 12.0,
+                        color: Color.fromRGBO(25, 22, 32, 1),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    ));
+  }
+
 }

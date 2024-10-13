@@ -9,6 +9,7 @@ import 'package:latlong2/latlong.dart';
 import 'package:rentcon/pages/profileSection/personalInformation.dart';
 import 'package:rentcon/pages/profileSection/profileChecker.dart';
 import 'package:rentcon/theme_controller.dart';
+import 'package:shadcn_ui/shadcn_ui.dart';
 import 'package:smooth_page_indicator/smooth_page_indicator.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:table_calendar/table_calendar.dart';
@@ -47,7 +48,7 @@ class _ManagepropertyState extends State<Manageproperty> {
   }
 
   Future<void> fetchRooms() async {
-    final response = await http.get(Uri.parse('http://192.168.1.31:3000/rooms/properties/${widget.property.id}/rooms'));
+    final response = await http.get(Uri.parse('http://192.168.1.19:3000/rooms/properties/${widget.property.id}/rooms'));
 
     if (response.statusCode == 200) {
       final data = jsonDecode(response.body);
@@ -231,9 +232,34 @@ class _ManagepropertyState extends State<Manageproperty> {
           fontFamily: 'GeistSans',
           fontWeight: FontWeight.w800,
         )),
-        leading: IconButton(
-          icon: Icon(Icons.arrow_back),
-          onPressed: () => Navigator.of(context).pop(),
+        leading: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 11.0, horizontal: 12.0),
+          child: SizedBox(
+            height: 40,  // Set a specific height for the button
+            width: 40,   // Set a specific width to make it a square button
+            child: ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.transparent, // Transparent background to simulate outline
+                side: BorderSide(
+                  color: _themeController.isDarkMode.value ? Colors.white : Colors.black, // Outline color
+                  width: 0.90, // Outline width
+                ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8.0), // Optional rounded corners
+                ),
+                elevation: 0, // Remove elevation to get the outline effect
+                padding: EdgeInsets.all(0), // Remove any padding to center the icon
+              ),
+              onPressed: () {
+                Navigator.pop(context);
+              },
+              child: Icon(
+                Icons.chevron_left,
+                color: _themeController.isDarkMode.value ? Colors.white : Colors.black, // Icon color based on theme
+                size: 16, // Icon size
+              ),
+            ),
+          ),
         ),
       ),
       body: Stack(

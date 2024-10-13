@@ -1,3 +1,5 @@
+// ignore_for_file: sort_child_properties_last
+
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
@@ -41,7 +43,7 @@ class _CardNotificationsState extends State<CardNotifications> {
   Future<List<dynamic>> fetchNotifications(String userId, String token) async {
     try {
       final response = await http.get(
-        Uri.parse('http://192.168.1.31:3000/notification/unread/$userId'),
+        Uri.parse('http://192.168.1.19:3000/notification/unread/$userId'),
         headers: {
           'Authorization': 'Bearer $token',
           'Content-Type': 'application/json',
@@ -99,7 +101,7 @@ class _CardNotificationsState extends State<CardNotifications> {
 
   Future<void> _markNotificationAsRead(String notificationId) async {
     final response = await http.patch(
-      Uri.parse('http://192.168.1.31:3000/notification/$notificationId/read'),
+      Uri.parse('http://192.168.1.19:3000/notification/$notificationId/read'),
       headers: {
         'Authorization': 'Bearer ${widget.token}',
         'Content-Type': 'application/json',

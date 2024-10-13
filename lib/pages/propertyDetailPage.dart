@@ -1,4 +1,4 @@
-// ignore_for_file: prefer_const_constructors
+// ignore_for_file: prefer_const_constructors, no_leading_underscores_for_local_identifiers
 
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
@@ -14,6 +14,7 @@ import 'package:latlong2/latlong.dart';
 import 'package:rentcon/pages/profileSection/personalInformation.dart';
 import 'package:rentcon/pages/profileSection/profileChecker.dart';
 import 'package:rentcon/theme_controller.dart';
+import 'package:shadcn_ui/shadcn_ui.dart';
 import 'package:skeletonizer/skeletonizer.dart';
 import 'package:smooth_page_indicator/smooth_page_indicator.dart';
 import 'package:flutter_svg/flutter_svg.dart';
@@ -63,7 +64,7 @@ Future<void> fetchRooms() async {
     _loadingRooms = true;  // Start loading
   });
 
-  final response = await http.get(Uri.parse('http://192.168.1.31:3000/rooms/properties/${widget.property.id}/rooms'));
+  final response = await http.get(Uri.parse('http://192.168.1.19:3000/rooms/properties/${widget.property.id}/rooms'));
 
   if (response.statusCode == 200) {
     final data = jsonDecode(response.body);
@@ -83,7 +84,7 @@ Future<void> fetchRooms() async {
 
 Future<void> fetchNotifications() async {
   final response = await http.get(
-    Uri.parse('http://192.168.1.31:3000/notifications'),
+    Uri.parse('http://192.168.1.19:3000/notifications'),
     headers: {
       'Authorization': 'Bearer ${widget.token}', // Use the user's token for authentication
     },
@@ -126,11 +127,23 @@ void showRoomDetailsModal(BuildContext context, Map<String, dynamic> room) {
     ),
     builder: (BuildContext context) {
       return Padding(
-        padding: const EdgeInsets.all(16.0),
+        padding: const EdgeInsets.fromLTRB(20, 3,20,20),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            Center(
+              child: Container(
+                width: 100, // Full width
+                height: 7.0, // Thickness of the divider
+                decoration: BoxDecoration(
+                  color: _themeController.isDarkMode.value? const Color.fromARGB(255, 199, 198, 198): Color.fromARGB(255, 83, 83, 83), // Color of the divider
+                  borderRadius: BorderRadius.circular(10.0), // Adjust the radius here
+                ),
+                margin: const EdgeInsets.symmetric(vertical: 10.0), // Space above and below
+              ),
+            ),
+
             // Room Photos Slider
             roomPhotoUrls.isNotEmpty
                 ? Column(
@@ -178,7 +191,6 @@ void showRoomDetailsModal(BuildContext context, Map<String, dynamic> room) {
             Text('Capacity: ${room['capacity']}', style: const TextStyle(fontSize: 16)),
             Text('Deposit: ₱${room['deposit']}', style: const TextStyle(fontSize: 16)),
             Text('Advance: ₱${room['advance']}', style: const TextStyle(fontSize: 16)),
-            Text('Reservation Duration: ${room['reservationDuration']} Days', style: const TextStyle(fontSize: 16)),
             Text('Reservation Fee: ₱${room['reservationFee']}', style: const TextStyle(fontSize: 16)),
             const SizedBox(height: 16),
 
@@ -189,27 +201,35 @@ void showRoomDetailsModal(BuildContext context, Map<String, dynamic> room) {
               ),
               const SizedBox(height: 16),
             ] else if (hasPendingRequest) ...[
-              // If occupant already has a pending request, show a message and disable buttons
               Text(
                 'You have a pending request. Please wait for it to be approved or rejected before making another request.',
                 style: const TextStyle(color: Colors.orange, fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 16),
             ] else if (widget.userRole == 'occupant' && widget.profileStatus == 'approved') ...[
+              // Reservation Duration Picker
+              const SizedBox(height: 16),
               Row(
                 children: [
                   Expanded(
                     child: ElevatedButton(
                       onPressed: () {
-                        _showReservationConfirmation(context, room, _themeController); // Call confirmation dialog
+                        _showDurationPicker(context, room, _themeController); // Show duration picker
                       },
-                      child:  Text('Reserve',
-                      style: TextStyle(
-                       color:  _themeController.isDarkMode.value?Colors.black: Colors.white
-                      ),),
+                      child: Text('Reserve',
+                        style: TextStyle(
+                          color: _themeController.isDarkMode.value
+                              ? Colors.black
+                              : Colors.white
+                        ),
+                      ),
                       style: ElevatedButton.styleFrom(
-                        backgroundColor:  _themeController.isDarkMode.value? const Color.fromARGB(255, 255, 255, 255): Colors.black,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                        backgroundColor: _themeController.isDarkMode.value
+                            ? const Color.fromARGB(255, 255, 255, 255)
+                            : Colors.black,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8)
+                        ),
                       ),
                     ),
                   ),
@@ -217,14 +237,22 @@ void showRoomDetailsModal(BuildContext context, Map<String, dynamic> room) {
                   Expanded(
                     child: ElevatedButton(
                       onPressed: () {
-                        _showRentConfirmation(context, room, _themeController); // Send rent request
+                        _showRentConfirmation(context, room, _themeController); 
                       },
-                      child: Text('Rent', style: TextStyle(
-                        color: _themeController.isDarkMode.value?Colors.black: Colors.white
-                      ),),
+                      child: Text('Rent', 
+                        style: TextStyle(
+                          color: _themeController.isDarkMode.value
+                              ? Colors.black
+                              : Colors.white
+                        ),
+                      ),
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: _themeController.isDarkMode.value? const Color.fromARGB(255, 255, 255, 255): Colors.black,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                        backgroundColor: _themeController.isDarkMode.value
+                            ? const Color.fromARGB(255, 255, 255, 255)
+                            : Colors.black,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8)
+                        ),
                       ),
                     ),
                   ),
@@ -238,14 +266,16 @@ void showRoomDetailsModal(BuildContext context, Map<String, dynamic> room) {
   );
 }
 
-void _sendReserveRequest(BuildContext context, Map<String, dynamic> room) async {
+void _sendRentRequest(BuildContext context, Map<String, dynamic> room, DateTime? proposedStartDate, String? customTerms) async {
   // Check if there is a pending request before proceeding
   final checkResponse = await http.get(
-    Uri.parse('http://192.168.1.31:3000/inquiries/check-pending?userId=$userId&roomId=${room['_id']}'),
+    Uri.parse('http://192.168.1.19:3000/inquiries/check-pending?userId=$userId&roomId=${room['_id']}'),
     headers: {
       'Authorization': 'Bearer ${widget.token}',
     },
   );
+
+  print('Check Pending Response: ${checkResponse.statusCode} - ${checkResponse.body}'); // Debugging line
 
   if (checkResponse.statusCode == 200) {
     final checkData = jsonDecode(checkResponse.body);
@@ -260,68 +290,7 @@ void _sendReserveRequest(BuildContext context, Map<String, dynamic> room) async 
     } else {
       // Proceed with sending the request
       final inquiryResponse = await http.post(
-        Uri.parse('http://192.168.1.31:3000/inquiries/create'),
-        headers: {
-          'Authorization': 'Bearer ${widget.token}',
-          'Content-Type': 'application/json',
-        },
-        body: jsonEncode({
-          'roomId': '${room['_id']}',
-          'userId': userId,
-          'requestType': 'reservation',
-          'status': 'pending',
-        }),
-      );
-
-      if (inquiryResponse.statusCode == 201) {
-        Fluttertoast.showToast(
-          msg: 'Reservation request sent!',
-          textColor:_themeController.isDarkMode.value?const Color.fromARGB(255, 0, 0, 0): const Color.fromARGB(255, 255, 255, 255),
-          backgroundColor: _themeController.isDarkMode.value?Colors.white: const Color.fromARGB(255, 0, 0, 0),
-        );
-        // Disable further requests
-        setState(() {
-          room['pendingRequest'] = true; // Mark room as having a pending request
-        });
-      } else {
-        Fluttertoast.showToast(
-          msg: 'Failed to send request',
-          backgroundColor: Colors.red,
-        );
-      }
-    }
-  } else {
-    Fluttertoast.showToast(
-      msg: 'Failed to check request status',
-      backgroundColor: Colors.red,
-    );
-  }
-}
-
-
-void _sendRentRequest(BuildContext context, Map<String, dynamic> room) async {
-  // Check if there is a pending request before proceeding
-  final checkResponse = await http.get(
-    Uri.parse('http://192.168.1.31:3000/inquiries/check-pending?userId=$userId&roomId=${room['_id']}'),
-    headers: {
-      'Authorization': 'Bearer ${widget.token}',
-    },
-  );
-
-  if (checkResponse.statusCode == 200) {
-    final checkData = jsonDecode(checkResponse.body);
-    final bool hasPendingRequest = checkData['hasPendingRequest'] ?? false;
-
-    if (hasPendingRequest) {
-      Fluttertoast.showToast(
-        msg: 'You already have a pending request for this room.',
-        backgroundColor: Colors.orange,
-        textColor: Colors.white,
-      );
-    } else {
-      // Proceed with sending the request
-      final inquiryResponse = await http.post(
-        Uri.parse('http://192.168.1.31:3000/inquiries/create'),
+        Uri.parse('http://192.168.1.19:3000/inquiries/create'),
         headers: {
           'Authorization': 'Bearer ${widget.token}',
           'Content-Type': 'application/json',
@@ -331,18 +300,74 @@ void _sendRentRequest(BuildContext context, Map<String, dynamic> room) async {
           'userId': userId,
           'requestType': 'rent',
           'status': 'pending',
+          'proposedStartDate': proposedStartDate?.toIso8601String(), // Send start date
+          'customTerms': customTerms, // Send custom terms
         }),
       );
+
+      print('Inquiry Response: ${inquiryResponse.statusCode} - ${inquiryResponse.body}'); // Debugging line
 
       if (inquiryResponse.statusCode == 201) {
         Fluttertoast.showToast(
           msg: 'Rent request sent!',
-          backgroundColor: _themeController.isDarkMode.value?Colors.white: const Color.fromARGB(255, 0, 0, 0),
+          backgroundColor: _themeController.isDarkMode.value ? Colors.white : const Color.fromARGB(255, 0, 0, 0),
         );
+        
         // Disable further requests
         setState(() {
           room['pendingRequest'] = true; // Mark room as having a pending request
         });
+
+        // Fetch landlord's email using the provided endpoint
+        final landlordEmailResponse = await http.get(
+          Uri.parse('http://192.168.1.19:3000/rooms/landlord-email/${room['_id']}'),
+          headers: {
+            'Authorization': 'Bearer ${widget.token}',
+          },
+        );
+
+        if (landlordEmailResponse.statusCode == 200) {
+          final landlordData = jsonDecode(landlordEmailResponse.body);
+          final String landlordEmail = landlordData['landlordEmail']; // Adjust according to the response structure
+
+          // Now send notification to landlord
+          final notificationBody = {
+            'userId': "${room['ownerId']}",
+            'message': 'You have a new rent inquiry for room ${room['roomNumber']}.',
+            'roomId': room['_id'],
+            'roomNumber': room['roomNumber'],
+            'requesterEmail': landlordEmail, // The email of the landlord
+            'inquiryId': jsonDecode(inquiryResponse.body)['_id'],
+          };
+
+          // Send notification request
+          final notificationResponse = await http.post(
+            Uri.parse('http://192.168.1.19:3000/notification/create'),
+            headers: {
+              'Authorization': 'Bearer ${widget.token}',
+              'Content-Type': 'application/json',
+            },
+            body: jsonEncode(notificationBody),
+          );
+
+          // Debugging: Print notification response status and body
+          print('Notification Request Status Code: ${notificationResponse.statusCode}');
+          print('Notification Request Response Body: ${notificationResponse.body}');
+
+          if (notificationResponse.statusCode == 201) {
+            print('Notification sent successfully.');
+          } else {
+            Fluttertoast.showToast(
+              msg: 'Failed to send notification to landlord.',
+              backgroundColor: Colors.red,
+            );
+          }
+        } else {
+          Fluttertoast.showToast(
+            msg: 'Failed to fetch landlord email.',
+            backgroundColor: Colors.red,
+          );
+        }
       } else {
         Fluttertoast.showToast(
           msg: 'Failed to send request',
@@ -360,7 +385,298 @@ void _sendRentRequest(BuildContext context, Map<String, dynamic> room) async {
 
 
 
-void _showReservationConfirmation(BuildContext context, Map<String, dynamic> room, ThemeController themeController) {
+void _showRentConfirmation(BuildContext context, Map<String, dynamic> room, ThemeController themeController) {
+  DateTime? _selectedStartDate;
+  TextEditingController _termsController = TextEditingController();
+
+  showDialog(
+    context: context,
+    builder: (context) => StatefulBuilder(
+      builder: (context, setState) {
+        return Center(
+          child: Dialog(
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(8.2), // Rounded corners
+            ),
+            child: Padding(
+              padding: const EdgeInsets.all(25.0),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Confirm Rent Request',
+                    style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, fontFamily: 'geistsans'),
+                  ),
+                  const SizedBox(height: 5),
+                  Text('Room/Unit no. ${room['roomNumber']}', style: TextStyle(fontFamily: 'geistsans', color: const Color.fromARGB(255, 105, 105, 105))),
+                  const SizedBox(height: 5),
+
+                  // Date Picker
+                  GestureDetector(
+                    onTap: () async {
+                      DateTime? picked = await showDatePicker(
+                        context: context,
+                        initialDate: DateTime.now(),
+                        firstDate: DateTime.now(),
+                        lastDate: DateTime(2100),
+                      );
+                      if (picked != null) {
+                        setState(() {
+                          _selectedStartDate = picked; // Update the state with the selected date
+                        });
+                      }
+                    },
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(vertical: 8.0),
+                      child: Row(
+                        children: [
+                          const Icon(Icons.calendar_today),
+                          const SizedBox(width: 8),
+                          Text(
+                            _selectedStartDate != null 
+                              ? 'Start Date: ${_selectedStartDate!.toLocal().toString().split(' ')[0]}' 
+                              : 'Select Start Date',
+                            style: TextStyle(
+                              color: _themeController.isDarkMode.value
+                                ? const Color.fromARGB(255, 7, 138, 245)
+                                : const Color.fromARGB(255, 55, 58, 240),
+                              fontFamily: 'geistsans'
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+
+                  // Custom Terms Input
+                  TextField(
+                    controller: _termsController,
+                    decoration: const InputDecoration(
+                      hintText: 'Optional: Add custom terms or message',
+                      border: OutlineInputBorder(),
+                    ),
+                    maxLines: 3,
+                  ),
+                  const SizedBox(height: 16),
+
+                  // Action Buttons
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      ShadButton.outline(
+                        child: Text(
+                          'Cancel',
+                          style: TextStyle(
+                            color: _themeController.isDarkMode.value ? Colors.white : const Color.fromARGB(255, 6, 1, 36)
+                          ),
+                        ),
+                        onPressed: () => Navigator.of(context).pop(), // Cancel button
+                      ),
+                      ShadButton(
+                        backgroundColor: _themeController.isDarkMode.value ? Colors.white : const Color.fromARGB(255, 5, 16, 44),
+                        child: Text(
+                          'Send Rent Request',
+                          style: TextStyle(
+                            color: _themeController.isDarkMode.value ? const Color.fromARGB(255, 3, 1, 36) : const Color.fromARGB(255, 255, 255, 255)
+                          ),
+                        ),
+                        onPressed: () {
+                          if (_selectedStartDate == null) {
+                            Fluttertoast.showToast(
+                              msg: 'Please select a start date.',
+                              backgroundColor: Colors.red,
+                            );
+                          } else {
+                            Navigator.pop(context);
+                            _sendRentRequest(context, room, _selectedStartDate, _termsController.text); // Proceed to send rent request
+                          }
+                        },
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    ),
+  );
+}
+
+
+int selectedReservationDuration = 1;
+void _showDurationPicker(BuildContext context, Map<String, dynamic> room, ThemeController _themeController) {
+  showCupertinoModalPopup(
+    context: context,
+    builder: (BuildContext context) {
+      return CupertinoActionSheet(
+        title: const Text('Select Reservation Duration'),
+        actions: List<CupertinoActionSheetAction>.generate(30, (index) {
+          return CupertinoActionSheetAction(
+            onPressed: () {
+              setState(() {
+                selectedReservationDuration = index + 1; // Update duration
+              });
+
+              Navigator.pop(context); // Close the picker
+
+              // Show the reservation confirmation dialog
+              _showReservationConfirmation(context, room, _themeController, selectedReservationDuration);
+            },
+            child: Text('${index + 1} Days'),
+          );
+        }),
+        cancelButton: CupertinoActionSheetAction(
+          isDefaultAction: true,
+          onPressed: () {
+            Navigator.pop(context); // Close the picker
+          },
+          child: const Text('Cancel'),
+        ),
+      );
+    },
+  );
+}
+
+
+
+
+
+
+void _sendReserveRequest(BuildContext context, Map<String, dynamic> room, int selectedReservationDuration) async {
+  // Check if there is a pending request before proceeding
+  final checkResponse = await http.get(
+    Uri.parse('http://192.168.1.19:3000/inquiries/check-pending?userId=$userId&roomId=${room['_id']}'),
+    headers: {
+      'Authorization': 'Bearer ${widget.token}',
+    },
+  );
+
+  if (checkResponse.statusCode == 200) {
+    final checkData = jsonDecode(checkResponse.body);
+    final bool hasPendingRequest = checkData['hasPendingRequest'] ?? false;
+
+    if (hasPendingRequest) {
+      Fluttertoast.showToast(
+        msg: 'You already have a pending request for this room.',
+        backgroundColor: Colors.orange,
+        textColor: Colors.white,
+      );
+    } else {
+      // Prepare the request body for inquiry
+      final requestBody = {
+        'roomId': '${room['_id']}',
+        'userId': userId,
+        'requestType': 'reservation',
+        'status': 'pending',
+        'reservationDuration': selectedReservationDuration,
+      };
+
+      // Debugging: Print request payload
+      print('Inquiry Creation Request Payload: $requestBody');
+
+      // Proceed with sending the reservation request
+      final inquiryResponse = await http.post(
+        Uri.parse('http://192.168.1.19:3000/inquiries/create'),
+        headers: {
+          'Authorization': 'Bearer ${widget.token}',
+          'Content-Type': 'application/json',
+        },
+        body: jsonEncode(requestBody),
+      );
+
+      // Debugging: Print response status and body
+      print('Inquiry Creation Request Status Code: ${inquiryResponse.statusCode}');
+      print('Inquiry Creation Request Response Body: ${inquiryResponse.body}');
+
+      if (inquiryResponse.statusCode == 201) {
+        Fluttertoast.showToast(
+          msg: 'Reservation request sent!',
+          textColor: _themeController.isDarkMode.value
+              ? const Color.fromARGB(255, 0, 0, 0)
+              : const Color.fromARGB(255, 255, 255, 255),
+          backgroundColor: _themeController.isDarkMode.value
+              ? Colors.white
+              : const Color.fromARGB(255, 0, 0, 0),
+        );
+
+        // Disable further requests
+        setState(() {
+          room['pendingRequest'] = true; // Mark room as having a pending request
+        });
+
+        // Fetch landlord's email using the provided endpoint
+        final landlordEmailResponse = await http.get(
+          Uri.parse('http://192.168.1.19:3000/rooms/landlord-email/${room['_id']}'),
+          headers: {
+            'Authorization': 'Bearer ${widget.token}',
+          },
+        );
+
+        if (landlordEmailResponse.statusCode == 200) {
+          final landlordData = jsonDecode(landlordEmailResponse.body);
+          final String landlordEmail = landlordData['landlordEmail']; // Adjust according to the response structure
+
+          // Now send notification to landlord
+          final notificationBody = {
+            'userId': room['ownerId'],
+            'message': 'You have a new reservation inquiry for room ${room['roomNumber']}.',
+            'roomId': room['_id'],
+            'roomNumber': room['roomNumber'],
+            'requesterEmail': landlordEmail, // The email of the landlord
+            'inquiryId': jsonDecode(inquiryResponse.body)['_id'],
+          };
+
+          // Send notification request
+          final notificationResponse = await http.post(
+            Uri.parse('http://192.168.1.19:3000/notification/create'),
+            headers: {
+              'Authorization': 'Bearer ${widget.token}',
+              'Content-Type': 'application/json',
+            },
+            body: jsonEncode(notificationBody),
+          );
+
+          // Debugging: Print notification response status and body
+          print('Notification Request Status Code: ${notificationResponse.statusCode}');
+          print('Notification Request Response Body: ${notificationResponse.body}');
+
+          if (notificationResponse.statusCode == 201) {
+            print('Notification sent successfully.');
+          } else {
+            Fluttertoast.showToast(
+              msg: 'Failed to send notification to landlord.',
+              backgroundColor: Colors.red,
+            );
+          }
+        } else {
+          Fluttertoast.showToast(
+            msg: 'Failed to fetch landlord email.',
+            backgroundColor: Colors.red,
+          );
+        }
+      } else {
+        Fluttertoast.showToast(
+          msg: 'Failed to send request',
+          backgroundColor: Colors.red,
+        );
+      }
+    }
+  } else {
+    Fluttertoast.showToast(
+      msg: 'Failed to check request status',
+      backgroundColor: Colors.red,
+    );
+  }
+}
+
+
+
+
+
+void _showReservationConfirmation(BuildContext context, Map<String, dynamic> room, ThemeController themeController, int selectedReservationDuration) {
   showCupertinoDialog(
     context: context,
     builder: (BuildContext context) {
@@ -376,7 +692,7 @@ void _showReservationConfirmation(BuildContext context, Map<String, dynamic> roo
             children: [
               Text('Room/Unit no. ${room['roomNumber']}'),
               Text('Reservation Fee: ₱${room['reservationFee']}'),
-              Text('Reservation Duration: ${room['reservationDuration']} Days'),
+              Text('Reservation Duration: $selectedReservationDuration Days'), // Show selected duration here
               const SizedBox(height: 16),
               const Text(
                 'Warning: The reservation fee is non-refundable.',
@@ -395,7 +711,7 @@ void _showReservationConfirmation(BuildContext context, Map<String, dynamic> roo
             CupertinoDialogAction(
               onPressed: () {
                 Navigator.pop(context);
-                _sendReserveRequest(context, room); // Proceed to send rent request
+                _sendReserveRequest(context, room, selectedReservationDuration); // Pass selected duration to request
               },
               isDestructiveAction: true,
               child: const Text('Send Reserve Request'),
@@ -409,95 +725,7 @@ void _showReservationConfirmation(BuildContext context, Map<String, dynamic> roo
 
 
 
-void _showRentConfirmation(BuildContext context, Map<String, dynamic> room, ThemeController themeController) {
-  showCupertinoDialog(
-    context: context,
-    builder: (BuildContext context) {
-      return CupertinoTheme(
-        data: CupertinoThemeData(
-          brightness: themeController.isDarkMode.value ? Brightness.dark : Brightness.light,
-        ),
-        child: CupertinoAlertDialog(
-          title: const Text('Confirm Reservation'),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text('Room/Unit no. ${room['roomNumber']}'),
-              const SizedBox(height: 16),
-            ],
-          ),
-          actions: [
-            CupertinoDialogAction(
-              onPressed: () {
-                Navigator.pop(context); // Cancel button
-              },
-              isDefaultAction: true,
-              child: const Text('Cancel'),
-            ),
-            CupertinoDialogAction(
-              onPressed: () {
-                Navigator.pop(context);
-                _sendRentRequest(context, room); // Proceed to send rent request
-              },
-              isDestructiveAction: true,
-              child: const Text('Send Rent Request'),
-            ),
-          ],
-        ),
-      );
-    },
-  );
-}
 
-
-
-// Function to allow occupant to cancel reservation request before landlord approves
-void _allowCancellation(BuildContext context, Map<String, dynamic> room) {
-  setState(() {
-    room['reservationStatus'] = 'pending'; // Update status to 'pending'
-  });
-
-  ElevatedButton(
-    onPressed: () async {
-      await _cancelReserveRequest(context, room);
-    },
-    child: const Text('Cancel Reservation'),
-  );
-}
-
-// Function to cancel reservation request
-Future<void> _cancelReserveRequest(BuildContext context, Map<String, dynamic> room) async {
-  // Logic for canceling the reservation request...
-  final response = await http.post(
-    Uri.parse('http://192.168.1.31:3000/inquiries/cancel'),
-    headers: {
-      'Authorization': 'Bearer ${widget.token}',
-      'Content-Type': 'application/json',
-    },
-    body: jsonEncode({
-      'roomId': '${room['_id']}',
-      'userId': userId,
-    }),
-  );
-
-  if (response.statusCode == 200) {
-    Fluttertoast.showToast(
-      msg: 'Reservation canceled',
-      backgroundColor: Colors.green,
-    );
-    setState(() {
-      room['reservationStatus'] = null; // Reset reservation status
-    });
-  } else {
-    Fluttertoast.showToast(
-      msg: 'Failed to cancel reservation',
-      backgroundColor: Colors.red,
-    );
-  }
-}
-
-// Function to send rent request
 
 
 final Map<String, IconData> amenityIcons = {
@@ -513,6 +741,20 @@ final Map<String, IconData> amenityIcons = {
   'CCTV': Icons.videocam,
   // Add more amenities and their respective icons here
 };
+final Map<String, Color> amenityColors = {
+  'WiFi': Colors.blue, // Set your desired color for WiFi
+  'Parking': Colors.green, // Set your desired color for Parking
+  'Pool': Colors.blueAccent, // Set your desired color for Pool
+  'Study lounge': Colors.orange, // Set your desired color for Study lounge
+  'Gym': Colors.red, // Set your desired color for Gym
+  'Air Conditioning': Colors.lightBlue, // Set your desired color for Air Conditioning
+  'Laundry': Colors.purple, // Set your desired color for Laundry
+  'Pets Allowed': Colors.brown, // Set your desired color for Pets Allowed
+  'Elevator': Colors.grey, // Set your desired color for Elevator
+  'CCTV': Colors.yellow, // Set your desired color for CCTV
+  // Add more amenities and their respective colors here
+};
+
 
 
 
@@ -542,10 +784,35 @@ Widget build(BuildContext context) {
           fontWeight: FontWeight.w800,
         ),
       ),
-      leading: IconButton(
-        icon: Icon(Icons.arrow_back_ios_new_outlined),
-        onPressed: () => Navigator.of(context).pop(),
-      ),
+      leading: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 11.0, horizontal: 12.0),
+          child: SizedBox(
+            height: 40,  // Set a specific height for the button
+            width: 40,   // Set a specific width to make it a square button
+            child: ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.transparent, // Transparent background to simulate outline
+                side: BorderSide(
+                  color: _themeController.isDarkMode.value ? Colors.white : Colors.black, // Outline color
+                  width: 0.90, // Outline width
+                ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8.0), // Optional rounded corners
+                ),
+                elevation: 0, // Remove elevation to get the outline effect
+                padding: EdgeInsets.all(0), // Remove any padding to center the icon
+              ),
+              onPressed: () {
+                Navigator.pop(context);
+              },
+              child: Icon(
+                Icons.chevron_left,
+                color: _themeController.isDarkMode.value ? Colors.white : Colors.black, // Icon color based on theme
+                size: 16, // Icon size
+              ),
+            ),
+          ),
+        ),
     ),
     body: Stack(
       
@@ -718,42 +985,40 @@ Widget build(BuildContext context) {
                 style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
               ),
               SizedBox(height: 8),
-              Wrap(
-                spacing: 8,
-                runSpacing: 8,
-                children: widget.property.amenities.isNotEmpty
-                    ? widget.property.amenities.map<Widget>((amenity) {
-                        return Container(
-                          width: (MediaQuery.of(context).size.width / 2) - 24, // Adjust size based on screen width
-                          padding: EdgeInsets.all(8),
-                          decoration: BoxDecoration(
-                            color: _themeController.isDarkMode.value
-                                ? const Color.fromARGB(255, 77, 78, 90)
-                                : Colors.grey[200],
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                          child: Row(
-                            children: [
-                              Icon(
-                                amenityIcons[amenity] ?? Icons.check_circle, // Use the appropriate icon, fallback to check_circle
-                                color: amenityIcons.containsKey(amenity)
-                                    ? Theme.of(context).iconTheme.color
-                                    : Colors.green, // Use default green if no custom icon
+             Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: widget.property.amenities.isNotEmpty
+                  ? widget.property.amenities.map<Widget>((amenity) {
+                      return Container(
+                        width: (MediaQuery.of(context).size.width / 2) - 24, // Adjust size based on screen width
+                        padding: EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: _themeController.isDarkMode.value
+                              ? const Color.fromARGB(255, 77, 78, 90)
+                              : Colors.grey[200],
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: Row(
+                          children: [
+                            Icon(
+                              amenityIcons[amenity] ?? Icons.check_circle, // Use the appropriate icon, fallback to check_circle
+                              color: amenityColors[amenity] ?? Colors.green, // Use the custom color for the amenity
+                            ),
+                            SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                amenity,
+                                style: TextStyle(fontSize: 14),
+                                overflow: TextOverflow.ellipsis,
                               ),
-                              SizedBox(width: 8),
-                              Expanded(
-                                child: Text(
-                                  amenity,
-                                  style: TextStyle(fontSize: 14),
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                              ),
-                            ],
-                          ),
-                        );
-                      }).toList()
-                    : [Text('No amenities listed')],
-              )
+                            ),
+                          ],
+                        ),
+                      );
+                    }).toList()
+                  : [Text('No amenities listed')],
+            ),
             ],
           ),
         ),

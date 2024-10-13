@@ -37,7 +37,7 @@ class _AccountSettingsState extends State<AccountSettings> {
   }
 
   Future<void> _updateEmail(String newEmail) async {
-    final url = Uri.parse('http://192.168.1.31:3000/updateUserInfo');
+    final url = Uri.parse('http://192.168.1.19:3000/updateUserInfo');
     try {
       final response = await http.patch(
         url,
@@ -76,7 +76,7 @@ class _AccountSettingsState extends State<AccountSettings> {
   }
 
   Future<void> _updatePassword(String currentPassword, String newPassword) async {
-    final url = Uri.parse('http://192.168.1.31:3000/updatePassword');
+    final url = Uri.parse('http://192.168.1.19:3000/updatePassword');
     try {
       final response = await http.patch(
         url,
@@ -159,12 +159,35 @@ Widget build(BuildContext context) {
           fontWeight: FontWeight.bold,
         ),
       ),
-      leading: GestureDetector(
-        onTap: () {
-          Navigator.pop(context);
-        },
-        child: const Icon(Icons.arrow_back_ios_new_outlined),
-      ),
+      leading: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 11.0, horizontal: 12.0),
+          child: SizedBox(
+            height: 40,  // Set a specific height for the button
+            width: 40,   // Set a specific width to make it a square button
+            child: ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.transparent, // Transparent background to simulate outline
+                side: BorderSide(
+                  color: _themeController.isDarkMode.value ? Colors.white : Colors.black, // Outline color
+                  width: 0.90, // Outline width
+                ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8.0), // Optional rounded corners
+                ),
+                elevation: 0, // Remove elevation to get the outline effect
+                padding: EdgeInsets.all(0), // Remove any padding to center the icon
+              ),
+              onPressed: () {
+                Navigator.pop(context);
+              },
+              child: Icon(
+                Icons.chevron_left,
+                color: _themeController.isDarkMode.value ? Colors.white : Colors.black, // Icon color based on theme
+                size: 16, // Icon size
+              ),
+            ),
+          ),
+        ),
     ),
     resizeToAvoidBottomInset: true, // This helps to avoid overflow when keyboard appears
     body: SingleChildScrollView( // Wrap the body in a scroll view
@@ -183,20 +206,13 @@ Widget build(BuildContext context) {
             tabs: [
               ShadTab(
                 value: 'account',
-                child: Text(
-                  'Account',
-                  style: TextStyle(
-                    color: _themeController.isDarkMode.value
-                        ? const Color.fromARGB(255, 255, 255, 255)
-                        : const Color.fromARGB(255, 255, 255, 255),
-                  ),
-                ),
+                child: const Text('Email'),
                 content: ShadCard(
                   backgroundColor: _themeController.isDarkMode.value
                       ? const Color.fromARGB(255, 0, 0, 0)
                       : const Color.fromARGB(255, 255, 255, 255),
                   title: Text(
-                    'Account',
+                    'Email',
                     style: TextStyle(
                       color: _themeController.isDarkMode.value
                           ? const Color.fromARGB(255, 255, 255, 255)

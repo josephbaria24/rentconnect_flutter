@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
+import 'package:get/get.dart';
 import 'package:latlong2/latlong.dart';
+import 'package:rentcon/theme_controller.dart';
+import 'package:shadcn_ui/shadcn_ui.dart';
 
 class PropertyLocationPicker extends StatefulWidget {
   final Function(LatLng) onLocationSelected; // Callback for selected location
@@ -13,12 +16,41 @@ class PropertyLocationPicker extends StatefulWidget {
 
 class _PropertyLocationPickerState extends State<PropertyLocationPicker> {
   LatLng? selectedLocation; // To store the selected location
-
+  final ThemeController _themeController = Get.find<ThemeController>();
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: Text('Select Property Location'),
+        leading: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 11.0, horizontal: 12.0),
+          child: SizedBox(
+            height: 40,  // Set a specific height for the button
+            width: 40,   // Set a specific width to make it a square button
+            child: ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.transparent, // Transparent background to simulate outline
+                side: BorderSide(
+                  color: _themeController.isDarkMode.value ? Colors.white : Colors.black, // Outline color
+                  width: 0.90, // Outline width
+                ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8.0), // Optional rounded corners
+                ),
+                elevation: 0, // Remove elevation to get the outline effect
+                padding: EdgeInsets.all(0), // Remove any padding to center the icon
+              ),
+              onPressed: () {
+                Navigator.pop(context);
+              },
+              child: Icon(
+                Icons.chevron_left,
+                color: _themeController.isDarkMode.value ? Colors.white : Colors.black, // Icon color based on theme
+                size: 16, // Icon size
+              ),
+            ),
+          ),
+        ),
       ),
       body: FlutterMap(
         options: MapOptions(

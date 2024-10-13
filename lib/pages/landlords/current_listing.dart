@@ -1,31 +1,42 @@
-// ignore_for_file: prefer_const_constructors
+// ignore_for_file: prefer_const_constructors, prefer_final_fields, unused_import
 
 import 'dart:convert';
 import 'dart:typed_data';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:get/get.dart';
-import 'package:image_gallery_saver/image_gallery_saver.dart';
 import 'package:intl/intl.dart';
 import 'package:jwt_decoder/jwt_decoder.dart';
 import 'package:http/http.dart' as http;
+import 'package:line_awesome_flutter/line_awesome_flutter.dart';
 import 'package:rentcon/config.dart';
 import 'package:rentcon/models/property.dart';
 import 'package:rentcon/navigation_menu.dart';
 import 'package:rentcon/pages/global_loading_indicator.dart';
 import 'package:rentcon/pages/landlords/AddingRoom.dart';
 import 'package:rentcon/pages/landlords/addListing.dart';
+import 'package:rentcon/pages/landlords/detailedProperty.dart';
 import 'package:rentcon/pages/landlords/manageProperty.dart';
 import 'package:rentcon/pages/landlords/roomCreation.dart';
+import 'package:rentcon/pages/landlords/widgets/hasInquiry.dart';
+import 'package:rentcon/pages/landlords/widgets/no_inquiries_widget.dart';
+import 'package:rentcon/pages/landlords/widgets/occupant_list_widget.dart';
+import 'package:rentcon/pages/landlords/widgets/payment_details.dart';
+import 'package:rentcon/pages/landlords/widgets/reservation_details.dart';
+import 'package:rentcon/pages/landlords/widgets/reserver_list.dart';
 import 'package:rentcon/pages/profile.dart';
 import 'package:rentcon/theme_controller.dart';
 import 'package:rentcon/pages/propertyDetailPage.dart';
 import 'package:shadcn_ui/shadcn_ui.dart';
 import 'package:skeletonizer/skeletonizer.dart';
 import 'package:smooth_page_indicator/smooth_page_indicator.dart';
+import 'PaymentLandlordSide.dart';
+import 'package:saver_gallery/saver_gallery.dart';
 
 class CurrentListingPage extends StatefulWidget {
   final String token;
+
 
   const CurrentListingPage({required this.token, Key? key}) : super(key: key);
 
@@ -39,13 +50,27 @@ class _CurrentListingPageState extends State<CurrentListingPage> {
   List<dynamic>? items;
   String? responseBody;
   DateTime? _selectedDueDate;
+  DateTime? _selectedStartDate;
   Map<String, List<dynamic>> propertyRooms = {};
   Map<String, List<dynamic>> propertyInquiries = {};
   Map<String, dynamic> userProfiles = {};
+  Map<String, dynamic> profilePic= {};
+  Map<String, dynamic>? inquiry = {};
+  String? selectedUserId; 
+  Map<String, dynamic> room = {};
+
+
   final ThemeController _themeController = Get.find<ThemeController>();
   bool _loading = true; // Added state for loading
-  String _sortOption = 'None';
   bool showAllRooms = false;
+  late String landlordId;
+  int _currentMonthIndex = 0; // Track the current month index
+   final List<String> months = [
+    'January', 'February', 'March', 'April', 'May', 'June',
+    'July', 'August', 'September', 'October', 'November', 'December'
+  ];
+  late PageController _monthPageController;
+  
 
   @override
   void initState() {
@@ -56,321 +81,243 @@ class _CurrentListingPageState extends State<CurrentListingPage> {
     getPropertyList(userId);
     _loading = true;
     fetchRoomInquiries;
-    
-  }
-
-  Future<void> getPropertyList(String userId) async {
-    try {
-      setState(() {
-        _loading = true; // Set loading to true when starting fetch
-      });
-
-      var regBody = {"userId": userId};
-      var response = await http.post(
-        Uri.parse(getProperty),
-        headers: {"Content-Type": "application/json"},
-        body: jsonEncode(regBody),
-      );
-
-      if (response.statusCode == 200) {
-        var jsonResponse = jsonDecode(response.body);
-        List<dynamic> properties = jsonResponse['success'] ?? [];
-        setState(() {
-          items = properties;
-          _loading = false; // Set loading to false after fetch
-        });
-
-        for (var property in properties) {
-          String propertyId = property['_id'];
-          fetchRooms(propertyId);
-          // Fetch inquiries for each property
-        }
-      } else {
-        print("Error: ${response.statusCode}");
-        print("Response Body: ${response.body}");
-        setState(() {
-          _loading = false; // Set loading to false on error
-        });
-      }
-    } catch (e) {
-      print("Error fetching property list: $e");
-      setState(() {
-        _loading = false; // Set loading to false on error
-      });
-    }
-  }
-
-  Future<void> fetchUserProfile(String userId) async {
-    try {
-      final response =
-          await http.get(Uri.parse('http://192.168.1.31:3000/user/$userId'));
-      if (response.statusCode == 200) {
-        final user = json.decode(response.body);
-        setState(() {
-          userProfiles[userId] =
-              user['profile']; // Store profile data by userId
-        });
-      } else {
-        print(
-            "Error fetching user profile for $userId: ${response.statusCode}");
-      }
-    } catch (error) {
-      print('Error fetching user profile for $userId: $error');
-    }
-  }
-
-  Future<void> fetchRoomInquiries(String roomId) async {
-    try {
-      final response = await http
-          .get(Uri.parse('http://192.168.1.31:3000/inquiries/rooms/$roomId'));
-      if (response.statusCode == 200) {
-        final inquiries = json.decode(response.body);
-        setState(() {
-          propertyInquiries[roomId] = inquiries; // Store inquiries by room ID
-        });
-
-        // Fetch user profiles for each inquiry
-        for (var inquiry in inquiries) {
-          String userId = inquiry['userId'];
-          await fetchUserProfile(userId); // Fetch the user profile
-        }
-      } else {
-        print(
-            "Error fetching inquiries for room $roomId: ${response.statusCode}");
-      }
-    } catch (error) {
-      print('Error fetching inquiries for room $roomId: $error');
-    }
+     _monthPageController = PageController(initialPage: _currentMonthIndex); // Initialize the PageController
+      _fetchProofForAllMonths(room['_id'], widget.token); // Fetch proof when the widget is initialized
   }
 
 
-
-  Future<void> fetchRooms(String propertyId) async {
-    try {
-      final response = await http.get(Uri.parse(
-          'http://192.168.1.31:3000/rooms/properties/$propertyId/rooms'));
-
-      if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        print('Fetch rooms response data: $data');
-
-        if (data['status']) {
-          setState(() {
-            propertyRooms[propertyId] = data['rooms'] ?? [];
-          });
-
-          // Fetch inquiries and user profiles for each room
-          for (var room in data['rooms']) {
-            String roomId = room['_id'];
-
-            // Fetch inquiries for the room
-            await fetchRoomInquiries(roomId);
-
-            // Fetch profiles for the occupants (users and non-users)
-            List<dynamic> occupantUsers = room['occupantUsers'] ?? [];
-            for (var occupantUserId in occupantUsers) {
-              await fetchUserProfile(occupantUserId); // Fetch profile by userId
-            }
-          }
-        } else {
-          print(
-              'Failed to fetch rooms for property $propertyId. Status: ${data['status']}');
-        }
-      } else {
-        print(
-            'Failed to load rooms for property $propertyId. Status code: ${response.statusCode}');
-      }
-    } catch (e) {
-      print('Error fetching rooms for property $propertyId: $e');
-    }
-  }
-
-
-Future<void> updateRoomStatus(String roomId, String newStatus) async {
-  final url = Uri.parse('http://192.168.1.31:3000/rooms/updateRoom/$roomId'); // Replace with your backend URL
-  final headers = {
-    'Content-Type': 'application/json',
-    'Authorization': 'Bearer your_jwt_token' // Add your JWT token if required
-  };
-
-  final updateData = {
-    'roomStatus': newStatus,
-  };
-
-  try {
-    final response = await http.patch(
-      url,
-      headers: headers,
-      body: json.encode(updateData),
-    );
-
-    if (response.statusCode == 200) {
-      // Handle successful response
-      final responseData = json.decode(response.body);
-      print('Room updated successfully: ${responseData['room']}');
-    } else {
-      // Handle error response
-      final errorData = json.decode(response.body);
-      print('Failed to update room: ${errorData['error']}');
-    }
-  } catch (error) {
-    print('Error updating room: $error');
+  Color getStatusColor(String? status) {
+  switch (status) {
+    case 'Waiting':
+      return const Color.fromARGB(255, 255, 196, 0); // Yellow for Waiting
+    case 'Approved':
+      return Colors.green; // Green for Approved
+    case 'Rejected':
+      return Colors.red; // Red for Rejected
+    default:
+      return _themeController.isDarkMode.value
+          ? Colors.grey // Default color for dark mode
+          : Colors.black; // Default color for light mode
   }
 }
 
-  Future<void> deleteProperty(String propertyId) async {
-    try {
-      var response = await http.delete(
-        Uri.parse('http://192.168.1.31:3000/deleteProperty/$propertyId'),
-        headers: {"Authorization": "Bearer ${widget.token}"},
-      );
 
-      if (response.statusCode == 200) {
-        await getPropertyList(userId); // Refresh property list after deletion
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Property deleted successfully')),
-        );
-      } else {
-        print("Error deleting property: ${response.statusCode}");
-      }
-    } catch (e) {
-      print("Error: $e");
-    }
-  }
+Future<String?> getProofOfPaymentForSelectedMonth(String roomId, String token, String selectedMonth) async {
+  final String apiUrl = 'http://192.168.1.19:3000/payment/room/$roomId/monthlyPayments';
 
-  void showPropertyDetailPage(Property property) {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => Manageproperty(
-          token: widget.token,
-          property: property,
-          userEmail: email,
-          userRole: 'none',
-          profileStatus: 'none',
-        ),
-      ),
-    );
-  }
-
-  Color _getRoomStatusColor(String? status) {
-    switch (status) {
-      case 'available':
-        return _themeController.isDarkMode.value
-            ? const Color.fromARGB(255, 0, 214, 89)
-            : const Color.fromARGB(100, 0, 255, 106);
-      case 'occupied':
-        return _themeController.isDarkMode.value
-            ? const Color.fromARGB(255, 0, 132, 255)
-            : const Color.fromARGB(100, 0, 217, 255);
-      case 'reserved':
-        return _themeController.isDarkMode.value
-            ? const Color.fromARGB(255, 238, 194, 0)
-            : const Color.fromARGB(100, 255, 230, 0);
-      default:
-        return _themeController.isDarkMode.value
-            ? Colors.white70
-            : Colors.black54;
-    }
-  }
-
-  Future<void> _refresh() async {
-    setState(() {
-      items = null;
-      propertyRooms.clear();
-      _loading = true; // Set loading to true when refreshing
-    });
-
-    await getPropertyList(userId);
-  }
-
-
-
-Future<String?> fetchProofOfReservation(String roomId) async {
   try {
-    // Example API call to fetch payment details
-    var response = await http.get(Uri.parse('http://192.168.1.31:3000/payment/room/$roomId/proofOfReservation'));
+    print('API URL: $apiUrl');
+
+    final response = await http.get(
+      Uri.parse(apiUrl),
+      headers: {
+        'Authorization': 'Bearer $token',
+        'Content-Type': 'application/json',
+      },
+    );
+
+    print('Response Body: ${response.body}');
+
     if (response.statusCode == 200) {
-      var data = jsonDecode(response.body);
-      return data['proofOfReservation']; // Ensure the key matches your backend response
+      final Map<String, dynamic> data = jsonDecode(response.body);
+      if (data['status'] == true && data['monthlyPayments'].isNotEmpty) {
+        final List<dynamic> monthlyPayments = data['monthlyPayments'];
+
+        // Find the payment for the selected month
+        final paymentForMonth = monthlyPayments.firstWhere(
+          (payment) => payment['month'] == selectedMonth,
+          orElse: () => null, // If no payment is found for that month
+        );
+
+        if (paymentForMonth != null) {
+          final proofOfPayment = paymentForMonth['proofOfPayment'];
+          print('Proof of Payment for $selectedMonth: $proofOfPayment');
+          return proofOfPayment; // Return if it's a String (URL)
+        } else {
+          print('No proof of payment found for $selectedMonth.');
+          return null; // No payment found for the selected month
+        }
+      } else {
+        print('No payments found or empty monthlyPayments.');
+        return null;
+      }
     } else {
-      // Handle error, return null if not available
-      return null;
+      throw Exception('Failed to fetch proof of payment: ${response.statusCode}');
     }
   } catch (e) {
-    // Handle any errors during the request
+    print('Error fetching proof of payment: $e');
     return null;
   }
 }
 
-// Function to save the image
-Future<void> saveImage(String imageUrl) async {
-  try {
-    // Fetch the image data from the URL
-    final response = await http.get(Uri.parse(imageUrl));
+final List<String> rejectionReasons = [
+  'Not enough information provided.',
+  'Room is already rented.',
+  'Duration is too long.',
+  'Not a valid request type.',
+  'User did not meet the criteria.',
+  'Request was made too late.',
+  'Other reasons.',
+];
 
-    if (response.statusCode == 200) {
-      // Convert the response body to Uint8List
-      final Uint8List imageBytes = response.bodyBytes;
 
-      // Save the image
-      final result = await ImageGallerySaver.saveImage(imageBytes);
+ Map<String, bool> _monthsWithProof = {
+    'January': false,
+    'February': false,
+    'March': false,
+    'April': false,
+    'May': false,
+    'June': false,
+    'July': false,
+    'August': false,
+    'September': false,
+    'October': false,
+    'November': false,
+    'December': false,
+  };
 
-      // Show a toast or Snackbar to inform the user that the image has been saved
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Image saved to gallery!')),
-      );
-    } else {
-      // Handle error if the response is not 200
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Failed to fetch image.')),
-      );
+  Future<void> _fetchProofForAllMonths(String? roomId, String token) async {
+    for (String month in _monthsWithProof.keys) {
+      final proof = await getProofOfPaymentForSelectedMonth(roomId!, token, month);
+      _monthsWithProof[month] = proof != null; // Set to true if proof exists
     }
-  } catch (e) {
-    // Handle exceptions
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Error saving image: $e')),
-    );
+    setState(() {}); // Update UI after fetching proof for all months
   }
+
+
+Future<String?>? _proofFuture;
+String _selectedMonth = '';
+
+Future<void> _onMonthSelected(String month, Map<String, dynamic> room, BuildContext context) async {
+  if (!mounted) return;
+
+  _selectedMonth = month; // Update the selected month
+  _currentMonthIndex = months.indexOf(month); // Update the current month index
+  _proofFuture = getProofOfPaymentForSelectedMonth(room['_id'], widget.token, month);
+
+  // Close any existing dialogs
+  Navigator.of(context).pop(); // Close the previous showRoomDetailPopover
+
+  // Retrieve inquiries for the specific room
+  List<dynamic> inquiries = propertyInquiries[room['_id']] ?? []; // Provide a default empty list
+
+  // Open a new room detail popover and pass the selected month and current index
+  showRoomDetailPopover(context, room, userProfiles, inquiries, selectedMonth: month, currentMonthIndex: _currentMonthIndex);
 }
 
-void showFullscreenImage(BuildContext context, String imageUrl) {
-  showDialog(
-    context: context,
-    builder: (context) {
-      return Dialog(
-        backgroundColor: Colors.black,
-        child: GestureDetector(
-          onTap: () {
-            Navigator.of(context).pop(); // Close the fullscreen image on tap
-          },
-          child: Container(
-            constraints: BoxConstraints(
-              minHeight: MediaQuery.of(context).size.height * 0.5,
-              maxHeight: MediaQuery.of(context).size.height * 0.9, // Limit height to 90% of screen
-            ),
-            child: Image.network(
-              imageUrl,
-              fit: BoxFit.contain,
-              loadingBuilder: (context, child, loadingProgress) {
-                if (loadingProgress == null) return child; // If loading complete
-                return Center(child: CircularProgressIndicator()); // Show loading indicator
-              },
-              errorBuilder: (context, error, stackTrace) {
-                return Center(child: Text('Error loading image', style: TextStyle(color: Colors.white)));
-              },
+
+Widget buildMonthButtons(Map<String, dynamic> room, BuildContext context) {
+  List<String> months = [
+    'January', 'February', 'March', 'April', 'May', 'June',
+    'July', 'August', 'September', 'October', 'November', 'December'
+  ];
+
+  return Container(
+    height: 42, // Set a fixed height for the button row
+    width: double.infinity, // Set width to fill the dialog
+    child: Row(
+      children: [
+        // Left Arrow Indicator
+        if (months.isNotEmpty) 
+          Padding(
+            padding: const EdgeInsets.only(right: 6.0),
+            child: SizedBox(
+              width: 20, // Set a fixed width for the left arrow
+              child: IconButton(
+                icon: Icon(Icons.arrow_left_rounded),
+                onPressed: () {
+                  // Handle left arrow click (optional)
+                },
+              ),
             ),
           ),
+
+        // Month Buttons
+        Expanded(
+          child: ListView.builder(
+            scrollDirection: Axis.horizontal, // Enable horizontal scrolling
+            itemCount: months.length,
+            itemBuilder: (BuildContext context, int index) {
+              String? month = months[index];
+              return Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 2.0, vertical: 4), // Add horizontal padding
+                child: ElevatedButton(
+                  onPressed: () {
+                    // Pass the context to _onMonthSelected
+                    _onMonthSelected(month, room, context);
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color.fromARGB(255, 12, 0, 56), // Background color
+                    foregroundColor: Colors.white, // Text color
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10), // Rounded corners
+                    ),
+                    padding: EdgeInsets.symmetric(horizontal: 10, vertical: 8), // Increased padding inside the button
+                    elevation: 2, // Button shadow
+                  ),
+                  child: Text(
+                    month,
+                    style: TextStyle(
+                      fontSize: 13, // Font size of the text
+                      fontWeight: FontWeight.bold, 
+                      fontFamily: 'geistsans', // Bold text
+                    ),
+                  ),
+                ),
+              );
+            },
+          ),
         ),
-      );
-    },
+
+        // Right Arrow Indicator
+        if (months.isNotEmpty)
+          Padding(
+            padding: const EdgeInsets.only(right: 8.0),
+            child: SizedBox(
+              width: 12, // Set a fixed width for the right arrow
+              child: IconButton(
+                icon: Icon(Icons.arrow_right_rounded),
+                onPressed: () {
+                  // Handle right arrow click (optional)
+                },
+              ),
+            ),
+          ),
+      ],
+    ),
   );
 }
 
 
+Future<int?> getReservationDuration(String roomId, String token) async {
+  final response = await http.get(
+    Uri.parse('http://192.168.1.19:3000/inquiries/rooms/$roomId'),
+    headers: {
+      'Authorization': 'Bearer $token', // If you're using token-based authentication
+      'Content-Type': 'application/json',
+    },
+  );
 
-void showRoomDetailPopover(BuildContext context, dynamic room, Map<String, dynamic> userProfiles) {
-  showDialog(
+  if (response.statusCode == 200) {
+    // Parse the response JSON
+    final data = json.decode(response.body);
+
+    // Check if inquiries exist and return the reservationDuration
+    if (data is List && data.isNotEmpty) {
+      // Assuming the inquiry structure contains 'reservationDuration'
+      return data.first['reservationDuration'];
+    }
+  } else {
+    // Handle the error (you can throw an error or return null)
+    print('Failed to load inquiries: ${response.statusCode}');
+  }
+  return null; // Return null if no valid data is found
+}
+
+
+void showRoomDetailPopover(BuildContext context, dynamic room, Map<String, dynamic> userProfiles,  List<dynamic> inquiries, {String? selectedMonth,  int currentMonthIndex = 0}) async{
+  int? reservationDuration = await getReservationDuration(room['_id'], widget.token);
+  showCupertinoDialog(
     context: context,
     barrierDismissible: true,
     builder: (context) {
@@ -400,79 +347,17 @@ void showRoomDetailPopover(BuildContext context, dynamic room, Map<String, dynam
       PageController pageController = PageController();
 
       bool hasOccupants = room['occupantUsers'] != null && room['occupantUsers'].isNotEmpty;
+      bool hasReserver = room['reservationInquirers'] != null && room['reservationInquirers'].isNotEmpty;
       bool isReserved = room['roomStatus'] == 'reserved';
+      bool isAvailable = room['roomStatus'] == 'available';
+      bool hasInquiry = propertyInquiries['status'] == 'pending';
       bool isOccupied = room['roomStatus'] == 'occupied';
 
-      // Function to save image to device
-      Future<void> saveImage(String imageUrl) async {
-        try {
-          final response = await http.get(Uri.parse(imageUrl));
-
-          if (response.statusCode == 200) {
-            final Uint8List imageBytes = response.bodyBytes;
-            final result = await ImageGallerySaver.saveImage(imageBytes);
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text('Image saved to gallery!')),
-            );
-          } else {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text('Failed to fetch image.')),
-            );
-          }
-        } catch (e) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Error saving image: $e')),
-          );
-        }
-      }
-
-      // Show full-screen image
-      void showFullscreenImage(BuildContext context, String imageUrl) {
-        showDialog(
-          context: context,
-          builder: (context) {
-            return Dialog(
-              backgroundColor: Colors.black,
-              child: GestureDetector(
-                onTap: () {
-                  Navigator.of(context).pop(); // Close the fullscreen image on tap
-                },
-                child: Container(
-                  constraints: BoxConstraints(
-                    maxHeight: MediaQuery.of(context).size.height * 0.4, // Limit height to 90% of screen
-                  ),
-                  child: Stack(
-                    alignment: Alignment.center,
-                    children: [
-                      Image.network(
-                        imageUrl,
-                        fit: BoxFit.contain,
-                        loadingBuilder: (context, child, loadingProgress) {
-                          if (loadingProgress == null) return child; // If loading complete
-                          return Center(child: CircularProgressIndicator()); // Show loading indicator
-                        },
-                        errorBuilder: (context, error, stackTrace) {
-                          return Center(child: Text('Error loading image', style: TextStyle(color: Colors.white)));
-                        },
-                      ),
-                      Positioned(
-                        top: 5,
-                        right: 10,
-                        child: IconButton(
-                          icon: Icon(Icons.download, color: Colors.white),
-                          onPressed: () {
-                            saveImage(imageUrl);
-                          },
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            );
-          },
-        );
-      }
+      bool hasPendingInquiry = false;
+            if (propertyInquiries.containsKey(room['_id'])) {
+              List<dynamic> inquiries = propertyInquiries[room['_id']] ?? [];
+              hasPendingInquiry = inquiries.any((inquiry) => inquiry['status'] == 'pending');
+            }
 
       return Dialog(
         backgroundColor: Theme.of(context).brightness == Brightness.dark
@@ -481,11 +366,18 @@ void showRoomDetailPopover(BuildContext context, dynamic room, Map<String, dynam
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(20),
         ),
-        child: Container(
+        child: ConstrainedBox(
           constraints: BoxConstraints(
-              maxHeight: MediaQuery.of(context).size.height * 0.7), // Limits the height to 80% of screen
+            maxHeight: MediaQuery.of(context).size.height * 0.8, // Limits the height to 80% of screen
+            maxWidth: MediaQuery.of(context).size.width * 0.9, // Adjust the width to 90% of the screen
+          ),
           child: StatefulBuilder(
             builder: (BuildContext context, StateSetter setState) {
+              // Set the initially selected month if provided
+              if (selectedMonth != null) {
+                _selectedMonth = selectedMonth;
+              }
+
               return Padding(
                 padding: const EdgeInsets.all(14),
                 child: Column(
@@ -502,28 +394,60 @@ void showRoomDetailPopover(BuildContext context, dynamic room, Map<String, dynam
                               fontSize: 20,
                               fontFamily: 'GeistSans'),
                         ),
-                        ShadButton.ghost(
-                          backgroundColor: Colors.white,
-                          height: 33,
-                          onPressed: () {
-                            Navigator.pop(context);
-                          },
-                          icon: Icon(
-                            Icons.close,
-                            color: Theme.of(context).brightness == Brightness.dark
-                                ? Colors.white
-                                : Colors.black,
+                        ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor:_themeController.isDarkMode.value
+                              ? const Color.fromARGB(0, 0, 0, 0): const Color.fromARGB(255, 255, 255, 255), // Background color similar to ghost button
+                          elevation: 0,
+                          minimumSize: const Size(0, 33), // Set the height
+                          padding: EdgeInsets.zero, // Remove padding to match size closely
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8.0), // Optional rounded corners
                           ),
                         ),
+                        onPressed: () {
+                          Navigator.pop(context);
+                        },
+                        child: Icon(
+                          Icons.close,
+                          color: _themeController.isDarkMode.value
+                              ? Colors.white
+                              : const Color.fromARGB(255, 11, 3, 39), // Icon color based on dark mode
+                        ),
+                      ),
+
                       ],
                     ),
-    
-                    // Scrollable Content
+
+                    const SizedBox(height: 10),
+
+                    if (hasOccupants) ...[
+                      OccupantListWidget(
+                        occupantUsers: room['occupantUsers'],
+                        userProfiles: userProfiles,
+                        profilePic: profilePic,
+                        fetchUserProfile: fetchUserProfile,
+                        isDarkMode: _themeController.isDarkMode.value,
+                      ),
+                    ],
+
+                    if (hasReserver) ...[
+                      ReserverList(
+                        hasReserver: hasReserver,
+                        room: room,
+                        userProfiles: userProfiles,
+                        profilePic: profilePic,
+                        themeController: _themeController,  // Your theme controller instance
+                        fetchUserProfile: fetchUserProfile, // Your fetch user profile function
+                      ),
+                    ],
+
                     Expanded(
                       child: Scrollbar(
                         thickness: 7,
                         radius: Radius.circular(20),
-                        thumbVisibility: true, // Makes the scrollbar always visible
+                        thumbVisibility: true,
+                        controller: pageController, // Makes the scrollbar always visible
                         child: Padding(
                           padding: const EdgeInsets.only(right: 10.0),
                           child: SingleChildScrollView(
@@ -543,13 +467,11 @@ void showRoomDetailPopover(BuildContext context, dynamic room, Map<String, dynam
                                                 showFullscreenImage(context, photos[index]);
                                               },
                                               child: Padding(
-                                                padding:
-                                                    const EdgeInsets.symmetric(vertical: 8.0),
+                                                padding: const EdgeInsets.symmetric(vertical: 8.0),
                                                 child: ClipRRect(
                                                   borderRadius: BorderRadius.circular(12),
                                                   child: FadeInImage.assetNetwork(
-                                                    placeholder:
-                                                        'assets/images/placeholder.webp',
+                                                    placeholder: 'assets/images/placeholder.webp',
                                                     image: photos[index],
                                                     fit: BoxFit.cover,
                                                   ),
@@ -576,134 +498,173 @@ void showRoomDetailPopover(BuildContext context, dynamic room, Map<String, dynam
                                       ),
                                     ),
                                   ),
-                                const SizedBox(height: 10),
+
+                                if (isAvailable) ... [
+                                  NoInquiriesWidget(),
+                                ],
+
+                                if (hasInquiry) ... [
+                                  Hasinquiry(
+                                    occupantUsers: room['occupantUsers'],
+                                  userProfiles: userProfiles,
+                                  profilePic: profilePic,
+                                  fetchUserProfile: fetchUserProfile,
+                                  isDarkMode: _themeController.isDarkMode.value,
+
+                                  ),
+                                ],
 
                                 // Proof of Reservation when Reserved
                                 if (isReserved) ...[
-                                  Text(
-                                    'Reservation Details',
-                                    style: TextStyle(
-                                        fontSize: 18, fontWeight: FontWeight.bold),
-                                  ),
-                                  const SizedBox(height: 5),
-                                  Text('Reservation Fee: ₱${room['reservationFee'] ?? 'N/A'}'),
-                                  Text('Duration of Reservation: ${room['reservationDuration'] ?? 'N/A'} days'),
-                                  const SizedBox(height: 10),
-                                  Text('Proof of Reservation:', style: TextStyle(fontWeight: FontWeight.bold)),
-                                  FutureBuilder<String?>(
-                                    future: fetchProofOfReservation(room['_id']),
-                                    builder: (context, snapshot) {
-                                      if (snapshot.connectionState == ConnectionState.waiting) {
-                                        return Container(
-                                          height: 100,
-                                          alignment: Alignment.center,
-                                          child: CircularProgressIndicator(),
+                                  Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Reservation Details',
+          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+        ),
+        const SizedBox(height: 5),
+        Text('Reservation Fee: ₱${room['reservationFee'] ?? 'N/A'}'),
+        Text('Duration of Reservation: ${reservationDuration} days'), // Display reservationDuration
+        const SizedBox(height: 10),
+        Text('Proof of Reservation:', style: TextStyle(fontWeight: FontWeight.bold)),
+        FutureBuilder<String?>(
+          future: fetchProofOfReservation(room['_id']),
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return Container(
+                height: 100,
+                alignment: Alignment.center,
+                child: CupertinoActivityIndicator(),
+              );
+            } else if (snapshot.hasError) {
+              return Container(
+                height: 100,
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(12),
+                  color: Colors.grey[200],
+                ),
+                alignment: Alignment.center,
+                child: Text('Error loading image'),
+              );
+            } else if (snapshot.hasData && snapshot.data != null) {
+              return GestureDetector(
+                onTap: () {
+                  showFullscreenImage(context, snapshot.data!);
+                },
+                child: Container(
+                  height: 100,
+                  alignment: Alignment.center,
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(12),
+                    child: FadeInImage.assetNetwork(
+                      placeholder: 'assets/images/placeholder.webp',
+                      image: snapshot.data!,
+                      fit: BoxFit.cover,
+                    ),
+                  ),
+                ),
+              );
+            } else {
+              return Container(
+                height: 100,
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(12),
+                  color: const Color.fromARGB(136, 131, 131, 131),
+                ),
+                alignment: Alignment.center,
+                child: Text('No proof uploaded yet'),
+              );
+            }
+          },
+        ),
+        const SizedBox(height: 10),
+        Center(child: Text('Is the reservant moved-in?', style: TextStyle(
+          fontFamily: 'geistsans',
+          color: _themeController.isDarkMode.value? const Color.fromARGB(255, 216, 216, 216): const Color.fromARGB(193, 53, 53, 53),
+          fontSize: 13,
+        ),)),
+        Tooltip(
+          message: 'Is the reservant moved-in?',
+          child: Center(
+            child: ShadButton(
+              backgroundColor: _themeController.isDarkMode.value? Colors.white: const Color.fromARGB(255, 0, 16, 34),
+              onPressed: () async {
+
+                // Show confirmation dialog
+                showCupertinoDialog(
+                  context: context,
+                  builder: (BuildContext context) {
+                    return CupertinoAlertDialog(
+                      title: Text('Confirm Occupation'),
+                      content: Text('Are you sure you want to mark this room as occupied?'),
+                      actions: [
+                        CupertinoDialogAction(
+                          child: Text('Cancel'),
+                          isDefaultAction: true,
+                          onPressed: () {
+                            Navigator.of(context).pop(); // Close the dialog without action
+                          },
+                        ),
+                        CupertinoDialogAction(
+                          child: Text('Confirm'),
+                          isDestructiveAction: true,
+                          onPressed: () async {
+                            await markRoomAsOccupied(room["_id"]);
+
+                            Navigator.of(context).pop(); // Close confirmation dialog
+
+                            // Show success dialog
+                            showCupertinoDialog(
+                              context: context,
+                              builder: (BuildContext context) {
+                                return CupertinoAlertDialog(
+                                  title: Text('Success'),
+                                  content: Text('Successfully marked as occupied!'),
+                                  actions: [
+                                    CupertinoDialogAction(
+                                      child: Text('OK'),
+                                      onPressed: () {
+                                        Navigator.of(context).pop(); // Close success dialog
+                                        Navigator.pushReplacement(
+                                          context,
+                                          MaterialPageRoute(
+                                            builder: (context) => CurrentListingPage(token: widget.token),
+                                          ),
                                         );
-                                      } else if (snapshot.hasError) {
-                                        return Container(
-                                          height: 100,
-                                          decoration: BoxDecoration(
-                                            border: Border.all(color: Colors.grey),
-                                            borderRadius: BorderRadius.circular(8),
-                                          ),
-                                          child: Center(
-                                            child: Text('Error fetching proof of reservation', style: TextStyle(color: Colors.red)),
-                                          ),
-                                        );
-                                      } else if (snapshot.hasData && snapshot.data != null && snapshot.data!.isNotEmpty) {
-                                        return GestureDetector(
-                                          onTap: () {
-                                            // Show full-screen image with save option
-                                            showFullscreenImage(context, snapshot.data!);
-                                          },
-                                          child: Image.network(
-                                            snapshot.data!,
-                                            height: 100,
-                                            fit: BoxFit.cover,
-                                          ),
-                                        );
-                                      } else {
-                                        return Container(
-                                          height: 100,
-                                          decoration: BoxDecoration(
-                                            border: Border.all(color: Colors.grey),
-                                            borderRadius: BorderRadius.circular(8),
-                                          ),
-                                          child: Center(
-                                            child: Text('No Proof of Reservation Available', style: TextStyle(color: Colors.grey)),
-                                          ),
-                                        );
-                                      }
-                                    },
-                                  ),
-                                  const SizedBox(height: 10),
-                                  ShadButton(
-                                    child: const Text('Mark as Occupied'),
-                                    onPressed: () {
-                                      updateRoomStatus(room['_id'], 'occupied');
-                                      Navigator.pop(context);
-                                    },
-                                  ),
-                                  
+                                      },
+                                    ),
+                                  ],
+                                );
+                              },
+                            );
+                          },
+                        ),
+                      ],
+                    );
+                  },
+                );
+              },
+              child: Text('Mark as Occupied', style: TextStyle(
+                color: _themeController.isDarkMode.value? Colors.black: Colors.white
+              ),),
+            ),
+          ),
+        ),
+      ],
+    ),
                                 ],
 
-                                // Proof of Payment when Occupied
+
+
+                                // Payment Details when Occupied
                                 if (isOccupied) ...[
-                                  Text(
-                                    'Payment Details',
-                                    style: TextStyle(
-                                        fontSize: 18, fontWeight: FontWeight.bold),
-                                  ),
-                                  const SizedBox(height: 5),
-                                  Text('Due Date: ${_selectedDueDate != null ? DateFormat('MMMM dd, yyyy').format(_selectedDueDate!) : 'N/A'}'),
-                                  Text('Total Amount: ₱${room['price'] ?? 'N/A'}'),
-                                  const SizedBox(height: 10),
-                                  Text('Proof of Payment:', style: TextStyle(fontWeight: FontWeight.bold)),
-                                  FutureBuilder<String?>(
-                                    future: fetchProofOfReservation(room['_id']),
-                                    builder: (context, snapshot) {
-                                      if (snapshot.connectionState == ConnectionState.waiting) {
-                                        return Container(
-                                          height: 100,
-                                          alignment: Alignment.center,
-                                          child: CircularProgressIndicator(),
-                                        );
-                                      } else if (snapshot.hasError) {
-                                        return Container(
-                                          height: 100,
-                                          decoration: BoxDecoration(
-                                            border: Border.all(color: Colors.grey),
-                                            borderRadius: BorderRadius.circular(8),
-                                          ),
-                                          child: Center(
-                                            child: Text('Error fetching proof of payment', style: TextStyle(color: Colors.red)),
-                                          ),
-                                        );
-                                      } else if (snapshot.hasData && snapshot.data != null && snapshot.data!.isNotEmpty) {
-                                        return GestureDetector(
-                                          onTap: () {
-                                            // Show full-screen image with save option
-                                            showFullscreenImage(context, snapshot.data!);
-                                          },
-                                          child: Image.network(
-                                            snapshot.data!,
-                                            height: 100,
-                                            fit: BoxFit.cover,
-                                          ),
-                                        );
-                                      } else {
-                                        return Container(
-                                          height: 100,
-                                          decoration: BoxDecoration(
-                                            border: Border.all(color: Colors.grey),
-                                            borderRadius: BorderRadius.circular(8),
-                                          ),
-                                          child: Center(
-                                            child: Text('No Proof of Payment Available', style: TextStyle(color: Colors.grey)),
-                                          ),
-                                        );
-                                      }
-                                    },
+                                  PaymentDetails(
+                                    room: room,
+                                    selectedDueDate: _selectedDueDate,
+                                    selectedMonth: _selectedMonth,
+                                    proofFuture: _proofFuture,
+                                    buildMonthButtons: (room) => buildMonthButtons(room!, context), // Pass the function here
                                   ),
                                 ],
                               ],
@@ -725,14 +686,11 @@ void showRoomDetailPopover(BuildContext context, dynamic room, Map<String, dynam
 
 
 
-
-
-
   Future<void> updateRoomDueDate(String roomId, DateTime dueDate) async {
     try {
       final response = await http.patch(
         Uri.parse(
-            'http://192.168.1.31:3000/rooms/updateRoom/$roomId'), // Ensure the URL is correct
+            'http://192.168.1.19:3000/rooms/updateRoom/$roomId'), // Ensure the URL is correct
         headers: <String, String>{
           'Content-Type': 'application/json; charset=UTF-8',
         },
@@ -756,9 +714,9 @@ void showRoomDetailPopover(BuildContext context, dynamic room, Map<String, dynam
   }
 
   Future<void> updateInquiryStatus(
-      String inquiryId, String newStatus, String token) async {
+      String? inquiryId, String? newStatus, String? token) async {
     final url = Uri.parse(
-        'http://192.168.1.31:3000/inquiries/update/$inquiryId'); // Match your backend route
+        'http://192.168.1.19:3000/inquiries/update/$inquiryId'); // Match your backend route
 
     try {
       final response = await http.patch(
@@ -785,78 +743,147 @@ void showRoomDetailPopover(BuildContext context, dynamic room, Map<String, dynam
     }
   }
 
-  void _sortProperties(String option) {
-    setState(() {
-      _sortOption = option;
-      if (option == 'Available Rooms') {
-        items?.sort((a, b) {
-          final aRooms = propertyRooms[a['_id']] ?? [];
-          final bRooms = propertyRooms[b['_id']] ?? [];
-          final aAvailable =
-              aRooms.any((room) => room['roomStatus'] == 'available');
-          final bAvailable =
-              bRooms.any((room) => room['roomStatus'] == 'available');
-          return (bAvailable ? 1 : 0) - (aAvailable ? 1 : 0);
-        });
-      } else {
-        // You can add other sorting options here if needed
-      }
-    });
-  }
 
 // Approve and update the room
-  Future<void> updateInquiryStatusAndRoom(
-      Map<String, dynamic> inquiry,
-      String inquiryId,
-      String status,
-      String roomId,
-      String userId,
-      String token) async {
-    // Construct the request body
-    var requestBody = {
-      'status': status,
-      'requestType': inquiry['requestType'], // Now inquiry is defined
-      'roomId': roomId,
-      'userId': userId
-    };
+Future<void> updateInquiryStatusAndRoom(
+    Map<String, dynamic> inquiry,
+    String inquiryId,
+    String status,
+    String roomId,
+    String userId,
+    String token,
+    int reservationDuration, // Include reservation duration
+) async {
+    final url = 'http://192.168.1.19:3000/inquiries/update/$inquiryId'; // Update inquiry status
+    try {
+        final response = await http.patch(
+            Uri.parse(url),
+            headers: {
+                'Authorization': 'Bearer $token', // Include token if required
+                'Content-Type': 'application/json',
+            },
+            body: json.encode({
+                'status': status,
+                'requestType': inquiry['requestType'], // Include requestType
+                'roomId': roomId,
+                'userId': userId,
+                'reservationDuration': reservationDuration, // Pass the duration
+            }),
+        );
 
+        if (response.statusCode == 200) {
+            // Get the occupant's email
+            final emailResponse = await http.get(
+                Uri.parse('http://192.168.1.19:3000/inquiries/$inquiryId/email'),
+                headers: {
+                    'Authorization': 'Bearer $token',
+                    'Content-Type': 'application/json',
+                },
+            );
+            final inquiryResponse = await http.get(
+              Uri.parse('http://192.168.1.19:3000/inquiries/email/delarasean54@gmail.com/inquiries'), // Update the endpoint to get inquiry details
+              headers: {
+                'Authorization': 'Bearer $token',
+                'Content-Type': 'application/json',
+              },
+            );
+
+            if (emailResponse.statusCode == 200) {
+                final occupantEmail = json.decode(emailResponse.body)['email'];
+                final message = status == 'approved'
+                    ? 'Your inquiry for room ${inquiry['roomId']['roomNumber']} has been approved. Please Settle all needed payment for reservation immediately.'
+                    : 'Your inquiry for room ${inquiry['roomNumber']} has been rejected.';
+
+                await _sendOccupantNotificationEmail(occupantEmail, message, inquiry['userId']);
+                print('Occupant notified successfully.');
+            } else {
+                print('Failed to retrieve occupant email: ${emailResponse.statusCode}');
+            }
+        } else {
+            // Handle error
+            throw Exception('Failed to update inquiry and room');
+        }
+    } catch (e) {
+        // Handle exceptions (like network errors)
+        print('Error updating inquiry and room: $e');
+    }
+}
+
+
+Future<void> _sendOccupantNotificationEmail(String occupantEmail, String message, String userId) async {
+    final emailServiceUrl = 'http://192.168.1.19:3000/notification/create'; // Endpoint to send notifications
+    try {
+        final response = await http.post(
+            Uri.parse(emailServiceUrl),
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: json.encode({
+                'userId': userId, // Include the userId
+                'message': message,
+                'requesterEmail': occupantEmail, // This is the same as occupantEmail
+            }),
+        );
+
+        if (response.statusCode != 201) {
+            print('Failed to send notification email to occupant: ${response.statusCode}');
+        } else {
+            final responseBody = json.decode(response.body);
+            print('Email service response: ${responseBody}');
+        }
+    } catch (error) {
+        print('Error sending notification email: $error');
+    }
+}
+
+
+
+
+Future<void> rejectAndDeleteInquiry(String inquiryId, String token, String reason) async {
+  try {
+    // First, call your API to reject the inquiry and send the reason
     final response = await http.patch(
-      Uri.parse('http://192.168.1.31:3000/inquiries/update/$inquiryId'),
+      Uri.parse('http://192.168.1.19:3000/inquiries/reject/$inquiryId'), // Update the endpoint
       headers: {
-        'Content-Type': 'application/json',
         'Authorization': 'Bearer $token',
+        'Content-Type': 'application/json',
       },
-      body: jsonEncode(requestBody), // Encode the body correctly
+      body: json.encode({
+        'reason': reason, // Include the rejection reason in the request body
+      }),
     );
 
     if (response.statusCode == 200) {
-      // Handle successful update
-      print('Inquiry and room updated successfully');
-    } else {
-      throw Exception('Failed to update inquiry: ${response.body}');
-    }
-  }
+      print('Inquiry rejected successfully.');
 
-// Reject and delete the inquiry
-  Future<void> rejectAndDeleteInquiry(String inquiryId, String token) async {
-    try {
-      final response = await http.delete(
-        Uri.parse('http://192.168.1.31:3000/inquiries/delete/$inquiryId'),
+      // Get the inquiry details, including userId and occupant's email
+      final inquiryResponse = await http.get(
+        Uri.parse('http://192.168.1.19:3000/inquiries/$inquiryId'), // Update the endpoint to get inquiry details
         headers: {
           'Authorization': 'Bearer $token',
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
         },
       );
 
-      if (response.statusCode == 200) {
-        print('Inquiry rejected and deleted.');
+      if (inquiryResponse.statusCode == 200) {
+        final inquiryData = json.decode(inquiryResponse.body);
+        final occupantEmail = inquiryData['requesterEmail']; // Assuming this field exists
+        final userId = inquiryData['userId']; // Get userId from the inquiry data
+
+        // Prepare the rejection message
+        final message = 'Your inquiry has been rejected for the following reason: $reason';
+        await _sendOccupantNotificationEmail(occupantEmail, message, userId); // Pass userId here
+        print('Occupant notified successfully.');
       } else {
-        print('Failed to delete inquiry: ${response.statusCode}');
+        print('Failed to retrieve inquiry details: ${inquiryResponse.statusCode}');
       }
-    } catch (error) {
-      print('Error rejecting and deleting inquiry: $error');
+    } else {
+      print('Failed to reject inquiry: ${response.statusCode}');
     }
+  } catch (error) {
+    print('Error rejecting inquiry: $error');
   }
+}
 
 
   void _deletePropertiesOrRooms() {
@@ -888,11 +915,14 @@ void showRoomDetailPopover(BuildContext context, dynamic room, Map<String, dynam
     );
   }
 
+
+
+
   @override
   Widget build(BuildContext context) {
-    final List rooms = [];
+    print('inquiry: $propertyInquiries');
+    print('UserId from inquiry:$selectedUserId');
     return Scaffold(
-      
       backgroundColor: _themeController.isDarkMode.value
           ? Color.fromARGB(255, 28, 29, 34)
           : Colors.white,
@@ -910,20 +940,39 @@ void showRoomDetailPopover(BuildContext context, dynamic room, Map<String, dynam
             fontWeight: FontWeight.w600,
           ),
         ),
-        leading: IconButton(
-          icon: Icon(
-            Icons.arrow_back_ios_new,
-            color: _themeController.isDarkMode.value
-                ? Colors.white
-                : const Color.fromARGB(255, 94, 94, 94),
+        leading: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 11.0, horizontal: 12.0),
+          child: SizedBox(
+            height: 40,  // Set a specific height for the button
+            width: 40,   // Set a specific width to make it a square button
+            child: ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.transparent, // Transparent background to simulate outline
+                side: BorderSide(
+                  color: _themeController.isDarkMode.value ? Colors.white : Colors.black, // Outline color
+                  width: 0.90, // Outline width
+                ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8.0), // Optional rounded corners
+                ),
+                elevation: 0, // Remove elevation to get the outline effect
+                padding: EdgeInsets.all(0), // Remove any padding to center the icon
+              ),
+              onPressed: () {
+                Navigator.pop(context);
+              },
+              child: Icon(
+                Icons.chevron_left,
+                color: _themeController.isDarkMode.value ? Colors.white : Colors.black, // Icon color based on theme
+                size: 16, // Icon size
+              ),
+            ),
           ),
-          onPressed: () {
-            Navigator.pop(context);
-          },
         ),
-        
       ),
       body: RefreshIndicator(
+        color: Colors.black,
+        backgroundColor: Colors.white,
         onRefresh: _refresh,
         child: Skeletonizer(
           enableSwitchAnimation: true,
@@ -984,16 +1033,37 @@ void showRoomDetailPopover(BuildContext context, dynamic room, Map<String, dynam
                                               crossAxisAlignment: CrossAxisAlignment.start,
                                               children: [
                                                 // Property Type
-                                                Text(
-                                                  item['typeOfProperty'] ?? 'Unknown Property Type',
-                                                  style: TextStyle(
-                                                    fontWeight: FontWeight.bold,
-                                                    fontSize: 18,
-                                                    color: _themeController.isDarkMode.value
-                                                        ? Colors.white
-                                                        : Colors.black,
-                                                  ),
+                                                Row(
+                                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                                  children: [
+                                                    Text(
+                                                      item['typeOfProperty'] ?? 'Unknown Property Type',
+                                                      style: TextStyle(
+                                                        fontWeight: FontWeight.bold,
+                                                        fontSize: 18,
+                                                        color: _themeController.isDarkMode.value
+                                                            ? Colors.white
+                                                            : Colors.black,
+                                                      ),
+                                                    ),
+                                                    ShadTooltip(
+                                                      builder: (context) => const Text('Status of your request listing',
+                                                      style: TextStyle(
+                                                        fontFamily: 'geistsans'
+                                                      ),),
+                                                      child: Text(
+                                                        item['status'] ?? 'No Status',
+                                                        style: TextStyle(
+                                                          fontWeight: FontWeight.bold,
+                                                          fontSize: 18,
+                                                          color: getStatusColor(item['status']), // Call the function to get the color based on status
+                                                        ),
+                                                      ),
+                                                    ),
+                                                  ],
                                                 ),
+
+
                                                 const SizedBox(height: 8),
 
                                                 // Location Row
@@ -1089,6 +1159,7 @@ void showRoomDetailPopover(BuildContext context, dynamic room, Map<String, dynam
                                             )
                                           ],
                                         ),
+
                                         SizedBox(height: 8),
                                         rooms.isEmpty
                                             ? Text('No rooms available.')
@@ -1109,16 +1180,23 @@ void showRoomDetailPopover(BuildContext context, dynamic room, Map<String, dynam
                                                             8.0),
                                                     child: DecoratedBox(
                                                       decoration: BoxDecoration(
-                                                        //border: Border.all(width: 0.4),
+                                                         boxShadow: [
+                                                          BoxShadow(
+                                                            color: _themeController.isDarkMode.value
+                                                                ? const Color.fromARGB(95, 0, 0, 0) // Adjust color for dark mode
+                                                                : const Color.fromARGB(59, 0, 0, 0), // Adjust color for light mode
+                                                            blurRadius: 8.0, // Softens the shadow
+                                                            offset: Offset(0, 5), // Changes the position of the shadow
+                                                            spreadRadius: 0, // Increases the size of the shadow
+                                                          ),
+                                                        ],
                                                         color: _themeController
                                                                 .isDarkMode
                                                                 .value
                                                             ? const Color
                                                                 .fromARGB(
                                                                 174, 68, 67, 82)
-                                                            : const Color
-                                                                .fromARGB(170,
-                                                                241, 241, 241),
+                                                            : const Color.fromARGB(255, 255, 255, 255),
                                                         borderRadius:
                                                             BorderRadius
                                                                 .circular(12),
@@ -1128,10 +1206,11 @@ void showRoomDetailPopover(BuildContext context, dynamic room, Map<String, dynam
                                                             const EdgeInsets
                                                                 .all(8.0),
                                                         child: InkWell(
+                                                        
                                                           onTap: () =>
                                                               showRoomDetailPopover(
                                                                   context,
-                                                                  room, userProfiles),
+                                                                  room, userProfiles, inquiries),
                                                           child: Padding(
                                                             padding:
                                                                 const EdgeInsets
@@ -1234,9 +1313,7 @@ void showRoomDetailPopover(BuildContext context, dynamic room, Map<String, dynam
                                                                 const SizedBox(
                                                                     height: 10),
                                                                 // Only show inquiries if the room status is 'available'
-                                                                if (room[
-                                                                        'roomStatus'] ==
-                                                                    'available') ...[
+                                                                if (room['roomStatus'] == 'available') ...[
                                                                   Text(
                                                                     'Inquiries',
                                                                     style:
@@ -1263,181 +1340,245 @@ void showRoomDetailPopover(BuildContext context, dynamic room, Map<String, dynam
                                                                               0),
                                                                     ),
                                                                   ),
-                                                                  SizedBox(
-                                                                      height:
-                                                                          8),
-                                                                  inquiries
-                                                                          .isEmpty
-                                                                      ? Text(
-                                                                          'No inquiries yet.')
+                                                                  SizedBox(height:8),
+                                                                  inquiries.isEmpty? Text('No inquiries yet.')
                                                                       : Column(
                                                                           children:
                                                                               inquiries.map((inquiry) {
-                                                                            String
-                                                                                userId =
-                                                                                inquiry['userId'];
-                                                                            var profile =
-                                                                                userProfiles[userId]; // Get the user profile
+                                                                            String userId = inquiry['userId'];
+                                                                            var profile = userProfiles[userId]; // Get the user profile
 
                                                                             // Default to "Unknown User" if profile is not available
                                                                             String userName = (profile != null)
                                                                                 ? '${profile['firstName']} ${profile['lastName']}'
                                                                                 : 'Unknown User';
+                                                                            String userContact = (profile != null && profile['contactDetails'] != null)
+                                                                        ? 'Phone: ${profile['contactDetails']['phone'] ?? 'No phone provided'}\n' +
+                                                                          'Address: ${profile['contactDetails']['address'] ?? 'No address provided'}'
+                                                                        : 'No contact details available';
 
                                                                             return Padding(
                                                                               padding: const EdgeInsets.all(8.0),
-                                                                              child: DecoratedBox(
-                                                                                decoration: BoxDecoration(
-                                                                                  color: _themeController.isDarkMode.value ? const Color.fromARGB(255, 0, 0, 0) : const Color.fromARGB(59, 187, 187, 187),
-                                                                                  borderRadius: BorderRadius.circular(12),
-                                                                                ),
-                                                                                child: Padding(
-                                                                                  padding: const EdgeInsets.all(8.0),
-                                                                                  child: Column(
-                                                                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                                                                    children: [
-                                                                                      Text(
-                                                                                        'Inquiry from $userName', // Display user name
-                                                                                        style: TextStyle(
-                                                                                          fontWeight: FontWeight.bold,
-                                                                                          fontSize: 14,
-                                                                                        ),
-                                                                                      ),
-                                                                                      SizedBox(height: 4),
-                                                                                      Text(
-                                                                                        'Request Date: ${DateFormat('yyyy-MM-dd').format(DateTime.parse(inquiry['requestDate']))}',
-                                                                                        style: TextStyle(
-                                                                                          fontSize: 12,
-                                                                                        ),
-                                                                                      ),
-                                                                                      SizedBox(height: 4),
-                                                                                      Text(
-                                                                                        'Request Type: ${inquiry['requestType']?.toString().toUpperCase() ?? 'N/A'}',
-                                                                                        style: TextStyle(
-                                                                                          fontSize: 12,
-                                                                                          fontWeight: FontWeight.w600,
-                                                                                        ),
-                                                                                      ),
-                                                                                      const SizedBox(height: 8),
-
-                                                                                      // Approve and Reject Buttons
-                                                                                      Row(
-                                                                                        mainAxisAlignment: MainAxisAlignment.end,
+                                                                              child: Tooltip(
+                                                                                message: 'Tap to see inquiry detail',
+                                                                                child: GestureDetector(
+                                                                                  onTap: () {
+                                                                                    showInquiryDetailsDialog(context, userName, userContact, inquiry);
+                                                                                  },
+                                                                                  child: DecoratedBox(
+                                                                                    decoration: BoxDecoration(
+                                                                                      color: _themeController.isDarkMode.value
+                                                                                          ? const Color.fromARGB(255, 0, 0, 0)
+                                                                                          : const Color.fromARGB(59, 187, 187, 187),
+                                                                                      borderRadius: BorderRadius.circular(12),
+                                                                                    ),
+                                                                                    child: Padding(
+                                                                                      padding: const EdgeInsets.all(10.0),
+                                                                                      child: Column(
+                                                                                        crossAxisAlignment: CrossAxisAlignment.start,
                                                                                         children: [
-                                                                                          // Approve Button
-                                                                                          ElevatedButton(
-                                                                                            style: ElevatedButton.styleFrom(
-                                                                                              backgroundColor: const Color.fromARGB(255, 0, 255, 106),
-                                                                                              shape: RoundedRectangleBorder(
-                                                                                                borderRadius: BorderRadius.circular(8.0),
+                                                                                          Row(
+                                                                                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                                                                            children: [
+                                                                                              Text(
+                                                                                                'Inquiry from $userName', // Display user name
+                                                                                                style: TextStyle(
+                                                                                                  fontWeight: FontWeight.bold,
+                                                                                                  fontSize: 14,
+                                                                                                ),
                                                                                               ),
-                                                                                            ),
-                                                                                            onPressed: () async {
-                                                                                              bool? confirm = await showCupertinoDialog(
-                                                                                                context: context,
-                                                                                                builder: (BuildContext context) {
-                                                                                                  return CupertinoAlertDialog(
-                                                                                                    title: Text("Approve Inquiry"),
-                                                                                                    content: Text("Are you sure you want to approve this inquiry?"),
-                                                                                                    actions: <Widget>[
-                                                                                                      CupertinoDialogAction(
-                                                                                                        child: Text("Cancel"),
-                                                                                                        onPressed: () {
-                                                                                                          Navigator.of(context).pop(false);
-                                                                                                        },
-                                                                                                      ),
-                                                                                                      CupertinoDialogAction(
-                                                                                                        isDestructiveAction: true,
-                                                                                                        child: Text("Approve"),
-                                                                                                        onPressed: () {
-                                                                                                          Navigator.of(context).pop(true);
-                                                                                                        },
-                                                                                                      ),
-                                                                                                    ],
-                                                                                                  );
-                                                                                                },
-                                                                                              );
-
-                                                                                              if (confirm == true) {
-                                                                                                // Call the function to approve inquiry and update room
-                                                                                                try {
-                                                                                                  await updateInquiryStatusAndRoom(inquiry, inquiry['_id'], 'approved', roomId, userId, widget.token);
-                                                                                                  setState(() {
-                                                                                                    responseBody = jsonEncode(responseBody); // Use responseBody to store the JSON data
-                                                                                                  });
-                                                                                                   await fetchRoomInquiries(roomId);
-                                                                                                } catch (error) {
-                                                                                                  print('Error: $error');
-                                                                                                }
-                                                                                              }
-                                                                                            },
-                                                                                            child: Text(
-                                                                                              'Approve',
-                                                                                              style: TextStyle(
-                                                                                                color: Colors.black,
+                                                                                              Text(
+                                                                                                'View', // Display user name
+                                                                                                style: TextStyle(
+                                                                                                  fontWeight: FontWeight.bold,
+                                                                                                  fontSize: 14,
+                                                                                                  color: Colors.blue
+                                                                                                ),
                                                                                               ),
+                                                                                            ],
+                                                                                          ),
+                                                                                          
+                                                                                          SizedBox(height: 4),
+                                                                                          Text(
+                                                                                            'Request Date: ${DateFormat('yyyy-MM-dd').format(DateTime.parse(inquiry['requestDate']))}',
+                                                                                            style: TextStyle(
+                                                                                              fontSize: 12,
                                                                                             ),
                                                                                           ),
-
-                                                                                          const SizedBox(width: 8),
-
-                                                                                          // Reject Button
-                                                                                          ElevatedButton(
-                                                                                            style: ElevatedButton.styleFrom(
-                                                                                              backgroundColor: const Color.fromARGB(255, 255, 3, 78), // Button color for Reject
-                                                                                              shape: RoundedRectangleBorder(
-                                                                                                borderRadius: BorderRadius.circular(8.0),
-                                                                                              ),
-                                                                                            ),
-                                                                                            onPressed: () async {
-                                                                                              bool? confirm = await showCupertinoDialog(
-                                                                                                context: context,
-                                                                                                builder: (BuildContext context) {
-                                                                                                  return CupertinoAlertDialog(
-                                                                                                    title: Text("Reject Inquiry"),
-                                                                                                    content: Text("Are you sure you want to reject this inquiry?"),
-                                                                                                    actions: <Widget>[
-                                                                                                      CupertinoDialogAction(
-                                                                                                        child: Text("Cancel"),
-                                                                                                        onPressed: () {
-                                                                                                          Navigator.of(context).pop(false); // Return false
-                                                                                                        },
-                                                                                                      ),
-                                                                                                      CupertinoDialogAction(
-                                                                                                        isDestructiveAction: true,
-                                                                                                        child: Text("Reject"),
-                                                                                                        onPressed: () {
-                                                                                                          Navigator.of(context).pop(true); // Return true
-                                                                                                        },
-                                                                                                      ),
-                                                                                                    ],
-                                                                                                  );
-                                                                                                },
-                                                                                              );
-
-                                                                                              if (confirm == true) {
-                                                                                                // Call API to reject inquiry and delete it
-                                                                                                print('Reject button clicked for inquiry by $userName');
-                                                                                                if (inquiry['_id'] != null && widget.token != null) {
-                                                                                                  await rejectAndDeleteInquiry(inquiry['_id'], widget.token);
-                                                                                                } else {
-                                                                                                  print('Error: Inquiry ID or token is null');
-                                                                                                }
-                                                                                              }
-                                                                                            },
-                                                                                            child: Text(
-                                                                                              'Reject',
-                                                                                              style: TextStyle(
-                                                                                                color: Colors.black,
-                                                                                              ),
+                                                                                          SizedBox(height: 4),
+                                                                                          Text(
+                                                                                            'Request Type: ${inquiry['requestType']?.toString().toUpperCase() ?? 'N/A'}',
+                                                                                            style: TextStyle(
+                                                                                              fontSize: 12,
+                                                                                              fontWeight: FontWeight.w600,
                                                                                             ),
                                                                                           ),
+                                                                                          const SizedBox(height: 8),
+
+                                                                                          // Approve and Reject Buttons
+                                                                                              Row(
+                                                                                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                                                                                children: [
+                                                                                                  // Approve Button
+                                                                                                  Expanded(
+                                                                                                    child: ElevatedButton(
+                                                                                                      style: ElevatedButton.styleFrom(
+                                                                                                        backgroundColor: const Color.fromARGB(255, 0, 255, 106),
+                                                                                                        shape: RoundedRectangleBorder(
+                                                                                                          borderRadius: BorderRadius.circular(8.0),
+                                                                                                        ),
+                                                                                                      ),
+                                                                                                      onPressed: () async {
+                                                                                                        bool? confirm = await showCupertinoDialog(
+                                                                                                          context: context,
+                                                                                                          builder: (BuildContext context) {
+                                                                                                            return CupertinoAlertDialog(
+                                                                                                              title: Text("Approve Inquiry"),
+                                                                                                              content: Text("Are you sure you want to approve this inquiry?"),
+                                                                                                              actions: <Widget>[
+                                                                                                                CupertinoDialogAction(
+                                                                                                                  child: Text("Cancel"),
+                                                                                                                  onPressed: () {
+                                                                                                                    Navigator.of(context).pop(false);
+                                                                                                                  },
+                                                                                                                ),
+                                                                                                                CupertinoDialogAction(
+                                                                                                                  isDestructiveAction: true,
+                                                                                                                  child: Text("Approve"),
+                                                                                                                  onPressed: () {
+                                                                                                                    Navigator.of(context).pop(true);
+                                                                                                                    Navigator.pushReplacement(
+                                                                                                                      context,
+                                                                                                                      MaterialPageRoute(
+                                                                                                                        builder: (context) => CurrentListingPage(token: widget.token), // Your page to refresh
+                                                                                                                      ),
+                                                                                                                    );
+                                                                                                                  },
+                                                                                                                ),
+                                                                                                              ],
+                                                                                                            );
+                                                                                                          },
+                                                                                                        );
+
+                                                                                                        if (confirm == true) {
+                                                                                                          // Call the function to approve inquiry and update room
+                                                                                                          try {
+                                                                                                            await updateInquiryStatusAndRoom(
+                                                                                                              inquiry,
+                                                                                                              inquiry['_id'],
+                                                                                                              'approved',
+                                                                                                              roomId,
+                                                                                                              userId,
+                                                                                                              widget.token,
+                                                                                                              inquiry['reservationDuration'],
+                                                                                                              // Pass reservation duration here
+                                                                                                            );
+                                                                                                            await fetchRoomInquiries(roomId);
+                                                                                                          } catch (error) {
+                                                                                                            print('Error: $error');
+                                                                                                          }
+                                                                                                        }
+                                                                                                      },
+                                                                                                      child: Text(
+                                                                                                        'Approve',
+                                                                                                        style: TextStyle(
+                                                                                                          color: Colors.black,
+                                                                                                        ),
+                                                                                                      ),
+                                                                                                    ),
+                                                                                                  ),
+
+                                                                                                  const SizedBox(width: 8),
+
+                                                                                                  // Reject Button
+                                                                                                  Expanded(
+                                                                                                  child: ElevatedButton(
+                                                                                                    style: ElevatedButton.styleFrom(
+                                                                                                      backgroundColor: const Color.fromARGB(255, 255, 3, 78), // Button color for Reject
+                                                                                                      shape: RoundedRectangleBorder(
+                                                                                                        borderRadius: BorderRadius.circular(8.0),
+                                                                                                      ),
+                                                                                                    ),
+                                                                                                    onPressed: () async {
+                                                                                                      // Show confirmation dialog for rejection
+                                                                                                      bool? confirm = await showCupertinoDialog(
+                                                                                                        context: context,
+                                                                                                        builder: (BuildContext context) {
+                                                                                                          return CupertinoAlertDialog(
+                                                                                                            title: Text("Reject Inquiry"),
+                                                                                                            content: Text("Are you sure you want to reject this inquiry?"),
+                                                                                                            actions: <Widget>[
+                                                                                                              CupertinoDialogAction(
+                                                                                                                child: Text("Cancel"),
+                                                                                                                onPressed: () {
+                                                                                                                  Navigator.of(context).pop(false); // Return false
+                                                                                                                },
+                                                                                                              ),
+                                                                                                              CupertinoDialogAction(
+                                                                                                                isDestructiveAction: true,
+                                                                                                                child: Text("Reject"),
+                                                                                                                onPressed: () {
+                                                                                                                  Navigator.of(context).pop(true); // Return true
+                                                                                                                },
+                                                                                                              ),
+                                                                                                            ],
+                                                                                                          );
+                                                                                                        },
+                                                                                                      );
+
+                                                                                                      if (confirm == true) {
+                                                                                                        // Show reasons dialog if the inquiry is rejected
+                                                                                                        final String? selectedReason = await showCupertinoDialog<String>(
+                                                                                                          context: context,
+                                                                                                          builder: (BuildContext context) {
+                                                                                                            return CupertinoAlertDialog(
+                                                                                                              title: Text("Select Rejection Reason"),
+                                                                                                              content: Column(
+                                                                                                                mainAxisSize: MainAxisSize.min,
+                                                                                                                children: rejectionReasons.map((reason) {
+                                                                                                                  return CupertinoDialogAction(
+                                                                                                                    child: Text(reason),
+                                                                                                                    onPressed: () {
+                                                                                                                      Navigator.of(context).pop(reason); // Return the selected reason
+                                                                                                                    },
+                                                                                                                  );
+                                                                                                                }).toList(),
+                                                                                                              ),
+                                                                                                            );
+                                                                                                          },
+                                                                                                        );
+
+                                                                                                        if (selectedReason != null) {
+                                                                                                          // Call API to reject inquiry and delete it with the selected reason
+                                                                                                          print('Reject button clicked for inquiry by $userName with reason: $selectedReason');
+                                                                                                          if (inquiry['_id'] != null && widget.token != null) {
+                                                                                                            await rejectAndDeleteInquiry(inquiry['_id'], widget.token, selectedReason); // Pass the reason
+                                                                                                          } else {
+                                                                                                            print('Error: Inquiry ID or token is null');
+                                                                                                          }
+                                                                                                        }
+                                                                                                      }
+                                                                                                    },
+                                                                                                    child: Text(
+                                                                                                      'Reject',
+                                                                                                      style: TextStyle(
+                                                                                                        color: Colors.black,
+                                                                                                      ),
+                                                                                                    ),
+                                                                                                  ),
+                                                                                                ),
+
+
+                                                                                                ],
+                                                                                              ),
+                                                                                                  
                                                                                         ],
                                                                                       ),
-                                                                                    ],
+                                                                                    ),
                                                                                   ),
                                                                                 ),
-                                                                              ),
+                                                                              )
+
                                                                             );
                                                                           }).toList(),
                                                                         ),
@@ -1466,6 +1607,7 @@ void showRoomDetailPopover(BuildContext context, dynamic room, Map<String, dynam
         ),
       ),
       floatingActionButton: FloatingActionButton(
+        backgroundColor: const Color.fromARGB(255, 0, 18, 32),
         onPressed: () {
           Navigator.push(
             context,
@@ -1474,9 +1616,544 @@ void showRoomDetailPopover(BuildContext context, dynamic room, Map<String, dynam
             ),
           );
         },
-        child: ImageIcon(AssetImage('assets/icons/add.png')),
+        child: Icon(Icons.add, color: Colors.white, size: 30,),
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.miniEndFloat,
     );
   }
+
+
+
+void showInquiryDetailsDialog(BuildContext context, String userName, String userContact, Map<String, dynamic> inquiry) {
+  debugPrintStack(label: 'Error location', maxFrames: 10);
+  showCupertinoDialog(
+    context: context,
+    builder: (BuildContext context) {
+      return CupertinoAlertDialog(
+        title: Text(
+          "Inquiry Details",
+          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20),
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            SizedBox(height: 12),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  'Name:',
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                ),
+                SizedBox(width: 5),
+                Expanded(
+                  child: Text(
+                    userName,
+                    style: TextStyle(fontSize: 16),
+                    textAlign: TextAlign.start,
+                  ),
+                ),
+              ],
+            ),
+            SizedBox(height: 4),
+            Text(
+              'Contact:',
+              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+            ),
+            SizedBox(height: 4),
+            Padding(
+              padding: const EdgeInsets.only(left: 10.0),
+              child: Text(
+                userContact,
+                style: TextStyle(fontSize: 14),
+                textAlign: TextAlign.start,
+              ),
+            ),
+            SizedBox(height: 8),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  'Request Date:',
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                ),
+                SizedBox(width: 5),
+                Expanded(
+                  child: Text(
+                    inquiry['requestDate'] != null
+                        ? DateFormat('yyyy-MM-dd').format(DateTime.parse(inquiry['requestDate']))
+                        : 'No date provided',
+                    style: TextStyle(fontSize: 14),
+                    textAlign: TextAlign.start,
+                  ),
+                ),
+              ],
+            ),
+            SizedBox(height: 4),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  'Request Type:',
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                ),
+                SizedBox(width: 5),
+                Expanded(
+                  child: Text(
+                    inquiry['requestType']?.toString()?.toUpperCase() ?? 'N/A',
+                    style: TextStyle(fontSize: 14),
+                    textAlign: TextAlign.start,
+                  ),
+                ),
+              ],
+            ),
+            // Conditionally show Proposed Start Date if requestType is 'rent'
+            if (inquiry['requestType']?.toString()?.toLowerCase() == 'rent') ...[
+              SizedBox(height: 4),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.start,
+                children: [
+                  Text(
+                    'Proposed Start Date:',
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                    textAlign: TextAlign.start,
+                  ),
+                  SizedBox(width: 5),
+                  Expanded(
+                    child: Text(
+                      inquiry['proposedStartDate'] != null
+                          ? DateFormat('yyyy-MM-dd').format(DateTime.parse(inquiry['proposedStartDate']))
+                          : 'No date provided',
+                      style: TextStyle(fontSize: 14),
+                      textAlign: TextAlign.start,
+                    ),
+                  ),
+                ],
+              ),
+            ],
+            if (inquiry['requestType']?.toString()?.toLowerCase() == 'reservation') ...[
+            SizedBox(height: 4),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.start,
+              children: [
+                Text(
+                  'Reservation duration:',
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                  textAlign: TextAlign.start,
+                ),
+                SizedBox(width: 5),
+                Expanded(
+                child: Text(
+                  inquiry['reservationDuration'] != null
+                      ? '${inquiry['reservationDuration']} Days'  // Append 'Days' after the duration
+                      : 'No duration provided',  // Fallback if null
+                  style: TextStyle(fontSize: 14),
+                  textAlign: TextAlign.start,
+                ),
+                ),
+              ],
+            ),
+          ],
+            SizedBox(height: 4),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  'Message:',
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                ),
+                SizedBox(width: 5),
+                Expanded(
+                  child: Text(
+                    inquiry['customTerms']?.toString() ?? 'None',
+                    style: const TextStyle(fontSize: 14),
+                    textAlign: TextAlign.start,
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+        actions: <CupertinoDialogAction>[
+          CupertinoDialogAction(
+            child: Text('Close'),
+            onPressed: () {
+              Navigator.of(context).pop();
+            },
+          ),
+        ],
+      );
+    },
+  );
+}
+
+
+
+    Future<void> getPropertyList(String userId) async {
+    try {
+      setState(() {
+        _loading = true; // Set loading to true when starting fetch
+      });
+
+      var regBody = {"userId": userId};
+      var response = await http.post(
+        Uri.parse(getProperty),
+        headers: {"Content-Type": "application/json"},
+        body: jsonEncode(regBody),
+      );
+
+      if (response.statusCode == 200) {
+        var jsonResponse = jsonDecode(response.body);
+        List<dynamic> properties = jsonResponse['success'] ?? [];
+        setState(() {
+          items = properties;
+          _loading = false; // Set loading to false after fetch
+        });
+
+        for (var property in properties) {
+          String propertyId = property['_id'];
+          fetchRooms(propertyId);
+          // Fetch inquiries for each property
+        }
+      } else {
+        print("Error: ${response.statusCode}");
+        print("Response Body: ${response.body}");
+        setState(() {
+          _loading = false; // Set loading to false on error
+        });
+      }
+    } catch (e) {
+      print("Error fetching property list: $e");
+      setState(() {
+        _loading = false; // Set loading to false on error
+      });
+    }
+  }
+
+
+
+
+  Future<void> fetchUserProfile(String userId) async {
+    try {
+      final response =
+          await http.get(Uri.parse('http://192.168.1.19:3000/user/$userId'));
+      if (response.statusCode == 200) {
+        final user = json.decode(response.body);
+        setState(() {
+          userProfiles[userId] =
+              user['profile']; // Store profile data by userId
+          profilePic[userId] =
+              user['profilePicture']; // Store profile data by userId
+        });
+      } else {
+        print(
+            "Error fetching user profile for $userId: ${response.statusCode}");
+      }
+    } catch (error) {
+      print('Error fetching user profile for $userId: $error');
+    }
+  }
+
+
+
+Future<void> fetchRoomInquiries(String roomId) async {
+  try {
+    final response = await http.get(Uri.parse('http://192.168.1.19:3000/inquiries/rooms/$roomId'));
+    
+    if (response.statusCode == 200) {
+      final inquiries = json.decode(response.body) as List<dynamic>; // Decode as List
+      setState(() {
+        propertyInquiries[roomId] = inquiries; // Store inquiries by room ID
+      });
+
+      // Fetch user profiles for each inquiry
+      for (var inquiry in inquiries) {
+      final userId = inquiry['userId'];
+      if (inquiry['status'] == 'approved') {
+        selectedUserId = userId; // Store userId of the approved inquiry
+      }
+      print('UserId from inquiry: $userId'); // Print the userId for debugging
+      await fetchUserProfile(userId); // Fetch user profile if needed
+    }
+    } else {
+      print("Error fetching inquiries for room $roomId: ${response.statusCode}");
+    }
+  } catch (error) {
+    print('Error fetching inquiries for room $roomId: $error');
+  }
+}
+
+
+
+  Future<void> fetchRooms(String propertyId) async {
+    try {
+      final response = await http.get(Uri.parse(
+          'http://192.168.1.19:3000/rooms/properties/$propertyId/rooms'));
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        print('Fetch rooms response data: $data');
+
+        if (data['status']) {
+          setState(() {
+            propertyRooms[propertyId] = data['rooms'] ?? [];
+          });
+
+          // Fetch inquiries and user profiles for each room
+          for (var room in data['rooms']) {
+            String roomId = room['_id'];
+
+            // Fetch inquiries for the room
+            await fetchRoomInquiries(roomId);
+
+            // Fetch profiles for the occupants (users and non-users)
+            List<dynamic> occupantUsers = room['occupantUsers'] ?? [];
+            for (var occupantUserId in occupantUsers) {
+              await fetchUserProfile(occupantUserId); // Fetch profile by userId
+            }
+          }
+        } else {
+          print(
+              'Failed to fetch rooms for property $propertyId. Status: ${data['status']}');
+        }
+      } else {
+        print(
+            'Failed to load rooms for property $propertyId. Status code: ${response.statusCode}');
+      }
+    } catch (e) {
+      print('Error fetching rooms for property $propertyId: $e');
+    }
+  }
+
+
+Future<void> updateRoomStatus(String? roomId, String? newStatus) async {
+  final url = Uri.parse('http://192.168.1.19:3000/rooms/updateRoom/$roomId'); // Replace with your backend URL
+  final headers = {
+    'Content-Type': 'application/json',
+    'Authorization': 'Bearer your_jwt_token' // Add your JWT token if required
+  };
+
+  final updateData = {
+    'roomStatus': newStatus,
+  };
+
+  try {
+    final response = await http.patch(
+      url,
+      headers: headers,
+      body: json.encode(updateData),
+    );
+
+    if (response.statusCode == 200) {
+      // Handle successful response
+      final responseData = json.decode(response.body);
+      print('Room updated successfully: ${responseData['room']}');
+    } else {
+      // Handle error response
+      final errorData = json.decode(response.body);
+      print('Failed to update room: ${errorData['error']}');
+    }
+  } catch (error) {
+    print('Error updating room: $error');
+  }
+}
+
+
+
+
+
+  Future<void> deleteProperty(String propertyId) async {
+    try {
+      var response = await http.delete(
+        Uri.parse('http://192.168.1.19:3000/deleteProperty/$propertyId'),
+        headers: {"Authorization": "Bearer ${widget.token}"},
+      );
+
+      if (response.statusCode == 200) {
+        await getPropertyList(userId); // Refresh property list after deletion
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Property deleted successfully')),
+        );
+      } else {
+        print("Error deleting property: ${response.statusCode}");
+      }
+    } catch (e) {
+      print("Error: $e");
+    }
+  }
+
+  void showPropertyDetailPage(Property property) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => Manageproperty(
+          token: widget.token,
+          property: property,
+          userEmail: email,
+          userRole: 'none',
+          profileStatus: 'none',
+        ),
+      ),
+    );
+  }
+
+  Color _getRoomStatusColor(String? status) {
+    switch (status) {
+      case 'available':
+        return _themeController.isDarkMode.value
+            ? const Color.fromARGB(255, 0, 214, 89)
+            : const Color.fromARGB(100, 0, 255, 106);
+      case 'occupied':
+        return _themeController.isDarkMode.value
+            ? const Color.fromARGB(255, 0, 132, 255)
+            : const Color.fromARGB(100, 0, 217, 255);
+      case 'reserved':
+        return _themeController.isDarkMode.value
+            ? const Color.fromARGB(255, 238, 194, 0)
+            : const Color.fromARGB(100, 255, 230, 0);
+      default:
+        return _themeController.isDarkMode.value
+            ? Colors.white70
+            : Colors.black54;
+    }
+  }
+
+  Future<void> _refresh() async {
+    setState(() {
+      items = null;
+      propertyRooms.clear();
+      _loading = true; // Set loading to true when refreshing
+    });
+
+    await getPropertyList(userId);
+  }
+
+
+Future<void> markRoomAsOccupied(String roomId) async {
+  if (selectedUserId != null) {
+    try {
+      final response = await http.patch(
+        Uri.parse('http://192.168.1.19:3000/rooms/$roomId/occupy'),
+        headers: {'Content-Type': 'application/json'},
+        body: json.encode({
+          'userId': selectedUserId, // Pass the userId from approved inquiry
+        }),
+      );
+
+      print('Response status: ${response.statusCode}');
+      print('Response body: ${response.body}'); // Log the response body
+
+      if (response.statusCode == 200) {
+        // Handle success (e.g., show a success message, refresh UI)
+        print('Room marked as occupied successfully');
+      } else {
+        // Handle error responses (e.g., log error)
+        print('Error marking room as occupied: ${response.body}');
+      }
+    } catch (error) {
+      print('Error occurred while marking room as occupied: $error');
+    }
+  } else {
+    print('No userId found to mark as occupied');
+  }
+}
+
+
+
+
+Future<String?> fetchProofOfReservation(String roomId) async {
+  try {
+    // Example API call to fetch payment details
+    var response = await http.get(Uri.parse('http://192.168.1.19:3000/payment/room/$roomId/proofOfReservation'));
+    if (response.statusCode == 200) {
+      var data = jsonDecode(response.body);
+      return data['proofOfReservation']; // Ensure the key matches your backend response
+    } else {
+      // Handle error, return null if not available
+      return null;
+    }
+  } catch (e) {
+    // Handle any errors during the request
+    return null;
+  }
+}
+
+
+Future<void> saveImage(String imageUrl) async {
+        try {
+          final response = await http.get(Uri.parse(imageUrl));
+
+          if (response.statusCode == 200) {
+            final Uint8List imageBytes = response.bodyBytes;
+            final result = await SaverGallery.saveImage(
+              imageBytes,
+        quality: 60, // Adjust image quality
+        name: "saved_image", // Provide a name for the saved image
+        androidRelativePath: "Pictures/YourAppName", // Specify the directory path
+        androidExistNotSave: false, // Prevent saving if a file with the same name exists
+            );
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text('Image saved to gallery!')),
+            );
+          } else {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text('Failed to fetch image.')),
+            );
+          }
+        } catch (e) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Error saving image: $e')),
+          );
+        }
+      }
+
+
+void showFullscreenImage(BuildContext context, String imageUrl) {
+  showDialog(
+    context: context,
+    builder: (context) {
+      return Dialog(
+        backgroundColor: Colors.black,
+        child: GestureDetector(
+          onTap: () {
+            Navigator.of(context).pop(); // Close the fullscreen image on tap
+          },
+          child: Container(
+            constraints: BoxConstraints(
+              maxHeight: MediaQuery.of(context).size.height * 0.4, // Limit height to 90% of screen
+            ),
+            child: Stack(
+              alignment: Alignment.center,
+              children: [
+                Image.network(
+                  imageUrl,
+                  fit: BoxFit.contain,
+                  loadingBuilder: (context, child, loadingProgress) {
+                    if (loadingProgress == null) return child; // If loading complete
+                    return Center(child: CircularProgressIndicator()); // Show loading indicator
+                  },
+                  errorBuilder: (context, error, stackTrace) {
+                    return Center(child: Text('Error loading image', style: TextStyle(color: Colors.white)));
+                  },
+                ),
+                Positioned(
+                  top: 5,
+                  right: 10,
+                  child: IconButton(
+                    icon: Icon(Icons.download, color: Colors.white),
+                    onPressed: () {
+                      saveImage(imageUrl);
+                    },
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    },
+  );
+}
+
 }

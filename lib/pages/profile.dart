@@ -1,9 +1,11 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:get/get.dart';
 import 'package:jwt_decoder/jwt_decoder.dart';
 import 'package:line_awesome_flutter/line_awesome_flutter.dart';
 import 'package:rentcon/main.dart';
+import 'package:rentcon/navigation_menu.dart';
 import 'package:rentcon/pages/about.dart';
 import 'package:rentcon/pages/account_settings.dart';
 import 'package:rentcon/pages/global_loading_indicator.dart';
@@ -12,6 +14,7 @@ import 'package:rentcon/pages/login.dart';
 import 'package:rentcon/pages/occupants/occupant_inquiries.dart';
 import 'package:rentcon/pages/profileSection/profileChecker.dart';
 import 'package:rentcon/theme_controller.dart';
+import 'package:shadcn_ui/shadcn_ui.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:image_picker/image_picker.dart'; // For picking images
 import 'dart:io'; // For file operations
@@ -76,7 +79,7 @@ class _ProfilePageState extends State<ProfilePage> {
 
   Future<void> _fetchUserProfile() async {
     final url = Uri.parse(
-        'http://192.168.1.31:3000/user/$userId'); // Adjust the endpoint if needed
+        'http://192.168.1.19:3000/user/$userId'); // Adjust the endpoint if needed
     try {
       final response = await http
           .get(url, headers: {'Authorization': 'Bearer ${widget.token}'});
@@ -96,7 +99,7 @@ class _ProfilePageState extends State<ProfilePage> {
 
   Future<void> fetchUserProfileStatus() async {
     final url = Uri.parse(
-        'http://192.168.1.31:3000/profile/checkProfileCompletion/$userId'); // Replace with your API endpoint
+        'http://192.168.1.19:3000/profile/checkProfileCompletion/$userId'); // Replace with your API endpoint
     try {
       final response = await http.get(
         url,
@@ -118,47 +121,15 @@ class _ProfilePageState extends State<ProfilePage> {
     }
   }
 
-  // Future<void> _logout() async {
-  //   SharedPreferences prefs = await SharedPreferences.getInstance();
 
-  //   // Clear all relevant user data
-  //   await prefs.clear(); // Use clear to remove all stored data
-
-  //   // You can also clear specific values if needed:
-  //   await prefs.remove('token');
-  //   await prefs.remove('userId');
-  //   await prefs.remove('email');
-
-  //   print('Logged out, all session data removed from SharedPreferences');
-
-  //   // If your app has any in-memory user/session data, make sure to reset them here
-  //   // For example:
-  //   // themeController.reset();  // Reset any in-memory state (e.g., theme, user settings)
-
-  //   // Ensure the navigation stack is cleared and user is redirected to the login page
-  //   Navigator.pushAndRemoveUntil(
-  //     context,
-  //     MaterialPageRoute(
-  //         builder: (context) =>
-  //             LoginPage()), // Replace with your actual login page widget
-  //     (route) => false, // Remove all other routes to ensure no back navigation
-  //   );
-  // }
 
 Future<void> _logout(BuildContext context) async {
   SharedPreferences prefs = await SharedPreferences.getInstance();
 
   // Clear all session data
   await prefs.clear();
-
-  // Navigate to login page
-  MyApp.restartApp(context);
-  Navigator.pushAndRemoveUntil(
-    context,
-    MaterialPageRoute(
-      builder: (context) => LoginPage(),
-    ),
-    (route) => false, // Remove all other routes to ensure no back navigation
+  Navigator.pushNamed(
+    context, '/login'// Remove all other routes to ensure no back navigation
   );
 
   // Restart the app after navigating to login page
@@ -183,7 +154,7 @@ Future<void> _logout(BuildContext context) async {
   Future<void> _uploadProfilePicture() async {
     if (_profileImage != null) {
       final url =
-          Uri.parse('http://192.168.1.31:3000/updateProfilePicture/$userId');
+          Uri.parse('http://192.168.1.19:3000/updateProfilePicture/$userId');
       var request = http.MultipartRequest('PATCH', url)
         ..headers['Authorization'] = 'Bearer ${widget.token}';
 
@@ -258,9 +229,63 @@ Future<void> _logout(BuildContext context) async {
     });
   }
 
-  @override
-  Widget build(BuildContext context) {
-    return Obx(() => Scaffold(
+ @override
+    Widget build(BuildContext context) {
+          return Obx(() => Scaffold(
+          appBar: AppBar(
+        scrolledUnderElevation: 0,
+        backgroundColor: _isDarkMode
+            ? const Color.fromARGB(0, 0, 0, 0)
+            : const Color.fromARGB(0, 241, 212, 212),
+        actions: [
+          Align(
+            alignment: Alignment.topRight,
+            child: Row(
+              children: [
+                // Display sun icon when light mode is active
+                Visibility(
+                  visible: !themeController.isDarkMode.value,
+                  child:Text('Darkmode Off', style: TextStyle(
+                    fontFamily: 'geistsans',
+                    fontWeight: FontWeight.w600,
+                    color: Colors.black
+                  ),),
+                ),
+                Visibility(
+                  visible: themeController.isDarkMode.value,
+                  child:Text('Darkmode On', style: TextStyle(
+                    fontFamily: 'geistsans',
+                    fontWeight: FontWeight.w600
+                  ),),
+                ),
+                Transform.scale(
+                  scale: 0.6, // Adjust the scale to match iOS switch size
+                  child: CupertinoSwitch(
+                    value: themeController.isDarkMode.value, // Reflect current mode
+                    onChanged: (bool value) {
+                      themeController.toggleTheme(value); // Toggle dark/light mode
+
+                      // Optional: Navigate to a new screen
+                      Navigator.pushReplacement(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => NavigationMenu(
+                            token: widget.token,
+                            currentIndex: 4, // Set the index to 4 (Profile)
+                          ),
+                        ),
+                      );
+                    },
+                    activeColor: const Color.fromARGB(255, 255, 0, 89), // Active color
+                    // No thumbIcon since CupertinoSwitch doesn't support it
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+
           backgroundColor: themeController.isDarkMode.value
               ? Color.fromARGB(255, 28, 29, 34)
               : Color.fromRGBO(255, 255, 255, 1),
@@ -273,46 +298,10 @@ Future<void> _logout(BuildContext context) async {
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
                   SizedBox(
-                    height: 10,
+                    height: 0,
                   ),
                   // Dark mode toggle icon placed at the top-right corner
-                  Align(
-                    alignment: Alignment.topRight,
-                    child: Transform.scale(
-                      scale: 0.8, // Adjust the scale to match iOS switch size
-                      child: Switch(
-                        value: themeController
-                            .isDarkMode.value, // Reflect current mode
-                        onChanged: (bool value) {
-                          themeController
-                              .toggleTheme(value); // Toggle dark/light mode
-                        },
-                        activeColor: const Color.fromARGB(255, 108, 151,
-                            245), // Active thumb color for dark mode
-                        inactiveThumbColor: const Color.fromARGB(
-                            255, 214, 182, 38), // Thumb color for light mode
-
-                        // Set thumbIcon property using your WidgetStateProperty for custom icon behavior
-                        thumbIcon: WidgetStateProperty.resolveWith<Icon?>(
-                          (Set<WidgetState> states) {
-                            if (states.contains(WidgetState.selected)) {
-                              return const Icon(
-                                Icons.nights_stay,
-                                color: Colors.black,
-                              ); // Moon icon for dark mode
-                            }
-                            return const Icon(
-                                Icons.wb_sunny); // Sun icon for light mode
-                          },
-                        ),
-
-                        activeTrackColor: Colors.blue
-                            .withOpacity(0.2), // Track color when active
-                        inactiveTrackColor: Colors.yellow
-                            .withOpacity(0.2), // Track color when inactive
-                      ),
-                    ),
-                  ),
+                  
 
                   // Rest of the UI components
                   Container(
@@ -350,18 +339,18 @@ Future<void> _logout(BuildContext context) async {
                             bottom: 2,
                             right: 2,
                             child: SizedBox(
-                              height: 30,
-                              width: 30,
+                              height: 31,
+                              width: 31,
                               child: DecoratedBox(
                                 decoration: BoxDecoration(
-                                  color: Colors.grey,
-                                  borderRadius: BorderRadius.circular(10),
+                                  color: const Color.fromARGB(255, 100, 100, 100),
+                                  borderRadius: BorderRadius.circular(50),
                                 ),
                                 child: IconButton(
                                   icon: Icon(
                                     Icons.camera_alt_rounded,
                                     color:
-                                        const Color.fromARGB(255, 56, 56, 56),
+                                        const Color.fromARGB(255, 255, 255, 255),
                                     size: 17,
                                   ),
                                   onPressed: _pickImage,
@@ -385,64 +374,74 @@ Future<void> _logout(BuildContext context) async {
                         ),
                   ),
                   if (profileStatus == 'approved')
-                  DecoratedBox(
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(10),
-                      color: themeController.isDarkMode.value? Colors.white:Color.fromARGB(255, 6, 0, 20),
-                    ),
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 6.0, vertical: 2.0), // Adds some padding inside the container
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min, // Ensures the row only takes the required space
-                        children: [
-                          const Icon(
-                            Icons.check_circle,
-                            color: Colors.green, // Check icon with green color
-                            size: 16.0, // Icon size
-                          ),
-                          const SizedBox(width: 4), // Space between icon and text
-                          Text(
-                            'Verified',
-                            style: TextStyle(
-                              fontFamily: 'geistsans',
-                              fontWeight: FontWeight.w700,
-                              color: themeController.isDarkMode.value
-                                  ? const Color.fromARGB(255, 0, 0, 0)
-                                  : const Color.fromARGB(255, 255, 255, 255),
+                  ShadTooltip(
+                    showDuration:Duration(milliseconds: 1000),
+                    builder: (context) => const Text('Your profile is verified'),
+                    child: DecoratedBox(
+                      decoration: BoxDecoration(
+                        border: Border.all(width: 1, color: themeController.isDarkMode.value?Colors.white: Colors.black),
+                        borderRadius: BorderRadius.circular(10),
+                        color: themeController.isDarkMode.value? const Color.fromARGB(255, 26, 26, 26):Color.fromARGB(255, 245, 245, 245),
+                      ),
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 6.0, vertical: 2.0), // Adds some padding inside the container
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min, // Ensures the row only takes the required space
+                          children: [
+                            const Icon(
+                              Icons.check_circle,
+                              color: Colors.green, // Check icon with green color
+                              size: 16.0, // Icon size
                             ),
-                          ),
-                        ],
+                            const SizedBox(width: 4), // Space between icon and text
+                            Text(
+                              'Verified',
+                              style: TextStyle(
+                                fontFamily: 'geistsans',
+                                fontWeight: FontWeight.w700,
+                                color: themeController.isDarkMode.value
+                                    ? const Color.fromARGB(255, 255, 255, 255)
+                                    : const Color.fromARGB(255, 0, 0, 0),
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                     ),
                   )
                 else
-                  DecoratedBox(
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(10),
-                      color: themeController.isDarkMode.value? Colors.white:Color.fromARGB(255, 6, 0, 20),
-                    ),
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 6.0, vertical: 2.0), // Adds some padding inside the container
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min, // Ensures the row only takes the required space
-                        children: [
-                          const Icon(
-                            Icons.not_interested_rounded,
-                            color: Colors.red, // Check icon with green color
-                            size: 16.0, // Icon size
-                          ),
-                          const SizedBox(width: 4), // Space between icon and text
-                          Text(
-                            'Unverified',
-                            style: TextStyle(
-                              fontFamily: 'geistsans',
-                              fontWeight: FontWeight.w700,
-                              color: themeController.isDarkMode.value
-                                  ? const Color.fromARGB(255, 0, 0, 0)
-                                  : const Color.fromARGB(255, 255, 255, 255),
+                  ShadTooltip(
+                    showDuration:Duration(milliseconds: 1000),
+                    builder: (context) => const Text('Your profile is not verified yet.'),
+                    child: DecoratedBox(
+                      decoration: BoxDecoration(
+                        border: Border.all(width: 1, color: themeController.isDarkMode.value?Colors.white: Colors.black),
+                        borderRadius: BorderRadius.circular(10),
+                        color: themeController.isDarkMode.value? const Color.fromARGB(255, 26, 26, 26):Color.fromARGB(255, 245, 245, 245),
+                      ),
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 6.0, vertical: 2.0), // Adds some padding inside the container
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min, // Ensures the row only takes the required space
+                          children: [
+                            const Icon(
+                              Icons.not_interested_rounded,
+                              color: Colors.red, // Check icon with green color
+                              size: 16.0, // Icon size
                             ),
-                          ),
-                        ],
+                            const SizedBox(width: 4), // Space between icon and text
+                            Text(
+                              'Unverified',
+                              style: TextStyle(
+                                fontFamily: 'geistsans',
+                                fontWeight: FontWeight.w700,
+                                color: themeController.isDarkMode.value
+                                    ? const Color.fromARGB(255, 255, 255, 255)
+                                    : const Color.fromARGB(255, 0, 0, 0),
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                     ),
                   ),
@@ -469,7 +468,7 @@ Future<void> _logout(BuildContext context) async {
                   SizedBox(height: 20),
                   if (userRole == 'landlord' &&
                       profileStatus == 'approved') ...[
-                    DeviceCard(
+                    DeviceCard1(
                       title: "Listing",
                       icon: SvgPicture.asset('assets/icons/listing2.svg',
                           height: 24,
@@ -491,27 +490,54 @@ Future<void> _logout(BuildContext context) async {
                     ),
                   ] else if (userRole == 'occupant' &&
                       profileStatus == 'approved') ...[
-                    DeviceCard(
-                      icon: SvgPicture.asset(
-                        'assets/icons/occupanthome.svg',
-                        color: themeController.isDarkMode.value
-                            ? const Color.fromARGB(255, 255, 255, 255)
-                            : Colors.white,
-                        height: 24,
-                        width: 24,
-                      ),
-                      title: "My Home",
-                      textColor: themeController.isDarkMode.value
-                          ? Colors.white
-                          : Colors.black,
-                      onPress: () {
-                        Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                                builder: (context) => OccupantInquiries(
-                                    userId: userId, token: widget.token)));
-                        // Navigate to "My Home" page
-                      },
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        DeviceCard1(
+                          icon: SvgPicture.asset(
+                            'assets/icons/occupanthome.svg',
+                            color: themeController.isDarkMode.value
+                                ? const Color.fromARGB(255, 255, 255, 255)
+                                : const Color.fromARGB(255, 219, 2, 2),
+                            height: 24,
+                            width: 24,
+                          ),
+                          title: "My Home",
+                          textColor: themeController.isDarkMode.value
+                              ? Colors.white
+                              : const Color.fromARGB(255, 0, 0, 0),
+                          onPress: () {
+                            Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                    builder: (context) => OccupantInquiries(
+                                        userId: userId, token: widget.token)));
+                            // Navigate to "My Home" page
+                          },
+                        ),
+                        DeviceCard2(
+                          icon: SvgPicture.asset(
+                            'assets/icons/roommate.svg',
+                            color: themeController.isDarkMode.value
+                                ? const Color.fromARGB(255, 255, 255, 255)
+                                : const Color.fromARGB(255, 0, 82, 57),
+                            height: 24,
+                            width: 24,
+                          ),
+                          title: "Roommates",
+                          textColor: themeController.isDarkMode.value
+                              ? Colors.black
+                              : Colors.black,
+                          onPress: () {
+                            Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                    builder: (context) => OccupantInquiries(
+                                        userId: userId, token: widget.token)));
+                            // Navigate to "My Home" page
+                          },
+                        ),
+                      ],
                     ),
                   ],
                   Padding(
@@ -636,8 +662,8 @@ class InfoCard extends StatelessWidget {
   }
 }
 
-class DeviceCard extends StatelessWidget {
-  DeviceCard({
+class DeviceCard1 extends StatelessWidget {
+  DeviceCard1({
     Key? key,
     required this.title,
     required this.icon,
@@ -662,11 +688,11 @@ class DeviceCard extends StatelessWidget {
           onTap: onPress,
           child: Container(
             padding: const EdgeInsets.all(16),
-            width: MediaQuery.of(context).size.width * 0.42,
+            width: MediaQuery.of(context).size.width * 0.39,
             decoration: BoxDecoration(
               color: _themeController.isDarkMode.value
-                  ? const Color.fromARGB(255, 36, 37, 43)
-                  : Color.fromARGB(255, 10, 0, 40),
+                  ? const Color.fromARGB(255, 255, 138, 138)
+                  : Color.fromARGB(255, 164, 205, 255),
               borderRadius: BorderRadius.circular(17),
             ),
             child: Row(
@@ -681,9 +707,10 @@ class DeviceCard extends StatelessWidget {
                   style: TextStyle(
                     color: _themeController.isDarkMode.value
                         ? Colors.white
-                        : const Color.fromARGB(255, 255, 255, 255),
-                    fontSize: 16,
-                    fontWeight: FontWeight.w500,
+                        : const Color.fromARGB(255, 0, 0, 0),
+                    fontSize: 15,
+                    fontWeight: FontWeight.w600,
+                    fontFamily: 'geistsans'
                   ),
                 ),
               ],
@@ -694,6 +721,67 @@ class DeviceCard extends StatelessWidget {
     );
   }
 }
+
+class DeviceCard2 extends StatelessWidget {
+  DeviceCard2({
+    Key? key,
+    required this.title,
+    required this.icon,
+    required this.onPress,
+    this.endIcon = true,
+    this.textColor,
+  }) : super(key: key);
+
+  final String title;
+  final SvgPicture icon;
+  final VoidCallback onPress;
+  final bool endIcon;
+  final Color? textColor;
+  final ThemeController _themeController = Get.find<ThemeController>();
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.start,
+      children: [
+        GestureDetector(
+          onTap: onPress,
+          child: Container(
+            padding: const EdgeInsets.all(16),
+            width: MediaQuery.of(context).size.width * 0.45,
+            decoration: BoxDecoration(
+              color: _themeController.isDarkMode.value
+                  ? const Color.fromARGB(174, 131, 197, 191)
+                  : Color.fromARGB(174, 131, 197, 191),
+              borderRadius: BorderRadius.circular(17),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.start,
+              children: [
+                Padding(
+                  padding: const EdgeInsets.all(8.0),
+                  child: icon,
+                ),
+                Text(
+                  title,
+                  style: TextStyle(
+                    color: _themeController.isDarkMode.value
+                        ? Colors.white
+                        : const Color.fromARGB(255, 0, 0, 0),
+                    fontSize: 15,
+                    fontWeight: FontWeight.w600,
+                    fontFamily: 'geistsans'
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
 
 class ProfileMenuWidget extends StatelessWidget {
   ProfileMenuWidget({
@@ -715,61 +803,60 @@ class ProfileMenuWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      height: 65,
-      width: double.infinity,
-      margin: EdgeInsets.only(bottom: 10), // Adds space between tiles
-      decoration: BoxDecoration(
-        color: _themeController.isDarkMode.value
-            ? Color.fromARGB(255, 36, 37, 43)
-            : Color.fromARGB(166, 241, 241, 241), // Box background color
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: ListTile(
-        onTap: onPress,
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 5),
-        leading: Container(
-          width: 40,
-          height: 40,
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(100),
-            color: const Color.fromARGB(0, 28, 28, 30), // Icon background
-          ),
-          child: Icon(
-            icon,
-            color: _themeController.isDarkMode.value
-                ? const Color.fromARGB(255, 226, 226, 226)
-                : const Color.fromARGB(255, 0, 0, 0),
-          ),
+  height: 55,
+  width: double.infinity,
+  margin: const EdgeInsets.only(bottom: 10), // Adds space between tiles
+  decoration: BoxDecoration(
+    color: _themeController.isDarkMode.value
+        ? const Color.fromARGB(255, 36, 37, 43)
+        : const Color.fromARGB(255, 241, 241, 241), // Box background color
+    borderRadius: BorderRadius.circular(12),
+  ),
+  child: Center( // Center the ListTile within the Container
+    child: ListTile(
+      onTap: onPress,
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 0), // Adjust vertical padding
+      leading: Container(
+        width: 40,
+        height: 40,
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(100),
+          color: const Color.fromARGB(0, 28, 28, 30), // Icon background
         ),
-        title: Text(
-          title,
-          style: Theme.of(context)
-              .textTheme
-              .bodyMedium
-              ?.copyWith(
-                  fontWeight: FontWeight.w500,
-                  fontSize: 16,
-                  fontFamily: 'GeistSans')
-              ?.apply(color: textColor ?? Colors.white),
+        child: Icon(
+          icon,
+          color: _themeController.isDarkMode.value
+              ? const Color.fromARGB(255, 226, 226, 226)
+              : const Color.fromARGB(255, 0, 0, 0),
         ),
-        trailing: endIcon
-            ? Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                decoration: BoxDecoration(
-                  color: const Color.fromARGB(
-                      0, 28, 28, 30), // Trailing icon box background
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Icon(
-                  Icons.arrow_forward_ios,
-                  size: 18.0,
-                  color: _themeController.isDarkMode.value
-                      ? const Color.fromARGB(255, 226, 226, 226)
-                      : const Color.fromARGB(255, 0, 0, 0),
-                ),
-              )
-            : null,
       ),
-    );
+      title: Text(
+        title,
+        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+              fontWeight: FontWeight.w500,
+              fontSize: 16,
+              fontFamily: 'GeistSans',
+            )?.apply(color: textColor ?? Colors.white),
+      ),
+      trailing: endIcon
+          ? Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              decoration: BoxDecoration(
+                color: const Color.fromARGB(0, 28, 28, 30), // Trailing icon box background
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Icon(
+                Icons.arrow_forward_ios,
+                size: 18.0,
+                color: _themeController.isDarkMode.value
+                    ? const Color.fromARGB(255, 226, 226, 226)
+                    : const Color.fromARGB(255, 0, 0, 0),
+              ),
+            )
+          : null,
+    ),
+  ),
+);
+
   }
 }

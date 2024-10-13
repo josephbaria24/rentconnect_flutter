@@ -6,6 +6,7 @@ import 'package:jwt_decoder/jwt_decoder.dart';
 import 'package:rentcon/pages/fullscreenImage.dart'; // Assuming you have this for property images
 import 'package:rentcon/pages/propertyDetailPage.dart';
 import 'package:rentcon/theme_controller.dart';
+import 'package:shadcn_ui/shadcn_ui.dart';
 import '../models/property.dart';
 
 class SearchResultPage extends StatefulWidget {
@@ -53,7 +54,7 @@ class _SearchResultPageState extends State<SearchResultPage> {
   Future<List<dynamic>> fetchRooms(String propertyId) async {
     try {
       final response = await http.get(Uri.parse(
-          'http://192.168.1.31:3000/rooms/properties/$propertyId/rooms'));
+          'http://192.168.1.19:3000/rooms/properties/$propertyId/rooms'));
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         if (data['status']) {
@@ -71,11 +72,34 @@ class _SearchResultPageState extends State<SearchResultPage> {
     return Scaffold(
       appBar: AppBar(
         title: Text('Search Results for "${widget.query}"'),
-        leading: GestureDetector(
-          onTap: () {
-            Navigator.pop(context);
-          },
-          child: Icon(Icons.arrow_back_ios_new_outlined),
+        leading: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 11.0, horizontal: 12.0),
+          child: SizedBox(
+            height: 40,  // Set a specific height for the button
+            width: 40,   // Set a specific width to make it a square button
+            child: ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.transparent, // Transparent background to simulate outline
+                side: BorderSide(
+                  color: _themeController.isDarkMode.value ? Colors.white : Colors.black, // Outline color
+                  width: 0.90, // Outline width
+                ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8.0), // Optional rounded corners
+                ),
+                elevation: 0, // Remove elevation to get the outline effect
+                padding: EdgeInsets.all(0), // Remove any padding to center the icon
+              ),
+              onPressed: () {
+                Navigator.pop(context);
+              },
+              child: Icon(
+                Icons.chevron_left,
+                color: _themeController.isDarkMode.value ? Colors.white : Colors.black, // Icon color based on theme
+                size: 16, // Icon size
+              ),
+            ),
+          ),
         ),
       ),
       body: Padding(
@@ -88,7 +112,7 @@ class _SearchResultPageState extends State<SearchResultPage> {
                   final property = widget.properties[index];
                   final imageUrl = property.photo.startsWith('http')
                       ? property.photo
-                      : 'http://192.168.1.31:3000/${property.photo}';
+                      : 'http://192.168.1.19:3000/${property.photo}';
         
                   return FutureBuilder<List<dynamic>>(
                     future: fetchRooms(property.id),
