@@ -144,72 +144,80 @@ void _showForgotPasswordDialog(BuildContext context) {
   showCupertinoDialog(
     context: context,
     builder: (context) {
-      return CupertinoAlertDialog(
-        title: Text('Forgot Password'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: <Widget>[
-            Text('Please enter your email address. We will send you a link to reset your password.'),
-            SizedBox(height: 10),
-            CupertinoTextField(
-              controller: emailController,
-              placeholder: 'Email',
-              keyboardType: TextInputType.emailAddress,
-              padding: EdgeInsets.symmetric(vertical: 12.0, horizontal: 16.0),
-              decoration: BoxDecoration(
-                border: Border.all(color: CupertinoColors.systemGrey, width: 1.0),
-                borderRadius: BorderRadius.circular(8.0),
-              ),
+      return StatefulBuilder(
+        builder: (BuildContext context, StateSetter setState) {
+          return CupertinoAlertDialog(
+            title: Text('Forgot Password'),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: <Widget>[
+                Text('Please enter your email address. We will send you a link to reset your password.'),
+                SizedBox(height: 10),
+                CupertinoTextField(
+                  controller: emailController,
+                  placeholder: 'Email',
+                  keyboardType: TextInputType.emailAddress,
+                  padding: EdgeInsets.symmetric(vertical: 12.0, horizontal: 16.0),
+                  decoration: BoxDecoration(
+                    border: Border.all(color: CupertinoColors.systemGrey, width: 1.0),
+                    borderRadius: BorderRadius.circular(8.0),
+                  ),
+                ),
+              ],
             ),
-          ],
-        ),
-        actions: <Widget>[
-          CupertinoDialogAction(
-            onPressed: () {
-              Navigator.of(context).pop();
-            },
-            child: Text('Cancel'),
-          ),
-          CupertinoDialogAction(
-            onPressed: _isSubmitting
-                ? null
-                : () async {
-                    setState(() {
-                      _isSubmitting = true;
-                    });
+            actions: <Widget>[
+              CupertinoDialogAction(
+                onPressed: () {
+                  Navigator.of(context).pop();
+                },
+                child: Text('Cancel', style: 
+                TextStyle(
+                  color: themeController.isDarkMode.value ? Colors.white : Colors.black
+                ),),
+              ),
+              CupertinoDialogAction(
+                onPressed: _isSubmitting
+                    ? null
+                    : () async {
+                        setState(() {
+                          _isSubmitting = true; // Show loading indicator
+                        });
 
-                    // Call your backend API to send the reset link
-                    final response = await _sendPasswordResetEmail(emailController.text);
+                        // Call your backend API to send the reset link
+                        final response = await _sendPasswordResetEmail(emailController.text);
 
-                    setState(() {
-                      _isSubmitting = false;
-                    });
+                        setState(() {
+                          _isSubmitting = false; // Hide loading indicator
+                        });
 
-                    if (response) {
-                      Navigator.of(context).pop(); // Close the dialog
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text('Reset link sent to ${emailController.text}.')),
-                      );
-                    } else {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text('Failed to send reset link.')),
-                      );
-                    }
-                  },
-            child: _isSubmitting
-                ? CupertinoActivityIndicator() // Shows a loading indicator
-                : Text('Send Reset Link'),
-          ),
-        ],
+                        if (response) {
+                          Navigator.of(context).pop(); // Close the dialog
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(content: Text('Reset link sent to ${emailController.text}.')),
+                          );
+                        } else {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(content: Text('Failed to send reset link.')),
+                          );
+                        }
+                      },
+                child: _isSubmitting
+                    ? CupertinoActivityIndicator() // Show loading indicator
+                    : Text('Send'),
+              ),
+            ],
+          );
+        },
       );
     },
   );
 }
+
 Future<bool> _sendPasswordResetEmail(String email) async {
   // Replace with your actual endpoint and logic
   try {
     final response = await http.post(
-      Uri.parse('http://192.168.1.19:3000/forgot-password'), // Update with your API endpoint
+      Uri.parse('https://rentconnect-backend-nodejs.onrender.com/forgot-password'), // Update with your API endpoint
       headers: <String, String>{
         'Content-Type': 'application/json; charset=UTF-8',
       },
@@ -386,7 +394,7 @@ Widget build(BuildContext context) {
                       )
                     : const Text('Login', style: TextStyle(fontFamily: 'GeistSans', color: Colors.white)),
               ),
-              const SizedBox(height: 20.0),
+              const SizedBox(height: 10.0),
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: <Widget>[
@@ -419,55 +427,59 @@ Widget build(BuildContext context) {
                   ),
                 ],
               ),
-              const SizedBox(height: 150),
-              Wrap(
-                alignment: WrapAlignment.center,
-                children: <Widget>[
-                  const Text(
-                    "By signing up, you agree to our ",
-                    style: TextStyle(
-                      fontFamily: 'GeistSans',
-                      fontWeight: FontWeight.w400,
-                      fontSize: 12.0,
-                      color: Color.fromARGB(255, 97, 97, 97),
-                    ),
-                  ),
-                  GestureDetector(
-                    onTap: () {
-                      // Navigate to Terms of Service page
-                    },
-                    child: const Text(
-                      'Terms of Service',
-                      style: TextStyle(
-                        fontFamily: 'GeistSans',
-                        fontWeight: FontWeight.bold,
-                        fontSize: 12.0,
-                        color: Color.fromRGBO(25, 22, 32, 1),
+              const SizedBox(height: 200),
+              Column(
+                children: [
+                  Wrap(
+                    alignment: WrapAlignment.center,
+                    children: <Widget>[
+                      const Text(
+                        "By signing up, you agree to our ",
+                        style: TextStyle(
+                          fontFamily: 'GeistSans',
+                          fontWeight: FontWeight.w400,
+                          fontSize: 12.0,
+                          color: Color.fromARGB(255, 97, 97, 97),
+                        ),
                       ),
-                    ),
-                  ),
-                  const Text(
-                    ' and ',
-                    style: TextStyle(
-                      fontFamily: 'GeistSans',
-                      fontWeight: FontWeight.w400,
-                      fontSize: 12.0,
-                      color: Color.fromARGB(255, 97, 97, 97),
-                    ),
-                  ),
-                  GestureDetector(
-                    onTap: () {
-                      // Navigate to Privacy Policy page
-                    },
-                    child: const Text(
-                      'Privacy Policy',
-                      style: TextStyle(
-                        fontFamily: 'GeistSans',
-                        fontWeight: FontWeight.bold,
-                        fontSize: 12.0,
-                        color: Color.fromRGBO(25, 22, 32, 1),
+                      GestureDetector(
+                        onTap: () {
+                          // Navigate to Terms of Service page
+                        },
+                        child: const Text(
+                          'Terms of Service',
+                          style: TextStyle(
+                            fontFamily: 'GeistSans',
+                            fontWeight: FontWeight.bold,
+                            fontSize: 12.0,
+                            color: Color.fromRGBO(25, 22, 32, 1),
+                          ),
+                        ),
                       ),
-                    ),
+                      const Text(
+                        ' and ',
+                        style: TextStyle(
+                          fontFamily: 'GeistSans',
+                          fontWeight: FontWeight.w400,
+                          fontSize: 12.0,
+                          color: Color.fromARGB(255, 97, 97, 97),
+                        ),
+                      ),
+                      GestureDetector(
+                        onTap: () {
+                          // Navigate to Privacy Policy page
+                        },
+                        child: const Text(
+                          'Privacy Policy',
+                          style: TextStyle(
+                            fontFamily: 'GeistSans',
+                            fontWeight: FontWeight.bold,
+                            fontSize: 12.0,
+                            color: Color.fromRGBO(25, 22, 32, 1),
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),

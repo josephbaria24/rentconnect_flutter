@@ -40,7 +40,7 @@ Future<void> markRoomAsOccupied(String roomId) async {
   if (selectedUserId != null) {
     try {
       final response = await http.patch(
-        Uri.parse('http://192.168.1.19:3000/rooms/$roomId/occupy'),
+        Uri.parse('https://rentconnect-backend-nodejs.onrender.com/rooms/$roomId/occupy'),
         headers: {'Content-Type': 'application/json'},
         body: json.encode({
           'userId': selectedUserId, // Pass the userId from approved inquiry

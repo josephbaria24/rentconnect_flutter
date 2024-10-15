@@ -1,15 +1,20 @@
-// ignore_for_file: sort_child_properties_last
+// ignore_for_file: sort_child_properties_last, prefer_const_constructors
 
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:get/get.dart';
 import 'package:http/http.dart' as http;
+import 'package:intl/intl.dart';
+import 'package:rentcon/pages/fullscreenImage.dart';
 import 'package:rentcon/pages/landlords/current_listing.dart';
 import 'package:rentcon/pages/occupants/occupant_inquiries.dart';
 import 'package:rentcon/theme_controller.dart';
 import 'dart:convert';
 import 'package:shadcn_ui/shadcn_ui.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:skeletonizer/skeletonizer.dart';
+
 
 class PaymentUploadWidget extends StatefulWidget {
   final String inquiryId;
@@ -35,140 +40,182 @@ class PaymentUploadWidget extends StatefulWidget {
 
   @override
   _PaymentUploadWidgetState createState() => _PaymentUploadWidgetState();
-}bool _isLoading = false;
- List<Map<String, dynamic>> monthlyPayments = [];
+}
+
 class _PaymentUploadWidgetState extends State<PaymentUploadWidget> {
   final List<String> months = [
     'January', 'February', 'March', 'April', 'May', 'June',
     'July', 'August', 'September', 'October', 'November', 'December'
   ];
   final ThemeController _themeController = Get.find<ThemeController>();
-
+  
   String? proofOfPaymentUrl;
- @override
+   String? lastSelectedMonth; // New variable to store the last selected month
+  List<Map<String, dynamic>> monthlyPayments = [];
+  bool _isLoading = false;
+
+  @override
   void initState() {
     super.initState();
+    _setDefaultSelectedMonth();// Load the last selected month on initialization
     _fetchMonthlyPayments();
-    _checkExistingPayment(widget.selectedMonths[widget.inquiryId]); // Fetch payments when the widget initializes
+  }
+
+
+  void _setDefaultSelectedMonth() {
+    final now = DateTime.now();
+    final currentMonth = DateFormat('MMMM').format(now); // Get current month name
+    lastSelectedMonth = currentMonth; // Set it as the default selected month
+    widget.selectedMonths[widget.inquiryId] = lastSelectedMonth; // Set the loaded month as the selected month
+     _checkExistingPayment(lastSelectedMonth);
   }
 
 
   @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        // Button to open the month selection dialog
-        ShadButton.secondary(
-          onPressed: _showMonthSelectionDialog,
-          child: Text(
-            widget.selectedMonths[widget.inquiryId] ?? 'Select Month',
-            style: TextStyle(
-              color: widget.selectedMonths[widget.inquiryId] != null ? Colors.white : Colors.black,
-            ),
-          ),
-          backgroundColor: widget.selectedMonths[widget.inquiryId] != null ? const Color.fromARGB(255, 0, 24, 37) : const Color.fromARGB(255, 201, 200, 200),
-        ),
-
-        const SizedBox(height: 10),
-        
-        // Amount Input Field
-        ShadInput(
-          controller: widget.amountController,
-          placeholder: Text('Amount(Optional):'),
-          keyboardType: TextInputType.number,
-        ),
-        const SizedBox(height: 16),
-
-        // Display proof of payment or upload button
-        if (proofOfPaymentUrl != null)
-          Column(
-            children: [
-              Text('Proof Of Payment:', style: TextStyle(
-                fontFamily: 'geistsans',
-                fontSize: 20,
-                fontWeight: FontWeight.bold
-              ),),
-              Image.network(proofOfPaymentUrl!),
-              const SizedBox(height: 8),
-              ShadButton(
-              onPressed: () async {
-                setState(() {
-                  _isLoading = true; // Start loading
-                });
-
-                // Call your upload function and wait for it to complete
-                await _uploadPayment();
-
-                // Refresh the currentListingPage or any necessary data here
-                Navigator.pushReplacement(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => OccupantInquiries(token: widget.token, userId: widget.userId), // Your page to refresh
-                  ),
-                );
-
-                setState(() {
-                  _isLoading = false; // Stop loading
-                });
-              },
-              child: _isLoading
-                  ? SizedBox(
-                      height: 20,
-                      width: 20,
-                      child: CircularProgressIndicator(
-                        valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                        strokeWidth: 2,
-                      ),
-                    )
-                            : const Text('Change Photo'),
-                      ),
-            ],
-          )
-        else
-          Center(
-            child: Column(
-            
-              children: [
-                
-                ShadButton(
-              onPressed: () async {
-                setState(() {
-                  _isLoading = true; // Start loading
-                });
-
-                // Call your upload function and wait for it to complete
-                await _uploadPayment();
-
-                // Refresh the currentListingPage or any necessary data here
-                Navigator.pushReplacement(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => OccupantInquiries(token: widget.token, userId: widget.userId,), // Your page to refresh
-                  ),
-                );
-
-                setState(() {
-                  _isLoading = false; // Stop loading
-                });
-              },
-              child: _isLoading
-                  ? SizedBox(
-                      height: 20,
-                      width: 20,
-                      child: CircularProgressIndicator(
-                        valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                        strokeWidth: 2,
-                      ),
-                    )
-                            : const Text('Upload Proof of Payment'),
-                      ),
-              ],
-            ),
-          ),
-      ],
-    );
+  void dispose() {
+    // Cancel any timers or subscriptions here
+    super.dispose();
   }
+
+  Future<void> _saveSelectedMonth(String month) async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    await prefs.setString('lastSelectedMonth', month); // Save the selected month
+  }
+
+@override
+Widget build(BuildContext context) {
+  return Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      // Button to open the month selection dialog
+      ShadButton.secondary(
+        onPressed: _showMonthSelectionDialog,
+        child: Text(
+          widget.selectedMonths[widget.inquiryId] ?? 'Select Month',
+          style: TextStyle(
+            color: widget.selectedMonths[widget.inquiryId] != null ? Colors.white : Colors.black,
+          ),
+        ),
+        backgroundColor: widget.selectedMonths[widget.inquiryId] != null 
+            ? const Color.fromARGB(255, 0, 24, 37) 
+            : const Color.fromARGB(255, 201, 200, 200),
+      ),
+
+      const SizedBox(height: 10),
+
+      // Amount Input Field
+      ShadInput(
+        controller: widget.amountController,
+        placeholder: Text('Amount(Optional):'),
+        keyboardType: TextInputType.number,
+      ),
+      const SizedBox(height: 16),
+
+      // Display proof of payment or upload button
+      if (proofOfPaymentUrl != null)
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            Text('Proof Of Payment:', style: TextStyle(
+              fontFamily: 'geistsans',
+              fontSize: 20,
+              fontWeight: FontWeight.bold
+            )),
+            Center(
+              child: GestureDetector(
+                onTap: () {
+                  Navigator.push(context, MaterialPageRoute(builder: (context) => FullscreenImage(imageUrl: proofOfPaymentUrl!)));
+                },
+                child: Hero(
+                  tag: proofOfPaymentUrl!,
+                  child: Container(
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(width: 1, color: _themeController.isDarkMode.value ? Colors.white : Colors.black)
+                    ),
+                    child: Padding(
+                      padding: const EdgeInsets.all(8.0),
+                      child: Image.network(proofOfPaymentUrl!, fit: BoxFit.fitWidth, height: 200),
+                    )
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(height: 8),
+            ShadButton(
+              onPressed: _uploadPayment,
+              child: _isLoading
+                  ? SizedBox(
+                      height: 20,
+                      width: 20,
+                      child: CircularProgressIndicator(
+                        valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                        strokeWidth: 2,
+                      ),
+                    )
+                  : const Text('Change Photo'),
+            ),
+          ],
+        )
+      else
+        Center(
+          child: Column(
+            children: [
+              if (_hasPaymentForMonth(widget.selectedMonths[widget.inquiryId] ?? ''))
+                SizedBox.shrink() // Hide if there is a payment
+              else
+                Column(
+                  children: [
+                    if (_isLoading) // Skeleton Loader for photo fetching
+                      Skeletonizer(
+                        enabled: _isLoading,
+                        child: Container(
+                          height: 200,
+                          width: double.infinity,
+                          decoration: BoxDecoration(
+                            color: Colors.grey[300],
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                        ),
+                      )
+                    else
+                      Image.asset('assets/icons/emptypana.png', height: 200), // Replace with your "no payment" image
+                      Text('No payment for this month', style: TextStyle(color: Colors.red)),
+                  ],
+                ),
+              ShadButton(
+                onPressed: _uploadPayment,
+                child: _isLoading
+                    ? SizedBox(
+                        height: 20,
+                        width: 20,
+                        child: CircularProgressIndicator(
+                          valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                          strokeWidth: 2,
+                        ),
+                      )
+                    : const Text('Upload Proof of Payment'),
+              ),
+            ],
+          ),
+        ),
+
+      // Status Indicator
+      // if (_statusMessage != null) 
+      //   Padding(
+      //     padding: const EdgeInsets.only(top: 8.0),
+      //     child: Text(
+      //       _statusMessage!,
+      //       style: TextStyle(
+      //         color: _isError ? Colors.red : Colors.green, // Change color based on error status
+      //         fontWeight: FontWeight.bold,
+      //       ),
+      //     ),
+      //   ),
+    ],
+  );
+}
+
 
   void _showMonthSelectionDialog() {
   showCupertinoDialog(
@@ -224,7 +271,7 @@ class _PaymentUploadWidgetState extends State<PaymentUploadWidget> {
                           style: TextStyle(
                             color: isSelected
                                 ? (_themeController.isDarkMode.value ? const Color.fromARGB(255, 255, 255, 255) : Colors.white)
-                                : _themeController.isDarkMode.value ? const Color.fromARGB(255, 0, 0, 0) : Colors.black,
+                                : _themeController.isDarkMode.value ? const Color.fromARGB(255, 255, 255, 255) : Colors.black,
                             fontFamily: 'geistsans',
                             fontWeight: FontWeight.w600,
                             fontSize: 13,
@@ -256,32 +303,63 @@ class _PaymentUploadWidgetState extends State<PaymentUploadWidget> {
     },
   );
 }
-
 void _fetchMonthlyPayments() async {
-    try {
-      final response = await http.get(Uri.parse('http://192.168.1.19:3000/payment/room/${widget.roomDetails['_id']}/monthlyPayments'));
-      if (response.statusCode == 200) {
-        final data = json.decode(response.body);
-        if (data['status']) {
+  setState(() {
+    _isLoading = true; // Set loading to true before the API call
+  });
+
+  try {
+    final response = await http.get(Uri.parse('https://rentconnect-backend-nodejs.onrender.com/payment/room/${widget.roomDetails['_id']}/monthlyPayments'));
+
+    print('Response status: ${response.statusCode}');
+    print('Response body: ${response.body}');
+
+    if (response.statusCode == 200) {
+      final data = json.decode(response.body);
+      if (data['status']) {
+        if (mounted) {
           setState(() {
             monthlyPayments = List<Map<String, dynamic>>.from(data['monthlyPayments']);
           });
         }
       } else {
+        String message = 'Error: ${data['message'] ?? 'Unknown error'}';
+        print(message); // Print to console
         Fluttertoast.showToast(
-          msg: 'Failed to fetch monthly payments.',
+          msg: message,
           backgroundColor: Colors.red,
           textColor: Colors.white,
         );
       }
-    } catch (e) {
+    } else {
+      String message = 'Failed to fetch monthly payments. Status: ${response.statusCode}';
+      print(message); // Print to console
       Fluttertoast.showToast(
-        msg: 'Error fetching payments. Please try again.',
+        msg: message,
         backgroundColor: Colors.red,
         textColor: Colors.white,
       );
     }
+  } catch (e) {
+    String message = 'Error fetching payments. Please try again. Exception: $e';
+    print(message); // Print to console
+    Fluttertoast.showToast(
+      msg: message,
+      backgroundColor: Colors.red,
+      textColor: Colors.white,
+    );
+  } finally {
+    // Ensure loading is set to false regardless of success or failure
+    if (mounted) {
+      setState(() {
+        _isLoading = false;
+      });
+    }
   }
+}
+
+
+
   bool _hasPaymentForMonth(String month) {
     // Check if the proof of payment exists for the selected month
     for (var payment in monthlyPayments) {
@@ -293,56 +371,71 @@ void _fetchMonthlyPayments() async {
   }
 
   // Function to check if payment exists for the selected month
-  void _checkExistingPayment(String? selectedMonth) async {
-    if (selectedMonth != null) {
-      try {
-        // Call the API to get monthly payments
-        final response = await http.get(Uri.parse('http://192.168.1.19:3000/payment/room/${widget.roomDetails['_id']}/monthlyPayments'));
+void _checkExistingPayment(String? selectedMonth) async {
+  if (selectedMonth != null) {
+    setState(() {
+      _isLoading = true; // Set loading to true before the API call
+    });
 
-        // Debugging: Print the response status and body
-        print('Response status: ${response.statusCode}');
-        print('Response body: ${response.body}');
+    try {
+      // Call the API to get monthly payments
+      final response = await http.get(Uri.parse('https://rentconnect-backend-nodejs.onrender.com/payment/room/${widget.roomDetails['_id']}/monthlyPayments'));
 
-        if (response.statusCode == 200) {
-          final data = json.decode(response.body);
-          if (data['status']) {
-            final monthlyPayments = data['monthlyPayments'] as List;
+      // Debugging: Print the response status and body
+      print('Response status: ${response.statusCode}');
+      print('Response body: ${response.body}');
 
-            // Check if the selected month has a corresponding payment
-            for (var payment in monthlyPayments) {
-              print('Checking payment for month: ${payment['month']}'); // Debugging
-              if (payment['month'] == selectedMonth) {
-                print('Found proof of payment for month: $selectedMonth'); // Debugging
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        if (data['status']) {
+          final monthlyPayments = data['monthlyPayments'] as List;
+
+          // Check if the selected month has a corresponding payment
+          for (var payment in monthlyPayments) {
+            print('Checking payment for month: ${payment['month']}'); // Debugging
+            if (payment['month'] == selectedMonth) {
+              print('Found proof of payment for month: $selectedMonth'); // Debugging
+              if (mounted) { // Check if the widget is still mounted before calling setState
                 setState(() {
                   proofOfPaymentUrl = payment['proofOfPayment'];
                 });
-                return;
               }
+              return;
             }
           }
-        } else {
-          Fluttertoast.showToast(
-            msg: 'Failed to fetch monthly payments.',
-            backgroundColor: Colors.red,
-            textColor: Colors.white,
-          );
         }
-      } catch (e) {
-        // Handle any exceptions during the API call
-        print('Error fetching payments: $e'); // Debugging
+      } else {
         Fluttertoast.showToast(
-          msg: 'Error fetching payments. Please try again.',
+          msg: 'Failed to fetch monthly payments.',
           backgroundColor: Colors.red,
           textColor: Colors.white,
         );
       }
+    } catch (e) {
+      // Handle any exceptions during the API call
+      print('Error fetching payments: $e'); // Debugging
+      Fluttertoast.showToast(
+        msg: 'Error fetching payments. Please try again.',
+        backgroundColor: Colors.red,
+        textColor: Colors.white,
+      );
+    } finally {
+      // Ensure loading is set to false regardless of success or failure
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
 
-      // If no payment was found for the selected month, clear the URL
+    // If no payment was found for the selected month, clear the URL
+    if (mounted) { // Check if the widget is still mounted before calling setState
       setState(() {
         proofOfPaymentUrl = null;
       });
     }
   }
+}
 
   // Function to handle the upload or change of proof of payment
   Future<void> _uploadPayment() async {

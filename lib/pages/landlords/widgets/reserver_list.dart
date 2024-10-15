@@ -28,10 +28,13 @@ class ReserverList extends StatelessWidget {
       children: [
         Text(
           'Reservant',
-          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18, fontFamily: 'geistsans'),
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+            fontSize: 18,
+            fontFamily: 'geistsans',
+          ),
         ),
         Container(
-          height: (60 * room['reservationInquirers'].length).toDouble(),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(10),
             color: _themeController.isDarkMode.value
@@ -46,76 +49,82 @@ class ReserverList extends StatelessWidget {
               ),
             ],
           ),
-          child: Column(
-            children: room['reservationInquirers'].map<Widget>((reserverId) {
-              if (userProfiles.containsKey(reserverId)) {
-                var reserverProfile = userProfiles[reserverId];
-                var profilePicture = profilePic[reserverId];
-                String fullName = '${reserverProfile['firstName']} ${reserverProfile['lastName']}';
-                String profilePictureUrl = profilePicture ?? '';
+          child: ConstrainedBox(
+            constraints: BoxConstraints(
+              maxHeight: MediaQuery.of(context).size.height * 0.5, // Limits the height to 50% of the screen
+            ),
+            child: SingleChildScrollView(
+              child: Column(
+                children: room['reservationInquirers'].map<Widget>((reserverId) {
+                  if (userProfiles.containsKey(reserverId)) {
+                    var reserverProfile = userProfiles[reserverId];
+                    var profilePicture = profilePic[reserverId];
+                    String fullName = '${reserverProfile['firstName']} ${reserverProfile['lastName']}';
+                    String profilePictureUrl = profilePicture ?? '';
 
-                return ListTile(
-                  leading: Container(
-                    padding: EdgeInsets.all(.0),
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      border: Border.all(
-                        color: _themeController.isDarkMode.value
-                            ? const Color.fromARGB(255, 33, 243, 233)
-                            : const Color.fromARGB(255, 22, 22, 22),
-                        width: 1.0,
-                      ),
-                    ),
-                    child: CircleAvatar(
-                      backgroundImage: profilePictureUrl.isNotEmpty
-                          ? NetworkImage(profilePictureUrl)
-                          : AssetImage('assets/images/profile.png'),
-                    ),
-                  ),
-                  title: Text(fullName),
-                  trailing: IconButton(
-                    onPressed: () {
-                    showCupertinoDialog(
-                      context: context,
-                      builder: (BuildContext context) {
-                        return CupertinoAlertDialog(
-                          title: Text('Reserver Details'),
-                          content: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text('Name: $fullName'),
-                              Text('Gender: ${reserverProfile['gender']}'),
-                              Text('Phone: ${reserverProfile['contactDetails']['phone']}'),
-                              Text('Address: ${reserverProfile['contactDetails']['address']}'),
-                            ],
+                    return ListTile(
+                      leading: Container(
+                        padding: EdgeInsets.all(4.0),
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          border: Border.all(
+                            color: _themeController.isDarkMode.value
+                                ? const Color.fromARGB(255, 33, 243, 233)
+                                : const Color.fromARGB(255, 22, 22, 22),
+                            width: 1.0,
                           ),
-                          actions: [
-                            CupertinoDialogAction(
-                              onPressed: () {
-                                Navigator.of(context).pop(); // Close the dialog
-                              },
-                              child: Text('Close'),
-                            ),
-                          ],
-                        );
-                      },
+                        ),
+                        child: CircleAvatar(
+                          backgroundImage: profilePictureUrl.isNotEmpty
+                              ? NetworkImage(profilePictureUrl)
+                              : AssetImage('assets/images/profile.png'),
+                        ),
+                      ),
+                      title: Text(fullName),
+                      trailing: IconButton(
+                        onPressed: () {
+                          showCupertinoDialog(
+                            context: context,
+                            builder: (BuildContext context) {
+                              return CupertinoAlertDialog(
+                                title: Text('Reserver Details'),
+                                content: Column(
+                                  mainAxisSize: MainAxisSize.min,
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text('Name: $fullName'),
+                                    Text('Gender: ${reserverProfile['gender']}'),
+                                    Text('Phone: ${reserverProfile['contactDetails']['phone']}'),
+                                    Text('Address: ${reserverProfile['contactDetails']['address']}'),
+                                  ],
+                                ),
+                                actions: [
+                                  CupertinoDialogAction(
+                                    onPressed: () {
+                                      Navigator.of(context).pop(); // Close the dialog
+                                    },
+                                    child: Text('Close'),
+                                  ),
+                                ],
+                              );
+                            },
+                          );
+                        },
+                        icon: Icon(Icons.contact_emergency),
+                      ),
                     );
-                  },
-
-                    icon: Icon(Icons.contact_emergency),
-                  ),
-                );
-              } else {
-                fetchUserProfile(reserverId);
-                return ListTile(
-                  leading: CircleAvatar(
-                    backgroundImage: AssetImage('assets/images/profile.png'),
-                  ),
-                  title: Text('Loading...'),
-                );
-              }
-            }).toList(),
+                  } else {
+                    fetchUserProfile(reserverId);
+                    return ListTile(
+                      leading: CircleAvatar(
+                        backgroundImage: AssetImage('assets/images/profile.png'),
+                      ),
+                      title: Text('Loading...'),
+                    );
+                  }
+                }).toList(),
+              ),
+            ),
           ),
         ),
       ],

@@ -26,6 +26,8 @@ import 'toast.dart';
 import 'package:rentcon/theme_controller.dart';
 import '../models/property.dart';
 import 'global_loading_indicator.dart';
+import 'package:connectivity_plus/connectivity_plus.dart';
+
 
 class HomePage extends StatefulWidget {
   final String token;
@@ -63,7 +65,7 @@ class _HomePageState extends State<HomePage> {
   @override
   void initState() {
     super.initState();
-     
+     propertiesFuture = fetchProperties();
     // Set up a listener for notifications
     _searchController = TextEditingController();
     ftoast = FToast(); // Initialize FToast
@@ -81,6 +83,7 @@ class _HomePageState extends State<HomePage> {
       });
     });
     fetchUserProfileStatus();
+    
     // Connect
     
   }
@@ -119,13 +122,9 @@ Stream<List<dynamic>> notificationStream = NotificationStream().stream.cast<List
 
 
 
-
-
-
-
   Future<void> fetchUserProfileStatus() async {
     final url = Uri.parse(
-        'http://192.168.1.19:3000/profile/checkProfileCompletion/$userId'); // Replace with your API endpoint
+        'https://rentconnect-backend-nodejs.onrender.com/profile/checkProfileCompletion/$userId'); // Replace with your API endpoint
     try {
       final response = await http.get(
         url,
@@ -153,7 +152,7 @@ Stream<List<dynamic>> notificationStream = NotificationStream().stream.cast<List
 
   Future<void> fetchUserProfileStatusForNotification() async {
     final url = Uri.parse(
-        'http://192.168.1.19:3000/profile/checkProfileCompletion/$userId'); // Your API endpoint
+        'https://rentconnect-backend-nodejs.onrender.com/profile/checkProfileCompletion/$userId'); // Your API endpoint
     try {
       final response = await http.get(
         url,
@@ -193,38 +192,51 @@ Stream<List<dynamic>> notificationStream = NotificationStream().stream.cast<List
 
   //Fetch properties from the API
 // Fetch properties from the API and filter based on 'approved' status
-  Future<List<Property>> fetchProperties() async {
-    try {
-      final response = await http.get(Uri.parse(getAllProperties));
+Future<List<Property>> fetchProperties() async {
+  final connectivityResult = await Connectivity().checkConnectivity();
 
-      if (response.statusCode == 200) {
-        final Map<String, dynamic> json = jsonDecode(response.body);
-        final List<dynamic> data = json['success'];
-
-        // Convert JSON data to Property objects
-        final properties = data
-            .map((json) => Property.fromJson(json as Map<String, dynamic>))
-            .toList();
-
-        // Filter only properties with the status 'approved'
-        final approvedProperties = properties
-            .where((property) => property.status.toLowerCase() == 'approved')
-            .toList();
-
-        // Reverse the list to show newest properties first
-        return approvedProperties.reversed.toList();
-      } else {
-        throw Exception('Failed to load properties');
-      }
-    } catch (error) {
-      throw Exception('Failed to load properties: $error');
-    }
+  if (connectivityResult.contains(ConnectivityResult.none)) {
+    throw Exception('No internet connection');
   }
+
+  try {
+    final response = await http.get(Uri.parse(getAllProperties));
+
+    if (response.statusCode == 200) {
+      final Map<String, dynamic> json = jsonDecode(response.body);
+      final List<dynamic> data = json['success'];
+
+      final properties = data
+          .map((json) => Property.fromJson(json as Map<String, dynamic>))
+          .toList();
+
+      final approvedProperties = properties
+          .where((property) => property.status.toLowerCase() == 'approved')
+          .toList();
+
+      return approvedProperties.reversed.toList();
+    } else {
+      throw Exception('Failed to load properties');
+    }
+  } catch (error) {
+    throw Exception('Failed to load properties: $error');
+  }
+}
+
+  void _retryFetching() {
+    setState(() {
+      propertiesFuture = fetchProperties();
+    });
+  }
+
+
+
+
 
   Future<List<dynamic>> fetchRooms(String propertyId) async {
     try {
       final response = await http.get(Uri.parse(
-          'http://192.168.1.19:3000/rooms/properties/$propertyId/rooms'));
+          'https://rentconnect-backend-nodejs.onrender.com/rooms/properties/$propertyId/rooms'));
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         if (data['status']) {
@@ -301,7 +313,7 @@ Stream<List<dynamic>> notificationStream = NotificationStream().stream.cast<List
     try {
       final response = await http.get(
         Uri.parse(
-            'http://192.168.1.19:3000/getUserBookmarks/$userId'), // Adjust endpoint if necessary
+            'https://rentconnect-backend-nodejs.onrender.com/getUserBookmarks/$userId'), // Adjust endpoint if necessary
         headers: {
           'Authorization': 'Bearer ${widget.token}',
         },
@@ -327,7 +339,7 @@ Stream<List<dynamic>> notificationStream = NotificationStream().stream.cast<List
   Future<String> fetchUserEmail(String userId) async {
     try {
       final response = await http.get(Uri.parse(
-          'http://192.168.1.19:3000/getUserEmail/$userId'));
+          'https://rentconnect-backend-nodejs.onrender.com/getUserEmail/$userId'));
 
       if (response.statusCode == 200) {
         final Map<String, dynamic> json = jsonDecode(response.body);
@@ -351,14 +363,14 @@ Stream<List<dynamic>> notificationStream = NotificationStream().stream.cast<List
 
 
   Future<void> bookmarkProperty(String propertyId) async {
-    final url = Uri.parse('http://192.168.1.19:3000/addBookmark');
+    final url = Uri.parse('https://rentconnect-backend-nodejs.onrender.com/addBookmark');
     final Map<String, dynamic> jwtDecodedToken = JwtDecoder.decode(widget.token);
     String userId = jwtDecodedToken['_id']?.toString() ?? 'Unknown user ID';
 
     try {
       if (bookmarkedPropertyIds.contains(propertyId)) {
         // If already bookmarked, remove it
-        final removeUrl = Uri.parse('http://192.168.1.19:3000/removeBookmark');
+        final removeUrl = Uri.parse('https://rentconnect-backend-nodejs.onrender.com/removeBookmark');
         await http.post(removeUrl,
             headers: {
               'Authorization': 'Bearer ${widget.token}',
@@ -505,7 +517,7 @@ Stream<List<dynamic>> notificationStream = NotificationStream().stream.cast<List
     try {
       final response = await http.get(
         Uri.parse(
-            'http://192.168.1.19:3000/notification/unread/$userId'),
+            'https://rentconnect-backend-nodejs.onrender.com/notification/unread/$userId'),
         headers: {
           'Authorization': 'Bearer $token',
           'Content-Type': 'application/json',
@@ -599,7 +611,7 @@ void _showNotificationsModal(List<dynamic> notifications) {
     try {
       final response = await http.delete(
         Uri.parse(
-            'http://192.168.1.19:3000/notification/clear/$userId'),
+            'https://rentconnect-backend-nodejs.onrender.com/notification/clear/$userId'),
         headers: {
           'Authorization': 'Bearer ${widget.token}',
         },
@@ -622,7 +634,7 @@ void _showNotificationsModal(List<dynamic> notifications) {
   Future<void> _markNotificationAsRead(String notificationId) async {
     final response = await http.patch(
       Uri.parse(
-          'http://192.168.1.19:3000/notification/$notificationId/read'),
+          'https://rentconnect-backend-nodejs.onrender.com/notification/$notificationId/read'),
       headers: {
         'Authorization': 'Bearer ${widget.token}',
         'Content-Type': 'application/json',
@@ -635,6 +647,9 @@ void _showNotificationsModal(List<dynamic> notifications) {
       print('Failed to mark notification as read');
     }
   }
+
+
+  
 
 @override
 Widget build(BuildContext context) {
@@ -834,130 +849,156 @@ Widget build(BuildContext context) {
     backgroundColor: _themeController.isDarkMode.value
         ? Color.fromARGB(255, 28, 29, 34)
         : Color.fromRGBO(255, 255, 255, 1),
-    body: Padding(
-      padding: EdgeInsets.symmetric(horizontal: 10.0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-        SearchFieldWidget(
-          searchController: _searchController,
-          isDarkMode: _themeController.isDarkMode.value,
-          handleSearch: _handleSearch,
-          performSearch: _performSearch,
-          showFilterDialog: () {
-            showDialog(
-              context: context,
-              builder: (BuildContext context) {
-                return FilterDialog(
-                  minPriceController: _minPriceController,
-                  maxPriceController: _maxPriceController,
-                  applyFilters: _applyFilters,
-                  initialRange: RangeValues(
-                    double.tryParse(_minPriceController.text) ?? 0.0,
-                    double.tryParse(_maxPriceController.text) ?? 10000.0,
-                  ),
-                  clearFilters: () {
-                    _minPriceController.text = '0';
-                    _maxPriceController.text = '10000';
-                    setState(() {
-                      isFilterApplied = false;
-                    });
+body: Padding(
+  padding: EdgeInsets.symmetric(horizontal: 10.0),
+  child: Column(
+    crossAxisAlignment: CrossAxisAlignment.center,
+    children: [
+      SearchFieldWidget(
+        searchController: _searchController,
+        isDarkMode: _themeController.isDarkMode.value,
+        handleSearch: _handleSearch,
+        performSearch: _performSearch,
+        showFilterDialog: () {
+          showDialog(
+            context: context,
+            builder: (BuildContext context) {
+              return FilterDialog(
+                minPriceController: _minPriceController,
+                maxPriceController: _maxPriceController,
+                applyFilters: _applyFilters,
+                initialRange: RangeValues(
+                  double.tryParse(_minPriceController.text) ?? 0.0,
+                  double.tryParse(_maxPriceController.text) ?? 10000.0,
+                ),
+                clearFilters: () {
+                  _minPriceController.text = '0';
+                  _maxPriceController.text = '10000';
+                  setState(() {
+                    isFilterApplied = false;
+                  });
+                },
+              );
+            },
+          );
+        },
+        isFilterApplied: isFilterApplied,
+      ),
+      SizedBox(height: 10),
+      Expanded(
+        child: RefreshIndicator(
+          color: Colors.black,
+          backgroundColor: Colors.white,
+          onRefresh: _refreshProperties,
+          child: FutureBuilder<List<Property>>(
+            future: propertiesFuture,
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return GlobalLoadingIndicator();
+              } else if (snapshot.hasError) {
+                if (snapshot.error.toString().contains('No internet connection')) {
+                  return Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Image.asset(
+                          'assets/icons/noInternet.png', // Replace with your PNG path
+                          width: 200,
+                          height: 200,
+                        ),
+                        SizedBox(height: 20),
+                        Text(
+                          'No Internet Connection',
+                          style: TextStyle(fontSize: 18, color: _themeController.isDarkMode.value? Colors.white: Colors.black,
+                          fontFamily: 'geistsans',
+                          fontWeight: FontWeight.bold),
+                        ),
+                        SizedBox(height: 20),
+                        ShadButton(
+                          onPressed: () {
+                            setState(() {
+                              propertiesFuture = fetchProperties();
+                            });
+                          },
+                          child: Text('Retry'),
+                        ),
+                      ],
+                    ),
+                  );
+                } else {
+                  return Center(child: Text('Error: ${snapshot.error}'));
+                }
+              } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
+                return Center(child: Text('No properties available.'));
+              } else {
+                final properties = searchQuery.isEmpty
+                    ? snapshot.data!
+                    : filteredProperties;
+
+                return ListView.builder(
+                  itemCount: properties.length,
+                  itemBuilder: (context, index) {
+                    final property = properties[index];
+                    final imageUrl = property.photo.startsWith('http')
+                        ? property.photo
+                        : 'https://rentconnect-backend-nodejs.onrender.com/${property.photo}';
+
+                    return FutureBuilder<List<dynamic>>(
+                      future: fetchRooms(property.id),
+                      builder: (context, roomsSnapshot) {
+                        if (roomsSnapshot.connectionState ==
+                            ConnectionState.waiting) {
+                          return SizedBox.shrink();
+                        } else if (roomsSnapshot.hasError ||
+                            !roomsSnapshot.hasData) {
+                          return Center(child: Text('No rooms available.'));
+                        }
+                        final rooms = roomsSnapshot.data!;
+                        final priceRange = rooms.isNotEmpty
+                            ? '${rooms.map((r) => r['price']).reduce((a, b) => a < b ? a : b)} - ${rooms.map((r) => r['price']).reduce((a, b) => a > b ? a : b)}'
+                            : 'N/A';
+                        return FutureBuilder<String>(
+                          future: fetchUserEmail(property.userId),
+                          builder: (context, userSnapshot) {
+                            if (userSnapshot.connectionState ==
+                                ConnectionState.waiting) {
+                              return SizedBox.shrink();
+                            } else if (userSnapshot.hasError) {
+                              return Center(
+                                  child: Text('Error: ${userSnapshot.error}'));
+                            } else if (!userSnapshot.hasData ||
+                                userSnapshot.data!.isEmpty) {
+                              return Center(child: Text('No user email found.'));
+                            } else {
+                              final userEmail = userSnapshot.data!;
+                              return PropertyCard(
+                                userId: userId,
+                                token: widget.token,
+                                property: property,
+                                userEmail: userEmail,
+                                imageUrl: imageUrl,
+                                bookmarkedPropertyIds: bookmarkedPropertyIds,
+                                bookmarkProperty: bookmarkProperty,
+                                priceRange: priceRange,
+                                isDarkMode: _themeController.isDarkMode.value,
+                              );
+                            }
+                          },
+                        );
+                      },
+                    );
                   },
                 );
-              },
-            );
-          },
-          isFilterApplied: isFilterApplied,
-        ),
-        SizedBox(height: 10),
-        Expanded(
-          child: RefreshIndicator(
-            color: Colors.black,
-        backgroundColor: Colors.white,
-            onRefresh: _refreshProperties,
-            child: FutureBuilder<List<Property>>(
-              future: propertiesFuture,
-              builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return GlobalLoadingIndicator();
-                } else if (snapshot.hasError) {
-                  return Center(child: Text('Error: ${snapshot.error}'));
-                } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
-                  return Center(child: Text('No properties available.'));
-                } else {
-                  final properties = searchQuery.isEmpty
-                      ? snapshot.data!
-                      : filteredProperties;
-
-                  return ListView.builder(
-                    itemCount: properties.length,
-                    itemBuilder: (context, index) {
-                      final property = properties[index];
-                      final imageUrl = property.photo.startsWith('http')
-                          ? property.photo
-                          : 'http://192.168.1.19:3000/${property.photo}';
-
-                      return FutureBuilder<List<dynamic>>(
-                        future: fetchRooms(property.id),
-                        builder: (context, roomsSnapshot) {
-                          if (roomsSnapshot.connectionState ==
-                              ConnectionState.waiting) {
-                            return SizedBox.shrink();
-                          } else if (roomsSnapshot.hasError ||
-                              !roomsSnapshot.hasData) {
-                            return Center(child: Text('No rooms available.'));
-                          }
-                          final rooms = roomsSnapshot.data!;
-                          final priceRange = rooms.isNotEmpty
-                              ? '${rooms.map((r) => r['price']).reduce((a, b) => a < b ? a : b)} - ${rooms.map((r) => r['price']).reduce((a, b) => a > b ? a : b)}'
-                              : 'N/A';
-                          return FutureBuilder<String>(
-                            future: fetchUserEmail(property.userId),
-                            builder: (context, userSnapshot) {
-                              if (userSnapshot.connectionState ==
-                                  ConnectionState.waiting) {
-                                return SizedBox.shrink();
-                              } else if (userSnapshot.hasError) {
-                                return Center(
-                                    child: Text(
-                                        'Error: ${userSnapshot.error}'));
-                              } else if (!userSnapshot.hasData ||
-                                  userSnapshot.data!.isEmpty) {
-                                return Center(
-                                    child: Text('No user email found.'));
-                              } else {
-                                final userEmail = userSnapshot.data!;
-                                return PropertyCard(
-                                  userId: userId,
-                                  token: widget.token,
-                                  property: property,
-                                  userEmail: userEmail,
-                                  imageUrl: imageUrl,
-                                  bookmarkedPropertyIds:
-                                      bookmarkedPropertyIds,
-                                  bookmarkProperty: bookmarkProperty,
-                                  priceRange: priceRange,
-                                  isDarkMode:
-                                      _themeController.isDarkMode.value,
-                                );
-                              }
-                            },
-                          );
-                        },
-                      );
-                    },
-                  );
-                }
-              },
-            ),
+              }
+            },
           ),
         ),
-      ],
-    ),
+      ),
+    ],
   ),
+)
 );
 }
-
 }
 
 // Controller for the search field

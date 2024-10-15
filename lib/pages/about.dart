@@ -1,14 +1,15 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:jwt_decoder/jwt_decoder.dart';
 import 'package:rentcon/theme_controller.dart';
 import 'package:shadcn_ui/shadcn_ui.dart';
-import 'package:get/get.dart';
-import 'package:rentcon/theme_controller.dart';
+import 'package:flutter_svg/flutter_svg.dart'; // Include this for SVG support
 
 class AboutPage extends StatefulWidget {
   final String token;
   const AboutPage({required this.token, Key? key}) : super(key: key);
+  
   @override
   _AboutPageState createState() => _AboutPageState();
 }
@@ -28,47 +29,56 @@ class _AboutPageState extends State<AboutPage> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('About Us'),
-        backgroundColor: Colors.blueAccent,
-        elevation: 0,
+        backgroundColor: const Color.fromARGB(0, 68, 137, 255),
+        scrolledUnderElevation: 0,
         leading: Padding(
           padding: const EdgeInsets.symmetric(vertical: 11.0, horizontal: 12.0),
           child: SizedBox(
-            height: 40,  // Set a specific height for the button
-            width: 40,   // Set a specific width to make it a square button
+            height: 40,
+            width: 40,
             child: ElevatedButton(
               style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.transparent, // Transparent background to simulate outline
+                backgroundColor: Colors.transparent,
                 side: BorderSide(
-                  color: _themeController.isDarkMode.value ? Colors.white : Colors.black, // Outline color
-                  width: 0.90, // Outline width
+                  color: _themeController.isDarkMode.value ? Colors.white : Colors.black,
+                  width: 0.90,
                 ),
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8.0), // Optional rounded corners
+                  borderRadius: BorderRadius.circular(8.0),
                 ),
-                elevation: 0, // Remove elevation to get the outline effect
-                padding: EdgeInsets.all(0), // Remove any padding to center the icon
+                elevation: 0,
+                padding: EdgeInsets.all(0),
               ),
               onPressed: () {
                 Navigator.pop(context);
               },
               child: Icon(
                 Icons.chevron_left,
-                color: _themeController.isDarkMode.value ? Colors.white : Colors.black, // Icon color based on theme
-                size: 16, // Icon size
+                color: _themeController.isDarkMode.value ? Colors.white : Colors.black,
+                size: 16,
               ),
             ),
           ),
         ),
       ),
       body: Padding(
-        padding: const EdgeInsets.all(20.0),
+        padding: const EdgeInsets.only(left: 25.0, right: 25),
         child: Column(
           children: [
-            // Profile Picture
-            CircleAvatar(
-              radius: 50,
-              backgroundImage: NetworkImage(
-                'https://via.placeholder.com/150',
+            // Logo with Rounded Box
+            ClipRRect(
+              borderRadius: BorderRadius.circular(15),
+              child: Container(
+                width: 100,
+                height: 100,
+                color: const Color.fromARGB(0, 224, 224, 224), // Placeholder for the background
+                child: _themeController.isDarkMode.value? Image.asset(
+                  'assets/icons/ren2.png', // Updated asset
+                  fit: BoxFit.cover,
+                ) : Image.asset(
+                  'assets/icons/ren.png', // Updated asset
+                  fit: BoxFit.cover,
+                ),
               ),
             ),
             const SizedBox(height: 20),
@@ -77,27 +87,32 @@ class _AboutPageState extends State<AboutPage> {
             Text(
               'RentConnect',
               style: TextStyle(
-                fontSize: 24,
+                fontFamily: 'geistsans',
+                fontSize: 28,
                 fontWeight: FontWeight.bold,
-                color: const Color.fromARGB(255, 0, 0, 0),
+                color: _themeController.isDarkMode.value ? Colors.white : Colors.black,
               ),
             ),
             Text(
-              'Your tagline here',
+              'Connecting Landlords and Occupants Seamlessly',
               style: TextStyle(
-                fontSize: 16,
-                color: Colors.grey,
+                fontFamily: 'geistsans',
+                fontSize: 18,
+                color: _themeController.isDarkMode.value? const Color.fromARGB(255, 255, 255, 255): Colors.black,
               ),
+              textAlign: TextAlign.center,
             ),
             const SizedBox(height: 20),
 
             // About Text
             Text(
-              'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed sit amet nulla auctor, vestibulum magna sed, convallis ex. Cum sociis natoque penatibus et magnis dis parturient montes, nascetur ridiculus mus.',
+              'At RentConnect, we strive to create a reliable platform for landlords and occupants. Our aim is to facilitate seamless communication, efficient management, and enjoyable rental experiences.',
               style: TextStyle(
+                fontFamily: 'geistsans',
                 fontSize: 16,
-                color: Colors.grey,
+                color:  _themeController.isDarkMode.value ? Colors.white : const Color.fromARGB(209, 0, 0, 0),
               ),
+              textAlign: TextAlign.justify,
             ),
             const SizedBox(height: 20),
 
@@ -107,15 +122,16 @@ class _AboutPageState extends State<AboutPage> {
               children: [
                 IconButton(
                   icon: Icon(Icons.facebook),
-                  onPressed: () {},
+                  onPressed: () {
+                    // Add your action here
+                  },
                 ),
-                IconButton(
-                  icon: Icon(Icons.gite),
-                  onPressed: () {},
-                ),
+                
                 IconButton(
                   icon: Icon(Icons.email),
-                  onPressed: () {},
+                  onPressed: () {
+                    // Add your action here
+                  },
                 ),
               ],
             ),

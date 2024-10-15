@@ -3,6 +3,7 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:rentcon/pages/fullscreenImage.dart';
 
 class PaymentDetails extends StatelessWidget {
   final Map<String, dynamic>? room;
@@ -19,9 +20,6 @@ class PaymentDetails extends StatelessWidget {
     required this.buildMonthButtons,
   });
 
-  void showFullscreenImage(BuildContext context, String imageUrl) {
-    // Your logic to show a fullscreen image
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -65,7 +63,7 @@ class PaymentDetails extends StatelessWidget {
             } else if (snapshot.hasData && snapshot.data != null) {
               return GestureDetector(
                 onTap: () {
-                  showFullscreenImage(context, snapshot.data!);
+                  Navigator.push(context, MaterialPageRoute(builder: (context)=> FullscreenImage(imageUrl:snapshot.data!)));
                 },
                 child: Container(
                   height: 100,

@@ -14,6 +14,7 @@ import 'package:jwt_decoder/jwt_decoder.dart';
 import 'package:line_awesome_flutter/line_awesome_flutter.dart';
 import 'package:rentcon/pages/components/countdown_reservation.dart';
 import 'package:rentcon/pages/components/glassmorphism.dart';
+import 'package:rentcon/pages/fullscreenImage.dart';
 import 'package:rentcon/pages/occupants/widgets/PaymentUploadWidget.dart';
 import 'package:rentcon/pages/occupants/widgets/detail_room_property.dart';
 import 'package:rentcon/theme_controller.dart';
@@ -70,7 +71,7 @@ class _OccupantInquiriesState extends State<OccupantInquiries> {
   Future<List<Map<String, dynamic>>> fetchInquiries(
       String userId, String token) async {
     final response = await http.get(
-      Uri.parse('http://192.168.1.19:3000/inquiries/occupant/$userId'),
+      Uri.parse('https://rentconnect-backend-nodejs.onrender.com/inquiries/occupant/$userId'),
       headers: {
         'Authorization': 'Bearer $token',
         'Content-Type': 'application/json',
@@ -88,7 +89,7 @@ class _OccupantInquiriesState extends State<OccupantInquiries> {
   Map<String, dynamic>? propertyRoomDetails;
 
   Future<void> fetchPropertyDetails(String roomId) async {
-    final url = 'http://192.168.1.19:3000/inquiries/room/$roomId/property';
+    final url = 'https://rentconnect-backend-nodejs.onrender.com/inquiries/room/$roomId/property';
 
     try {
       final response = await http.get(Uri.parse(url));
@@ -143,7 +144,7 @@ class _OccupantInquiriesState extends State<OccupantInquiries> {
     if (image != null) {
       final request = http.MultipartRequest(
         'POST',
-        Uri.parse('http://192.168.1.19:3000/payment/uploadProofOfReservation'),
+        Uri.parse('https://rentconnect-backend-nodejs.onrender.com/payment/uploadProofOfReservation'),
       );
 
       request.headers['Authorization'] = 'Bearer ${widget.token}';
@@ -214,7 +215,7 @@ class _OccupantInquiriesState extends State<OccupantInquiries> {
 
   Future<String?> getProofOfReservation(String roomId, String token) async {
     final url =
-        'http://192.168.1.19:3000/payment/room/$roomId/proofOfReservation';
+        'https://rentconnect-backend-nodejs.onrender.com/payment/room/$roomId/proofOfReservation';
 
     try {
       final response = await http.get(
@@ -240,7 +241,7 @@ class _OccupantInquiriesState extends State<OccupantInquiries> {
   }
 
   Future<void> _getLandlordId(String roomId) async {
-    final uri = Uri.parse('http://192.168.1.19:3000/rooms/getRoom/$roomId');
+    final uri = Uri.parse('https://rentconnect-backend-nodejs.onrender.com/rooms/getRoom/$roomId');
 
     final response = await http.get(uri);
 
@@ -271,7 +272,7 @@ class _OccupantInquiriesState extends State<OccupantInquiries> {
   }
 
   Future<void> _fetchLandlordId(String propertyId) async {
-    final uri = Uri.parse('http://192.168.1.19:3000/getPropertiesByIds');
+    final uri = Uri.parse('https://rentconnect-backend-nodejs.onrender.com/getPropertiesByIds');
 
     final response = await http.post(
       uri,
@@ -307,7 +308,7 @@ class _OccupantInquiriesState extends State<OccupantInquiries> {
 
   Future<String?> getProofOfPayment(String roomId, String token) async {
     final String apiUrl =
-        'http://192.168.1.19:3000/room/$roomId/monthlyPayments'; // Update with your API endpoint
+        'https://rentconnect-backend-nodejs.onrender.com/room/$roomId/monthlyPayments'; // Update with your API endpoint
 
     try {
       final response = await http.get(
@@ -356,7 +357,7 @@ class _OccupantInquiriesState extends State<OccupantInquiries> {
 
   Future<void> deleteProof(String roomId, String type) async {
     final url =
-        'http://192.168.1.19:3000/payment/room/$roomId/payment/month/proof/reservation';
+        'https://rentconnect-backend-nodejs.onrender.com/payment/room/$roomId/payment/month/proof/reservation';
 
     print('Attempting to delete: $url'); // Print the URL for debugging
 
@@ -418,7 +419,7 @@ class _OccupantInquiriesState extends State<OccupantInquiries> {
         final paymentRequest = http.MultipartRequest(
           'POST',
           Uri.parse(
-              'http://192.168.1.19:3000/payment/createoraddMonthlyPayment'),
+              'https://rentconnect-backend-nodejs.onrender.com/payment/createoraddMonthlyPayment'),
         );
 
         // Adding headers
@@ -483,7 +484,7 @@ class _OccupantInquiriesState extends State<OccupantInquiries> {
 
   Future<void> _cancelInquiry(String inquiryId, String token) async {
     final String apiUrl =
-        'http://192.168.1.19:3000/inquiries/delete/$inquiryId';
+        'https://rentconnect-backend-nodejs.onrender.com/inquiries/delete/$inquiryId';
     try {
       final response = await http.delete(
         Uri.parse(apiUrl),
@@ -736,15 +737,13 @@ class _OccupantInquiriesState extends State<OccupantInquiries> {
                                             Container(
                                               child: ElevatedButton(
                                                 style: ElevatedButton.styleFrom(
-                                                  backgroundColor: const Color
-                                                      .fromARGB(198, 2, 48,
-                                                      61), // Background color
+                                                  backgroundColor: _themeController.isDarkMode.value? const Color.fromARGB(255, 36, 38, 43): const Color.fromARGB(255, 255, 255, 255), // Background color
                                                   foregroundColor: Colors
                                                       .white, // Text (foreground) color
                                                   shadowColor: Colors
                                                       .black, // Shadow color
                                                   elevation:
-                                                      1, // Elevation for shadow
+                                                      0, // Elevation for shadow
                                                   padding: EdgeInsets.symmetric(
                                                       horizontal: 20,
                                                       vertical:
@@ -757,32 +756,63 @@ class _OccupantInquiriesState extends State<OccupantInquiries> {
                                                 ),
                                                 onPressed:
                                                     _toggleImageVisibility, // Button to toggle image visibility
-                                                child: Text(
-                                                  _isImageVisible
-                                                      ? 'Hide Image'
-                                                      : 'Show Room Image',
-                                                  style: TextStyle(
-                                                    color: _themeController
-                                                            .isDarkMode.value
-                                                        ? Colors.white
-                                                        : Colors.black,
+                                               child: Row(
+                                                mainAxisSize: MainAxisSize.min, // Adjust size based on content
+                                                children: [
+                                                  Icon(
+                                                    _isImageVisible ? Icons.visibility_off : Icons.visibility,
+                                                    color: _themeController.isDarkMode.value ? Colors.white : Colors.black,
                                                   ),
-                                                ),
+                                                  SizedBox(width: 8), // Add some space between the icon and the text
+                                                  Text(
+                                                    _isImageVisible ? 'Hide Image' : 'Show Room Image',
+                                                    style: TextStyle(
+                                                      color: _themeController.isDarkMode.value ? Colors.white : Colors.black,
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
+
                                               ),
                                             ),
                                           ],
                                         ),
                                         if (_isImageVisible) // Conditionally show the image
-                                          Image.network(
-                                            roomPhotoUrl ?? defaultPhoto,
-                                            fit: BoxFit.cover,
-                                            height: 150,
-                                            errorBuilder:
-                                                (context, error, stackTrace) {
-                                              return const Icon(Icons.error,
-                                                  color: Color.fromARGB(
-                                                      255, 190, 5, 51));
-                                            },
+                                          GestureDetector(
+                                            onTap: () {
+                                            Navigator.push(
+                                              context,
+                                              MaterialPageRoute(
+                                                builder: (context) => FullscreenImage(
+                                                  imageUrl: roomPhotoUrl,
+                                                ),
+                                              ),
+                                            );
+                                          },
+                                            child: Hero(
+                                              tag: roomPhotoUrl!,
+                                              child: Container(
+                                                decoration: BoxDecoration(
+                                                  borderRadius: BorderRadius.circular(10),
+                                                  border: Border.all(width: 1, color: _themeController.isDarkMode.value?
+                                                  Colors.white: Colors.black)
+                                                ),
+                                                child: Padding(
+                                                  padding: const EdgeInsets.all(5.0),
+                                                  child: Image.network(
+                                                    roomPhotoUrl ?? defaultPhoto,
+                                                    fit: BoxFit.contain,
+                                                    height: 150,
+                                                    errorBuilder:
+                                                        (context, error, stackTrace) {
+                                                      return const Icon(Icons.error,
+                                                          color: Color.fromARGB(
+                                                              255, 190, 5, 51));
+                                                    },
+                                                  ),
+                                                ),
+                                              ),
+                                            ),
                                           ),
                                         const SizedBox(height: 16),
                                         Text(
@@ -1046,8 +1076,7 @@ class _OccupantInquiriesState extends State<OccupantInquiries> {
                                                     ),
                                                   ),
                                                 ),
-                                        ],
-                                        ElevatedButton(
+                                                ElevatedButton(
                                           style: ElevatedButton.styleFrom(
                                             backgroundColor: Colors
                                                 .transparent, // No background color (transparent)
@@ -1110,6 +1139,14 @@ class _OccupantInquiriesState extends State<OccupantInquiries> {
                                                     .w700), // Set text color as white
                                           ),
                                         )
+                                        ],
+                                        if (inquiry['status'] == 'approved' &&
+                                            inquiry['requestType'] ==
+                                                'reservation' &&
+                                            inquiry['isRented'] == true) ...[
+                                              PaymentUploadWidget(inquiryId: inquiryId, userId: userId, roomDetails: roomDetails, token: widget.token, selectedMonths: selectedMonths, uploadProofOfPayment: uploadProofOfPayment, isDarkMode: isDarkMode, amountController: amountController)
+                                            ],
+                                        
                                       ],
                                     ),
                                   ),

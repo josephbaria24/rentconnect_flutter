@@ -1,5 +1,6 @@
-// ignore_for_file: depend_on_referenced_packages, unused_import, library_private_types_in_public_api, use_super_parameters
+// ignore_for_file: depend_on_referenced_packages, unused_import, library_private_types_in_public_api, use_super_parameters, prefer_const_constructors
 
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:get/get.dart';
@@ -14,7 +15,8 @@ import 'package:rentcon/navigation_menu.dart';
 import 'package:rentcon/pages/home.dart';
 import 'package:rentcon/theme_controller.dart';
 import 'package:lottie/lottie.dart';
-import 'package:shadcn_ui/shadcn_ui.dart'; // For MIME type detection
+import 'package:shadcn_ui/shadcn_ui.dart';
+import 'package:smooth_page_indicator/smooth_page_indicator.dart'; // For MIME type detection
 
 class PersonalInformation extends StatefulWidget {
   final String token; // Specify the type of token as String
@@ -48,10 +50,11 @@ class _PersonalInformationState extends State<PersonalInformation> {
     email = jwtDecodedToken['email']?.toString() ?? 'Unknown email';
     userId = jwtDecodedToken['_id']?.toString() ?? 'Unknown userId';
     _checkProfileCompletion();
+    _fetchUserDetails();
   }
 
 Future<void> _checkProfileCompletion() async {
-  final url = Uri.parse('http://192.168.1.19:3000/profile/checkProfileCompletion/$userId');
+  final url = Uri.parse('https://rentconnect-backend-nodejs.onrender.com/profile/checkProfileCompletion/$userId');
   try {
     final response = await http.get(url, headers: {'Authorization': 'Bearer ${widget.token}'});
     if (response.statusCode == 200) {
@@ -95,20 +98,22 @@ Future<void> _submitProfileAndId() async {
 
 
 void _showThankYouModal() {
-  showDialog(
+  showCupertinoDialog(
     context: context,
     barrierDismissible: false, // Prevent dismissal by tapping outside
     builder: (BuildContext context) {
-      return AlertDialog(
+      return CupertinoAlertDialog(
         title: Text("Profile Submitted"),
         content: Text("Thank you for filling out your profile! Please wait for the admin to approve it."),
-        actions: [
-          ElevatedButton(
+        actions: <CupertinoDialogAction>[
+          CupertinoDialogAction(
             onPressed: () {
               Navigator.of(context).pop(); // Close the modal
-              Navigator.of(context).pushReplacement(MaterialPageRoute(
-                builder: (context) => NavigationMenu(token: widget.token), // Redirect to Home after submission
-              ));
+              Navigator.of(context).pushReplacement(
+                CupertinoPageRoute(
+                  builder: (context) => NavigationMenu(token: widget.token), // Redirect to Home after submission
+                ),
+              );
             },
             child: Text("OK"),
           ),
@@ -122,7 +127,7 @@ void _showThankYouModal() {
 
 
 Future<void> _updateProfileCompletion() async {
-  final url = Uri.parse('http://192.168.1.19:3000/profile/updateProfile');
+  final url = Uri.parse('https://rentconnect-backend-nodejs.onrender.com/profile/updateProfile');
   try {
     final response = await http.patch(
       url,
@@ -158,7 +163,7 @@ Future<void> _updateProfileCompletion() async {
 
 
   Future<void> _updateRole() async {
-    final url = Uri.parse('http://192.168.1.19:3000/updateUserInfo');
+    final url = Uri.parse('https://rentconnect-backend-nodejs.onrender.com/updateUserInfo');
     try {
       final response = await http.patch(
         url,
@@ -186,11 +191,41 @@ Future<void> _updateProfileCompletion() async {
     }
   }
 
+Map<String, dynamic>? userDetails;
+Future<void> _fetchUserDetails() async {
+  final url = Uri.parse('https://rentconnect-backend-nodejs.onrender.com/user/$userId'); // Your new endpoint
+  try {
+    final response = await http.get(url, headers: {
+      'Authorization': 'Bearer ${widget.token}',
+    });
+
+    if (response.statusCode == 200) {
+      setState(() {
+        userDetails = jsonDecode(response.body);
+
+        // Populate the controllers with user data
+        _firstNameController.text = userDetails?['profile']?['firstName'] ?? '';
+        _lastNameController.text = userDetails?['profile']?['lastName'] ?? '';
+        _phoneController.text = userDetails?['profile']?['contactDetails']['phone'] ?? '';
+        _addressController.text = userDetails?['profile']?['contactDetails']['address'] ?? '';
+        _gender = userDetails?['profile']?['gender'] ?? 'Male'; // Default to 'Male'
+        _selectedRole = userDetails?['role'] ?? 'occupant'; // Default to 'occupant'
+      });
+    } else {
+      print("Failed to load user details. Status code: ${response.statusCode}");
+    }
+  } catch (e) {
+    print("Error fetching user details: $e");
+  }
+}
+
+
+
   Future<void> _uploadValidId() async {
     if (_validIdImage != null) {
       var request = http.MultipartRequest(
         'PATCH',
-        Uri.parse('http://192.168.1.19:3000/profile/uploadValidId')
+        Uri.parse('https://rentconnect-backend-nodejs.onrender.com/profile/uploadValidId')
       );
       request.fields['userId'] = userId;
       String mimeType = lookupMimeType(_validIdImage!.path) ?? 'application/octet-stream';
@@ -241,6 +276,7 @@ bool _isFormComplete() {
 }
 @override
 Widget build(BuildContext context) {
+  print(userDetails?['profile']?['firstName']);
   return Scaffold(
     appBar: AppBar(
       title: Text('Personal Information', style: TextStyle(
@@ -533,14 +569,44 @@ Widget build(BuildContext context) {
                         Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text("Role", style: TextStyle(
-                                  fontFamily: 'geistsans',
-                                  color: _themeController.isDarkMode.value
-                                                ? Colors.white
-                                                : Colors.black,
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w600
-                                ),),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Text("Role", style: TextStyle(
+                                      fontFamily: 'geistsans',
+                                      color: _themeController.isDarkMode.value
+                                                    ? Colors.white
+                                                    : Colors.black,
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.w600
+                                    ),),
+                                SizedBox(width: 10,),
+                                GestureDetector(
+                                  onTap: () {
+                                    showCupertinoModalPopup(
+                                      context: context,
+                                      builder: (BuildContext context) {
+                                        return CupertinoPageScaffold(
+                                         
+                                          child: RoleSelectionDialog(),
+                                        );
+                                      },
+                                    );
+                                  },
+                                  child: Text(
+                                    "What is role?",
+                                    style: TextStyle(
+                                      fontFamily: 'geistsans',
+                                      color: _themeController.isDarkMode.value
+                                          ? const Color.fromARGB(255, 0, 150, 250)
+                                          : const Color.fromARGB(255, 0, 87, 250),
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
                             // Role selection using ShadSelect
                             ConstrainedBox(
                               constraints: const BoxConstraints(minWidth: 170),
@@ -601,13 +667,33 @@ Widget build(BuildContext context) {
                       ),
                     ),
                     if (_validIdImage != null)
-                      Text('ID image selected: ${_validIdImage!.path}'),
+                    Column(
+                      children: [
+                        Container(
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(width: 1, color: _themeController.isDarkMode.value? Colors.white: Colors.black)
+                          ),
+                          child: Padding(
+                            padding: const EdgeInsets.all(8.0),
+                            child: Image.file(
+                              File(_validIdImage!.path), // Display the image
+                              height: 200, // Set the height to your preference
+                              fit: BoxFit.fitHeight, // Adjust image fit as needed
+                            ),
+                          ),
+                        ),
+                        SizedBox(height: 8.0), // Add some spacing
+                        
+                      ],
+                    ),
+
                     SizedBox(height: 20),
                     ElevatedButton(
                     style: ElevatedButton.styleFrom(
                       backgroundColor: _themeController.isDarkMode.value
                           ? Colors.white
-                          : Colors.black, // Background color based on theme
+                          : Colors.green, // Background color based on theme
                       foregroundColor: _themeController.isDarkMode.value
                           ? Colors.black
                           : Colors.white, // Text color based on theme
@@ -619,23 +705,24 @@ Widget build(BuildContext context) {
                       if (_isFormComplete()) {
                         _submitProfileAndId(); // Proceed with form submission
                       } else {
-                        showDialog(
-                          context: context,
-                          builder: (BuildContext context) {
-                            return AlertDialog(
-                              title: Text('Incomplete Form'),
-                              content: Text('Please fill in all fields and upload a valid ID image.'),
-                              actions: [
-                                TextButton(
-                                  onPressed: () {
-                                    Navigator.of(context).pop();
-                                  },
-                                  child: Text('OK'),
-                                ),
-                              ],
-                            );
-                          },
-                        );
+                        showCupertinoDialog(
+                        context: context,
+                        builder: (BuildContext context) {
+                          return CupertinoAlertDialog(
+                            title: Text('Incomplete Form'),
+                            content: Text('Please fill in all fields and upload a valid ID image.'),
+                            actions: <CupertinoDialogAction>[
+                              CupertinoDialogAction(
+                                onPressed: () {
+                                  Navigator.of(context).pop();
+                                },
+                                child: Text('OK'),
+                              ),
+                            ],
+                          );
+                        },
+                      );
+
                       }
                     },
                     child: Text('Submit'),
@@ -649,4 +736,309 @@ Widget build(BuildContext context) {
   );
 }
 
+
+
+}
+// Create a stateful widget to handle role selection
+class RoleSelectionDialog extends StatefulWidget {
+  @override
+  _RoleSelectionDialogState createState() => _RoleSelectionDialogState();
+}
+
+class _RoleSelectionDialogState extends State<RoleSelectionDialog> {
+    final ThemeController _themeController = Get.find<ThemeController>();
+
+  // Add a state variable to manage the selected tab
+  String _selectedTab = 'occupant';
+   PageController _pageController1 = PageController();
+   PageController _pageController2 = PageController();
+  int _currentPage = 0;
+
+  void _onPageChanged(int page) {
+    setState(() {
+      _currentPage = page;
+    });
+  }
+
+
+@override
+Widget build(BuildContext context) {
+  return Scaffold(
+    appBar: AppBar(
+      title: const Text(
+        'Learn more about Roles',
+        style: TextStyle(
+          fontFamily: 'GeistSans',
+          fontWeight: FontWeight.bold,
+        ),
+      ),
+      leading: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 11.0, horizontal: 12.0),
+        child: SizedBox(
+          height: 40,  // Set a specific height for the button
+          width: 40,   // Set a specific width to make it a square button
+          child: ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.transparent,
+              side: BorderSide(
+                color: _themeController.isDarkMode.value ? Colors.white : Colors.black,
+                width: 0.90,
+              ),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8.0),
+              ),
+              elevation: 0,
+              padding: EdgeInsets.all(0),
+            ),
+            onPressed: () {
+              Navigator.pop(context);
+            },
+            child: Icon(
+              Icons.chevron_left,
+              color: _themeController.isDarkMode.value ? Colors.white : Colors.black,
+              size: 16,
+            ),
+          ),
+        ),
+      ),
+    ),
+    resizeToAvoidBottomInset: true,
+    body: SingleChildScrollView(
+      padding: const EdgeInsets.all(20.0),
+      child: Column(
+        children: [
+          ShadTabs<String>(
+            value: _selectedTab,
+            onChanged: (newTab) {
+              setState(() {
+                _selectedTab = newTab;
+              });
+            },
+            tabBarConstraints: const BoxConstraints(maxWidth: 400),
+            contentConstraints: const BoxConstraints(maxWidth: 400),
+            tabs: [
+              ShadTab(
+                value: 'occupant',
+                child: const Text('Occupant'),
+                content: ShadCard(
+                  backgroundColor: _themeController.isDarkMode.value
+                      ? const Color.fromARGB(255, 0, 0, 0)
+                      : const Color.fromARGB(255, 255, 255, 255),
+                  title: Text(
+                    'What is an Occupant?',
+                    style: TextStyle(
+                      color: _themeController.isDarkMode.value
+                          ? const Color.fromARGB(255, 255, 255, 255)
+                          : const Color.fromARGB(255, 0, 0, 0),
+                    ),
+                  ),
+                  description: const Text(
+                    "Occupants are tenants who rent properties and enjoy the facilities offered by landlords.",
+                  ),
+                  child: Column(
+                    children: [
+                      SizedBox(
+                        height: MediaQuery.of(context).size.height * 0.4, // Adjust height as needed
+                        child: PageView(
+                          controller: _pageController1,
+                          onPageChanged: _onPageChanged,
+                          children: [
+                            // Page 1
+                            Column(
+                              children: [
+                                const SizedBox(height: 16),
+                                Image.asset(
+                                  'assets/icons/manage.png',
+                                  height: 200,
+                                ),
+                                const SizedBox(height: 8),
+                                Text(
+                                  "• Access available properties\n"
+                                  "• Make reservations\n"
+                                  "• Manage payments and inquiries",
+                                  style: TextStyle(
+                                    fontFamily: 'GeistSans',
+                                    fontSize: 14,
+                                  ),
+                                  textAlign: TextAlign.start,
+                                ),
+                              ],
+                            ),
+                            // Page 2
+                            Column(
+                              children: [
+                                const SizedBox(height: 24),
+                                SvgPicture.asset(
+                                  'assets/icons/interact.svg',
+                                  height: 200,
+                                ),
+                                const SizedBox(height: 8),
+                                Text(
+                                  "• Interact with landlords\n"
+                                  "• Receive notifications for updates\n"
+                                  "• Manage monthly payment through the app",
+                                  style: TextStyle(
+                                    fontFamily: 'GeistSans',
+                                    fontSize: 14,
+                                  ),
+                                  textAlign: TextAlign.start,
+                                ),
+                              ],
+                            ),
+                            // Page 3
+                            Column(
+                              children: [
+                                const SizedBox(height: 24),
+                                SvgPicture.asset(
+                                  'assets/icons/agreement.svg',
+                                  height: 200,
+                                ),
+                                const SizedBox(height: 8),
+                                Text(
+                                  "• Access documentation\n"
+                                  "• Track lease agreements and conditions",
+                                  style: TextStyle(
+                                    fontFamily: 'GeistSans',
+                                    fontSize: 14,
+                                  ),
+                                  textAlign: TextAlign.start,
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 16), // Space between PageView and indicator
+                      // Smooth Page Indicator
+                      SmoothPageIndicator(
+                        controller: _pageController1,
+                        count: 3,
+                        effect: ExpandingDotsEffect(
+                          activeDotColor: const Color.fromARGB(255, 255, 1, 85),
+                          dotColor: Colors.grey,
+                          dotHeight: 8,
+                          dotWidth: 8,
+                          spacing: 8,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              ShadTab(
+      value: 'landlord',
+      child: const Text('Landlord'),
+      content: ShadCard(
+        backgroundColor: _themeController.isDarkMode.value
+            ? const Color.fromARGB(255, 0, 0, 0)
+            : const Color.fromARGB(255, 255, 255, 255),
+        title: Text(
+          'What is a Landlord?',
+          style: TextStyle(
+            color: _themeController.isDarkMode.value
+                ? const Color.fromARGB(255, 255, 255, 255)
+                : const Color.fromARGB(255, 0, 0, 0),
+          ),
+        ),
+        description: const Text(
+          "Landlords manage properties, interact with potential tenants, and oversee rental agreements.",
+        ),
+        child: Column(
+          children: [
+            SizedBox(
+              height: MediaQuery.of(context).size.height * 0.4, // Adjust height as needed
+              child: PageView(
+                controller: _pageController2,
+                onPageChanged: _onPageChanged,
+                children: [
+                  // Page 1
+                  Column(
+                    children: [
+                      const SizedBox(height: 16),
+                      Image.asset(
+                        'assets/icons/listmanage.png',
+                        height: 200,
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        "• List and manage properties\n"
+                        "• Approve or reject reservations\n"
+                        "• Handle tenant inquiries",
+                        style: TextStyle(
+                          fontFamily: 'GeistSans',
+                          fontSize: 14,
+                        ),
+                        textAlign: TextAlign.start,
+                      ),
+                    ],
+                  ),
+                  // Page 2
+                  Column(
+                    children: [
+                      const SizedBox(height: 24),
+                      Image.asset(
+                        'assets/icons/track.png',
+                        height: 200,
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        "• Track rent payments\n"
+                        "• Communicate with tenants\n"
+                        "• Schedule property inspections",
+                        style: TextStyle(
+                          fontFamily: 'GeistSans',
+                          fontSize: 14,
+                        ),
+                        textAlign: TextAlign.start,
+                      ),
+                    ],
+                  ),
+                  // Page 3
+                  Column(
+                    children: [
+                      const SizedBox(height: 24),
+                      Image.asset(
+                        'assets/icons/viewpayment.png',
+                        height: 200,
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        "• View payment history\n"
+                        "• Manage documentation\n"
+                        "• Oversee rental conditions",
+                        style: TextStyle(
+                          fontFamily: 'GeistSans',
+                          fontSize: 14,
+                        ),
+                        textAlign: TextAlign.start,
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 16), // Space between PageView and indicator
+            // Smooth Page Indicator
+            SmoothPageIndicator(
+              controller: _pageController2,
+              count: 3,
+              effect: ExpandingDotsEffect(
+                activeDotColor: const Color.fromARGB(255, 255, 1, 85),
+                dotColor: Colors.grey,
+                dotHeight: 8,
+                dotWidth: 8,
+                spacing: 8,
+              ),
+            ),
+          ],
+        ),
+      ),
+    ),
+            ],
+          ),
+        ],
+      ),
+    ),
+  );
+}
 }

@@ -11,6 +11,7 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
+import 'package:rentcon/pages/fullscreenImage.dart';
 import 'package:rentcon/pages/profileSection/personalInformation.dart';
 import 'package:rentcon/pages/profileSection/profileChecker.dart';
 import 'package:rentcon/theme_controller.dart';
@@ -47,16 +48,34 @@ class _PropertyDetailPageState extends State<PropertyDetailPage> {
   final PageController _pageController = PageController();
   final ThemeController _themeController = Get.find<ThemeController>();
   bool _loadingRooms = true;
+  final PageController _roomPageController = PageController();
+  int _currentPageIndex = 0;
 
   @override
   void initState() {
     super.initState();
     final Map<String, dynamic> jwtDecodedToken = JwtDecoder.decode(widget.token);
-
+    
     // Safely extracting 'email' from the decoded token
     email = jwtDecodedToken['email']?.toString() ?? 'Unknown email';
     userId = jwtDecodedToken['_id']?.toString() ?? 'Unknown email';
     fetchRooms();
+     _roomPageController.addListener(() {
+      setState(() {
+        _currentPageIndex = _roomPageController.page!.round();
+      });
+    });
+     _pageController.addListener(() {
+      setState(() {
+        _currentPageIndex = _pageController.page!.round();
+      });
+    });
+  }
+    @override
+  void dispose() {
+    _roomPageController.dispose();
+    _pageController.dispose();
+    super.dispose();
   }
 
 Future<void> fetchRooms() async {
@@ -64,7 +83,7 @@ Future<void> fetchRooms() async {
     _loadingRooms = true;  // Start loading
   });
 
-  final response = await http.get(Uri.parse('http://192.168.1.19:3000/rooms/properties/${widget.property.id}/rooms'));
+  final response = await http.get(Uri.parse('https://rentconnect-backend-nodejs.onrender.com/rooms/properties/${widget.property.id}/rooms'));
 
   if (response.statusCode == 200) {
     final data = jsonDecode(response.body);
@@ -84,7 +103,7 @@ Future<void> fetchRooms() async {
 
 Future<void> fetchNotifications() async {
   final response = await http.get(
-    Uri.parse('http://192.168.1.19:3000/notifications'),
+    Uri.parse('https://rentconnect-backend-nodejs.onrender.com/notifications'),
     headers: {
       'Authorization': 'Bearer ${widget.token}', // Use the user's token for authentication
     },
@@ -148,22 +167,42 @@ void showRoomDetailsModal(BuildContext context, Map<String, dynamic> room) {
             roomPhotoUrls.isNotEmpty
                 ? Column(
                     children: [
-                      Container(
-                        height: 180,
-                        child: PageView.builder(
-                          controller: _roomPageController,
-                          itemCount: roomPhotoUrls.length,
-                          itemBuilder: (context, index) {
-                            return ClipRRect(
-                              borderRadius: BorderRadius.circular(10),
-                              child: Image.network(
-                                roomPhotoUrls[index],
-                                fit: BoxFit.cover,
-                              ),
-                            );
-                          },
+                      GestureDetector(
+                      onTap: () {
+                        // Pass the current image to the FullscreenImage widget
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => FullscreenImage(imageUrl: roomPhotoUrls[_currentPageIndex]),
+                          ),
+                        );
+                      },
+                      child: Hero(
+                        // Pass the current image to the Hero tag
+                        tag: roomPhotoUrls[_currentPageIndex],
+                        child: Container(
+                          height: 180,
+                          child: PageView.builder(
+                            controller: _roomPageController,
+                            itemCount: roomPhotoUrls.length,
+                            itemBuilder: (context, index) {
+                              return ClipRRect(
+                                borderRadius: BorderRadius.circular(10),
+                                child: Image.network(
+                                  roomPhotoUrls[index],
+                                  fit: BoxFit.cover,
+                                ),
+                              );
+                            },
+                            onPageChanged: (index) {
+                              setState(() {
+                                _currentPageIndex = index; // Update current index on page change
+                              });}
+                          ),
                         ),
                       ),
+                    ),
+
                       const SizedBox(height: 8),
                       SmoothPageIndicator(
                         controller: _roomPageController,
@@ -269,7 +308,7 @@ void showRoomDetailsModal(BuildContext context, Map<String, dynamic> room) {
 void _sendRentRequest(BuildContext context, Map<String, dynamic> room, DateTime? proposedStartDate, String? customTerms) async {
   // Check if there is a pending request before proceeding
   final checkResponse = await http.get(
-    Uri.parse('http://192.168.1.19:3000/inquiries/check-pending?userId=$userId&roomId=${room['_id']}'),
+    Uri.parse('https://rentconnect-backend-nodejs.onrender.com/inquiries/check-pending?userId=$userId&roomId=${room['_id']}'),
     headers: {
       'Authorization': 'Bearer ${widget.token}',
     },
@@ -290,7 +329,7 @@ void _sendRentRequest(BuildContext context, Map<String, dynamic> room, DateTime?
     } else {
       // Proceed with sending the request
       final inquiryResponse = await http.post(
-        Uri.parse('http://192.168.1.19:3000/inquiries/create'),
+        Uri.parse('https://rentconnect-backend-nodejs.onrender.com/inquiries/create'),
         headers: {
           'Authorization': 'Bearer ${widget.token}',
           'Content-Type': 'application/json',
@@ -320,7 +359,7 @@ void _sendRentRequest(BuildContext context, Map<String, dynamic> room, DateTime?
 
         // Fetch landlord's email using the provided endpoint
         final landlordEmailResponse = await http.get(
-          Uri.parse('http://192.168.1.19:3000/rooms/landlord-email/${room['_id']}'),
+          Uri.parse('https://rentconnect-backend-nodejs.onrender.com/rooms/landlord-email/${room['_id']}'),
           headers: {
             'Authorization': 'Bearer ${widget.token}',
           },
@@ -342,7 +381,7 @@ void _sendRentRequest(BuildContext context, Map<String, dynamic> room, DateTime?
 
           // Send notification request
           final notificationResponse = await http.post(
-            Uri.parse('http://192.168.1.19:3000/notification/create'),
+            Uri.parse('https://rentconnect-backend-nodejs.onrender.com/notification/create'),
             headers: {
               'Authorization': 'Bearer ${widget.token}',
               'Content-Type': 'application/json',
@@ -548,7 +587,7 @@ void _showDurationPicker(BuildContext context, Map<String, dynamic> room, ThemeC
 void _sendReserveRequest(BuildContext context, Map<String, dynamic> room, int selectedReservationDuration) async {
   // Check if there is a pending request before proceeding
   final checkResponse = await http.get(
-    Uri.parse('http://192.168.1.19:3000/inquiries/check-pending?userId=$userId&roomId=${room['_id']}'),
+    Uri.parse('https://rentconnect-backend-nodejs.onrender.com/inquiries/check-pending?userId=$userId&roomId=${room['_id']}'),
     headers: {
       'Authorization': 'Bearer ${widget.token}',
     },
@@ -579,7 +618,7 @@ void _sendReserveRequest(BuildContext context, Map<String, dynamic> room, int se
 
       // Proceed with sending the reservation request
       final inquiryResponse = await http.post(
-        Uri.parse('http://192.168.1.19:3000/inquiries/create'),
+        Uri.parse('https://rentconnect-backend-nodejs.onrender.com/inquiries/create'),
         headers: {
           'Authorization': 'Bearer ${widget.token}',
           'Content-Type': 'application/json',
@@ -609,7 +648,7 @@ void _sendReserveRequest(BuildContext context, Map<String, dynamic> room, int se
 
         // Fetch landlord's email using the provided endpoint
         final landlordEmailResponse = await http.get(
-          Uri.parse('http://192.168.1.19:3000/rooms/landlord-email/${room['_id']}'),
+          Uri.parse('https://rentconnect-backend-nodejs.onrender.com/rooms/landlord-email/${room['_id']}'),
           headers: {
             'Authorization': 'Bearer ${widget.token}',
           },
@@ -631,7 +670,7 @@ void _sendReserveRequest(BuildContext context, Map<String, dynamic> room, int se
 
           // Send notification request
           final notificationResponse = await http.post(
-            Uri.parse('http://192.168.1.19:3000/notification/create'),
+            Uri.parse('https://rentconnect-backend-nodejs.onrender.com/notification/create'),
             headers: {
               'Authorization': 'Bearer ${widget.token}',
               'Content-Type': 'application/json',
@@ -825,39 +864,53 @@ Widget build(BuildContext context) {
               // Property Images
               photoUrls.isNotEmpty
                   ? Column(
-                      children: [
-                        Container(
-                          height: 250,
-                          child: PageView.builder(
-                            controller: _pageController,
-                            itemCount: photoUrls.length,
-                            itemBuilder: (context, index) {
-                              return ClipRRect(
-                                borderRadius: BorderRadius.circular(10),
-                                child: Image.network(
-                                  photoUrls[index],
-                                  fit: BoxFit.cover,
-                                ),
-                              );
-                            },
-                          ),
-                        ),
-                        SizedBox(height: 8),
-                        SmoothPageIndicator(
+                children: [
+                  GestureDetector(
+                    onTap: () {
+                      Navigator.push(context, MaterialPageRoute(builder: (context)=>
+                      FullscreenImage(imageUrl: photoUrls[_currentPageIndex])));
+                    },
+                    child: Hero(
+                      tag: photoUrls,
+                      child: Container(
+                        height: 250,
+                        child: PageView.builder(
                           controller: _pageController,
-                          count: photoUrls.length,
-                          effect: ExpandingDotsEffect(
-                            activeDotColor: _themeController.isDarkMode.value
-                                ? Color.fromARGB(255, 253, 253, 253)
-                                : Color.fromARGB(255, 0, 0, 0),
-                            dotColor: const Color.fromARGB(255, 148, 146, 146),
-                            dotHeight: 10,
-                            dotWidth: 10,
-                            spacing: 10,
-                          ),
+                          itemCount: photoUrls.length,
+                          itemBuilder: (context, index) {
+                            return ClipRRect(
+                              borderRadius: BorderRadius.circular(10),
+                              child: Image.network(
+                                photoUrls[index],
+                                fit: BoxFit.cover,
+                              ),
+                            );
+                          },
+                          onPageChanged: (index) {
+                            setState(() {
+                              _currentPageIndex = index; // Update current index on page change
+                            });
+                          },
                         ),
-                      ],
-                    )
+                      ),
+                    ),
+                  ),
+                  SizedBox(height: 8),
+                  SmoothPageIndicator(
+                    controller: _pageController,
+                    count: photoUrls.length,
+                    effect: ExpandingDotsEffect(
+                      activeDotColor: _themeController.isDarkMode.value
+                          ? Color.fromARGB(255, 253, 253, 253)
+                          : Color.fromARGB(255, 0, 0, 0),
+                      dotColor: const Color.fromARGB(255, 148, 146, 146),
+                      dotHeight: 10,
+                      dotWidth: 10,
+                      spacing: 10,
+                    ),
+                  ),
+                ],
+              )
                   : Text('No photos available.'),
               SizedBox(height: 16),
 

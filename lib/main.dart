@@ -153,7 +153,9 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:jwt_decoder/jwt_decoder.dart';
+import 'package:rentcon/colorController.dart';
 import 'package:rentcon/dbHelper/mongodb.dart';
+import 'package:rentcon/dependency_injection.dart';
 import 'package:rentcon/navigation_menu.dart';
 import 'package:rentcon/pages/home.dart';
 import 'package:rentcon/pages/index.dart';
@@ -168,8 +170,12 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   SharedPreferences prefs = await SharedPreferences.getInstance();
   await MongoDatabase.connect();
+  Get.put(ColorController()); // Register ColorController
+  Get.put(ThemeController()); // Ensure your ThemeController is also registered
   String? token = prefs.getString('token'); // Nullable token
   runApp(MyApp(token: token));
+  DependencyInjection.init();
+   
 }
 
 class MyApp extends StatefulWidget {
@@ -266,13 +272,13 @@ Widget build(BuildContext context) {
             home: isAuthenticated
                 ? AnimatedSplashScreen(
                     splash: Image.asset('assets/icons/ren.png'),
-                    duration: 3000,
+                    duration: 2200,
                     backgroundColor: const Color.fromARGB(255, 255, 255, 255),
                     splashTransition: SplashTransition.fadeTransition,
                     nextScreen: NavigationMenu(token: widget.token!))
                 : AnimatedSplashScreen(
                     splash: Image.asset('assets/icons/ren.png'),
-                    duration: 3000,
+                    duration: 2200,
                     backgroundColor: const Color.fromARGB(255, 255, 255, 255),
                     splashTransition: SplashTransition.fadeTransition,
                     nextScreen: IndexPage()),

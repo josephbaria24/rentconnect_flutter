@@ -309,6 +309,13 @@ class _RoomUnitWidgetState extends State<RoomUnitWidget> {
                     fontWeight: FontWeight.bold,
                     color: _themeController.isDarkMode.value ? Colors.white : Colors.black,
                   ),),
+                Text('Upload ateast one photo',
+                 style: TextStyle(
+                    fontSize: 14,
+                    fontFamily: 'GeistSans',
+                    fontWeight: FontWeight.w500,
+                    color: _themeController.isDarkMode.value ? const Color.fromARGB(255, 128, 128, 128) : const Color.fromARGB(255, 78, 78, 78),
+                  ),),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [

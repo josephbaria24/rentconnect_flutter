@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
+import 'package:rentcon/pages/agreementDetails.dart';
 
 class OccupantListWidget extends StatelessWidget {
   final List<dynamic> occupantUsers;
@@ -7,6 +8,8 @@ class OccupantListWidget extends StatelessWidget {
   final Map<String, dynamic> profilePic;
   final Function(String) fetchUserProfile;
   final bool isDarkMode;
+  final Map<String, dynamic> room; // Room passed to access the agreement
+  final Map<String, List<dynamic>> propertyInquiries; // Added property inquiries
 
   const OccupantListWidget({
     Key? key,
@@ -15,6 +18,8 @@ class OccupantListWidget extends StatelessWidget {
     required this.profilePic,
     required this.fetchUserProfile,
     required this.isDarkMode,
+    required this.room,
+    required this.propertyInquiries, // Ensure property inquiries are passed
   }) : super(key: key);
 
   @override
@@ -23,12 +28,16 @@ class OccupantListWidget extends StatelessWidget {
       children: [
         Text(
           'Occupants',
-          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18, fontFamily: 'geistsans'),
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+            fontSize: 18,
+            fontFamily: 'geistsans',
+          ),
         ),
         const SizedBox(height: 10),
         // List of occupants
         Container(
-          height: (60 * occupantUsers.length).toDouble(),  // Adjust height dynamically based on items
+          height: (60 * occupantUsers.length).toDouble(), // Adjust height dynamically
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(10),
             color: isDarkMode
@@ -48,8 +57,7 @@ class OccupantListWidget extends StatelessWidget {
               if (userProfiles.containsKey(occupantId)) {
                 var occupantProfile = userProfiles[occupantId];
                 var profilePicture = profilePic[occupantId];
-                String fullName =
-                    '${occupantProfile['firstName']} ${occupantProfile['lastName']}';
+                String fullName = '${occupantProfile['firstName']} ${occupantProfile['lastName']}';
                 String profilePictureUrl = profilePicture ?? '';
 
                 return ListTile(
@@ -115,6 +123,57 @@ class OccupantListWidget extends StatelessWidget {
             }).toList(), // Convert map to list of widgets
           ),
         ),
+        const SizedBox(height: 20),
+        // Add button to navigate to the agreement page
+        ElevatedButton(
+          onPressed: () {
+            // Access the inquiries for the specific room using room ID
+            final inquiries = propertyInquiries[room['_id']];
+            if (inquiries != null && inquiries.isNotEmpty) {
+              // Pass the first inquiry's ID or handle accordingly
+              final inquiry = inquiries.first; // Get the first inquiry object
+              final inquiryId = inquiry['_id']; // Get the inquiry ID
+
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => AgreementDetails(
+                    inquiryId: inquiryId, // Pass the inquiry ID to the details page
+                  ),
+                ),
+              );
+            } else {
+              // Handle case where inquiry data is missing
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text('No agreement details available.'),
+                ),
+              );
+            }
+          },
+          style: ElevatedButton.styleFrom(
+            backgroundColor: isDarkMode ? const Color.fromARGB(255, 41, 43, 53) : Colors.white,
+            elevation: 0,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(8), // Set the border radius
+              side: BorderSide(
+                color: isDarkMode ? Colors.white : Colors.black, // Set border color
+                width: 1, // Set border width
+              ),
+            ),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min, // Adjusts the button size to fit its contents
+            children: [
+               Icon(Icons.assignment, color: isDarkMode? Colors.white:Colors.black,), // Add your desired icon here
+              const SizedBox(width: 8), // Space between icon and text
+               Text('View Agreement', style: TextStyle(
+                color: isDarkMode? Colors.white:Colors.black
+              ),), // Button text
+            ],
+          ),
+        ),
+
       ],
     );
   }

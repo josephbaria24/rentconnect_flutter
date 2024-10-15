@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
+import 'package:rentcon/theme_controller.dart';
+import 'package:shadcn_ui/shadcn_ui.dart';
 
 class FilterDialog extends StatefulWidget {
   final TextEditingController minPriceController;
@@ -28,16 +31,31 @@ class _FilterDialogState extends State<FilterDialog> {
     // Initialize the selected range with the initial range passed to the dialog
     _selectedRange = widget.initialRange;
   }
+  final ThemeController _themeController = Get.find<ThemeController>();
 
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: Text("Filter"),
+      backgroundColor: _themeController.isDarkMode.value? const Color.fromARGB(240, 28, 29, 34): const Color.fromARGB(237, 255, 255, 255),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(10)
+      ),
+      title: Center(
+        child: Text("Filter", style: TextStyle(
+          fontFamily: 'geistsans',
+          fontWeight: FontWeight.bold,
+          
+        ),),
+      ),
       content: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Text("Select Price Range"),
+          Text("Select Price Range", style: TextStyle(
+            fontFamily: 'geistsans',
+          ),),
           RangeSlider(
+            inactiveColor: Colors.black,
+            activeColor: const Color.fromARGB(255, 255, 0, 85),
             values: _selectedRange,
             min: 0.0,
             max: 10000.0,
@@ -68,21 +86,30 @@ class _FilterDialogState extends State<FilterDialog> {
           onPressed: () {
             Navigator.of(context).pop(); // Close dialog
           },
-          child: Text("Cancel"),
+          child: Text("Cancel", style: TextStyle(
+            fontFamily: 'geistsans',
+            color: _themeController.isDarkMode.value? Colors.white :Colors.black
+          ),),
         ),
-        ElevatedButton(
+        ShadButton(
+          backgroundColor: _themeController.isDarkMode.value? const Color.fromARGB(255, 255, 255, 255):Colors.black,
           onPressed: () {
             widget.applyFilters(); // Apply the filters
             Navigator.of(context).pop(); // Close dialog
           },
-          child: Text("Apply"),
+          child: Text("Apply", style: TextStyle(
+            color: _themeController.isDarkMode.value? Colors.black:Colors.white
+          ),),
         ),
         TextButton(
           onPressed: () {
             widget.clearFilters(); // Clear the filters
             Navigator.of(context).pop(); // Close dialog
           },
-          child: Text("Clear"),
+          child: Text("Clear", style: TextStyle(
+            fontFamily: 'geistsans',
+            color: _themeController.isDarkMode.value? Colors.white :Colors.black
+          ),),
         ),
       ],
     );

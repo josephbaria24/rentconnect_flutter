@@ -234,7 +234,7 @@ class _AddlistingState extends State<Addlisting> {
   }
 
   Future<void> _submitProperty() async {
-    var request = http.MultipartRequest('POST', Uri.parse('http://192.168.1.19:3000/storeProperty'));
+    var request = http.MultipartRequest('POST', Uri.parse('https://rentconnect-backend-nodejs.onrender.com/storeProperty'));
 
     request.fields['userId'] = userId;
     request.fields['description'] = descriptionController.text;
@@ -625,7 +625,7 @@ Widget build(BuildContext context) {
                 icon: Icon(icons[index]),
                 label: Text(amenities[index]),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: selectedAmenities[index] ? const Color.fromARGB(255, 248, 0, 83) : const Color.fromARGB(255, 122, 120, 136), // Button color
+                  backgroundColor: selectedAmenities[index] ? const Color.fromARGB(246, 0, 209, 164) : const Color.fromARGB(255, 122, 120, 136), // Button color
                   foregroundColor: Colors.white, // Text color
                   shape: RoundedRectangleBorder(
                      borderRadius: BorderRadius.circular(10),

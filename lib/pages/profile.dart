@@ -1,13 +1,18 @@
+// ignore_for_file: prefer_const_constructors
+
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_colorpicker/flutter_colorpicker.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:get/get.dart';
 import 'package:jwt_decoder/jwt_decoder.dart';
 import 'package:line_awesome_flutter/line_awesome_flutter.dart';
+import 'package:rentcon/colorController.dart';
 import 'package:rentcon/main.dart';
 import 'package:rentcon/navigation_menu.dart';
 import 'package:rentcon/pages/about.dart';
 import 'package:rentcon/pages/account_settings.dart';
+import 'package:rentcon/pages/fullscreenImage.dart';
 import 'package:rentcon/pages/global_loading_indicator.dart';
 import 'package:rentcon/pages/landlords/current_listing.dart';
 import 'package:rentcon/pages/login.dart';
@@ -49,6 +54,7 @@ class _ProfilePageState extends State<ProfilePage> {
   @override
   void initState() {
     super.initState();
+    
     _loadThemePreference();
     final Map<String, dynamic> jwtDecodedToken =
         JwtDecoder.decode(widget.token);
@@ -79,7 +85,7 @@ class _ProfilePageState extends State<ProfilePage> {
 
   Future<void> _fetchUserProfile() async {
     final url = Uri.parse(
-        'http://192.168.1.19:3000/user/$userId'); // Adjust the endpoint if needed
+        'https://rentconnect-backend-nodejs.onrender.com/user/$userId'); // Adjust the endpoint if needed
     try {
       final response = await http
           .get(url, headers: {'Authorization': 'Bearer ${widget.token}'});
@@ -99,7 +105,7 @@ class _ProfilePageState extends State<ProfilePage> {
 
   Future<void> fetchUserProfileStatus() async {
     final url = Uri.parse(
-        'http://192.168.1.19:3000/profile/checkProfileCompletion/$userId'); // Replace with your API endpoint
+        'https://rentconnect-backend-nodejs.onrender.com/profile/checkProfileCompletion/$userId'); // Replace with your API endpoint
     try {
       final response = await http.get(
         url,
@@ -154,7 +160,7 @@ Future<void> _logout(BuildContext context) async {
   Future<void> _uploadProfilePicture() async {
     if (_profileImage != null) {
       final url =
-          Uri.parse('http://192.168.1.19:3000/updateProfilePicture/$userId');
+          Uri.parse('https://rentconnect-backend-nodejs.onrender.com/updateProfilePicture/$userId');
       var request = http.MultipartRequest('PATCH', url)
         ..headers['Authorization'] = 'Bearer ${widget.token}';
 
@@ -233,51 +239,53 @@ Future<void> _logout(BuildContext context) async {
     Widget build(BuildContext context) {
           return Obx(() => Scaffold(
           appBar: AppBar(
-        scrolledUnderElevation: 0,
-        backgroundColor: _isDarkMode
-            ? const Color.fromARGB(0, 0, 0, 0)
-            : const Color.fromARGB(0, 241, 212, 212),
+  scrolledUnderElevation: 0,
+  backgroundColor: _isDarkMode
+      ? const Color.fromARGB(0, 0, 0, 0)
+      : const Color.fromARGB(0, 241, 212, 212),
         actions: [
           Align(
             alignment: Alignment.topRight,
             child: Row(
               children: [
-                // Display sun icon when light mode is active
                 Visibility(
                   visible: !themeController.isDarkMode.value,
-                  child:Text('Darkmode Off', style: TextStyle(
-                    fontFamily: 'geistsans',
-                    fontWeight: FontWeight.w600,
-                    color: Colors.black
-                  ),),
+                  child: Text(
+                    'Darkmode Off',
+                    style: TextStyle(
+                      fontFamily: 'geistsans',
+                      fontWeight: FontWeight.w600,
+                      color: Colors.black,
+                    ),
+                  ),
                 ),
                 Visibility(
                   visible: themeController.isDarkMode.value,
-                  child:Text('Darkmode On', style: TextStyle(
-                    fontFamily: 'geistsans',
-                    fontWeight: FontWeight.w600
-                  ),),
+                  child: Text(
+                    'Darkmode On',
+                    style: TextStyle(
+                      fontFamily: 'geistsans',
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
                 ),
                 Transform.scale(
-                  scale: 0.6, // Adjust the scale to match iOS switch size
+                  scale: 0.6,
                   child: CupertinoSwitch(
-                    value: themeController.isDarkMode.value, // Reflect current mode
+                    value: themeController.isDarkMode.value,
                     onChanged: (bool value) {
-                      themeController.toggleTheme(value); // Toggle dark/light mode
-
-                      // Optional: Navigate to a new screen
+                      themeController.toggleTheme(value);
                       Navigator.pushReplacement(
                         context,
                         MaterialPageRoute(
                           builder: (context) => NavigationMenu(
                             token: widget.token,
-                            currentIndex: 4, // Set the index to 4 (Profile)
+                            currentIndex: 4,
                           ),
                         ),
                       );
                     },
-                    activeColor: const Color.fromARGB(255, 255, 0, 89), // Active color
-                    // No thumbIcon since CupertinoSwitch doesn't support it
+                    activeColor: const Color.fromARGB(255, 255, 0, 89),
                   ),
                 ),
               ],
@@ -285,7 +293,6 @@ Future<void> _logout(BuildContext context) async {
           ),
         ],
       ),
-
           backgroundColor: themeController.isDarkMode.value
               ? Color.fromARGB(255, 28, 29, 34)
               : Color.fromRGBO(255, 255, 255, 1),
@@ -300,68 +307,77 @@ Future<void> _logout(BuildContext context) async {
                   SizedBox(
                     height: 0,
                   ),
-                  // Dark mode toggle icon placed at the top-right corner
-                  
-
-                  // Rest of the UI components
-                  Container(
-                    height: 120,
-                    width: 120,
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(100),
-                      color: themeController.isDarkMode.value
-                          ? const Color.fromARGB(255, 42, 43, 36)
-                          : Color.fromARGB(125, 42, 43, 36),
-                    ),
-                    child: Padding(
-                      padding: const EdgeInsets.all(4.0),
-                      child: Stack(
-                        alignment: Alignment.center,
-                        children: [
-                          SizedBox(
-                            width: 110,
-                            height: 110,
-                            child: ClipRRect(
-                              borderRadius: BorderRadius.circular(100),
-                              child: _profileImage != null
-                                  ? Image.file(_profileImage!,
-                                      fit: BoxFit.cover)
-                                  : _profileImageUrl != null
-                                      ? Image.network(
-                                          '$_profileImageUrl',
-                                          fit: BoxFit.cover,
-                                        )
-                                      : Image.asset(
-                                          "assets/images/profile.png"),
+                  GestureDetector(
+                  onTap: () {
+                    if (_profileImageUrl != null) {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => FullscreenImage(imageUrl: _profileImageUrl!),
+                        ),
+                      );
+                    }
+                  },
+                  child: Hero(
+                    tag: _profileImageUrl ?? 'default_tag', // Provide a default tag if null
+                    child: Container(
+                      height: 120,
+                      width: 120,
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(100),
+                        color: themeController.isDarkMode.value
+                            ? const Color.fromARGB(255, 97, 97, 97)
+                            : Color.fromARGB(190, 196, 196, 196),
+                      ),
+                      child: Padding(
+                        padding: const EdgeInsets.all(4.0),
+                        child: Stack(
+                          alignment: Alignment.center,
+                          children: [
+                            SizedBox(
+                              width: 110,
+                              height: 110,
+                              child: ClipRRect(
+                                borderRadius: BorderRadius.circular(100),
+                                child: _profileImage != null
+                                    ? Image.file(_profileImage!, fit: BoxFit.cover)
+                                    : _profileImageUrl != null
+                                        ? Image.network(
+                                            _profileImageUrl!,
+                                            fit: BoxFit.cover,
+                                          )
+                                        : Image.asset("assets/images/profile.png"),
+                              ),
                             ),
-                          ),
-                          Positioned(
-                            bottom: 2,
-                            right: 2,
-                            child: SizedBox(
-                              height: 31,
-                              width: 31,
-                              child: DecoratedBox(
-                                decoration: BoxDecoration(
-                                  color: const Color.fromARGB(255, 100, 100, 100),
-                                  borderRadius: BorderRadius.circular(50),
-                                ),
-                                child: IconButton(
-                                  icon: Icon(
-                                    Icons.camera_alt_rounded,
-                                    color:
-                                        const Color.fromARGB(255, 255, 255, 255),
-                                    size: 17,
+                            Positioned(
+                              bottom: 2,
+                              right: 2,
+                              child: SizedBox(
+                                height: 31,
+                                width: 31,
+                                child: DecoratedBox(
+                                  decoration: BoxDecoration(
+                                    color: const Color.fromARGB(255, 100, 100, 100),
+                                    borderRadius: BorderRadius.circular(50),
                                   ),
-                                  onPressed: _pickImage,
+                                  child: IconButton(
+                                    icon: Icon(
+                                      Icons.camera_alt_rounded,
+                                      color: const Color.fromARGB(255, 255, 255, 255),
+                                      size: 17,
+                                    ),
+                                    onPressed: _pickImage,
+                                  ),
                                 ),
                               ),
                             ),
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
                     ),
                   ),
+                ),
+
                   const SizedBox(height: 10),
                   Text(
                     '${userDetails?['profile']?['firstName'] ?? email} ${userDetails?['profile']?['lastName'] ?? ''}',
@@ -473,8 +489,8 @@ Future<void> _logout(BuildContext context) async {
                       icon: SvgPicture.asset('assets/icons/listing2.svg',
                           height: 24,
                           color: themeController.isDarkMode.value
-                              ? const Color.fromARGB(255, 109, 50, 248)
-                              : const Color.fromARGB(255, 253, 1, 77)),
+                              ? const Color.fromARGB(255, 253, 253, 253)
+                              : const Color.fromARGB(255, 0, 0, 0)),
                       textColor: themeController.isDarkMode.value
                           ? Colors.white
                           : const Color.fromARGB(255, 255, 255, 255),
@@ -615,6 +631,7 @@ Future<void> _logout(BuildContext context) async {
             ),
           ),
         ));
+  
   }
 }
 

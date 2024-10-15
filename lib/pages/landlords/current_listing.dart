@@ -2,6 +2,7 @@
 
 import 'dart:convert';
 import 'dart:typed_data';
+import 'package:rentcon/pages/agreementDetails.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
@@ -103,7 +104,7 @@ class _CurrentListingPageState extends State<CurrentListingPage> {
 
 
 Future<String?> getProofOfPaymentForSelectedMonth(String roomId, String token, String selectedMonth) async {
-  final String apiUrl = 'http://192.168.1.19:3000/payment/room/$roomId/monthlyPayments';
+  final String apiUrl = 'https://rentconnect-backend-nodejs.onrender.com/payment/room/$roomId/monthlyPayments';
 
   try {
     print('API URL: $apiUrl');
@@ -291,7 +292,7 @@ Widget buildMonthButtons(Map<String, dynamic> room, BuildContext context) {
 
 Future<int?> getReservationDuration(String roomId, String token) async {
   final response = await http.get(
-    Uri.parse('http://192.168.1.19:3000/inquiries/rooms/$roomId'),
+    Uri.parse('https://rentconnect-backend-nodejs.onrender.com/inquiries/rooms/$roomId'),
     headers: {
       'Authorization': 'Bearer $token', // If you're using token-based authentication
       'Content-Type': 'application/json',
@@ -423,6 +424,8 @@ void showRoomDetailPopover(BuildContext context, dynamic room, Map<String, dynam
 
                     if (hasOccupants) ...[
                       OccupantListWidget(
+                        propertyInquiries: propertyInquiries,
+                        room: room,
                         occupantUsers: room['occupantUsers'],
                         userProfiles: userProfiles,
                         profilePic: profilePic,
@@ -610,7 +613,7 @@ void showRoomDetailPopover(BuildContext context, dynamic room, Map<String, dynam
                           child: Text('Confirm'),
                           isDestructiveAction: true,
                           onPressed: () async {
-                            await markRoomAsOccupied(room["_id"]);
+                            await markRoomAsOccupied(context,room["_id"],);
 
                             Navigator.of(context).pop(); // Close confirmation dialog
 
@@ -690,7 +693,7 @@ void showRoomDetailPopover(BuildContext context, dynamic room, Map<String, dynam
     try {
       final response = await http.patch(
         Uri.parse(
-            'http://192.168.1.19:3000/rooms/updateRoom/$roomId'), // Ensure the URL is correct
+            'https://rentconnect-backend-nodejs.onrender.com/rooms/updateRoom/$roomId'), // Ensure the URL is correct
         headers: <String, String>{
           'Content-Type': 'application/json; charset=UTF-8',
         },
@@ -716,7 +719,7 @@ void showRoomDetailPopover(BuildContext context, dynamic room, Map<String, dynam
   Future<void> updateInquiryStatus(
       String? inquiryId, String? newStatus, String? token) async {
     final url = Uri.parse(
-        'http://192.168.1.19:3000/inquiries/update/$inquiryId'); // Match your backend route
+        'https://rentconnect-backend-nodejs.onrender.com/inquiries/update/$inquiryId'); // Match your backend route
 
     try {
       final response = await http.patch(
@@ -754,7 +757,7 @@ Future<void> updateInquiryStatusAndRoom(
     String token,
     int reservationDuration, // Include reservation duration
 ) async {
-    final url = 'http://192.168.1.19:3000/inquiries/update/$inquiryId'; // Update inquiry status
+    final url = 'https://rentconnect-backend-nodejs.onrender.com/inquiries/update/$inquiryId'; // Update inquiry status
     try {
         final response = await http.patch(
             Uri.parse(url),
@@ -774,14 +777,14 @@ Future<void> updateInquiryStatusAndRoom(
         if (response.statusCode == 200) {
             // Get the occupant's email
             final emailResponse = await http.get(
-                Uri.parse('http://192.168.1.19:3000/inquiries/$inquiryId/email'),
+                Uri.parse('https://rentconnect-backend-nodejs.onrender.com/inquiries/$inquiryId/email'),
                 headers: {
                     'Authorization': 'Bearer $token',
                     'Content-Type': 'application/json',
                 },
             );
             final inquiryResponse = await http.get(
-              Uri.parse('http://192.168.1.19:3000/inquiries/email/delarasean54@gmail.com/inquiries'), // Update the endpoint to get inquiry details
+              Uri.parse('https://rentconnect-backend-nodejs.onrender.com/inquiries/email/delarasean54@gmail.com/inquiries'), // Update the endpoint to get inquiry details
               headers: {
                 'Authorization': 'Bearer $token',
                 'Content-Type': 'application/json',
@@ -811,7 +814,7 @@ Future<void> updateInquiryStatusAndRoom(
 
 
 Future<void> _sendOccupantNotificationEmail(String occupantEmail, String message, String userId) async {
-    final emailServiceUrl = 'http://192.168.1.19:3000/notification/create'; // Endpoint to send notifications
+    final emailServiceUrl = 'https://rentconnect-backend-nodejs.onrender.com/notification/create'; // Endpoint to send notifications
     try {
         final response = await http.post(
             Uri.parse(emailServiceUrl),
@@ -843,7 +846,7 @@ Future<void> rejectAndDeleteInquiry(String inquiryId, String token, String reaso
   try {
     // First, call your API to reject the inquiry and send the reason
     final response = await http.patch(
-      Uri.parse('http://192.168.1.19:3000/inquiries/reject/$inquiryId'), // Update the endpoint
+      Uri.parse('https://rentconnect-backend-nodejs.onrender.com/inquiries/reject/$inquiryId'), // Update the endpoint
       headers: {
         'Authorization': 'Bearer $token',
         'Content-Type': 'application/json',
@@ -858,7 +861,7 @@ Future<void> rejectAndDeleteInquiry(String inquiryId, String token, String reaso
 
       // Get the inquiry details, including userId and occupant's email
       final inquiryResponse = await http.get(
-        Uri.parse('http://192.168.1.19:3000/inquiries/$inquiryId'), // Update the endpoint to get inquiry details
+        Uri.parse('https://rentconnect-backend-nodejs.onrender.com/inquiries/$inquiryId'), // Update the endpoint to get inquiry details
         headers: {
           'Authorization': 'Bearer $token',
           'Content-Type': 'application/json',
@@ -995,6 +998,47 @@ Future<void> rejectAndDeleteInquiry(String inquiryId, String token, String reaso
                     padding: const EdgeInsets.all(8.0),
                     child: items == null
                         ? Center(child: GlobalLoadingIndicator())
+                         : items!.isEmpty
+                        ?  Center(
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                
+                                
+                                Text(
+                                  'You have no listed property!',
+                                  textAlign: TextAlign.center,
+                                  style: TextStyle(
+                                    fontSize: 24,
+                                    color: _themeController.isDarkMode.value
+                                        ? const Color.fromARGB(255, 255, 255, 255)
+                                        : const Color.fromARGB(255, 0, 0, 0),
+                                    fontFamily: 'Geistsans',
+                                    fontWeight: FontWeight.bold
+                                  ),
+                                ),
+                                
+                                const SizedBox(height: 20),
+                                Image.asset(
+                                  'assets/icons/emptypana.png',
+                                  height: 300, // Adjust height as needed
+                                   // Adjust width as needed
+                                ),
+                                Text(
+                                  'Add now by pressing the plus button',
+                                  textAlign: TextAlign.center,
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    color: _themeController.isDarkMode.value
+                                        ? Colors.white70
+                                        : Colors.black54,
+                                        fontFamily: 'Geistsans',
+                                    fontWeight: FontWeight.w500
+                                  ),
+                                ),
+                              ],
+                            ),
+                          )
                         : ListView.builder(
                             itemCount: items!.length,
                             itemBuilder: (context, index) {
@@ -1607,7 +1651,10 @@ Future<void> rejectAndDeleteInquiry(String inquiryId, String token, String reaso
         ),
       ),
       floatingActionButton: FloatingActionButton(
-        backgroundColor: const Color.fromARGB(255, 0, 18, 32),
+        tooltip: 'Add property',
+        shape: CircleBorder(),
+        hoverColor: const Color.fromARGB(186, 0, 213, 241),
+        backgroundColor: _themeController.isDarkMode.value?Colors.white: const Color.fromARGB(255, 0, 18, 32),
         onPressed: () {
           Navigator.push(
             context,
@@ -1616,7 +1663,7 @@ Future<void> rejectAndDeleteInquiry(String inquiryId, String token, String reaso
             ),
           );
         },
-        child: Icon(Icons.add, color: Colors.white, size: 30,),
+        child: Icon(Icons.add, color:_themeController.isDarkMode.value?Colors.black: Colors.white, size: 30,),
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.miniEndFloat,
     );
@@ -1837,7 +1884,7 @@ void showInquiryDetailsDialog(BuildContext context, String userName, String user
   Future<void> fetchUserProfile(String userId) async {
     try {
       final response =
-          await http.get(Uri.parse('http://192.168.1.19:3000/user/$userId'));
+          await http.get(Uri.parse('https://rentconnect-backend-nodejs.onrender.com/user/$userId'));
       if (response.statusCode == 200) {
         final user = json.decode(response.body);
         setState(() {
@@ -1859,7 +1906,7 @@ void showInquiryDetailsDialog(BuildContext context, String userName, String user
 
 Future<void> fetchRoomInquiries(String roomId) async {
   try {
-    final response = await http.get(Uri.parse('http://192.168.1.19:3000/inquiries/rooms/$roomId'));
+    final response = await http.get(Uri.parse('https://rentconnect-backend-nodejs.onrender.com/inquiries/rooms/$roomId'));
     
     if (response.statusCode == 200) {
       final inquiries = json.decode(response.body) as List<dynamic>; // Decode as List
@@ -1889,7 +1936,7 @@ Future<void> fetchRoomInquiries(String roomId) async {
   Future<void> fetchRooms(String propertyId) async {
     try {
       final response = await http.get(Uri.parse(
-          'http://192.168.1.19:3000/rooms/properties/$propertyId/rooms'));
+          'https://rentconnect-backend-nodejs.onrender.com/rooms/properties/$propertyId/rooms'));
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
@@ -1928,7 +1975,7 @@ Future<void> fetchRoomInquiries(String roomId) async {
 
 
 Future<void> updateRoomStatus(String? roomId, String? newStatus) async {
-  final url = Uri.parse('http://192.168.1.19:3000/rooms/updateRoom/$roomId'); // Replace with your backend URL
+  final url = Uri.parse('https://rentconnect-backend-nodejs.onrender.com/rooms/updateRoom/$roomId'); // Replace with your backend URL
   final headers = {
     'Content-Type': 'application/json',
     'Authorization': 'Bearer your_jwt_token' // Add your JWT token if required
@@ -1966,7 +2013,7 @@ Future<void> updateRoomStatus(String? roomId, String? newStatus) async {
   Future<void> deleteProperty(String propertyId) async {
     try {
       var response = await http.delete(
-        Uri.parse('http://192.168.1.19:3000/deleteProperty/$propertyId'),
+        Uri.parse('https://rentconnect-backend-nodejs.onrender.com/deleteProperty/$propertyId'),
         headers: {"Authorization": "Bearer ${widget.token}"},
       );
 
@@ -2030,11 +2077,39 @@ Future<void> updateRoomStatus(String? roomId, String? newStatus) async {
   }
 
 
-Future<void> markRoomAsOccupied(String roomId) async {
+// Future<void> markRoomAsOccupied(String roomId) async {
+//   if (selectedUserId != null) {
+//     try {
+//       final response = await http.patch(
+//         Uri.parse('https://rentconnect-backend-nodejs.onrender.com/rooms/$roomId/occupy'),
+//         headers: {'Content-Type': 'application/json'},
+//         body: json.encode({
+//           'userId': selectedUserId, // Pass the userId from approved inquiry
+//         }),
+//       );
+
+//       print('Response status: ${response.statusCode}');
+//       print('Response body: ${response.body}'); // Log the response body
+
+//       if (response.statusCode == 200) {
+//         // Handle success (e.g., show a success message, refresh UI)
+//         print('Room marked as occupied successfully');
+//       } else {
+//         // Handle error responses (e.g., log error)
+//         print('Error marking room as occupied: ${response.body}');
+//       }
+//     } catch (error) {
+//       print('Error occurred while marking room as occupied: $error');
+//     }
+//   } else {
+//     print('No userId found to mark as occupied');
+//   }
+// }
+Future<void> markRoomAsOccupied(BuildContext context, String roomId) async {
   if (selectedUserId != null) {
     try {
       final response = await http.patch(
-        Uri.parse('http://192.168.1.19:3000/rooms/$roomId/occupy'),
+        Uri.parse('https://rentconnect-backend-nodejs.onrender.com/rooms/$roomId/occupy'),
         headers: {'Content-Type': 'application/json'},
         body: json.encode({
           'userId': selectedUserId, // Pass the userId from approved inquiry
@@ -2045,10 +2120,18 @@ Future<void> markRoomAsOccupied(String roomId) async {
       print('Response body: ${response.body}'); // Log the response body
 
       if (response.statusCode == 200) {
+        // Parse the response body for additional data
+        final data = json.decode(response.body);
+        
+        // Extract the agreement details from the response
+        final agreementData = data['agreement'];
+
         // Handle success (e.g., show a success message, refresh UI)
-        print('Room marked as occupied successfully');
+        print('Room marked as occupied successfully: ${data['message']}');
+
+        // Navigate to AgreementDetails page and pass the agreement dat
       } else {
-        // Handle error responses (e.g., log error)
+        // Handle error responses
         print('Error marking room as occupied: ${response.body}');
       }
     } catch (error) {
@@ -2065,7 +2148,7 @@ Future<void> markRoomAsOccupied(String roomId) async {
 Future<String?> fetchProofOfReservation(String roomId) async {
   try {
     // Example API call to fetch payment details
-    var response = await http.get(Uri.parse('http://192.168.1.19:3000/payment/room/$roomId/proofOfReservation'));
+    var response = await http.get(Uri.parse('https://rentconnect-backend-nodejs.onrender.com/payment/room/$roomId/proofOfReservation'));
     if (response.statusCode == 200) {
       var data = jsonDecode(response.body);
       return data['proofOfReservation']; // Ensure the key matches your backend response

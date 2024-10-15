@@ -49,7 +49,6 @@ void _addRoom() {
       capacityController: TextEditingController(),
       depositController: TextEditingController(),
       advanceController: TextEditingController(),
-      //reservationDurationController: TextEditingController(),
       reservationFeeController: TextEditingController(),
       roomPhotos: [null, null, null], // Initialize with 3 null values
     ));
@@ -70,7 +69,8 @@ void _submitRooms() async {
         room.capacityController.text.isEmpty ||
         room.depositController.text.isEmpty ||
         room.advanceController.text.isEmpty ||
-        room.reservationFeeController.text.isEmpty) {
+        room.reservationFeeController.text.isEmpty ||
+        room.roomPhotos.isEmpty) {
 
       // Show a Cupertino alert dialog for missing fields
       showCupertinoDialog(
@@ -107,7 +107,7 @@ void _submitRooms() async {
   }
 
   // If all fields are valid, proceed to submit the form
-  var request = http.MultipartRequest('POST', Uri.parse('http://192.168.1.19:3000/rooms/createRoom'));
+  var request = http.MultipartRequest('POST', Uri.parse('https://rentconnect-backend-nodejs.onrender.com/rooms/createRoom'));
 
   // Prepare data for all rooms
   for (int i = 0; i < roomUnits.length; i++) {
@@ -162,8 +162,8 @@ void _submitRooms() async {
           context: context,
           builder: (BuildContext context) {
             return CupertinoAlertDialog(
-              title: Text('Error'),
-              content: Text('Server Error: $responseBody'),
+              title: Text('Missing Field'),
+              content: Text('Please complete all required fields'),
               actions: <CupertinoDialogAction>[
                 CupertinoDialogAction(
                   child: Text('OK'),
@@ -200,11 +200,10 @@ void _submitRooms() async {
     );
   }
 }
-
   Future<void> _deleteProperty() async {
     try {
       final response = await http.delete(
-        Uri.parse('http://192.168.1.19:3000/deleteProperty/${widget.propertyId}'),
+        Uri.parse('https://rentconnect-backend-nodejs.onrender.com/deleteProperty/${widget.propertyId}'),
       );
 
       if (response.statusCode == 200) {
@@ -327,54 +326,91 @@ Widget build(BuildContext context) {
             SizedBox(height: 20),
             if (roomUnits.isNotEmpty)
             ShadButton(
-              backgroundColor: _themeController.isDarkMode.value
-                  ? const Color.fromARGB(255, 255, 255, 255)
-                  : const Color.fromARGB(255, 255, 0, 85),
-              onPressed: () async {
-                // Show the Cupertino confirmation dialog
-                bool confirmed = await showCupertinoDialog<bool>(
-                  context: context,
-                  builder: (BuildContext context) {
-                    return CupertinoAlertDialog(
-                      title: Text('Submit Room'),
-                      content: Text('Are you sure you want to submit the room details?'),
-                      actions: <Widget>[
-                        CupertinoDialogAction(
-                          isDefaultAction: true,
-                          child: Text('Cancel'),
-                          onPressed: () {
-                            Navigator.of(context).pop(false); // Return false on cancel
-                          },
-                        ),
-                        CupertinoDialogAction(
-                          isDestructiveAction: true,
-                          child: Text('Submit'),
-                          onPressed: () {
-                            Navigator.of(context).pop(true); // Return true on submit
-                          },
-                        ),
-                      ],
-                    );
-                  },
-                ) ?? false; // Provide a default value of 'false' in case the dialog returns null
+  backgroundColor: _themeController.isDarkMode.value
+      ? const Color.fromARGB(255, 255, 255, 255)
+      : const Color.fromARGB(255, 255, 0, 85),
+  onPressed: () async {
+    // Check if any room is missing photos
+    bool missingPhoto = false;
 
-                if (confirmed) {
-                  _submitRooms(); // Call submit if confirmed is true
-                }
-              },
-              child: Text(
-                'Submit Room',
-                style: TextStyle(
-                  color: _themeController.isDarkMode.value
-                      ? const Color.fromARGB(255, 0, 0, 0)
-                      : const Color.fromARGB(255, 255, 255, 255),
-                ),
+    for (var room in roomUnits) {
+      if (room.roomPhotos.isEmpty) { // Check if the room has no photos
+        missingPhoto = true;
+        break; // Exit the loop if we find a room without photos
+      }
+    }
+
+    if (missingPhoto) {
+      // Show an alert dialog if a room is missing photos
+      showCupertinoDialog(
+        context: context,
+        builder: (BuildContext context) {
+          return CupertinoAlertDialog(
+            title: Text(
+              'Missing Photos',
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                color: CupertinoColors.destructiveRed,
               ),
             ),
+            content: Text(
+              'Please upload at least one photo for all rooms before submitting.',
+              style: TextStyle(fontSize: 13, fontFamily: 'geistsans'),
+            ),
+            actions: <CupertinoDialogAction>[
+              CupertinoDialogAction(
+                child: Text('OK'),
+                onPressed: () {
+                  Navigator.of(context).pop();
+                },
+              ),
+            ],
+          );
+        },
+      );
+      return; // Exit the function early if there are missing photos
+    }
 
+    // Show the Cupertino confirmation dialog
+    bool confirmed = await showCupertinoDialog<bool>(
+      context: context,
+      builder: (BuildContext context) {
+        return CupertinoAlertDialog(
+          title: Text('Submit Room'),
+          content: Text('Are you sure you want to submit the room details?'),
+          actions: <Widget>[
+            CupertinoDialogAction(
+              isDefaultAction: true,
+              child: Text('Cancel'),
+              onPressed: () {
+                Navigator.of(context).pop(false); // Return false on cancel
+              },
+            ),
+            CupertinoDialogAction(
+              isDestructiveAction: true,
+              child: Text('Submit'),
+              onPressed: () {
+                Navigator.of(context).pop(true); // Return true on submit
+              },
+            ),
+          ],
+        );
+      },
+    ) ?? false; // Provide a default value of 'false' in case the dialog returns null
 
-
-              
+    if (confirmed) {
+      _submitRooms(); // Call submit if confirmed is true
+    }
+  },
+  child: Text(
+    'Submit Room',
+    style: TextStyle(
+      color: _themeController.isDarkMode.value
+          ? const Color.fromARGB(255, 0, 0, 0)
+          : const Color.fromARGB(255, 255, 255, 255),
+    ),
+  ),
+),
             if (roomUnits.isEmpty)
               Padding(
                 padding: const EdgeInsets.symmetric(vertical: 16.0),

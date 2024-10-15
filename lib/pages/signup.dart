@@ -106,7 +106,7 @@ void _handleRegistrationError(String errorMessage) {
     if (!_isCooldown) {
       try {
         var response = await http.post(
-          Uri.parse('http://192.168.1.19:3000/resend-otp'), // Replace with your resend OTP endpoint
+          Uri.parse('https://rentconnect-backend-nodejs.onrender.com/resend-otp'), // Replace with your resend OTP endpoint
           headers: {"Content-Type": "application/json"},
           body: jsonEncode({'email': email}),
         );
@@ -423,7 +423,7 @@ void registerUser() async {
 Future<bool> verifyOtp(String email, String otp, String hash) async {
   try {
     var response = await http.post(
-      Uri.parse('http://192.168.1.19:3000/verify-email-otp'), // Replace with your verification endpoint
+      Uri.parse('https://rentconnect-backend-nodejs.onrender.com/verify-email-otp'), // Replace with your verification endpoint
       headers: {"Content-Type": "application/json"},
       body: jsonEncode({
         'email': email,
