@@ -96,7 +96,7 @@ class SearchFieldWidget extends StatelessWidget {
             child: DecoratedBox(
               decoration: BoxDecoration(
                 color: isFilterApplied
-                    ? const Color.fromARGB(255, 255, 7, 90)
+                    ? const Color.fromARGB(255, 0, 214, 150)
                     : _themeController.isDarkMode.value
                         ? const Color.fromARGB(255, 41, 43, 49)
                         : const Color.fromARGB(255, 10, 0, 40),

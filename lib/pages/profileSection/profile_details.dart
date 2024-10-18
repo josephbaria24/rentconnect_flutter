@@ -29,7 +29,7 @@ class _ProfileDetailsState extends State<ProfileDetails> {
   }
 
   Future<void> _fetchUserDetails() async {
-    final url = Uri.parse('https://rentconnect-backend-nodejs.onrender.com/user/$userId'); // Your new endpoint
+    final url = Uri.parse('http://192.168.1.18:3000/user/$userId'); // Your new endpoint
     try {
       final response = await http.get(url, headers: {
         'Authorization': 'Bearer ${widget.token}',
@@ -52,7 +52,7 @@ class _ProfileDetailsState extends State<ProfileDetails> {
     return Scaffold(
       appBar: AppBar(
         title: Text('Profile Details'),
-        backgroundColor: Colors.blueAccent,
+        backgroundColor: const Color.fromARGB(0, 247, 247, 247),
         leading: Padding(
           padding: const EdgeInsets.symmetric(vertical: 11.0, horizontal: 12.0),
           child: SizedBox(
@@ -92,7 +92,7 @@ class _ProfileDetailsState extends State<ProfileDetails> {
                   // Profile Header
                   Container(
                     decoration: BoxDecoration(
-                      color: Colors.blueAccent,
+                      color: const Color.fromARGB(136, 76, 245, 208),
                       borderRadius: BorderRadius.circular(10),
                     ),
                     child: Padding(

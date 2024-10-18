@@ -28,13 +28,13 @@ class _LoginPageState extends State<LoginPage> {
   late SharedPreferences prefs;
   final themeController = Get.find<ThemeController>();
   late FToast fToast;
+  late ToastNotification toastNotification;
 
   @override
   void initState() {
     super.initState();
     initSharedPref();
-    fToast = FToast();
-    fToast.init(context);
+     toastNotification = ToastNotification(context);
   }
 
   void initSharedPref() async {
@@ -93,7 +93,7 @@ void loginUser() async {
         passwordController.clear();
 
         // Navigate to the main app screen
-        ToastNotification(fToast).success('Login successful!');
+        toastNotification.success('Login successful!');
         Navigator.pushAndRemoveUntil(
           context,
           MaterialPageRoute(builder: (context) => NavigationMenu(token: myToken)),
@@ -170,10 +170,11 @@ void _showForgotPasswordDialog(BuildContext context) {
                 onPressed: () {
                   Navigator.of(context).pop();
                 },
-                child: Text('Cancel', style: 
-                TextStyle(
-                  color: themeController.isDarkMode.value ? Colors.white : Colors.black
-                ),),
+                child: Text('Cancel',
+                  style: TextStyle(
+                    color: themeController.isDarkMode.value ? Colors.white : Colors.black
+                  ),
+                ),
               ),
               CupertinoDialogAction(
                 onPressed: _isSubmitting
@@ -191,9 +192,19 @@ void _showForgotPasswordDialog(BuildContext context) {
                         });
 
                         if (response) {
-                          Navigator.of(context).pop(); // Close the dialog
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(content: Text('Reset link sent to ${emailController.text}.')),
+                          // Close the keyboard
+                          FocusScope.of(context).unfocus();
+
+                          // Close the dialog
+                          Navigator.of(context).pop();
+                          
+                          ShadToaster.of(context).show(
+                            ShadToast(
+                              title: Text('Success', style: TextStyle(
+                                fontWeight: FontWeight.bold
+                              )),
+                              description: Text('Reset password link sent to ${emailController.text}'),
+                            ),
                           );
                         } else {
                           ScaffoldMessenger.of(context).showSnackBar(
@@ -213,11 +224,12 @@ void _showForgotPasswordDialog(BuildContext context) {
   );
 }
 
+
 Future<bool> _sendPasswordResetEmail(String email) async {
   // Replace with your actual endpoint and logic
   try {
     final response = await http.post(
-      Uri.parse('https://rentconnect-backend-nodejs.onrender.com/forgot-password'), // Update with your API endpoint
+      Uri.parse('http://192.168.1.18:3000/forgot-password'), // Update with your API endpoint
       headers: <String, String>{
         'Content-Type': 'application/json; charset=UTF-8',
       },

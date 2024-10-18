@@ -1,4 +1,4 @@
-// ignore_for_file: prefer_const_constructors, prefer_final_fields, unused_import
+// ignore_for_file: prefer_const_constructors, prefer_final_fields, unused_import, prefer_const_literals_to_create_immutables
 
 import 'dart:convert';
 import 'dart:typed_data';
@@ -20,6 +20,7 @@ import 'package:rentcon/pages/landlords/addListing.dart';
 import 'package:rentcon/pages/landlords/detailedProperty.dart';
 import 'package:rentcon/pages/landlords/manageProperty.dart';
 import 'package:rentcon/pages/landlords/roomCreation.dart';
+import 'package:rentcon/pages/landlords/widgets/editProperty.dart';
 import 'package:rentcon/pages/landlords/widgets/hasInquiry.dart';
 import 'package:rentcon/pages/landlords/widgets/no_inquiries_widget.dart';
 import 'package:rentcon/pages/landlords/widgets/occupant_list_widget.dart';
@@ -71,7 +72,8 @@ class _CurrentListingPageState extends State<CurrentListingPage> {
     'July', 'August', 'September', 'October', 'November', 'December'
   ];
   late PageController _monthPageController;
-  
+   bool _isTooltipVisible = false;
+   final GlobalKey _tooltipKey = GlobalKey();
 
   @override
   void initState() {
@@ -104,7 +106,7 @@ class _CurrentListingPageState extends State<CurrentListingPage> {
 
 
 Future<String?> getProofOfPaymentForSelectedMonth(String roomId, String token, String selectedMonth) async {
-  final String apiUrl = 'https://rentconnect-backend-nodejs.onrender.com/payment/room/$roomId/monthlyPayments';
+  final String apiUrl = 'http://192.168.1.18:3000/payment/room/$roomId/monthlyPayments';
 
   try {
     print('API URL: $apiUrl');
@@ -203,7 +205,7 @@ Future<void> _onMonthSelected(String month, Map<String, dynamic> room, BuildCont
   List<dynamic> inquiries = propertyInquiries[room['_id']] ?? []; // Provide a default empty list
 
   // Open a new room detail popover and pass the selected month and current index
-  showRoomDetailPopover(context, room, userProfiles, inquiries, selectedMonth: month, currentMonthIndex: _currentMonthIndex);
+  showRoomDetailPopover(context, room, userProfiles, inquiries, selectedMonth: month, currentMonthIndex: _currentMonthIndex, initialTabIndex: 1);
 }
 
 
@@ -225,7 +227,7 @@ Widget buildMonthButtons(Map<String, dynamic> room, BuildContext context) {
             child: SizedBox(
               width: 20, // Set a fixed width for the left arrow
               child: IconButton(
-                icon: Icon(Icons.arrow_left_rounded),
+                icon: Icon(Icons.chevron_left_rounded),
                 onPressed: () {
                   // Handle left arrow click (optional)
                 },
@@ -275,9 +277,9 @@ Widget buildMonthButtons(Map<String, dynamic> room, BuildContext context) {
           Padding(
             padding: const EdgeInsets.only(right: 8.0),
             child: SizedBox(
-              width: 12, // Set a fixed width for the right arrow
+              width: 8, // Set a fixed width for the right arrow
               child: IconButton(
-                icon: Icon(Icons.arrow_right_rounded),
+                icon: Icon(Icons.chevron_right_rounded),
                 onPressed: () {
                   // Handle right arrow click (optional)
                 },
@@ -292,7 +294,7 @@ Widget buildMonthButtons(Map<String, dynamic> room, BuildContext context) {
 
 Future<int?> getReservationDuration(String roomId, String token) async {
   final response = await http.get(
-    Uri.parse('https://rentconnect-backend-nodejs.onrender.com/inquiries/rooms/$roomId'),
+    Uri.parse('http://192.168.1.18:3000/inquiries/rooms/$roomId'),
     headers: {
       'Authorization': 'Bearer $token', // If you're using token-based authentication
       'Content-Type': 'application/json',
@@ -316,22 +318,31 @@ Future<int?> getReservationDuration(String roomId, String token) async {
 }
 
 
-void showRoomDetailPopover(BuildContext context, dynamic room, Map<String, dynamic> userProfiles,  List<dynamic> inquiries, {String? selectedMonth,  int currentMonthIndex = 0}) async{
+
+
+
+
+
+
+
+
+
+void showRoomDetailPopover(BuildContext context, dynamic room, Map<String, dynamic> userProfiles, List<dynamic> inquiries, {String? selectedMonth, int currentMonthIndex = 0, int initialTabIndex = 0}) async {
+  ScrollController tab1ScrollController = ScrollController(); // Add ScrollController for Tab 1
+  ScrollController tab2ScrollController = ScrollController(); // Add ScrollController for Tab 2
+  
   int? reservationDuration = await getReservationDuration(room['_id'], widget.token);
+  
   showCupertinoDialog(
     context: context,
     barrierDismissible: true,
     builder: (context) {
-      int selectedDay = room['dueDate'] != null
-          ? DateTime.parse(room['dueDate']).day
-          : 5; // Default to the 5th day
+      int selectedDay = room['dueDate'] != null ? DateTime.parse(room['dueDate']).day : 5; // Default to the 5th day
       DateTime? _selectedDueDate;
 
       void calculateDueDate() {
         DateTime today = DateTime.now();
         _selectedDueDate = DateTime(today.year, today.month, selectedDay);
-
-        // If the selected day has already passed this month, move to next month
         if (today.day > selectedDay) {
           _selectedDueDate = DateTime(today.year, today.month + 1, selectedDay);
         }
@@ -346,64 +357,63 @@ void showRoomDetailPopover(BuildContext context, dynamic room, Map<String, dynam
       ].where((photo) => photo.isNotEmpty).toList();
 
       PageController pageController = PageController();
-
       bool hasOccupants = room['occupantUsers'] != null && room['occupantUsers'].isNotEmpty;
       bool hasReserver = room['reservationInquirers'] != null && room['reservationInquirers'].isNotEmpty;
       bool isReserved = room['roomStatus'] == 'reserved';
+      bool isRented = inquiries.isNotEmpty && inquiries.any((inquiry) => inquiry['isRented'] == true);
       bool isAvailable = room['roomStatus'] == 'available';
-      bool hasInquiry = propertyInquiries['status'] == 'pending';
       bool isOccupied = room['roomStatus'] == 'occupied';
 
       bool hasPendingInquiry = false;
-            if (propertyInquiries.containsKey(room['_id'])) {
-              List<dynamic> inquiries = propertyInquiries[room['_id']] ?? [];
-              hasPendingInquiry = inquiries.any((inquiry) => inquiry['status'] == 'pending');
-            }
+      if (propertyInquiries.containsKey(room['_id'])) {
+        List<dynamic> inquiries = propertyInquiries[room['_id']] ?? [];
+        hasPendingInquiry = inquiries.any((inquiry) => inquiry['status'] == 'pending');
+      }
 
-      return Dialog(
-        backgroundColor: Theme.of(context).brightness == Brightness.dark
-            ? const Color.fromARGB(255, 41, 43, 53)
-            : Colors.white,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(20),
-        ),
-        child: ConstrainedBox(
-          constraints: BoxConstraints(
-            maxHeight: MediaQuery.of(context).size.height * 0.8, // Limits the height to 80% of screen
-            maxWidth: MediaQuery.of(context).size.width * 0.9, // Adjust the width to 90% of the screen
+      return DefaultTabController(
+        length: 2, // Two tabs
+        initialIndex: initialTabIndex,
+        child: Dialog(
+          backgroundColor: Theme.of(context).brightness == Brightness.dark
+              ? const Color.fromARGB(255, 41, 43, 53)
+              : Colors.white,
+          insetPadding: EdgeInsets.symmetric(
+            horizontal: MediaQuery.of(context).size.width < 400 ? 9.0 : 30.0,
           ),
-          child: StatefulBuilder(
-            builder: (BuildContext context, StateSetter setState) {
-              // Set the initially selected month if provided
-              if (selectedMonth != null) {
-                _selectedMonth = selectedMonth;
-              }
-
-              return Padding(
-                padding: const EdgeInsets.all(14),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    // Row for Room Number and Close Button
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          'Room No. ${room['roomNumber']?.toString() ?? 'Unknown'}',
-                          style: const TextStyle(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 20,
-                              fontFamily: 'GeistSans'),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10),
+          ),
+          child: ConstrainedBox(
+            constraints: BoxConstraints(
+              maxHeight: MediaQuery.of(context).size.height * 0.67,
+              maxWidth: MediaQuery.of(context).size.width * 0.98,
+            ),
+            child: Column(
+              children: [
+                // Room Number and Close Button
+                Padding(
+                  padding: const EdgeInsets.all(10.0),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        'Room No. ${room['roomNumber']?.toString() ?? 'Unknown'}',
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 20,
+                          fontFamily: 'GeistSans',
                         ),
-                        ElevatedButton(
+                      ),
+                      ElevatedButton(
                         style: ElevatedButton.styleFrom(
-                          backgroundColor:_themeController.isDarkMode.value
-                              ? const Color.fromARGB(0, 0, 0, 0): const Color.fromARGB(255, 255, 255, 255), // Background color similar to ghost button
+                          backgroundColor: _themeController.isDarkMode.value
+                              ? const Color.fromARGB(0, 0, 0, 0)
+                              : const Color.fromARGB(255, 255, 255, 255),
                           elevation: 0,
-                          minimumSize: const Size(0, 33), // Set the height
-                          padding: EdgeInsets.zero, // Remove padding to match size closely
+                          minimumSize: const Size(0, 33),
+                          padding: EdgeInsets.zero,
                           shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8.0), // Optional rounded corners
+                            borderRadius: BorderRadius.circular(8.0),
                           ),
                         ),
                         onPressed: () {
@@ -413,273 +423,332 @@ void showRoomDetailPopover(BuildContext context, dynamic room, Map<String, dynam
                           Icons.close,
                           color: _themeController.isDarkMode.value
                               ? Colors.white
-                              : const Color.fromARGB(255, 11, 3, 39), // Icon color based on dark mode
+                              : const Color.fromARGB(255, 11, 3, 39),
                         ),
                       ),
-
-                      ],
-                    ),
-
-                    const SizedBox(height: 10),
-
-                    if (hasOccupants) ...[
-                      OccupantListWidget(
-                        propertyInquiries: propertyInquiries,
-                        room: room,
-                        occupantUsers: room['occupantUsers'],
-                        userProfiles: userProfiles,
-                        profilePic: profilePic,
-                        fetchUserProfile: fetchUserProfile,
-                        isDarkMode: _themeController.isDarkMode.value,
-                      ),
                     ],
-
-                    if (hasReserver) ...[
-                      ReserverList(
-                        hasReserver: hasReserver,
-                        room: room,
-                        userProfiles: userProfiles,
-                        profilePic: profilePic,
-                        themeController: _themeController,  // Your theme controller instance
-                        fetchUserProfile: fetchUserProfile, // Your fetch user profile function
-                      ),
-                    ],
-
-                    Expanded(
-                      child: Scrollbar(
-                        thickness: 7,
-                        radius: Radius.circular(20),
-                        thumbVisibility: true,
-                        controller: pageController, // Makes the scrollbar always visible
-                        child: Padding(
-                          padding: const EdgeInsets.only(right: 10.0),
-                          child: SingleChildScrollView(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                SizedBox(
-                                  height: 150,
-                                  child: photos.isNotEmpty
-                                      ? PageView.builder(
-                                          controller: pageController,
-                                          itemCount: photos.length,
-                                          itemBuilder: (context, index) {
-                                            return GestureDetector(
-                                              onTap: () {
-                                                // Show full-screen image with save option
-                                                showFullscreenImage(context, photos[index]);
-                                              },
-                                              child: Padding(
-                                                padding: const EdgeInsets.symmetric(vertical: 8.0),
-                                                child: ClipRRect(
-                                                  borderRadius: BorderRadius.circular(12),
-                                                  child: FadeInImage.assetNetwork(
-                                                    placeholder: 'assets/images/placeholder.webp',
-                                                    image: photos[index],
-                                                    fit: BoxFit.cover,
-                                                  ),
-                                                ),
-                                              ),
-                                            );
-                                          },
-                                        )
-                                      : const Center(child: Text("No photos available")),
-                                ),
-                                if (photos.isNotEmpty)
-                                  Center(
-                                    child: SmoothPageIndicator(
-                                      controller: pageController,
-                                      count: photos.length,
-                                      effect: ExpandingDotsEffect(
-                                        dotHeight: 8,
-                                        dotWidth: 8,
-                                        activeDotColor:
-                                            Theme.of(context).brightness == Brightness.dark
-                                                ? Colors.white
-                                                : Colors.black,
-                                        dotColor: Colors.grey,
-                                      ),
-                                    ),
-                                  ),
-
-                                if (isAvailable) ... [
-                                  NoInquiriesWidget(),
-                                ],
-
-                                if (hasInquiry) ... [
-                                  Hasinquiry(
-                                    occupantUsers: room['occupantUsers'],
-                                  userProfiles: userProfiles,
-                                  profilePic: profilePic,
-                                  fetchUserProfile: fetchUserProfile,
-                                  isDarkMode: _themeController.isDarkMode.value,
-
-                                  ),
-                                ],
-
-                                // Proof of Reservation when Reserved
-                                if (isReserved) ...[
-                                  Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          'Reservation Details',
-          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-        ),
-        const SizedBox(height: 5),
-        Text('Reservation Fee: ₱${room['reservationFee'] ?? 'N/A'}'),
-        Text('Duration of Reservation: ${reservationDuration} days'), // Display reservationDuration
-        const SizedBox(height: 10),
-        Text('Proof of Reservation:', style: TextStyle(fontWeight: FontWeight.bold)),
-        FutureBuilder<String?>(
-          future: fetchProofOfReservation(room['_id']),
-          builder: (context, snapshot) {
-            if (snapshot.connectionState == ConnectionState.waiting) {
-              return Container(
-                height: 100,
-                alignment: Alignment.center,
-                child: CupertinoActivityIndicator(),
-              );
-            } else if (snapshot.hasError) {
-              return Container(
-                height: 100,
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(12),
-                  color: Colors.grey[200],
-                ),
-                alignment: Alignment.center,
-                child: Text('Error loading image'),
-              );
-            } else if (snapshot.hasData && snapshot.data != null) {
-              return GestureDetector(
-                onTap: () {
-                  showFullscreenImage(context, snapshot.data!);
-                },
-                child: Container(
-                  height: 100,
-                  alignment: Alignment.center,
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(12),
-                    child: FadeInImage.assetNetwork(
-                      placeholder: 'assets/images/placeholder.webp',
-                      image: snapshot.data!,
-                      fit: BoxFit.cover,
-                    ),
                   ),
                 ),
-              );
-            } else {
-              return Container(
-                height: 100,
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(12),
-                  color: const Color.fromARGB(136, 131, 131, 131),
+                const SizedBox(height: 10),
+                
+                // TabBar
+                TabBar(
+                  labelColor: _themeController.isDarkMode.value? Colors.white: Colors.black,
+                  indicatorColor: _themeController.isDarkMode.value? Colors.white:Colors.black,
+                  tabs: [
+                    Tab(text: 'Room Details'),
+                    Tab(text: 'Payment Details'),
+                  ],
                 ),
-                alignment: Alignment.center,
-                child: Text('No proof uploaded yet'),
-              );
-            }
-          },
-        ),
-        const SizedBox(height: 10),
-        Center(child: Text('Is the reservant moved-in?', style: TextStyle(
-          fontFamily: 'geistsans',
-          color: _themeController.isDarkMode.value? const Color.fromARGB(255, 216, 216, 216): const Color.fromARGB(193, 53, 53, 53),
-          fontSize: 13,
-        ),)),
-        Tooltip(
-          message: 'Is the reservant moved-in?',
-          child: Center(
-            child: ShadButton(
-              backgroundColor: _themeController.isDarkMode.value? Colors.white: const Color.fromARGB(255, 0, 16, 34),
-              onPressed: () async {
 
-                // Show confirmation dialog
-                showCupertinoDialog(
-                  context: context,
-                  builder: (BuildContext context) {
-                    return CupertinoAlertDialog(
-                      title: Text('Confirm Occupation'),
-                      content: Text('Are you sure you want to mark this room as occupied?'),
-                      actions: [
-                        CupertinoDialogAction(
-                          child: Text('Cancel'),
-                          isDefaultAction: true,
-                          onPressed: () {
-                            Navigator.of(context).pop(); // Close the dialog without action
-                          },
-                        ),
-                        CupertinoDialogAction(
-                          child: Text('Confirm'),
-                          isDestructiveAction: true,
-                          onPressed: () async {
-                            await markRoomAsOccupied(context,room["_id"],);
-
-                            Navigator.of(context).pop(); // Close confirmation dialog
-
-                            // Show success dialog
-                            showCupertinoDialog(
-                              context: context,
-                              builder: (BuildContext context) {
-                                return CupertinoAlertDialog(
-                                  title: Text('Success'),
-                                  content: Text('Successfully marked as occupied!'),
-                                  actions: [
-                                    CupertinoDialogAction(
-                                      child: Text('OK'),
-                                      onPressed: () {
-                                        Navigator.of(context).pop(); // Close success dialog
-                                        Navigator.pushReplacement(
-                                          context,
-                                          MaterialPageRoute(
-                                            builder: (context) => CurrentListingPage(token: widget.token),
-                                          ),
-                                        );
-                                      },
+                Expanded(
+                  child: TabBarView(
+                    children: [
+                      // Tab 1: Occupants, Room Photos, Agreement, etc.
+                      Padding(
+                        padding: const EdgeInsets.only(right: 3.0),
+                        child: Scrollbar(
+                          controller: tab1ScrollController, // Add ScrollController for Tab 1
+                          thickness: 4,
+                          radius: Radius.circular(10),
+                          thumbVisibility: true,
+                          child: SingleChildScrollView(
+                            controller: tab1ScrollController, // Assign ScrollController here too
+                            child: Padding(
+                              padding: const EdgeInsets.all(16.0),
+                              child: Column(
+                                children: [
+                                  if (hasOccupants)
+                                    OccupantListWidget(
+                                      propertyInquiries: propertyInquiries,
+                                      room: room,
+                                      occupantUsers: room['occupantUsers'],
+                                      userProfiles: userProfiles,
+                                      profilePic: profilePic,
+                                      fetchUserProfile: fetchUserProfile,
+                                      isDarkMode: _themeController.isDarkMode.value,
                                     ),
-                                  ],
-                                );
-                              },
-                            );
-                          },
-                        ),
-                      ],
-                    );
-                  },
-                );
-              },
-              child: Text('Mark as Occupied', style: TextStyle(
-                color: _themeController.isDarkMode.value? Colors.black: Colors.white
-              ),),
-            ),
-          ),
-        ),
-      ],
-    ),
+                                  if (hasReserver)
+                                    ReserverList(
+                                      hasReserver: hasReserver,
+                                      room: room,
+                                      userProfiles: userProfiles,
+                                      profilePic: profilePic,
+                                      themeController: _themeController,
+                                      fetchUserProfile: fetchUserProfile,
+                                    ),
+                                  SizedBox(height: 10),
+                                  Column( // Change Row to Column to stack photo and text vertically
+                                    children: [
+                                      Row(
+                                        mainAxisAlignment: MainAxisAlignment.spaceAround, // Aligns children evenly
+                                        children: [
+                                          SizedBox(
+                                            height: 150,
+                                            width: 150,
+                                            child: photos.isNotEmpty
+                                                ? PageView.builder(
+                                                    controller: pageController,
+                                                    itemCount: photos.length,
+                                                    itemBuilder: (context, index) {
+                                                      return GestureDetector(
+                                                        onTap: () {
+                                                          showFullscreenImage(context, photos[index]);
+                                                        },
+                                                        child: Container(
+                                                          decoration: BoxDecoration(
+                                                            border: Border.all(width: 1, color: _themeController.isDarkMode.value ? Colors.white : Colors.black),
+                                                            borderRadius: BorderRadius.circular(8),
+                                                          ),
+                                                          child: Padding(
+                                                            padding: const EdgeInsets.symmetric(vertical: 4.0, horizontal: 4),
+                                                            child: ClipRRect(
+                                                              borderRadius: BorderRadius.circular(8),
+                                                              child: FadeInImage.assetNetwork(
+                                                                placeholder: 'assets/images/placeholder.webp',
+                                                                image: photos[index],
+                                                                fit: BoxFit.cover,
+                                                              ),
+                                                            ),
+                                                          ),
+                                                        ),
+                                                      );
+                                                    },
+                                                  )
+                                                : const Center(child: Text("No photos available")),
+                                          ),
+                                          SizedBox(width: 10), // Spacing between the photo and texts
+                                          Expanded( // Makes the text take remaining space
+                                            child: Column(
+                                                  crossAxisAlignment: CrossAxisAlignment.start, // Aligns text to the start
+                                                  children: [
+                                                    Text.rich(
+                                                      TextSpan(
+                                                        children: [
+                                                          TextSpan(
+                                                            text: 'Monthly rent: ', 
+                                                            style: TextStyle(
+                                                              fontFamily: 'geistsans',
+                                                              fontWeight: FontWeight.bold,
+                                                              fontSize: 13
+                                                            ),
+                                                          ),
+                                                          TextSpan(
+                                                            text: '₱${room['price'] ?? 'N/A'}',
+                                                            style: TextStyle(
+                                                              fontFamily: 'geistsans',
+                                                              fontWeight: FontWeight.normal,
+                                                            ),
+                                                          ),
+                                                        ],
+                                                      ),
+                                                    ),
+                                                    Text.rich(
+                                                      TextSpan(
+                                                        children: [
+                                                          TextSpan(
+                                                            text: 'Capacity: ', 
+                                                            style: TextStyle(
+                                                              fontFamily: 'geistsans',
+                                                              fontWeight: FontWeight.bold,
+                                                            ),
+                                                          ),
+                                                          TextSpan(
+                                                            text: '${room['capacity'] ?? 'N/A'}',
+                                                            style: TextStyle(
+                                                              fontFamily: 'geistsans',
+                                                              fontWeight: FontWeight.normal,
+                                                            ),
+                                                          ),
+                                                        ],
+                                                      ),
+                                                    ),
+                                                    Text.rich(
+                                                      TextSpan(
+                                                        children: [
+                                                          TextSpan(
+                                                            text: 'Month Deposit: ', 
+                                                            style: TextStyle(
+                                                              fontFamily: 'geistsans',
+                                                              fontWeight: FontWeight.bold,
+                                                            ),
+                                                          ),
+                                                          TextSpan(
+                                                            text: '${room['deposit'] ?? 'N/A'}',
+                                                            style: TextStyle(
+                                                              fontFamily: 'geistsans',
+                                                              fontWeight: FontWeight.normal,
+                                                            ),
+                                                          ),
+                                                        ],
+                                                      ),
+                                                    ),
+                                                    Text.rich(
+                                                      TextSpan(
+                                                        children: [
+                                                          TextSpan(
+                                                            text: 'Month Advance: ', 
+                                                            style: TextStyle(
+                                                              fontFamily: 'geistsans',
+                                                              fontWeight: FontWeight.bold,
+                                                            ),
+                                                          ),
+                                                          TextSpan(
+                                                            text: '${room['advance'] ?? 'N/A'}',
+                                                            style: TextStyle(
+                                                              fontFamily: 'geistsans',
+                                                              fontWeight: FontWeight.normal,
+                                                            ),
+                                                          ),
+                                                        ],
+                                                      ),
+                                                    ),
+                                                  ],
+                                                ),
+
+                                          ),
+                                        ],
+                                      ),
+                                      if (photos.isNotEmpty)
+                                      SizedBox(height: 5),
+                                          Padding(
+                                            padding: const EdgeInsets.only(left: 67.0),
+                                            child: Align(
+                                              alignment: Alignment.centerLeft, // Aligns to the left
+                                              child: SmoothPageIndicator(
+                                                controller: pageController,
+                                                count: photos.length,
+                                                effect: ExpandingDotsEffect(
+                                                  dotHeight: 5,
+                                                  dotWidth: 5,
+                                                  activeDotColor: Theme.of(context).brightness == Brightness.dark
+                                                      ? Colors.white
+                                                      : Colors.black,
+                                                  dotColor: Colors.grey,
+                                                ),
+                                              ),
+                                            ),
+                                          ),
+
+                                        if (hasOccupants && !isRented) ...[
+                                        Center(child: Text('Is the reservant moved-in?', style: TextStyle(
+                                          fontFamily: 'geistsans',
+                                          color: _themeController.isDarkMode.value? const Color.fromARGB(255, 216, 216, 216): const Color.fromARGB(193, 53, 53, 53),
+                                          fontSize: 13,
+                                        ),)),
+                                        Tooltip(
+                                          message: 'Is the reservant moved-in?',
+                                          child: Center(
+                                            child: ShadButton(
+                                              backgroundColor: _themeController.isDarkMode.value? Colors.white: const Color.fromARGB(255, 0, 16, 34),
+                                              onPressed: () async {
+                                                // Show confirmation dialog
+                                                showCupertinoDialog(
+                                                  context: context,
+                                                  builder: (BuildContext context) {
+                                                    return CupertinoAlertDialog(
+                                                      title: Text('Confirm Occupation'),
+                                                      content: Text('Are you sure you want to mark this room as occupied?'),
+                                                      actions: [
+                                                        CupertinoDialogAction(
+                                                          child: Text('Cancel'),
+                                                          isDefaultAction: true,
+                                                          onPressed: () {
+                                                            Navigator.of(context).pop(); // Close the dialog without action
+                                                          },
+                                                        ),
+                                                        CupertinoDialogAction(
+                                                          child: Text('Confirm'),
+                                                          isDestructiveAction: true,
+                                                          onPressed: () async {
+                                                            await markRoomAsOccupied(context,room["_id"]);
+
+                                                            Navigator.of(context).pop(); // Close confirmation dialog
+
+                                                            // Show success dialog
+                                                            showCupertinoDialog(
+                                                              context: context,
+                                                              builder: (BuildContext context) {
+                                                                return CupertinoAlertDialog(
+                                                                  title: Text('Success'),
+                                                                  content: Text('Successfully marked as occupied!'),
+                                                                  actions: [
+                                                                    CupertinoDialogAction(
+                                                                      child: Text('OK'),
+                                                                      onPressed: () {
+                                                                        Navigator.of(context).pop(); // Close success dialog
+                                                                        Navigator.pushReplacement(
+                                                                          context,
+                                                                          MaterialPageRoute(
+                                                                            builder: (context) => CurrentListingPage(token: widget.token),
+                                                                          ),
+                                                                        );
+                                                                      },
+                                                                    ),
+                                                                  ],
+                                                                );
+                                                              },
+                                                            );
+                                                          },
+                                                        ),
+                                                      ],
+                                                    );
+                                                  },
+                                                );
+                                              },
+                                              child: Text('Mark as Occupied', style: TextStyle(
+                                                color: _themeController.isDarkMode.value? Colors.black: Colors.white
+                                              ),),
+                                            ),
+                                          ),
+                                        ),
+                                        ]
+                                    ],
+                                  ),
                                 ],
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
 
-
-
-                                // Payment Details when Occupied
+                      // Tab 2: Payment Details with Scrollbar
+                      Scrollbar(
+                        controller: tab2ScrollController, // Add ScrollController for Tab 2
+                        thumbVisibility: true, // Show scrollbar
+                        child: SingleChildScrollView(
+                          controller: tab2ScrollController, // Assign ScrollController here too
+                          child: Padding(
+                            padding: const EdgeInsets.all(20.0),
+                            child: Column(
+                              children: [
+                                SizedBox(height: 5,),
+                                if (isReserved) ...[
+                                  ReservationDetails(room: room, token: widget.token, mounted: mounted, reservationDuration: reservationDuration!)
+                                ],
                                 if (isOccupied) ...[
                                   PaymentDetails(
                                     room: room,
                                     selectedDueDate: _selectedDueDate,
                                     selectedMonth: _selectedMonth,
                                     proofFuture: _proofFuture,
-                                    buildMonthButtons: (room) => buildMonthButtons(room!, context), // Pass the function here
+                                    buildMonthButtons: (room) => buildMonthButtons(room!, context),
                                   ),
                                 ],
+                                if (isAvailable) ...[
+                                  NoInquiriesWidget(),
+                                ],
+                                 
                               ],
                             ),
                           ),
                         ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
-              );
-            },
+              ],
+            ),
           ),
         ),
       );
@@ -693,7 +762,7 @@ void showRoomDetailPopover(BuildContext context, dynamic room, Map<String, dynam
     try {
       final response = await http.patch(
         Uri.parse(
-            'https://rentconnect-backend-nodejs.onrender.com/rooms/updateRoom/$roomId'), // Ensure the URL is correct
+            'http://192.168.1.18:3000/rooms/updateRoom/$roomId'), // Ensure the URL is correct
         headers: <String, String>{
           'Content-Type': 'application/json; charset=UTF-8',
         },
@@ -719,7 +788,7 @@ void showRoomDetailPopover(BuildContext context, dynamic room, Map<String, dynam
   Future<void> updateInquiryStatus(
       String? inquiryId, String? newStatus, String? token) async {
     final url = Uri.parse(
-        'https://rentconnect-backend-nodejs.onrender.com/inquiries/update/$inquiryId'); // Match your backend route
+        'http://192.168.1.18:3000/inquiries/update/$inquiryId'); // Match your backend route
 
     try {
       final response = await http.patch(
@@ -755,9 +824,9 @@ Future<void> updateInquiryStatusAndRoom(
     String roomId,
     String userId,
     String token,
-    int reservationDuration, // Include reservation duration
+    int? reservationDuration,
 ) async {
-    final url = 'https://rentconnect-backend-nodejs.onrender.com/inquiries/update/$inquiryId'; // Update inquiry status
+    final url = 'http://192.168.1.18:3000/inquiries/update/$inquiryId'; // Update inquiry status
     try {
         final response = await http.patch(
             Uri.parse(url),
@@ -777,20 +846,12 @@ Future<void> updateInquiryStatusAndRoom(
         if (response.statusCode == 200) {
             // Get the occupant's email
             final emailResponse = await http.get(
-                Uri.parse('https://rentconnect-backend-nodejs.onrender.com/inquiries/$inquiryId/email'),
+                Uri.parse('http://192.168.1.18:3000/inquiries/$inquiryId/email'),
                 headers: {
                     'Authorization': 'Bearer $token',
                     'Content-Type': 'application/json',
                 },
             );
-            final inquiryResponse = await http.get(
-              Uri.parse('https://rentconnect-backend-nodejs.onrender.com/inquiries/email/delarasean54@gmail.com/inquiries'), // Update the endpoint to get inquiry details
-              headers: {
-                'Authorization': 'Bearer $token',
-                'Content-Type': 'application/json',
-              },
-            );
-
             if (emailResponse.statusCode == 200) {
                 final occupantEmail = json.decode(emailResponse.body)['email'];
                 final message = status == 'approved'
@@ -803,6 +864,8 @@ Future<void> updateInquiryStatusAndRoom(
                 print('Failed to retrieve occupant email: ${emailResponse.statusCode}');
             }
         } else {
+           print('Failed to update inquiry. Status Code: ${response.statusCode}');
+            print('Response Body: ${response.body}');
             // Handle error
             throw Exception('Failed to update inquiry and room');
         }
@@ -814,7 +877,7 @@ Future<void> updateInquiryStatusAndRoom(
 
 
 Future<void> _sendOccupantNotificationEmail(String occupantEmail, String message, String userId) async {
-    final emailServiceUrl = 'https://rentconnect-backend-nodejs.onrender.com/notification/create'; // Endpoint to send notifications
+    final emailServiceUrl = 'http://192.168.1.18:3000/notification/create'; // Endpoint to send notifications
     try {
         final response = await http.post(
             Uri.parse(emailServiceUrl),
@@ -832,7 +895,7 @@ Future<void> _sendOccupantNotificationEmail(String occupantEmail, String message
             print('Failed to send notification email to occupant: ${response.statusCode}');
         } else {
             final responseBody = json.decode(response.body);
-            print('Email service response: ${responseBody}');
+            print('Email service response: $responseBody');
         }
     } catch (error) {
         print('Error sending notification email: $error');
@@ -842,11 +905,13 @@ Future<void> _sendOccupantNotificationEmail(String occupantEmail, String message
 
 
 
+
+
 Future<void> rejectAndDeleteInquiry(String inquiryId, String token, String reason) async {
   try {
     // First, call your API to reject the inquiry and send the reason
     final response = await http.patch(
-      Uri.parse('https://rentconnect-backend-nodejs.onrender.com/inquiries/reject/$inquiryId'), // Update the endpoint
+      Uri.parse('http://192.168.1.18:3000/inquiries/reject/$inquiryId'), // Update the endpoint
       headers: {
         'Authorization': 'Bearer $token',
         'Content-Type': 'application/json',
@@ -861,7 +926,7 @@ Future<void> rejectAndDeleteInquiry(String inquiryId, String token, String reaso
 
       // Get the inquiry details, including userId and occupant's email
       final inquiryResponse = await http.get(
-        Uri.parse('https://rentconnect-backend-nodejs.onrender.com/inquiries/$inquiryId'), // Update the endpoint to get inquiry details
+        Uri.parse('http://192.168.1.18:3000/inquiries/$inquiryId'), // Update the endpoint to get inquiry details
         headers: {
           'Authorization': 'Bearer $token',
           'Content-Type': 'application/json',
@@ -888,6 +953,20 @@ Future<void> rejectAndDeleteInquiry(String inquiryId, String token, String reaso
   }
 }
 
+
+
+  Future<bool> deleteProperty(String propertyId) async {
+    final response = await http.delete(Uri.parse('http://192.168.1.18:3000/deleteProperty/$propertyId'));
+
+    if (response.statusCode == 200) {
+      // Successfully deleted the property
+      return true;
+    } else {
+      // Handle error or property not found
+      final Map<String, dynamic> responseData = json.decode(response.body);
+      throw Exception(responseData['error'] ?? 'Failed to delete property');
+    }
+  }
 
   void _deletePropertiesOrRooms() {
     // Implement your logic to delete properties or rooms here
@@ -918,13 +997,69 @@ Future<void> rejectAndDeleteInquiry(String inquiryId, String token, String reaso
     );
   }
 
+ void _confirmDelete(String propertyId) async {
+  final bool? confirmed = await showCupertinoDialog<bool>(
+    context: context,
+    builder: (context) => CupertinoAlertDialog(
+      title: Text('Delete Property'),
+      content: Text('Are you sure you want to delete this property?'),
+      actions: [
+        CupertinoDialogAction(
+          onPressed: () => Navigator.of(context).pop(false),
+          child: Text('Cancel'),
+        ),
+        CupertinoDialogAction(
+          onPressed: () => Navigator.of(context).pop(true),
+          child: Text('Delete', style: TextStyle(
+            color: Colors.red
+          ),),
+        ),
+      ],
+    ),
+  );
+
+  if (confirmed == true) {
+    try {
+      final success = await deleteProperty(propertyId);
+      if (success) {
+        setState(() {
+          // Ensure items is non-null before calling removeWhere
+          if (items != null) {
+            items?.removeWhere((property) => property['_id'] == propertyId);
+          }
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Property deleted successfully.')),
+        );
+      }
+    } catch (error) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to delete property: $error')),
+      );
+    }
+  }
+}
 
 
+
+void _navigateToEditProperty(String propertyId) {
+  // Find the property by its ID from the items list
+  var selectedProperty = items?.firstWhere((property) => property['_id'] == propertyId);
+
+  Navigator.push(
+    context,
+    MaterialPageRoute(
+      builder: (context) => EditPropertyScreen(
+        propertyId: propertyId,
+        propertyDetails: selectedProperty,  // Passing the selected property details
+      ),
+    ),
+  );
+}
 
   @override
   Widget build(BuildContext context) {
-    print('inquiry: $propertyInquiries');
-    print('UserId from inquiry:$selectedUserId');
+    print('Property $items');
     return Scaffold(
       backgroundColor: _themeController.isDarkMode.value
           ? Color.fromARGB(255, 28, 29, 34)
@@ -972,6 +1107,12 @@ Future<void> rejectAndDeleteInquiry(String inquiryId, String token, String reaso
             ),
           ),
         ),
+        actions: [
+          Padding(
+            padding: const EdgeInsets.only(right: 20.0),
+            child: Icon(Icons.help_outline_rounded),
+          )
+        ],
       ),
       body: RefreshIndicator(
         color: Colors.black,
@@ -1003,8 +1144,6 @@ Future<void> rejectAndDeleteInquiry(String inquiryId, String token, String reaso
                             child: Column(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
-                                
-                                
                                 Text(
                                   'You have no listed property!',
                                   textAlign: TextAlign.center,
@@ -1091,10 +1230,13 @@ Future<void> rejectAndDeleteInquiry(String inquiryId, String token, String reaso
                                                       ),
                                                     ),
                                                     ShadTooltip(
-                                                      builder: (context) => const Text('Status of your request listing',
-                                                      style: TextStyle(
-                                                        fontFamily: 'geistsans'
-                                                      ),),
+                                                      longPressDuration: Duration(microseconds: 01),
+                                                      builder: (context) => const Text(
+                                                        'Status of your request listing',
+                                                        style: TextStyle(
+                                                          fontFamily: 'geistsans',
+                                                        ),
+                                                      ),
                                                       child: Text(
                                                         item['status'] ?? 'No Status',
                                                         style: TextStyle(
@@ -1104,8 +1246,32 @@ Future<void> rejectAndDeleteInquiry(String inquiryId, String token, String reaso
                                                         ),
                                                       ),
                                                     ),
+                                                    PopupMenuButton(
+                                                      color: _themeController.isDarkMode.value? const Color.fromARGB(255, 42, 44, 48): Colors.white,
+                                                    icon: Icon(Icons.more_vert), // Three-dot icon
+                                                    itemBuilder: (context) => [
+                                                      PopupMenuItem(
+                                                        value: 'edit', // Value for the edit option
+                                                        child: Text('Edit Property'), // Display text for the edit option
+                                                      ),
+                                                      PopupMenuItem(
+                                                        value: 'delete', // Value for the delete option
+                                                        child: Text('Delete Property'), // Display text for the delete option
+                                                      ),
+                                                    ],
+                                                    onSelected: (value) {
+                                                      if (value == 'edit') {
+                                                        // Call your edit function or navigate to the edit page
+                                                       _navigateToEditProperty(propertyId); // Replace this with your actual edit logic
+                                                      } else if (value == 'delete') {
+                                                        _confirmDelete(propertyId); // Call the confirm delete function
+                                                      }
+                                                    },
+                                                  ),
+
                                                   ],
                                                 ),
+
 
 
                                                 const SizedBox(height: 8),
@@ -1162,47 +1328,56 @@ Future<void> rejectAndDeleteInquiry(String inquiryId, String token, String reaso
                                         ],
                                       ),
                                       SizedBox(height: 10,),
-                                      Divider(
-                                        thickness: 1.5, // Adjust thickness
-                                        color: const Color.fromARGB(255, 177, 177, 177), // Adjust color
-                                      ),
-
                                         const SizedBox(height: 10),
                                         Row(
-                                          mainAxisAlignment:
-                                              MainAxisAlignment.spaceBetween,
-                                          
-                                          children: [
-                                            Text(
-                                              'Room/Unit Available',
-                                              style: TextStyle(
+                                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                            children: [
+                                              Text(
+                                                'Room/Unit Available',
+                                                style: TextStyle(
                                                   fontWeight: FontWeight.bold,
-                                                  fontSize: 16),
-                                            ),
-                                            DecoratedBox(
-                                              decoration: BoxDecoration(
-                                                borderRadius: BorderRadius.circular(10),
-                                                color:  _themeController.isDarkMode.value?  Colors.white: Colors.black
+                                                  fontSize: 16,
+                                                ),
                                               ),
-                                              child: Padding(
+                                              
+                                              Expanded(
+                                                child: Padding(
+                                                  padding: const EdgeInsets.symmetric(horizontal: 5.0), // Add some padding to make the line look nicer
+                                                  child: Divider(
+                                                    thickness: 1.5, // Adjust the thickness of the line
+                                                    color: _themeController.isDarkMode.value ? Colors.white : Colors.black, // Change color based on the theme
+                                                  ),
+                                                ),
+                                              ),
+                                              
+                                              Padding(
                                                 padding: const EdgeInsets.all(6.0),
                                                 child: Row(
-                                                  crossAxisAlignment:
-                                                      CrossAxisAlignment.end,
+                                                  crossAxisAlignment: CrossAxisAlignment.end,
                                                   children: [
                                                     GestureDetector(
                                                       onTap: () {
-                                                        Navigator.push(context, MaterialPageRoute(builder: (context)=> Addingroom(token: widget.token, propertyId: propertyId)));
+                                                        Navigator.push(
+                                                          context,
+                                                          MaterialPageRoute(
+                                                            builder: (context) => Addingroom(
+                                                              token: widget.token,
+                                                              propertyId: propertyId,
+                                                            ),
+                                                          ),
+                                                        );
                                                       },
-                                                      child: Icon(Icons.add, 
-                                                      color: _themeController.isDarkMode.value?  Colors.black: Colors.white,),
+                                                      child: Icon(
+                                                        Icons.add_circle_rounded,
+                                                        size: 27,
+                                                        color: _themeController.isDarkMode.value ? Colors.white : Colors.black,
+                                                      ),
                                                     ),
                                                   ],
                                                 ),
-                                              ),
-                                            )
-                                          ],
-                                        ),
+                                              )
+                                            ],
+                                          ),
 
                                         SizedBox(height: 8),
                                         rooms.isEmpty
@@ -1404,6 +1579,8 @@ Future<void> rejectAndDeleteInquiry(String inquiryId, String token, String reaso
                                                                             return Padding(
                                                                               padding: const EdgeInsets.all(8.0),
                                                                               child: Tooltip(
+                                                                                triggerMode: TooltipTriggerMode.longPress,
+                                                                               verticalOffset: -50,
                                                                                 message: 'Tap to see inquiry detail',
                                                                                 child: GestureDetector(
                                                                                   onTap: () {
@@ -1486,42 +1663,44 @@ Future<void> rejectAndDeleteInquiry(String inquiryId, String token, String reaso
                                                                                                                     Navigator.of(context).pop(false);
                                                                                                                   },
                                                                                                                 ),
-                                                                                                                CupertinoDialogAction(
-                                                                                                                  isDestructiveAction: true,
-                                                                                                                  child: Text("Approve"),
-                                                                                                                  onPressed: () {
-                                                                                                                    Navigator.of(context).pop(true);
-                                                                                                                    Navigator.pushReplacement(
-                                                                                                                      context,
-                                                                                                                      MaterialPageRoute(
-                                                                                                                        builder: (context) => CurrentListingPage(token: widget.token), // Your page to refresh
-                                                                                                                      ),
-                                                                                                                    );
-                                                                                                                  },
+                                                                                                                 CupertinoDialogAction(
+                                                                                                                    isDestructiveAction: true,
+                                                                                                                    child: Text("Approve"),
+                                                                                                                    onPressed: () {
+                                                                                                                        Navigator.of(context).pop(true); // Only pop here
+                                                                                                                    },
                                                                                                                 ),
                                                                                                               ],
                                                                                                             );
                                                                                                           },
                                                                                                         );
 
-                                                                                                        if (confirm == true) {
-                                                                                                          // Call the function to approve inquiry and update room
-                                                                                                          try {
-                                                                                                            await updateInquiryStatusAndRoom(
-                                                                                                              inquiry,
-                                                                                                              inquiry['_id'],
-                                                                                                              'approved',
-                                                                                                              roomId,
-                                                                                                              userId,
-                                                                                                              widget.token,
-                                                                                                              inquiry['reservationDuration'],
-                                                                                                              // Pass reservation duration here
-                                                                                                            );
-                                                                                                            await fetchRoomInquiries(roomId);
-                                                                                                          } catch (error) {
-                                                                                                            print('Error: $error');
-                                                                                                          }
-                                                                                                        }
+                                                                                                        
+                                                                                                if (confirm == true) {
+                                                                                                    // Call the function to approve inquiry and update room
+                                                                                                    try {
+                                                                                                        await updateInquiryStatusAndRoom(
+                                                                                                            inquiry,
+                                                                                                            inquiry['_id'],
+                                                                                                            'approved',
+                                                                                                            roomId,
+                                                                                                            userId,
+                                                                                                            widget.token,
+                                                                                                            inquiry['reservationDuration'],
+                                                                                                        );
+
+                                                                                                        // Only navigate here after successful update
+                                                                                                        Navigator.pushReplacement(
+                                                                                                            context,
+                                                                                                            MaterialPageRoute(
+                                                                                                                builder: (context) => CurrentListingPage(token: widget.token),
+                                                                                                            ),
+                                                                                                        );
+                                                                                                        await fetchRoomInquiries(roomId);
+                                                                                                    } catch (error) {
+                                                                                                        print('Error: $error');
+                                                                                                    }
+                                                                                                }
                                                                                                       },
                                                                                                       child: Text(
                                                                                                         'Approve',
@@ -1837,7 +2016,7 @@ void showInquiryDetailsDialog(BuildContext context, String userName, String user
 
 
 
-    Future<void> getPropertyList(String userId) async {
+Future<void> getPropertyList(String userId) async {
     try {
       setState(() {
         _loading = true; // Set loading to true when starting fetch
@@ -1854,6 +2033,7 @@ void showInquiryDetailsDialog(BuildContext context, String userName, String user
         var jsonResponse = jsonDecode(response.body);
         List<dynamic> properties = jsonResponse['success'] ?? [];
         setState(() {
+          
           items = properties;
           _loading = false; // Set loading to false after fetch
         });
@@ -1884,7 +2064,7 @@ void showInquiryDetailsDialog(BuildContext context, String userName, String user
   Future<void> fetchUserProfile(String userId) async {
     try {
       final response =
-          await http.get(Uri.parse('https://rentconnect-backend-nodejs.onrender.com/user/$userId'));
+          await http.get(Uri.parse('http://192.168.1.18:3000/user/$userId'));
       if (response.statusCode == 200) {
         final user = json.decode(response.body);
         setState(() {
@@ -1906,7 +2086,7 @@ void showInquiryDetailsDialog(BuildContext context, String userName, String user
 
 Future<void> fetchRoomInquiries(String roomId) async {
   try {
-    final response = await http.get(Uri.parse('https://rentconnect-backend-nodejs.onrender.com/inquiries/rooms/$roomId'));
+    final response = await http.get(Uri.parse('http://192.168.1.18:3000/inquiries/rooms/$roomId'));
     
     if (response.statusCode == 200) {
       final inquiries = json.decode(response.body) as List<dynamic>; // Decode as List
@@ -1936,7 +2116,7 @@ Future<void> fetchRoomInquiries(String roomId) async {
   Future<void> fetchRooms(String propertyId) async {
     try {
       final response = await http.get(Uri.parse(
-          'https://rentconnect-backend-nodejs.onrender.com/rooms/properties/$propertyId/rooms'));
+          'http://192.168.1.18:3000/rooms/properties/$propertyId/rooms'));
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
@@ -1975,7 +2155,7 @@ Future<void> fetchRoomInquiries(String roomId) async {
 
 
 Future<void> updateRoomStatus(String? roomId, String? newStatus) async {
-  final url = Uri.parse('https://rentconnect-backend-nodejs.onrender.com/rooms/updateRoom/$roomId'); // Replace with your backend URL
+  final url = Uri.parse('http://192.168.1.18:3000/rooms/updateRoom/$roomId'); // Replace with your backend URL
   final headers = {
     'Content-Type': 'application/json',
     'Authorization': 'Bearer your_jwt_token' // Add your JWT token if required
@@ -2005,30 +2185,6 @@ Future<void> updateRoomStatus(String? roomId, String? newStatus) async {
     print('Error updating room: $error');
   }
 }
-
-
-
-
-
-  Future<void> deleteProperty(String propertyId) async {
-    try {
-      var response = await http.delete(
-        Uri.parse('https://rentconnect-backend-nodejs.onrender.com/deleteProperty/$propertyId'),
-        headers: {"Authorization": "Bearer ${widget.token}"},
-      );
-
-      if (response.statusCode == 200) {
-        await getPropertyList(userId); // Refresh property list after deletion
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Property deleted successfully')),
-        );
-      } else {
-        print("Error deleting property: ${response.statusCode}");
-      }
-    } catch (e) {
-      print("Error: $e");
-    }
-  }
 
   void showPropertyDetailPage(Property property) {
     Navigator.push(
@@ -2076,40 +2232,11 @@ Future<void> updateRoomStatus(String? roomId, String? newStatus) async {
     await getPropertyList(userId);
   }
 
-
-// Future<void> markRoomAsOccupied(String roomId) async {
-//   if (selectedUserId != null) {
-//     try {
-//       final response = await http.patch(
-//         Uri.parse('https://rentconnect-backend-nodejs.onrender.com/rooms/$roomId/occupy'),
-//         headers: {'Content-Type': 'application/json'},
-//         body: json.encode({
-//           'userId': selectedUserId, // Pass the userId from approved inquiry
-//         }),
-//       );
-
-//       print('Response status: ${response.statusCode}');
-//       print('Response body: ${response.body}'); // Log the response body
-
-//       if (response.statusCode == 200) {
-//         // Handle success (e.g., show a success message, refresh UI)
-//         print('Room marked as occupied successfully');
-//       } else {
-//         // Handle error responses (e.g., log error)
-//         print('Error marking room as occupied: ${response.body}');
-//       }
-//     } catch (error) {
-//       print('Error occurred while marking room as occupied: $error');
-//     }
-//   } else {
-//     print('No userId found to mark as occupied');
-//   }
-// }
 Future<void> markRoomAsOccupied(BuildContext context, String roomId) async {
   if (selectedUserId != null) {
     try {
       final response = await http.patch(
-        Uri.parse('https://rentconnect-backend-nodejs.onrender.com/rooms/$roomId/occupy'),
+        Uri.parse('http://192.168.1.18:3000/rooms/$roomId/occupy'),
         headers: {'Content-Type': 'application/json'},
         body: json.encode({
           'userId': selectedUserId, // Pass the userId from approved inquiry
@@ -2148,7 +2275,7 @@ Future<void> markRoomAsOccupied(BuildContext context, String roomId) async {
 Future<String?> fetchProofOfReservation(String roomId) async {
   try {
     // Example API call to fetch payment details
-    var response = await http.get(Uri.parse('https://rentconnect-backend-nodejs.onrender.com/payment/room/$roomId/proofOfReservation'));
+    var response = await http.get(Uri.parse('http://192.168.1.18:3000/payment/room/$roomId/proofOfReservation'));
     if (response.statusCode == 200) {
       var data = jsonDecode(response.body);
       return data['proofOfReservation']; // Ensure the key matches your backend response
@@ -2240,3 +2367,381 @@ void showFullscreenImage(BuildContext context, String imageUrl) {
 }
 
 }
+
+
+
+// void showRoomDetailPopover(BuildContext context, dynamic room, Map<String, dynamic> userProfiles,  List<dynamic> inquiries, {String? selectedMonth,  int currentMonthIndex = 0}) async{
+//   int? reservationDuration = await getReservationDuration(room['_id'], widget.token);
+//   showCupertinoDialog(
+//     context: context,
+//     barrierDismissible: true,
+//     builder: (context) {
+//       int selectedDay = room['dueDate'] != null
+//           ? DateTime.parse(room['dueDate']).day
+//           : 5; // Default to the 5th day
+//       DateTime? _selectedDueDate;
+
+//       void calculateDueDate() {
+//         DateTime today = DateTime.now();
+//         _selectedDueDate = DateTime(today.year, today.month, selectedDay);
+
+//         // If the selected day has already passed this month, move to next month
+//         if (today.day > selectedDay) {
+//           _selectedDueDate = DateTime(today.year, today.month + 1, selectedDay);
+//         }
+//       }
+
+//       calculateDueDate();
+
+//       List<String> photos = [
+//         (room['photo1'] as String?)?.toString() ?? '',
+//         (room['photo2'] as String?)?.toString() ?? '',
+//         (room['photo3'] as String?)?.toString() ?? '',
+//       ].where((photo) => photo.isNotEmpty).toList();
+
+//       PageController pageController = PageController();
+
+//       bool hasOccupants = room['occupantUsers'] != null && room['occupantUsers'].isNotEmpty;
+//       bool hasReserver = room['reservationInquirers'] != null && room['reservationInquirers'].isNotEmpty;
+//       bool isReserved = room['roomStatus'] == 'reserved';
+//       bool isAvailable = room['roomStatus'] == 'available';
+//       bool hasInquiry = propertyInquiries['status'] == 'pending';
+//       bool isOccupied = room['roomStatus'] == 'occupied';
+
+//       bool hasPendingInquiry = false;
+//             if (propertyInquiries.containsKey(room['_id'])) {
+//               List<dynamic> inquiries = propertyInquiries[room['_id']] ?? [];
+//               hasPendingInquiry = inquiries.any((inquiry) => inquiry['status'] == 'pending');
+//             }
+
+//       return Dialog(
+//         backgroundColor: Theme.of(context).brightness == Brightness.dark
+//             ? const Color.fromARGB(255, 41, 43, 53)
+//             : Colors.white,
+//         insetPadding: EdgeInsets.symmetric(
+//           horizontal: MediaQuery.of(context).size.width < 400
+//               ? 9.0 // Smaller padding for smaller screens
+//               : 30.0, // More padding for larger screens
+//         ),
+//         shape: RoundedRectangleBorder(
+//           borderRadius: BorderRadius.circular(10),
+//         ),
+//         child: ConstrainedBox(
+//           constraints: BoxConstraints(
+//             maxHeight: MediaQuery.of(context).size.height * 0.8, // Limits the height to 80% of screen
+//             maxWidth: MediaQuery.of(context).size.width * 0.98, // Adjust the width to 90% of the screen
+//           ),
+//           child: StatefulBuilder(
+//             builder: (BuildContext context, StateSetter setState) {
+//               // Set the initially selected month if provided
+//               if (selectedMonth != null) {
+//                 _selectedMonth = selectedMonth;
+//               }
+
+//               return Padding(
+//                 padding: const EdgeInsets.all(10),
+//                 child: Column(
+//                   mainAxisSize: MainAxisSize.min,
+//                   children: [
+//                     // Row for Room Number and Close Button
+//                     Row(
+//                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
+//                       children: [
+//                         Text(
+//                           'Room No. ${room['roomNumber']?.toString() ?? 'Unknown'}',
+//                           style: const TextStyle(
+//                               fontWeight: FontWeight.bold,
+//                               fontSize: 20,
+//                               fontFamily: 'GeistSans'),
+//                         ),
+//                         ElevatedButton(
+//                         style: ElevatedButton.styleFrom(
+//                           backgroundColor:_themeController.isDarkMode.value
+//                               ? const Color.fromARGB(0, 0, 0, 0): const Color.fromARGB(255, 255, 255, 255), // Background color similar to ghost button
+//                           elevation: 0,
+//                           minimumSize: const Size(0, 33), // Set the height
+//                           padding: EdgeInsets.zero, // Remove padding to match size closely
+//                           shape: RoundedRectangleBorder(
+//                             borderRadius: BorderRadius.circular(8.0), // Optional rounded corners
+//                           ),
+//                         ),
+//                         onPressed: () {
+//                           Navigator.pop(context);
+//                         },
+//                         child: Icon(
+//                           Icons.close,
+//                           color: _themeController.isDarkMode.value
+//                               ? Colors.white
+//                               : const Color.fromARGB(255, 11, 3, 39), // Icon color based on dark mode
+//                         ),
+//                       ),
+
+//                       ],
+//                     ),
+
+//                     const SizedBox(height: 10),
+
+//                     if (hasOccupants) ...[
+//                       OccupantListWidget(
+//                         propertyInquiries: propertyInquiries,
+//                         room: room,
+//                         occupantUsers: room['occupantUsers'],
+//                         userProfiles: userProfiles,
+//                         profilePic: profilePic,
+//                         fetchUserProfile: fetchUserProfile,
+//                         isDarkMode: _themeController.isDarkMode.value,
+//                       ),
+//                     ],
+
+//                     if (hasReserver) ...[
+//                       ReserverList(
+//                         hasReserver: hasReserver,
+//                         room: room,
+//                         userProfiles: userProfiles,
+//                         profilePic: profilePic,
+//                         themeController: _themeController,  // Your theme controller instance
+//                         fetchUserProfile: fetchUserProfile, // Your fetch user profile function
+//                       ),
+//                     ],
+
+//                     Expanded(
+//                       child: Scrollbar(
+//                         thickness: 7,
+//                         radius: Radius.circular(20),
+//                         thumbVisibility: true,
+//                         controller: pageController, // Makes the scrollbar always visible
+//                         child: Padding(
+//                           padding: const EdgeInsets.only(right: 10.0),
+//                           child: SingleChildScrollView(
+//                             child: Column(
+//                               crossAxisAlignment: CrossAxisAlignment.start,
+//                               children: [
+//                                 SizedBox(
+//                                   height: 150,
+//                                   child: photos.isNotEmpty
+//                                       ? PageView.builder(
+//                                           controller: pageController,
+//                                           itemCount: photos.length,
+//                                           itemBuilder: (context, index) {
+//                                             return GestureDetector(
+//                                               onTap: () {
+//                                                 // Show full-screen image with save option
+//                                                 showFullscreenImage(context, photos[index]);
+//                                               },
+//                                               child: Padding(
+//                                                 padding: const EdgeInsets.symmetric(vertical: 8.0),
+//                                                 child: ClipRRect(
+//                                                   borderRadius: BorderRadius.circular(12),
+//                                                   child: FadeInImage.assetNetwork(
+//                                                     placeholder: 'assets/images/placeholder.webp',
+//                                                     image: photos[index],
+//                                                     fit: BoxFit.cover,
+//                                                   ),
+//                                                 ),
+//                                               ),
+//                                             );
+//                                           },
+//                                         )
+//                                       : const Center(child: Text("No photos available")),
+//                                 ),
+//                                 if (photos.isNotEmpty)
+//                                   Center(
+//                                     child: SmoothPageIndicator(
+//                                       controller: pageController,
+//                                       count: photos.length,
+//                                       effect: ExpandingDotsEffect(
+//                                         dotHeight: 8,
+//                                         dotWidth: 8,
+//                                         activeDotColor:
+//                                             Theme.of(context).brightness == Brightness.dark
+//                                                 ? Colors.white
+//                                                 : Colors.black,
+//                                         dotColor: Colors.grey,
+//                                       ),
+//                                     ),
+//                                   ),
+
+//                                 if (isAvailable) ... [
+//                                   NoInquiriesWidget(),
+//                                 ],
+
+//                                 if (hasInquiry) ... [
+//                                   Hasinquiry(
+//                                     occupantUsers: room['occupantUsers'],
+//                                   userProfiles: userProfiles,
+//                                   profilePic: profilePic,
+//                                   fetchUserProfile: fetchUserProfile,
+//                                   isDarkMode: _themeController.isDarkMode.value,
+
+//                                   ),
+//                                 ],
+
+//                                 // Proof of Reservation when Reserved
+    //                             if (isReserved) ...[
+    //                               Column(
+    //   crossAxisAlignment: CrossAxisAlignment.start,
+    //   children: [
+    //     Text(
+    //       'Reservation Details',
+    //       style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+    //     ),
+    //     const SizedBox(height: 5),
+    //     Text('Reservation Fee: ₱${room['reservationFee'] ?? 'N/A'}'),
+    //     Text('Duration of Reservation: ${reservationDuration} days'), // Display reservationDuration
+    //     const SizedBox(height: 10),
+    //     Text('Proof of Reservation:', style: TextStyle(fontWeight: FontWeight.bold)),
+    //     FutureBuilder<String?>(
+    //       future: fetchProofOfReservation(room['_id']),
+    //       builder: (context, snapshot) {
+    //         if (snapshot.connectionState == ConnectionState.waiting) {
+    //           return Container(
+    //             height: 100,
+    //             alignment: Alignment.center,
+    //             child: CupertinoActivityIndicator(),
+    //           );
+    //         } else if (snapshot.hasError) {
+    //           return Container(
+    //             height: 100,
+    //             decoration: BoxDecoration(
+    //               borderRadius: BorderRadius.circular(12),
+    //               color: Colors.grey[200],
+    //             ),
+    //             alignment: Alignment.center,
+    //             child: Text('Error loading image'),
+    //           );
+    //         } else if (snapshot.hasData && snapshot.data != null) {
+    //           return GestureDetector(
+    //             onTap: () {
+    //               showFullscreenImage(context, snapshot.data!);
+    //             },
+    //             child: Container(
+    //               height: 100,
+    //               alignment: Alignment.center,
+    //               child: ClipRRect(
+    //                 borderRadius: BorderRadius.circular(12),
+    //                 child: FadeInImage.assetNetwork(
+    //                   placeholder: 'assets/images/placeholder.webp',
+    //                   image: snapshot.data!,
+    //                   fit: BoxFit.cover,
+    //                 ),
+    //               ),
+    //             ),
+    //           );
+    //         } else {
+    //           return Container(
+    //             height: 100,
+    //             decoration: BoxDecoration(
+    //               borderRadius: BorderRadius.circular(12),
+    //               color: const Color.fromARGB(136, 131, 131, 131),
+    //             ),
+    //             alignment: Alignment.center,
+    //             child: Text('No proof uploaded yet'),
+    //           );
+    //         }
+    //       },
+    //     ),
+    //     const SizedBox(height: 10),
+    //     Center(child: Text('Is the reservant moved-in?', style: TextStyle(
+    //       fontFamily: 'geistsans',
+    //       color: _themeController.isDarkMode.value? const Color.fromARGB(255, 216, 216, 216): const Color.fromARGB(193, 53, 53, 53),
+    //       fontSize: 13,
+    //     ),)),
+    //     Tooltip(
+    //       message: 'Is the reservant moved-in?',
+    //       child: Center(
+    //         child: ShadButton(
+    //           backgroundColor: _themeController.isDarkMode.value? Colors.white: const Color.fromARGB(255, 0, 16, 34),
+    //           onPressed: () async {
+
+    //             // Show confirmation dialog
+    //             showCupertinoDialog(
+    //               context: context,
+    //               builder: (BuildContext context) {
+    //                 return CupertinoAlertDialog(
+    //                   title: Text('Confirm Occupation'),
+    //                   content: Text('Are you sure you want to mark this room as occupied?'),
+    //                   actions: [
+    //                     CupertinoDialogAction(
+    //                       child: Text('Cancel'),
+    //                       isDefaultAction: true,
+    //                       onPressed: () {
+    //                         Navigator.of(context).pop(); // Close the dialog without action
+    //                       },
+    //                     ),
+    //                     CupertinoDialogAction(
+    //                       child: Text('Confirm'),
+    //                       isDestructiveAction: true,
+    //                       onPressed: () async {
+    //                         await markRoomAsOccupied(context,room["_id"],);
+
+    //                         Navigator.of(context).pop(); // Close confirmation dialog
+
+    //                         // Show success dialog
+    //                         showCupertinoDialog(
+    //                           context: context,
+    //                           builder: (BuildContext context) {
+    //                             return CupertinoAlertDialog(
+    //                               title: Text('Success'),
+    //                               content: Text('Successfully marked as occupied!'),
+    //                               actions: [
+    //                                 CupertinoDialogAction(
+    //                                   child: Text('OK'),
+    //                                   onPressed: () {
+    //                                     Navigator.of(context).pop(); // Close success dialog
+    //                                     Navigator.pushReplacement(
+    //                                       context,
+    //                                       MaterialPageRoute(
+    //                                         builder: (context) => CurrentListingPage(token: widget.token),
+    //                                       ),
+    //                                     );
+    //                                   },
+    //                                 ),
+    //                               ],
+    //                             );
+    //                           },
+    //                         );
+    //                       },
+    //                     ),
+    //                   ],
+    //                 );
+    //               },
+    //             );
+    //           },
+    //           child: Text('Mark as Occupied', style: TextStyle(
+    //             color: _themeController.isDarkMode.value? Colors.black: Colors.white
+    //           ),),
+    //         ),
+    //       ),
+    //     ),
+    //   ],
+    // ),
+    //                             ],
+
+
+
+//                                 // Payment Details when Occupied
+//                                 if (isOccupied) ...[
+//                                   PaymentDetails(
+//                                     room: room,
+//                                     selectedDueDate: _selectedDueDate,
+//                                     selectedMonth: _selectedMonth,
+//                                     proofFuture: _proofFuture,
+//                                     buildMonthButtons: (room) => buildMonthButtons(room!, context), // Pass the function here
+//                                   ),
+//                                 ],
+//                               ],
+//                             ),
+//                           ),
+//                         ),
+//                       ),
+//                     ),
+//                   ],
+//                 ),
+//               );
+//             },
+//           ),
+//         ),
+//       );
+//     },
+//   );
+// }

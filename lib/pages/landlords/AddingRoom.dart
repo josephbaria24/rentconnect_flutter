@@ -10,6 +10,7 @@ import 'package:mime/mime.dart';
 import 'package:http_parser/http_parser.dart';
 import 'package:rentcon/pages/landlords/room_unit_widget.dart';
 import 'package:rentcon/models/room_unit.dart';
+import 'package:rentcon/pages/toast.dart';
 import 'package:rentcon/theme_controller.dart';
 import 'package:shadcn_ui/shadcn_ui.dart';
 
@@ -30,10 +31,13 @@ class _AddingroomState extends State<Addingroom> {
   late String userId;
   final ThemeController _themeController = Get.find<ThemeController>();
    int _expandedRoomIndex = -1;
+ late ToastNotification toastNotification;
+
 
   @override
   void initState() {
     super.initState();
+     toastNotification = ToastNotification(context);
     print("Received propertyId: ${widget.propertyId}");
     final Map<String, dynamic> jwtDecodedToken = JwtDecoder.decode(widget.token);
     email = jwtDecodedToken['email']?.toString() ?? 'Unknown email';
@@ -60,6 +64,19 @@ void _addRoom() {
 }
 
 void _submitRooms() async {
+  // Show the loading indicator while submitting
+  showDialog(
+    context: context,
+    barrierDismissible: false,  // Prevent closing the dialog
+    builder: (BuildContext context) {
+      return Center(
+        child: CupertinoActivityIndicator(
+          radius: 20.0,
+        ),
+      );
+    },
+  );
+
   // Validate fields for all rooms
   for (int i = 0; i < roomUnits.length; i++) {
     RoomUnit room = roomUnits[i];
@@ -73,34 +90,11 @@ void _submitRooms() async {
         room.reservationFeeController.text.isEmpty ||
         room.roomPhotos.isEmpty) {
 
-      // Show a Cupertino alert dialog for missing fields
-      showCupertinoDialog(
-        context: context,
-        builder: (BuildContext context) {
-          return CupertinoAlertDialog(
-            title: Text(
-              'Incomplete Information',
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-                color: CupertinoColors.destructiveRed,
-              ),
-            ),
-            content: Text(
-              'It looks like some fields for Room ${i + 1} are not filled out yet. Please complete all the required information before submitting.',
-              style: TextStyle(fontSize: 13, fontFamily: 'geistsans'),
-            ),
+      // Dismiss the loading indicator
+      Navigator.of(context).pop();
 
-            actions: <CupertinoDialogAction>[
-              CupertinoDialogAction(
-                child: Text('OK'),
-                onPressed: () {
-                  Navigator.of(context).pop();
-                },
-              ),
-            ],
-          );
-        },
-      );
+      // Show a toast for missing fields
+      toastNotification.error('Incomplete information for Room ${i + 1}. Please fill out all fields.');
 
       // Stop the submission process
       return;
@@ -108,7 +102,7 @@ void _submitRooms() async {
   }
 
   // If all fields are valid, proceed to submit the form
-  var request = http.MultipartRequest('POST', Uri.parse('https://rentconnect-backend-nodejs.onrender.com/rooms/createRoom'));
+  var request = http.MultipartRequest('POST', Uri.parse('http://192.168.1.18:3000/rooms/createRoom'));
 
   // Prepare data for all rooms
   for (int i = 0; i < roomUnits.length; i++) {
@@ -144,9 +138,16 @@ void _submitRooms() async {
   try {
     var response = await request.send();
 
+    // Dismiss the loading indicator
+    Navigator.of(context).pop();
+
     if (response.statusCode == 200) {
       var responseBody = await response.stream.bytesToString();
       print("Rooms added successfully: $responseBody");
+
+      // Show success toast
+      toastNotification.success('Rooms submitted successfully!');
+
       Navigator.pushReplacementNamed(
         context,
         '/current-listing',
@@ -158,54 +159,24 @@ void _submitRooms() async {
       print("Response Body: $responseBody");
 
       if (response.statusCode == 400) {
-        // Show a Cupertino alert dialog for backend validation error
-        showCupertinoDialog(
-          context: context,
-          builder: (BuildContext context) {
-            return CupertinoAlertDialog(
-              title: Text('Missing Field'),
-              content: Text('Please complete all required fields'),
-              actions: <CupertinoDialogAction>[
-                CupertinoDialogAction(
-                  child: Text('OK'),
-                  onPressed: () {
-                    Navigator.of(context).pop();
-                  },
-                ),
-              ],
-            );
-          },
-        );
+        // Show toast for backend validation error
+        toastNotification.error('Please complete all required fields.');
       }
     }
   } catch (error) {
     print("Error occurred: $error");
 
-    // Show a Cupertino alert dialog for unexpected errors
-    showCupertinoDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return CupertinoAlertDialog(
-          title: Text('Error'),
-          content: Text('An unexpected error occurred: $error'),
-          actions: <CupertinoDialogAction>[
-            CupertinoDialogAction(
-              child: Text('OK'),
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
-            ),
-          ],
-        );
-      },
-    );
+    // Dismiss the loading indicator
+    Navigator.of(context).pop();
+
+    // Show toast for unexpected errors
+    toastNotification.error('An unexpected error occurred: $error');
   }
 }
-
   Future<void> _deleteProperty() async {
     try {
       final response = await http.delete(
-        Uri.parse('https://rentconnect-backend-nodejs.onrender.com/deleteProperty/${widget.propertyId}'),
+        Uri.parse('http://192.168.1.18:3000/deleteProperty/${widget.propertyId}'),
       );
 
       if (response.statusCode == 200) {

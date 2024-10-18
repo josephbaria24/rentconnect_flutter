@@ -37,11 +37,11 @@ class _NavigationMenuState extends State<NavigationMenu> {
   Color _getIconColor(int index) {
     return _selectedIndex == index
         ? themeController.isDarkMode.value
-            ? const Color.fromRGBO(255, 255, 255, 1)
-            :  Color.fromARGB(255, 255, 7, 90)
+            ? const Color.fromARGB(255, 0, 0, 0)
+            : const Color.fromARGB(255, 255, 255, 255)
         : themeController.isDarkMode.value
-            ? Colors.grey
-            : const Color.fromARGB(176, 136, 136, 136);
+            ? const Color.fromARGB(255, 255, 255, 255)
+            : const Color.fromARGB(255, 0, 9, 34);
   }
 
   @override
@@ -50,85 +50,113 @@ class _NavigationMenuState extends State<NavigationMenu> {
 
     return Scaffold(
       backgroundColor: themeController.isDarkMode.value
-          ? const Color.fromARGB(255, 255, 255, 255)
+          ? const Color.fromARGB(255, 28, 29, 34)
           : const Color.fromARGB(255, 255, 255, 255),
-      bottomNavigationBar: Container(
-          constraints: BoxConstraints(minHeight: 60), // Use minimum height constraint
-          color: themeController.isDarkMode.value
-              ? const Color.fromARGB(255, 28, 29, 34)
-              : const Color.fromARGB(255, 255, 255, 255),
-          child: Padding(
-            padding: const EdgeInsets.all(8.0),
-            child: GNav(
-            tabBorderRadius: 15,
-            color: themeController.isDarkMode.value ?  Colors.white : Colors.black,
-            backgroundColor: themeController.isDarkMode.value ? const Color.fromARGB(255, 28, 29, 34) : const Color.fromARGB(255, 255, 255, 255),
-            rippleColor: Color.fromARGB(255, 255, 7, 90),
-            hoverColor: Color.fromARGB(255, 255, 7, 90),
-            iconSize: 24,
-            haptic: true,
-            activeColor: themeController.isDarkMode.value? const Color.fromARGB(255, 255, 255, 255): Color.fromARGB(255, 255, 255, 255),
-            tabBackgroundColor: themeController.isDarkMode.value ? const Color.fromARGB(195, 255, 7, 90) : const Color.fromARGB(255, 42, 36, 59),
-            gap: 8,
-            padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 10),
-            selectedIndex: _selectedIndex,
-            onTabChange: (index) {
-              setState(() {
-                _selectedIndex = index;
-              });
-              controller.selectedIndex.value = index;
-            },
-            tabs: [
-              GButton(
-                icon: Icons.home_filled,
-                iconActiveColor: _getIconColor(0),
-                text: 'Home',
-                leading: SvgPicture.asset(
-                  'assets/icons/home2.svg',
-                  color: _getIconColor(0),
-                ),
+      bottomNavigationBar: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.only(right: 10.0, left: 10, bottom: 20),
+          child: LayoutBuilder(
+            builder:  (context, constraints) {
+            print('Max Width: ${constraints.maxWidth}');
+                return Container(
+              width: double.infinity, 
+              decoration: BoxDecoration(
+                color: themeController.isDarkMode.value
+                    ? const Color.fromARGB(255, 39, 41, 48)
+                    : const Color.fromARGB(255, 255, 255, 255),
+                borderRadius: BorderRadius.circular(20), // Rounded corners for the nav bar
+                boxShadow: [
+                  BoxShadow(
+                    offset: Offset(1, 5),
+                    color: themeController.isDarkMode.value? Color.fromARGB(255, 28, 29, 34): Color.fromARGB(31, 31, 31, 31),
+                    blurRadius: 9,
+                    spreadRadius: 2,
+                  ),
+                ],
               ),
-              GButton(
-                icon: Icons.favorite_border,
-                iconActiveColor: _getIconColor(1),
-                text: 'Saved',
-                leading: SvgPicture.asset(
-                  'assets/icons/fave.svg',
-                  color: _getIconColor(1),
-                ),
+              padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 8),
+              child: GNav(
+                tabBorderRadius: 15,
+                color: themeController.isDarkMode.value ? Colors.white : Colors.black,
+                backgroundColor: themeController.isDarkMode.value ? const Color.fromARGB(255, 39, 41, 48) : const Color.fromARGB(255, 255, 255, 255),
+                rippleColor: const Color.fromARGB(255, 255, 255, 255),
+                hoverColor: const Color.fromARGB(255, 0, 19, 37),
+                iconSize: 24,
+                haptic: true,
+                activeColor: themeController.isDarkMode.value
+                    ? const Color.fromARGB(255, 0, 0, 0)
+                    : const Color.fromARGB(255, 255, 255, 255),
+                tabBackgroundColor: themeController.isDarkMode.value
+                    ? const Color.fromARGB(255, 255, 255, 255)
+                    : const Color.fromARGB(255, 42, 36, 59),
+                gap: 8,
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
+                selectedIndex: _selectedIndex,
+                onTabChange: (index) {
+                  setState(() {
+                    _selectedIndex = index;
+                  });
+                  controller.selectedIndex.value = index;
+                },
+                tabs: [
+                  GButton(
+                    icon: Icons.home_filled,
+                    iconActiveColor: _getIconColor(0),
+                    text: 'Home',
+                    leading: Image.asset(
+                      'assets/icons/home.png',
+                      height: 24,
+                      color: _getIconColor(0),
+                    ),
+                  ),
+                  GButton(
+                    icon: Icons.favorite_border,
+                    iconActiveColor: _getIconColor(1),
+                    text: 'Saved',
+                    leading: SvgPicture.asset(
+                      'assets/icons/fave.svg',
+                      color: _getIconColor(1),
+                    ),
+                  ),
+                  GButton(
+                    icon: Icons.pie_chart_outline,
+                    iconActiveColor: _getIconColor(2),
+                    text: 'Trends',
+                    leading: SvgPicture.asset(
+                      'assets/icons/analytic.svg',
+                      color: _getIconColor(2),
+                      height: 24,
+                      width: 24,
+                    ),
+                  ),
+                  GButton(
+                    icon: Icons.message_outlined,
+                    iconActiveColor: _getIconColor(3),
+                    text: 'Inbox',
+                    leading: Transform(
+                      alignment: Alignment.center, // Ensure the flip happens around the center
+                      transform: Matrix4.rotationY(3.1416), // Flip horizontally by rotating 180 degrees (π radians)
+                      child: Image.asset(
+                        'assets/icons/typing.png',
+                        color: _getIconColor(3),
+                        height: 24,
+                      ),
+                    ),),
+                  GButton(
+                    icon: Icons.person_2_outlined,
+                    iconActiveColor: _getIconColor(4),
+                    text: 'Profile',
+                    leading: SvgPicture.asset(
+                      'assets/icons/person.svg',
+                      color: _getIconColor(4),
+                      height: 24,
+                      width: 24,
+                    ),
+                  ),
+                ],
               ),
-              GButton(
-                icon: Icons.pie_chart_outline,
-                iconActiveColor: _getIconColor(2),
-                text: 'Trends',
-                leading: SvgPicture.asset(
-                  'assets/icons/analytic.svg',
-                  color: _getIconColor(2),
-                  height: 24,
-                  width: 24,
-                ),
-              ),
-              GButton(
-                icon: Icons.message_outlined,
-                iconActiveColor: _getIconColor(3),
-                text: 'Inbox',
-                leading: SvgPicture.asset(
-                  'assets/icons/messagel.svg',
-                  color: _getIconColor(3),
-                ),
-              ),
-              GButton(
-                icon: Icons.person_2_outlined,
-                iconActiveColor: _getIconColor(4),
-                text: 'Profile',
-                leading: SvgPicture.asset(
-                  'assets/icons/person.svg',
-                  color: _getIconColor(4),
-                  height: 24,
-                  width: 24,
-                ),
-              ),
-            ],
+            );
+            }
           ),
         ),
       ),
@@ -136,7 +164,6 @@ class _NavigationMenuState extends State<NavigationMenu> {
     );
   }
 }
-
 class NavigationController extends GetxController {
   final Rx<int> selectedIndex;
   final String token;

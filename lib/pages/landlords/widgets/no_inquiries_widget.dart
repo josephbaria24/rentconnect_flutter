@@ -18,7 +18,7 @@ class NoInquiriesWidget extends StatelessWidget {
         ),
         const SizedBox(height: 5), // Add some space between the image and the text
         const Text(
-          'Room has no inquiries right now, Stay tuned!',
+          'This room has no occupant right now, Stay tuned!',
           textAlign: TextAlign.center, // Center the text
           style: TextStyle(
             fontFamily: 'geistsans',

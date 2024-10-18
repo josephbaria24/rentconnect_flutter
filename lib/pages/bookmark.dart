@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:get/get.dart';
 import 'package:http/http.dart' as http;
@@ -13,7 +14,7 @@ import 'package:fluttertoast/fluttertoast.dart';
  // Make sure to import your theme controller
 
 Future<List<Property>> getBookmarkedProperties(String token, String userId) async {
-  final url = Uri.parse('https://rentconnect-backend-nodejs.onrender.com/getUserBookmarks/$userId'); 
+  final url = Uri.parse('http://192.168.1.18:3000/getUserBookmarks/$userId'); 
 
   try {
     final response = await http.get(
@@ -43,7 +44,7 @@ Future<List<Property>> getBookmarkedProperties(String token, String userId) asyn
 }
 
 Future<void> removeBookmark(String token, String userId, String propertyId) async {
-  final url = Uri.parse('https://rentconnect-backend-nodejs.onrender.com/removeBookmark');
+  final url = Uri.parse('http://192.168.1.18:3000/removeBookmark');
 
   try {
     final response = await http.post(
@@ -103,7 +104,6 @@ class _BookmarkPageState extends State<BookmarkPage> {
     email = jwtDecodedToken['email']?.toString() ?? 'Unknown email';
     userId = jwtDecodedToken['_id']?.toString() ?? 'Unknown userID';
     bookmarkedProperties = getBookmarkedProperties(widget.token, userId);
-    toast = ToastNotification(ftoast);
   }
 
 
@@ -153,7 +153,27 @@ class _BookmarkPageState extends State<BookmarkPage> {
                 } else if (snapshot.hasError) {
                   return Center(child: Text('Error: ${snapshot.error}'));
                 } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
-                  return Center(child: Text('No bookmarked properties.'));
+                  return Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center, // Center the children vertically
+                        crossAxisAlignment: CrossAxisAlignment.center, // Center the children horizontally
+                        children: [
+                          SvgPicture.asset('assets/icons/noBookmark.svg',
+                          height: 280,),
+                          SizedBox(height: 20), // Space between icon and text
+                          Text(
+                            'No bookmarked properties.',
+                            style: TextStyle(
+                              fontFamily: 'geistsans',
+                              fontWeight: FontWeight.bold,
+                              fontSize: 18, // Font size for the text
+                              color:_themeController.isDarkMode.value? Colors.white: Colors.black, // Text color
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
+
                 } else {
                   return ListView.builder(
                     itemCount: snapshot.data!.length,
@@ -161,7 +181,7 @@ class _BookmarkPageState extends State<BookmarkPage> {
                       final property = snapshot.data![index];
                       final imageUrl = property.photo.startsWith('http')
                           ? property.photo
-                          : 'https://rentconnect-backend-nodejs.onrender.com/${property.photo}';
+                          : 'http://192.168.1.18:3000/${property.photo}';
 
                       return Card(
                         color: _themeController.isDarkMode.value

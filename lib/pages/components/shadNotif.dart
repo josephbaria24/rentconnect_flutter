@@ -3,7 +3,9 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:get/get.dart';
 import 'package:http/http.dart' as http;
+import 'package:rentcon/theme_controller.dart';
 import 'dart:convert'; // Add this import
 import 'package:shadcn_ui/shadcn_ui.dart';
 
@@ -25,7 +27,7 @@ class _CardNotificationsState extends State<CardNotifications> {
   List<dynamic> notifications = [];
   bool hasNewNotifications = false;
   ValueNotifier<bool> pushNotifications = ValueNotifier<bool>(false); // Initialize push notifications value
-
+final ThemeController _themeController = Get.find<ThemeController>();
   @override
   void initState() {
     super.initState();
@@ -43,7 +45,7 @@ class _CardNotificationsState extends State<CardNotifications> {
   Future<List<dynamic>> fetchNotifications(String userId, String token) async {
     try {
       final response = await http.get(
-        Uri.parse('https://rentconnect-backend-nodejs.onrender.com/notification/unread/$userId'),
+        Uri.parse('http://192.168.1.18:3000/notification/unread/$userId'),
         headers: {
           'Authorization': 'Bearer $token',
           'Content-Type': 'application/json',
@@ -101,7 +103,7 @@ class _CardNotificationsState extends State<CardNotifications> {
 
   Future<void> _markNotificationAsRead(String notificationId) async {
     final response = await http.patch(
-      Uri.parse('https://rentconnect-backend-nodejs.onrender.com/notification/$notificationId/read'),
+      Uri.parse('http://192.168.1.18:3000/notification/$notificationId/read'),
       headers: {
         'Authorization': 'Bearer ${widget.token}',
         'Content-Type': 'application/json',
@@ -177,9 +179,11 @@ class _CardNotificationsState extends State<CardNotifications> {
             );
           }).toList(),
           if (notifications.isEmpty)
-            const Padding(
+             Padding(
               padding: EdgeInsets.symmetric(vertical: 16),
-              child: Text('No notifications available.'),
+              child: Text('No notifications available.', style: TextStyle(
+                color: _themeController.isDarkMode.value? Colors.orange: Colors.orange
+              ),),
             ),
           const SizedBox(height: 16),
         ],

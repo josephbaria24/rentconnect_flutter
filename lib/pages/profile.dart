@@ -18,6 +18,7 @@ import 'package:rentcon/pages/landlords/current_listing.dart';
 import 'package:rentcon/pages/login.dart';
 import 'package:rentcon/pages/occupants/occupant_inquiries.dart';
 import 'package:rentcon/pages/profileSection/profileChecker.dart';
+import 'package:rentcon/pages/toast.dart';
 import 'package:rentcon/theme_controller.dart';
 import 'package:shadcn_ui/shadcn_ui.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -50,11 +51,12 @@ class _ProfilePageState extends State<ProfilePage> {
   Map<String, dynamic>? userDetails;
   String profileStatus = 'none'; // Default value
   String userRole = '';
+   late ToastNotification toastNotification;
 
   @override
   void initState() {
     super.initState();
-    
+      toastNotification = ToastNotification(context);
     _loadThemePreference();
     final Map<String, dynamic> jwtDecodedToken =
         JwtDecoder.decode(widget.token);
@@ -134,14 +136,18 @@ Future<void> _logout(BuildContext context) async {
 
   // Clear all session data
   await prefs.clear();
+
+  // Show a toast notification before navigating to the login page
+  toastNotification.success('You have been logged out successfully.');
+
+  // Wait for a brief moment to let the toast display
+  await Future.delayed(Duration(seconds: 2));
+
   Navigator.pushNamed(
-    context, '/login'// Remove all other routes to ensure no back navigation
+    context, 
+    '/login', // Remove all other routes to ensure no back navigation
   );
-
-  // Restart the app after navigating to login page
-  
 }
-
 
   Future<void> _pickImage() async {
     print('Picking image...');
@@ -157,56 +163,57 @@ Future<void> _logout(BuildContext context) async {
     }
   }
 
-  Future<void> _uploadProfilePicture() async {
-    if (_profileImage != null) {
-      final url =
-          Uri.parse('https://rentconnect-backend-nodejs.onrender.com/updateProfilePicture/$userId');
-      var request = http.MultipartRequest('PATCH', url)
-        ..headers['Authorization'] = 'Bearer ${widget.token}';
+Future<void> _uploadProfilePicture() async {
+  if (_profileImage != null) {
+    final url =
+        Uri.parse('https://rentconnect-backend-nodejs.onrender.com/updateProfilePicture/$userId');
+    var request = http.MultipartRequest('PATCH', url)
+      ..headers['Authorization'] = 'Bearer ${widget.token}';
 
-      String mimeType =
-          lookupMimeType(_profileImage!.path) ?? 'application/octet-stream';
-      var fileExtension = mimeType.split('/').last;
+    String mimeType =
+        lookupMimeType(_profileImage!.path) ?? 'application/octet-stream';
+    var fileExtension = mimeType.split('/').last;
 
-      request.files.add(
-        await http.MultipartFile.fromPath(
-          'profilePicture',
-          _profileImage!.path,
-          contentType: MediaType('image', fileExtension),
-        ),
-      );
+    request.files.add(
+      await http.MultipartFile.fromPath(
+        'profilePicture',
+        _profileImage!.path,
+        contentType: MediaType('image', fileExtension),
+      ),
+    );
 
-      try {
-        final response = await request.send();
-        final responseBody = await response.stream.bytesToString();
-        print('Response body: $responseBody'); // Debug print
+    try {
+      final response = await request.send();
+      final responseBody = await response.stream.bytesToString();
+      print('Response body: $responseBody'); // Debug print
 
-        // Parse the response
-        final jsonResponse = jsonDecode(responseBody);
-        print('Decoded response: $jsonResponse'); // Debug print
+      // Parse the response
+      final jsonResponse = jsonDecode(responseBody);
+      print('Decoded response: $jsonResponse'); // Debug print
 
-        // Check the 'message' field
-        if (jsonResponse is Map<String, dynamic> &&
-            jsonResponse.containsKey('message')) {
-          final message = jsonResponse['message'];
-          if (message == 'Profile picture updated successfully') {
-            ScaffoldMessenger.of(context)
-                .showSnackBar(SnackBar(content: Text(message)));
-            _hasImageChanged = false; // Reset the flag after successful upload
-          } else {
-            ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text('Failed to upload profile picture')));
-          }
+      // Check the 'message' field
+      if (jsonResponse is Map<String, dynamic> &&
+          jsonResponse.containsKey('message')) {
+        final message = jsonResponse['message'];
+        if (message == 'Profile picture updated successfully') {
+          // Use your custom toast notification here
+          ToastNotification(context).success('Profile picture updated successfully');
+          _hasImageChanged = false; // Reset the flag after successful upload
         } else {
-          ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text('Unexpected response format')));
+          // Use your custom toast notification for errors
+          ToastNotification(context).error('Failed to upload profile picture');
         }
-      } catch (error) {
-        ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Error uploading profile picture: $error')));
+      } else {
+        // Handle unexpected response format
+        ToastNotification(context).error('Unexpected response format');
       }
+    } catch (error) {
+      // Use your custom toast notification for errors
+      ToastNotification(context).error('Error uploading profile picture: $error');
     }
   }
+}
+
 
   Future<void> _handleSave() async {
     print('Save button pressed.');
@@ -216,8 +223,8 @@ Future<void> _logout(BuildContext context) async {
     await _uploadProfilePicture();
     setState(() {
       _isUpdating = false;
+      _fetchUserProfile();
     });
-    print('Save button processing completed.');
   }
 
   final themeController = Get.put(ThemeController()); // Get theme controller
@@ -285,7 +292,7 @@ Future<void> _logout(BuildContext context) async {
                         ),
                       );
                     },
-                    activeColor: const Color.fromARGB(255, 255, 0, 89),
+                    activeColor: const Color.fromARGB(255, 0, 233, 194),
                   ),
                 ),
               ],
@@ -406,7 +413,7 @@ Future<void> _logout(BuildContext context) async {
                           children: [
                             const Icon(
                               Icons.check_circle,
-                              color: Colors.green, // Check icon with green color
+                              color: Color.fromARGB(255, 0, 236, 157), // Check icon with green color
                               size: 16.0, // Icon size
                             ),
                             const SizedBox(width: 4), // Space between icon and text
@@ -466,14 +473,25 @@ Future<void> _logout(BuildContext context) async {
                   const SizedBox(height: 20),
                   if (_hasImageChanged)
                     SizedBox(
-                      width: 200,
+                      width: 160,
                       child: ElevatedButton(
                         onPressed: _handleSave,
+                        style: ElevatedButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(vertical: 12.0, horizontal: 17.0), // Add padding for better touch target
+                          elevation: 0, // Add shadow for depth
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8.0), // Rounded corners
+                          ),
+                          backgroundColor: themeController.isDarkMode.value
+                              ? const Color.fromARGB(146, 77, 245, 181) // Dark background
+                              : const Color.fromARGB(255, 77, 245, 181), // Light background
+                        ),
                         child: _isUpdating
-                            ? GlobalLoadingIndicator()
+                            ? CupertinoActivityIndicator()
                             : Text(
                                 'Save Changes',
                                 style: TextStyle(
+                                  
                                     color: themeController.isDarkMode.value
                                         ? const Color.fromARGB(
                                             255, 255, 255, 255)
@@ -487,13 +505,21 @@ Future<void> _logout(BuildContext context) async {
                     DeviceCard1(
                       title: "Listing",
                       icon: SvgPicture.asset('assets/icons/listing2.svg',
-                          height: 24,
+                          height: 20,
                           color: themeController.isDarkMode.value
                               ? const Color.fromARGB(255, 253, 253, 253)
                               : const Color.fromARGB(255, 0, 0, 0)),
+                      
                       textColor: themeController.isDarkMode.value
                           ? Colors.white
                           : const Color.fromARGB(255, 255, 255, 255),
+                      endIcon: true,
+                      icon2: Icon(Icons.chevron_right_outlined,
+                          size: 20,
+                          color: themeController.isDarkMode.value
+                              ? const Color.fromARGB(255, 253, 253, 253)
+                              : const Color.fromARGB(255, 0, 0, 0)),
+                      
                       onPress: () {
                         Navigator.push(
                           context,
@@ -507,54 +533,81 @@ Future<void> _logout(BuildContext context) async {
                   ] else if (userRole == 'occupant' &&
                       profileStatus == 'approved') ...[
                     Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        DeviceCard1(
-                          icon: SvgPicture.asset(
-                            'assets/icons/occupanthome.svg',
-                            color: themeController.isDarkMode.value
-                                ? const Color.fromARGB(255, 255, 255, 255)
-                                : const Color.fromARGB(255, 219, 2, 2),
-                            height: 24,
-                            width: 24,
-                          ),
-                          title: "My Home",
-                          textColor: themeController.isDarkMode.value
-                              ? Colors.white
-                              : const Color.fromARGB(255, 0, 0, 0),
-                          onPress: () {
-                            Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                    builder: (context) => OccupantInquiries(
-                                        userId: userId, token: widget.token)));
-                            // Navigate to "My Home" page
-                          },
-                        ),
-                        DeviceCard2(
-                          icon: SvgPicture.asset(
-                            'assets/icons/roommate.svg',
-                            color: themeController.isDarkMode.value
-                                ? const Color.fromARGB(255, 255, 255, 255)
-                                : const Color.fromARGB(255, 0, 82, 57),
-                            height: 24,
-                            width: 24,
-                          ),
-                          title: "Roommates",
-                          textColor: themeController.isDarkMode.value
-                              ? Colors.black
-                              : Colors.black,
-                          onPress: () {
-                            Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                    builder: (context) => OccupantInquiries(
-                                        userId: userId, token: widget.token)));
-                            // Navigate to "My Home" page
-                          },
-                        ),
-                      ],
-                    ),
+  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+  children: [
+    // Adaptable DeviceCard1
+    Flexible(
+      child: DeviceCard1(
+        icon: SvgPicture.asset(
+          'assets/icons/occupanthome.svg',
+          color: themeController.isDarkMode.value
+              ? const Color.fromARGB(255, 255, 255, 255)
+              : const Color.fromARGB(255, 0, 0, 0),
+          height: 20,
+          width: 20,
+        ),
+        title: "My Home",
+        textColor: themeController.isDarkMode.value
+            ? Colors.white
+            : const Color.fromARGB(255, 0, 0, 0),
+        icon2: Icon(
+          Icons.chevron_right_outlined,
+          size: 20,
+          color: themeController.isDarkMode.value
+              ? const Color.fromARGB(213, 253, 253, 253)
+              : const Color.fromARGB(146, 0, 0, 0),
+        ),
+        onPress: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => OccupantInquiries(
+                userId: userId,
+                token: widget.token,
+              ),
+            ),
+          );
+        },
+      ),
+    ),
+    const SizedBox(width: 10), // Space between the two DeviceCards
+    // Adaptable DeviceCard2
+    Flexible(
+      child: DeviceCard2(
+        icon: SvgPicture.asset(
+          'assets/icons/roommate.svg',
+          color: themeController.isDarkMode.value
+              ? const Color.fromARGB(255, 255, 255, 255)
+              : const Color.fromARGB(255, 0, 0, 0),
+          height: 20,
+        ),
+        title: "Roommates",
+        textColor: themeController.isDarkMode.value
+            ? Colors.black
+            : Colors.black,
+        icon2: Icon(
+          Icons.chevron_right_outlined,
+          size: 20,
+          color: themeController.isDarkMode.value
+              ? const Color.fromARGB(213, 253, 253, 253)
+              : const Color.fromARGB(146, 0, 0, 0),
+        ),
+        onPress: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => OccupantInquiries(
+                userId: userId,
+                token: widget.token,
+              ),
+            ),
+          );
+        },
+      ),
+    ),
+  ],
+),
+
                   ],
                   Padding(
                     padding: const EdgeInsets.all(8.0),
@@ -634,56 +687,12 @@ Future<void> _logout(BuildContext context) async {
   
   }
 }
-
-class InfoCard extends StatelessWidget {
-  const InfoCard({
-    Key? key,
-    required this.title,
-    required this.value,
-  }) : super(key: key);
-
-  final String title;
-  final String value;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      width: MediaQuery.of(context).size.width * 0.42,
-      decoration: BoxDecoration(
-        color: Colors.grey[900],
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            title,
-            style: const TextStyle(
-              color: Colors.grey,
-              fontSize: 14,
-            ),
-          ),
-          const SizedBox(height: 5),
-          Text(
-            value,
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 16,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
 class DeviceCard1 extends StatelessWidget {
   DeviceCard1({
     Key? key,
     required this.title,
     required this.icon,
+    this.icon2,
     required this.onPress,
     this.endIcon = true,
     this.textColor,
@@ -691,6 +700,7 @@ class DeviceCard1 extends StatelessWidget {
 
   final String title;
   final SvgPicture icon;
+  final Icon? icon2;
   final VoidCallback onPress;
   final bool endIcon;
   final Color? textColor;
@@ -704,12 +714,12 @@ class DeviceCard1 extends StatelessWidget {
         GestureDetector(
           onTap: onPress,
           child: Container(
-            padding: const EdgeInsets.all(16),
-            width: MediaQuery.of(context).size.width * 0.39,
+            padding: const EdgeInsets.fromLTRB(2, 10, 3, 10),
+            width: MediaQuery.of(context).size.width * 0.40,
             decoration: BoxDecoration(
               color: _themeController.isDarkMode.value
-                  ? const Color.fromARGB(255, 255, 138, 138)
-                  : Color.fromARGB(255, 164, 205, 255),
+                  ? const Color.fromARGB(255, 0, 202, 169)
+                  : const Color.fromARGB(255, 208, 252, 244),
               borderRadius: BorderRadius.circular(17),
             ),
             child: Row(
@@ -719,17 +729,32 @@ class DeviceCard1 extends StatelessWidget {
                   padding: const EdgeInsets.all(8.0),
                   child: icon,
                 ),
-                Text(
-                  title,
-                  style: TextStyle(
-                    color: _themeController.isDarkMode.value
-                        ? Colors.white
-                        : const Color.fromARGB(255, 0, 0, 0),
-                    fontSize: 15,
-                    fontWeight: FontWeight.w600,
-                    fontFamily: 'geistsans'
+                // Wrap the text and icon in Flexible to prevent overflow
+                Expanded(
+                  child: Text(
+                    title,
+                    style: TextStyle(
+                      color: _themeController.isDarkMode.value
+                          ? Colors.white
+                          : const Color.fromARGB(255, 0, 0, 0),
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      fontFamily: 'geistsans',
+                      overflow: TextOverflow.ellipsis, // Add ellipsis to avoid overflow
+                    ),
                   ),
                 ),
+                if (icon2 != null)
+                  Padding(
+                    padding: const EdgeInsets.only(left: 6.0),
+                    child: Container(
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(50),
+                        color: const Color.fromARGB(8, 0, 0, 0),
+                      ),
+                      child: icon2,
+                    ),
+                  ),
               ],
             ),
           ),
@@ -738,12 +763,14 @@ class DeviceCard1 extends StatelessWidget {
     );
   }
 }
+
 
 class DeviceCard2 extends StatelessWidget {
   DeviceCard2({
     Key? key,
     required this.title,
     required this.icon,
+    this.icon2,
     required this.onPress,
     this.endIcon = true,
     this.textColor,
@@ -751,6 +778,7 @@ class DeviceCard2 extends StatelessWidget {
 
   final String title;
   final SvgPicture icon;
+  final Icon? icon2;
   final VoidCallback onPress;
   final bool endIcon;
   final Color? textColor;
@@ -764,12 +792,12 @@ class DeviceCard2 extends StatelessWidget {
         GestureDetector(
           onTap: onPress,
           child: Container(
-            padding: const EdgeInsets.all(16),
-            width: MediaQuery.of(context).size.width * 0.45,
+            padding: const EdgeInsets.fromLTRB(1, 10, 3, 10),
+            width: MediaQuery.of(context).size.width * 0.40,
             decoration: BoxDecoration(
               color: _themeController.isDarkMode.value
-                  ? const Color.fromARGB(174, 131, 197, 191)
-                  : Color.fromARGB(174, 131, 197, 191),
+                  ? const Color.fromARGB(255, 0, 202, 108)
+                  : const Color.fromARGB(255, 208, 252, 212),
               borderRadius: BorderRadius.circular(17),
             ),
             child: Row(
@@ -779,17 +807,32 @@ class DeviceCard2 extends StatelessWidget {
                   padding: const EdgeInsets.all(8.0),
                   child: icon,
                 ),
-                Text(
-                  title,
-                  style: TextStyle(
-                    color: _themeController.isDarkMode.value
-                        ? Colors.white
-                        : const Color.fromARGB(255, 0, 0, 0),
-                    fontSize: 15,
-                    fontWeight: FontWeight.w600,
-                    fontFamily: 'geistsans'
+                // Make title flexible to avoid overflow
+                Expanded(
+                  child: Text(
+                    title,
+                    style: TextStyle(
+                      color: _themeController.isDarkMode.value
+                          ? Colors.white
+                          : const Color.fromARGB(255, 0, 0, 0),
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                      fontFamily: 'geistsans',
+                      overflow: TextOverflow.ellipsis, // Avoid overflow with ellipsis
+                    ),
                   ),
                 ),
+                if (icon2 != null)
+                  Padding(
+                    padding: const EdgeInsets.only(left: 6.0),
+                    child: Container(
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(50),
+                        color: const Color.fromARGB(8, 0, 0, 0),
+                      ),
+                      child: icon2,
+                    ),
+                  ),
               ],
             ),
           ),
@@ -798,6 +841,7 @@ class DeviceCard2 extends StatelessWidget {
     );
   }
 }
+
 
 
 class ProfileMenuWidget extends StatelessWidget {
@@ -857,14 +901,14 @@ class ProfileMenuWidget extends StatelessWidget {
       ),
       trailing: endIcon
           ? Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
               decoration: BoxDecoration(
-                color: const Color.fromARGB(0, 28, 28, 30), // Trailing icon box background
-                borderRadius: BorderRadius.circular(8),
+                color: const Color.fromARGB(20, 28, 28, 30), // Trailing icon box background
+                borderRadius: BorderRadius.circular(50),
               ),
               child: Icon(
-                Icons.arrow_forward_ios,
-                size: 18.0,
+                Icons.chevron_right_outlined,
+                size: 20.0,
                 color: _themeController.isDarkMode.value
                     ? const Color.fromARGB(255, 226, 226, 226)
                     : const Color.fromARGB(255, 0, 0, 0),

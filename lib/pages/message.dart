@@ -30,7 +30,6 @@ class _MessagePageState extends State<MessagePage> {
     // Initialize FToast and ToastNotification here
     ftoast = FToast();
     ftoast.init(context);
-    toast = ToastNotification(ftoast);
 
     return Scaffold(
       backgroundColor: themeController.isDarkMode.value ? Color.fromRGBO(28, 29, 34, 1) : Colors.white,

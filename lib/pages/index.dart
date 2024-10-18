@@ -66,7 +66,7 @@ class _IndexPageState extends State<IndexPage> {
           Positioned.fill(
             child: Column(
               children: <Widget>[
-                const SizedBox(height: 350),
+                const SizedBox(height: 450),
                 Expanded(
                   child: Stack(
                     children: [
@@ -75,8 +75,8 @@ class _IndexPageState extends State<IndexPage> {
                           decoration: const BoxDecoration(
                             color: Color.fromARGB(255, 253, 253, 253),
                             borderRadius: BorderRadius.only(
-                              topLeft: Radius.circular(30.0),
-                              topRight: Radius.circular(30.0),
+                              topLeft: Radius.circular(20.0),
+                              topRight: Radius.circular(20.0),
                             ),
                           ),
                         ),
@@ -86,8 +86,25 @@ class _IndexPageState extends State<IndexPage> {
                         child: Column(
                           children: [
                             const SizedBox(height: 10),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Container(
+                                height: 40,
+                                alignment: Alignment.topCenter,
+                                child: Image.asset('assets/icons/ren.png'),
+                                 ),
+                                Text('RentConnect', style: TextStyle(
+                                  fontFamily: 'geistsans',
+                                  fontWeight: FontWeight.w700,
+                                  fontSize: 17
+                                ),),
+                              ],
+                            ),
+                            
                             SizedBox(
-                              height: 170,
+                              height: 100,
+                              
                               child: PageView.builder(
                                 itemCount: descriptions.length,
                                 onPageChanged: (index) {
@@ -97,17 +114,12 @@ class _IndexPageState extends State<IndexPage> {
                                 },
                                 itemBuilder: (context, index) {
                                   return Padding(
-                                    padding: const EdgeInsets.all(7.0),
+                                    padding: const EdgeInsets.all(4.0),
                                     child: Column(
                                       children: [
-                                        Container(
-                                          height: 50,
-                                          width: 60,
-                                          alignment: Alignment.topCenter,
-                                          child: Image.asset('assets/icons/ren.png'),
-                                        ),
+                                        
                                         const SizedBox(
-                                            height: 8.0), // Space between icon and text
+                                            height: 2.0), // Space between icon and text
                                         Expanded(
                                           child: Center(
                                             child: Text(
@@ -129,7 +141,7 @@ class _IndexPageState extends State<IndexPage> {
                                 },
                               ),
                             ),
-                            const SizedBox(height: 10.0),
+                            const SizedBox(height: 5.0),
 
                             // Page Indicator
                             Row(
@@ -163,12 +175,12 @@ class _IndexPageState extends State<IndexPage> {
                                 );
                               },
                               style: ElevatedButton.styleFrom(
-                                backgroundColor: Colors.black,
+                                backgroundColor: const Color.fromARGB(255, 0, 16, 46),
                                 padding:
                                     const EdgeInsets.symmetric(vertical: 14.0),
                                 minimumSize: const Size(400, 50),
                                 shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(100),
+                                  borderRadius: BorderRadius.circular(12),
                                 ),
                               ),
                               child: const Text(
@@ -182,8 +194,6 @@ class _IndexPageState extends State<IndexPage> {
                               ),
                             ),
                             const SizedBox(height: 15.0),
-
-                            // Login Button
                             ElevatedButton(
                               onPressed: () {
                                 Navigator.push(
@@ -198,10 +208,10 @@ class _IndexPageState extends State<IndexPage> {
                                     const EdgeInsets.symmetric(vertical: 14.0),
                                 minimumSize: const Size(400, 50),
                                 shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(100),
+                                  borderRadius: BorderRadius.circular(12),
                                   side: const BorderSide(
-                                    color: Color.fromARGB(255, 14, 14, 14),
-                                    width: 2.0,
+                                    color: Color.fromARGB(255, 1, 25, 48),
+                                    width: 1.0,
                                   ),
                                 ),
                               ),

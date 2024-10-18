@@ -9,10 +9,12 @@ class GlobalLoadingIndicator extends StatelessWidget {
   final double size;
   final List<Color> colors;
 final ThemeController _themeController = Get.find<ThemeController>();
-  GlobalLoadingIndicator({
+   GlobalLoadingIndicator({
     this.size = 50.0, 
-    this.colors = const [ Color.fromARGB(255, 255, 0, 76), Color.fromARGB(255, 255, 0, 76), Color.fromARGB(255, 255, 0, 76)], // Default colors
-  });
+    List<Color>? colors, // Accept nullable list to allow default value
+  }) : colors = colors ?? (Get.find<ThemeController>().isDarkMode.value 
+    ? [Color.fromARGB(255, 255, 255, 255), Color.fromARGB(255, 255, 255, 255), Color.fromARGB(255, 0, 247, 255)] 
+    : [Color.fromARGB(255, 0, 15, 31), Color.fromARGB(255, 0, 15, 31), Color.fromARGB(255, 0, 247, 255)]); // Default for light mode
 
   @override
   Widget build(BuildContext context) {

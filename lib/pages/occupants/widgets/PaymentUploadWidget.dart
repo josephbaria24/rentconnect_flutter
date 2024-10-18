@@ -87,18 +87,29 @@ Widget build(BuildContext context) {
   return Column(
     crossAxisAlignment: CrossAxisAlignment.start,
     children: [
-      // Button to open the month selection dialog
-      ShadButton.secondary(
-        onPressed: _showMonthSelectionDialog,
-        child: Text(
-          widget.selectedMonths[widget.inquiryId] ?? 'Select Month',
-          style: TextStyle(
-            color: widget.selectedMonths[widget.inquiryId] != null ? Colors.white : Colors.black,
+      SizedBox(height: 10,),
+      Divider(thickness: 1,height: 1,color: Colors.black,),
+      SizedBox(height: 10,),
+      Row(
+        children: [
+          Text('Select Month', style: TextStyle(
+            fontFamily: 'geistsans',
+            fontSize: 15
+          ),),
+          // Button to open the month selection dialog
+          ShadButton.secondary(
+            onPressed: _showMonthSelectionDialog,
+            child: Text(
+              widget.selectedMonths[widget.inquiryId] ?? 'Select Month',
+              style: TextStyle(
+                color: widget.selectedMonths[widget.inquiryId] != null ? Colors.white : Colors.black,
+              ),
+            ),
+            backgroundColor: widget.selectedMonths[widget.inquiryId] != null 
+                ? const Color.fromARGB(255, 0, 24, 37) 
+                : const Color.fromARGB(255, 201, 200, 200),
           ),
-        ),
-        backgroundColor: widget.selectedMonths[widget.inquiryId] != null 
-            ? const Color.fromARGB(255, 0, 24, 37) 
-            : const Color.fromARGB(255, 201, 200, 200),
+        ],
       ),
 
       const SizedBox(height: 10),
@@ -309,7 +320,7 @@ void _fetchMonthlyPayments() async {
   });
 
   try {
-    final response = await http.get(Uri.parse('https://rentconnect-backend-nodejs.onrender.com/payment/room/${widget.roomDetails['_id']}/monthlyPayments'));
+    final response = await http.get(Uri.parse('http://192.168.1.18:3000/payment/room/${widget.roomDetails['_id']}/monthlyPayments'));
 
     print('Response status: ${response.statusCode}');
     print('Response body: ${response.body}');
@@ -379,7 +390,7 @@ void _checkExistingPayment(String? selectedMonth) async {
 
     try {
       // Call the API to get monthly payments
-      final response = await http.get(Uri.parse('https://rentconnect-backend-nodejs.onrender.com/payment/room/${widget.roomDetails['_id']}/monthlyPayments'));
+      final response = await http.get(Uri.parse('http://192.168.1.18:3000/payment/room/${widget.roomDetails['_id']}/monthlyPayments'));
 
       // Debugging: Print the response status and body
       print('Response status: ${response.statusCode}');

@@ -37,7 +37,11 @@ class _TrendPageState extends State<TrendPage> {
     return Scaffold(
       backgroundColor: themeController.isDarkMode.value ? Color.fromRGBO(28, 29, 34, 1) : Colors.white,
       appBar: AppBar(
-        title: Text('Trend Data for $email'),
+        backgroundColor: themeController.isDarkMode.value ? Color.fromRGBO(28, 29, 34, 1) : Colors.white,
+        title: Text('Trends', style: TextStyle(
+          fontFamily: 'geistsans'
+          
+        ),),
         leading: Padding(
           padding: const EdgeInsets.symmetric(vertical: 11.0, horizontal: 12.0),
           

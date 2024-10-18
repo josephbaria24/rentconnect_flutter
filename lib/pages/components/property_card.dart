@@ -35,7 +35,7 @@ class PropertyCard extends StatelessWidget {
   });
 
   Future<Map<String, String>> fetchUserProfileStatus() async {
-    final url = Uri.parse('https://rentconnect-backend-nodejs.onrender.com/profile/checkProfileCompletion/$userId');
+    final url = Uri.parse('http://192.168.1.18:3000/profile/checkProfileCompletion/$userId');
     try {
       final response = await http.get(
         url,
@@ -219,7 +219,7 @@ Widget build(BuildContext context) {
                               width: 60,
                               child: TextButton(
                                 style: TextButton.styleFrom(
-                                  backgroundColor: Color.fromRGBO(124, 0, 254, 1),
+                                  backgroundColor: Color.fromRGBO(0, 54, 231, 1),
                                   foregroundColor: Colors.white,
                                   padding: const EdgeInsets.symmetric(vertical: 4),
                                   shape: RoundedRectangleBorder(
@@ -243,7 +243,7 @@ Widget build(BuildContext context) {
                                 child: const Text(
                                   'View',
                                   style: TextStyle(
-                                    fontWeight: FontWeight.w600,
+                                    fontWeight: FontWeight.w700,
                                     fontFamily: 'GeistSans',
                                     fontSize: 11,
                                   ),

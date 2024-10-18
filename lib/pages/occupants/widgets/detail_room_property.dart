@@ -129,12 +129,12 @@ class _PropertyDetailsWidgetState extends State<PropertyDetailsWidget> {
                         width: 3.0,
                       )
                     ),
-                    color:_themeController.isDarkMode.value? const Color.fromARGB(255, 36, 38, 43): Color.fromARGB(255, 70, 92, 89),
+                    color:_themeController.isDarkMode.value? const Color.fromARGB(255, 36, 38, 43): Color.fromARGB(218, 68, 107, 102),
                     borderRadius: BorderRadius.circular(10),
                   ),
                   child: Center(
                     child: Padding(
-                      padding: const EdgeInsets.fromLTRB(0, 10, 5, 10),
+                      padding: const EdgeInsets.fromLTRB(10, 10, 5, 10),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [

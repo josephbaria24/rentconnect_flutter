@@ -53,6 +53,7 @@ class _HomePageState extends State<HomePage> {
   bool hasNewNotifications = true;
   RangeValues _currentRange = RangeValues(100, 500); // Default range
   bool isFilterApplied = false; // Tracks if the filter is applied
+  late ToastNotification toastNotification;
 
 
   List<dynamic> notifications = [];
@@ -61,12 +62,14 @@ class _HomePageState extends State<HomePage> {
   final TextEditingController _minPriceController = TextEditingController();
   final TextEditingController _maxPriceController = TextEditingController();
   final ThemeController _themeController = Get.find<ThemeController>();
-
+late FToast fToast;
   @override
   void initState() {
     super.initState();
+      fToast = FToast();
+    fToast.init(context); // Initialize FToast with the context
      propertiesFuture = fetchProperties();
-    // Set up a listener for notifications
+     toastNotification = ToastNotification(context);
     _searchController = TextEditingController();
     ftoast = FToast(); // Initialize FToast
     ftoast.init(context);
@@ -76,7 +79,6 @@ class _HomePageState extends State<HomePage> {
     userId = jwtDecodedToken['_id']?.toString() ?? 'Unknown userId';
     propertiesFuture = fetchProperties();
     fetchUserBookmarks();
-    toast = ToastNotification(ftoast.init(context));
     propertiesFuture.then((properties) {
       setState(() {
         filteredProperties = properties;
@@ -124,7 +126,7 @@ Stream<List<dynamic>> notificationStream = NotificationStream().stream.cast<List
 
   Future<void> fetchUserProfileStatus() async {
     final url = Uri.parse(
-        'https://rentconnect-backend-nodejs.onrender.com/profile/checkProfileCompletion/$userId'); // Replace with your API endpoint
+        'http://192.168.1.18:3000/profile/checkProfileCompletion/$userId'); // Replace with your API endpoint
     try {
       final response = await http.get(
         url,
@@ -152,7 +154,7 @@ Stream<List<dynamic>> notificationStream = NotificationStream().stream.cast<List
 
   Future<void> fetchUserProfileStatusForNotification() async {
     final url = Uri.parse(
-        'https://rentconnect-backend-nodejs.onrender.com/profile/checkProfileCompletion/$userId'); // Your API endpoint
+        'http://192.168.1.18:3000/profile/checkProfileCompletion/$userId'); // Your API endpoint
     try {
       final response = await http.get(
         url,
@@ -236,7 +238,7 @@ Future<List<Property>> fetchProperties() async {
   Future<List<dynamic>> fetchRooms(String propertyId) async {
     try {
       final response = await http.get(Uri.parse(
-          'https://rentconnect-backend-nodejs.onrender.com/rooms/properties/$propertyId/rooms'));
+          'http://192.168.1.18:3000/rooms/properties/$propertyId/rooms'));
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         if (data['status']) {
@@ -313,7 +315,7 @@ Future<List<Property>> fetchProperties() async {
     try {
       final response = await http.get(
         Uri.parse(
-            'https://rentconnect-backend-nodejs.onrender.com/getUserBookmarks/$userId'), // Adjust endpoint if necessary
+            'http://192.168.1.18:3000/getUserBookmarks/$userId'), // Adjust endpoint if necessary
         headers: {
           'Authorization': 'Bearer ${widget.token}',
         },
@@ -339,7 +341,7 @@ Future<List<Property>> fetchProperties() async {
   Future<String> fetchUserEmail(String userId) async {
     try {
       final response = await http.get(Uri.parse(
-          'https://rentconnect-backend-nodejs.onrender.com/getUserEmail/$userId'));
+          'http://192.168.1.18:3000/getUserEmail/$userId'));
 
       if (response.statusCode == 200) {
         final Map<String, dynamic> json = jsonDecode(response.body);
@@ -362,15 +364,15 @@ Future<List<Property>> fetchProperties() async {
 
 
 
-  Future<void> bookmarkProperty(String propertyId) async {
-    final url = Uri.parse('https://rentconnect-backend-nodejs.onrender.com/addBookmark');
+ Future<void> bookmarkProperty(String propertyId) async {
+    final url = Uri.parse('http://192.168.1.18:3000/addBookmark');
     final Map<String, dynamic> jwtDecodedToken = JwtDecoder.decode(widget.token);
     String userId = jwtDecodedToken['_id']?.toString() ?? 'Unknown user ID';
 
     try {
       if (bookmarkedPropertyIds.contains(propertyId)) {
         // If already bookmarked, remove it
-        final removeUrl = Uri.parse('https://rentconnect-backend-nodejs.onrender.com/removeBookmark');
+        final removeUrl = Uri.parse('http://192.168.1.18:3000/removeBookmark');
         await http.post(removeUrl,
             headers: {
               'Authorization': 'Bearer ${widget.token}',
@@ -388,8 +390,8 @@ Future<List<Property>> fetchProperties() async {
               .toList();
         });
 
-        // Show Cupertino alert for removal
-        _showCupertinoAlertDialog('Property removed from bookmarks!');
+        // Show success toast for removal
+        toastNotification.success('Property removed from bookmarks!');
       } else {
         // If not bookmarked, add it
         await http.post(url,
@@ -406,19 +408,18 @@ Future<List<Property>> fetchProperties() async {
           bookmarkedPropertyIds.add(propertyId); // Update local state
         });
 
-        // Show Cupertino alert for addition
-        _showCupertinoAlertDialog('Property added to bookmarks!');
+        // Show success toast for addition
+        toastNotification.success('Property added to bookmarks!');
       }
 
       // Refresh properties to reflect changes immediately
       await _refreshProperties();
     } catch (error) {
       print('Error toggling bookmark: $error');
-      // Show error message with a custom Cupertino alert
-      _showCupertinoAlertDialog('Failed to toggle bookmark');
+      // Show error message with a toast
+      toastNotification.error('Failed to toggle bookmark');
     }
   }
-
   // Function to show Cupertino alert dialog
   void _showCupertinoAlertDialog(String message) {
     showCupertinoDialog(
@@ -517,7 +518,7 @@ Future<List<Property>> fetchProperties() async {
     try {
       final response = await http.get(
         Uri.parse(
-            'https://rentconnect-backend-nodejs.onrender.com/notification/unread/$userId'),
+            'http://192.168.1.18:3000/notification/unread/$userId'),
         headers: {
           'Authorization': 'Bearer $token',
           'Content-Type': 'application/json',
@@ -611,7 +612,7 @@ void _showNotificationsModal(List<dynamic> notifications) {
     try {
       final response = await http.delete(
         Uri.parse(
-            'https://rentconnect-backend-nodejs.onrender.com/notification/clear/$userId'),
+            'http://192.168.1.18:3000/notification/clear/$userId'),
         headers: {
           'Authorization': 'Bearer ${widget.token}',
         },
@@ -634,7 +635,7 @@ void _showNotificationsModal(List<dynamic> notifications) {
   Future<void> _markNotificationAsRead(String notificationId) async {
     final response = await http.patch(
       Uri.parse(
-          'https://rentconnect-backend-nodejs.onrender.com/notification/$notificationId/read'),
+          'http://192.168.1.18:3000/notification/$notificationId/read'),
       headers: {
         'Authorization': 'Bearer ${widget.token}',
         'Content-Type': 'application/json',
@@ -656,7 +657,6 @@ Widget build(BuildContext context) {
   print('Notifications fetched: ${notifications}');
   ftoast = FToast();
   ftoast.init(context);
-  toast = ToastNotification(ftoast);
   final NavigationController controller = Get.find<NavigationController>();
 
   return Scaffold(
@@ -761,7 +761,7 @@ Widget build(BuildContext context) {
                         future: fetchNotifications(userId, widget.token),
                         builder: (context, snapshot) {
                           if (snapshot.connectionState == ConnectionState.waiting) {
-                            return GlobalLoadingIndicator();
+                            return CupertinoActivityIndicator(color: _themeController.isDarkMode.value?Colors.white:Colors.white,);
                           } else if (snapshot.hasError) {
                             return IconButton(
                               onPressed: () {
@@ -941,7 +941,7 @@ body: Padding(
                     final property = properties[index];
                     final imageUrl = property.photo.startsWith('http')
                         ? property.photo
-                        : 'https://rentconnect-backend-nodejs.onrender.com/${property.photo}';
+                        : 'http://192.168.1.18:3000/${property.photo}';
 
                     return FutureBuilder<List<dynamic>>(
                       future: fetchRooms(property.id),

@@ -65,7 +65,8 @@ class _RoomUnitWidgetState extends State<RoomUnitWidget> {
         widget.room.depositController.text.isNotEmpty &&
         // widget.room.reservationDurationController.text.isNotEmpty &&
         widget.room.reservationFeeController.text.isNotEmpty &&
-        widget.room.advanceController.text.isNotEmpty;
+        widget.room.advanceController.text.isNotEmpty &&
+        widget.room.roomPhotos.any((photo) => photo != null); 
   }
 
   @override
@@ -109,7 +110,9 @@ class _RoomUnitWidgetState extends State<RoomUnitWidget> {
                           children: [
                             Text(
                               'Completed',
-                              style: TextStyle(color: Colors.green),
+                              style: TextStyle(color: Colors.green,
+                              fontFamily: 'geistsans',
+                              fontSize: 10),
                             ),
                             Icon(
                               Icons.check,

@@ -1,6 +1,9 @@
+// ignore_for_file: prefer_const_constructors
+
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:rentcon/pages/agreementDetails.dart';
+import 'package:rentcon/pages/fullscreenImage.dart';
 
 class OccupantListWidget extends StatelessWidget {
   final List<dynamic> occupantUsers;
@@ -9,7 +12,8 @@ class OccupantListWidget extends StatelessWidget {
   final Function(String) fetchUserProfile;
   final bool isDarkMode;
   final Map<String, dynamic> room; // Room passed to access the agreement
-  final Map<String, List<dynamic>> propertyInquiries; // Added property inquiries
+  final Map<String, List<dynamic>>
+      propertyInquiries; // Added property inquiries
 
   const OccupantListWidget({
     Key? key,
@@ -34,96 +38,36 @@ class OccupantListWidget extends StatelessWidget {
             fontFamily: 'geistsans',
           ),
         ),
-        const SizedBox(height: 10),
+        const SizedBox(height: 4),
         // List of occupants
         Container(
-          height: (60 * occupantUsers.length).toDouble(), // Adjust height dynamically
+          height: 71, // Adjust to fit within available space
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(10),
             color: isDarkMode
-                ? Color.fromARGB(122, 194, 193, 228)
-                : Color.fromARGB(255, 249, 248, 255),
+                ? Color.fromARGB(255, 41, 43, 53)
+                : Color.fromARGB(255, 255, 255, 255),
             boxShadow: [
               BoxShadow(
                 color: Colors.black.withOpacity(0.2),
-                spreadRadius: 2,
-                blurRadius: 5,
+                spreadRadius: 1,
+                blurRadius: 2,
                 offset: Offset(0, 3),
               ),
             ],
           ),
-          child: Column(
-            children: occupantUsers.map<Widget>((occupantId) {
-              if (userProfiles.containsKey(occupantId)) {
-                var occupantProfile = userProfiles[occupantId];
-                var profilePicture = profilePic[occupantId];
-                String fullName = '${occupantProfile['firstName']} ${occupantProfile['lastName']}';
-                String profilePictureUrl = profilePicture ?? '';
-
-                return ListTile(
-                  leading: Container(
-                    padding: EdgeInsets.all(0.0),
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      border: Border.all(
-                        color: isDarkMode
-                            ? const Color.fromARGB(255, 33, 243, 233)
-                            : const Color.fromARGB(255, 22, 22, 22),
-                        width: 1.0,
-                      ),
-                    ),
-                    child: CircleAvatar(
-                      backgroundImage: profilePictureUrl.isNotEmpty
-                          ? NetworkImage(profilePictureUrl)
-                          : AssetImage('assets/images/profile.png') as ImageProvider,
-                    ),
+          child: occupantUsers.length > 3
+              ? SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: Row(
+                    children: _buildOccupantRows(context), // Pass context here
                   ),
-                  title: Text(fullName),
-                  trailing: IconButton(
-                    onPressed: () {
-                      showCupertinoDialog(
-                        context: context,
-                        builder: (BuildContext context) {
-                          return CupertinoAlertDialog(
-                            title: Text('Occupant Details'),
-                            content: Column(
-                              mainAxisSize: MainAxisSize.min,
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text('Name: $fullName'),
-                                Text('Gender: ${occupantProfile['gender']}'),
-                                Text('Phone: ${occupantProfile['contactDetails']['phone']}'),
-                                Text('Address: ${occupantProfile['contactDetails']['address']}'),
-                              ],
-                            ),
-                            actions: [
-                              CupertinoDialogAction(
-                                onPressed: () {
-                                  Navigator.of(context).pop(); // Close dialog
-                                },
-                                child: Text('Close'),
-                              ),
-                            ],
-                          );
-                        },
-                      );
-                    },
-                    icon: Icon(Icons.contact_emergency),
-                  ),
-                );
-              } else {
-                fetchUserProfile(occupantId);
-                return ListTile(
-                  leading: CircleAvatar(
-                    backgroundImage: AssetImage('assets/images/profile.png'),
-                  ),
-                  title: Text('Loading...'),
-                );
-              }
-            }).toList(), // Convert map to list of widgets
-          ),
+                )
+              : Row(
+                  children: _buildOccupantRows(context), // Pass context here
+                ),
         ),
-        const SizedBox(height: 20),
+        const SizedBox(height: 10),
         // Add button to navigate to the agreement page
         ElevatedButton(
           onPressed: () {
@@ -138,7 +82,8 @@ class OccupantListWidget extends StatelessWidget {
                 context,
                 MaterialPageRoute(
                   builder: (context) => AgreementDetails(
-                    inquiryId: inquiryId, // Pass the inquiry ID to the details page
+                    inquiryId:
+                        inquiryId, // Pass the inquiry ID to the details page
                   ),
                 ),
               );
@@ -152,29 +97,205 @@ class OccupantListWidget extends StatelessWidget {
             }
           },
           style: ElevatedButton.styleFrom(
-            backgroundColor: isDarkMode ? const Color.fromARGB(255, 41, 43, 53) : Colors.white,
+            backgroundColor: isDarkMode
+                ? const Color.fromARGB(255, 41, 43, 53)
+                : Colors.white,
             elevation: 0,
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(8), // Set the border radius
               side: BorderSide(
-                color: isDarkMode ? Colors.white : Colors.black, // Set border color
+                color: isDarkMode
+                    ? Colors.white
+                    : Colors.black, // Set border color
                 width: 1, // Set border width
               ),
             ),
           ),
           child: Row(
-            mainAxisSize: MainAxisSize.min, // Adjusts the button size to fit its contents
+            mainAxisSize:
+                MainAxisSize.min, // Adjusts the button size to fit its contents
             children: [
-               Icon(Icons.assignment, color: isDarkMode? Colors.white:Colors.black,), // Add your desired icon here
-              const SizedBox(width: 8), // Space between icon and text
-               Text('View Agreement', style: TextStyle(
-                color: isDarkMode? Colors.white:Colors.black
-              ),), // Button text
+              Icon(Icons.assignment,
+                  color: isDarkMode ? Colors.white : Colors.black),
+              const SizedBox(width: 7), // Space between icon and text
+              Text(
+                'View Agreement',
+                style: TextStyle(
+                  color: isDarkMode ? Colors.white : Colors.black,
+                ),
+              ), // Button text
             ],
           ),
         ),
-
       ],
     );
+  }
+
+  List<Widget> _buildOccupantRows(BuildContext context) {
+    return occupantUsers.map<Widget>((occupantId) {
+      if (userProfiles.containsKey(occupantId)) {
+        var occupantProfile = userProfiles[occupantId];
+        var profilePicture = profilePic[occupantId];
+        String fullName =
+            '${occupantProfile['firstName']} ${occupantProfile['lastName']}';
+        String profilePictureUrl = profilePicture ?? '';
+
+        return GestureDetector(
+          onTap: () {
+            showCupertinoDialog(
+              context: context,
+              builder: (BuildContext context) {
+                return CupertinoAlertDialog(
+                  title: Text('Occupant Details'),
+                  content: SingleChildScrollView(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // Add profile picture as a small avatar
+                        Row(
+                          children: [
+                            GestureDetector(
+                              onTap: () {
+                                Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                        builder: (context) => FullscreenImage(
+                                            imageUrl: profilePictureUrl)));
+                              },
+                              child: CircleAvatar(
+                                radius: 30,
+                                backgroundImage: profilePictureUrl.isNotEmpty
+                                    ? NetworkImage(profilePictureUrl)
+                                    : AssetImage('assets/images/profile.png')
+                                        as ImageProvider,
+                              ),
+                            ),
+                            const SizedBox(
+                                width: 10), // Spacing between image and text
+                            Expanded(
+                              // Ensure the text fits in available space
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  // Name with wrapping and ellipsis if it overflows
+                                  Text(
+                                    'Name: $fullName',
+                                    style:
+                                        TextStyle(fontWeight: FontWeight.bold),
+                                    overflow: TextOverflow.ellipsis,
+                                    maxLines:
+                                        2, // Wrap to a second line if necessary
+                                  ),
+                                  const SizedBox(
+                                      height: 4), // Spacing between details
+                                  // Gender
+                                  Text(
+                                    'Gender: ${occupantProfile['gender']}',
+                                    overflow: TextOverflow.ellipsis,
+                                    maxLines: 2,
+                                  ),
+                                  const SizedBox(height: 4),
+                                  // Phone
+                                  Text(
+                                    'Phone: ${occupantProfile['contactDetails']['phone']}',
+                                    overflow: TextOverflow.ellipsis,
+                                    maxLines: 2,
+                                  ),
+                                  const SizedBox(height: 4),
+                                  // Address with wrapping for long addresses
+                                  Text(
+                                    'Address: ${occupantProfile['contactDetails']['address']}',
+                                    overflow: TextOverflow.ellipsis,
+                                    maxLines: 2,
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                  actions: [
+                    CupertinoDialogAction(
+                      onPressed: () {
+                        Navigator.of(context).pop(); // Close dialog
+                      },
+                      child: Text('Close'),
+                    ),
+                  ],
+                );
+              },
+            );
+          },
+          child: Container(
+            height: 63,
+            width: 70,
+            margin: EdgeInsets.symmetric(horizontal: 4),
+            child: Column(
+              children: [
+                Container(
+                  padding: EdgeInsets.all(0.0),
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    border: Border.all(
+                      color: isDarkMode
+                          ? const Color.fromARGB(255, 33, 243, 233)
+                          : const Color.fromARGB(255, 22, 22, 22),
+                      width: 1.0,
+                    ),
+                  ),
+                  child: CircleAvatar(
+                    backgroundImage: profilePictureUrl.isNotEmpty
+                        ? NetworkImage(profilePictureUrl)
+                        : AssetImage('assets/images/profile.png')
+                            as ImageProvider,
+                  ),
+                ),
+                const SizedBox(height: 5),
+                Flexible(
+                  child: Text(
+                    fullName,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      fontFamily: 'GeistSans',
+                      fontWeight: FontWeight.w600,
+                      fontSize: 12.0,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      } else {
+        fetchUserProfile(occupantId);
+        return Container(
+          height: 63,
+          width: 45,
+          margin: EdgeInsets.symmetric(horizontal: 5),
+          child: Column(
+            children: [
+              CircleAvatar(
+                backgroundImage: AssetImage('assets/images/profile.png'),
+              ),
+              const SizedBox(height: 5),
+              Flexible(
+                child: Text(
+                  'Loading...',
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontFamily: 'GeistSans',
+                    fontWeight: FontWeight.w600,
+                    fontSize: 12.0,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+      }
+    }).toList(); // Convert map to list of widgets
   }
 }

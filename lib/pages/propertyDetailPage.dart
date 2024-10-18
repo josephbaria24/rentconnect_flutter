@@ -83,7 +83,7 @@ Future<void> fetchRooms() async {
     _loadingRooms = true;  // Start loading
   });
 
-  final response = await http.get(Uri.parse('https://rentconnect-backend-nodejs.onrender.com/rooms/properties/${widget.property.id}/rooms'));
+  final response = await http.get(Uri.parse('http://192.168.1.18:3000/rooms/properties/${widget.property.id}/rooms'));
 
   if (response.statusCode == 200) {
     final data = jsonDecode(response.body);
@@ -103,7 +103,7 @@ Future<void> fetchRooms() async {
 
 Future<void> fetchNotifications() async {
   final response = await http.get(
-    Uri.parse('https://rentconnect-backend-nodejs.onrender.com/notifications'),
+    Uri.parse('http://192.168.1.18:3000/notifications'),
     headers: {
       'Authorization': 'Bearer ${widget.token}', // Use the user's token for authentication
     },
@@ -308,7 +308,7 @@ void showRoomDetailsModal(BuildContext context, Map<String, dynamic> room) {
 void _sendRentRequest(BuildContext context, Map<String, dynamic> room, DateTime? proposedStartDate, String? customTerms) async {
   // Check if there is a pending request before proceeding
   final checkResponse = await http.get(
-    Uri.parse('https://rentconnect-backend-nodejs.onrender.com/inquiries/check-pending?userId=$userId&roomId=${room['_id']}'),
+    Uri.parse('http://192.168.1.18:3000/inquiries/check-pending?userId=$userId&roomId=${room['_id']}'),
     headers: {
       'Authorization': 'Bearer ${widget.token}',
     },
@@ -329,7 +329,7 @@ void _sendRentRequest(BuildContext context, Map<String, dynamic> room, DateTime?
     } else {
       // Proceed with sending the request
       final inquiryResponse = await http.post(
-        Uri.parse('https://rentconnect-backend-nodejs.onrender.com/inquiries/create'),
+        Uri.parse('http://192.168.1.18:3000/inquiries/create'),
         headers: {
           'Authorization': 'Bearer ${widget.token}',
           'Content-Type': 'application/json',
@@ -359,7 +359,7 @@ void _sendRentRequest(BuildContext context, Map<String, dynamic> room, DateTime?
 
         // Fetch landlord's email using the provided endpoint
         final landlordEmailResponse = await http.get(
-          Uri.parse('https://rentconnect-backend-nodejs.onrender.com/rooms/landlord-email/${room['_id']}'),
+          Uri.parse('http://192.168.1.18:3000/rooms/landlord-email/${room['_id']}'),
           headers: {
             'Authorization': 'Bearer ${widget.token}',
           },
@@ -381,7 +381,7 @@ void _sendRentRequest(BuildContext context, Map<String, dynamic> room, DateTime?
 
           // Send notification request
           final notificationResponse = await http.post(
-            Uri.parse('https://rentconnect-backend-nodejs.onrender.com/notification/create'),
+            Uri.parse('http://192.168.1.18:3000/notification/create'),
             headers: {
               'Authorization': 'Bearer ${widget.token}',
               'Content-Type': 'application/json',
@@ -515,7 +515,7 @@ void _showRentConfirmation(BuildContext context, Map<String, dynamic> room, Them
                       ShadButton(
                         backgroundColor: _themeController.isDarkMode.value ? Colors.white : const Color.fromARGB(255, 5, 16, 44),
                         child: Text(
-                          'Send Rent Request',
+                          'Send',
                           style: TextStyle(
                             color: _themeController.isDarkMode.value ? const Color.fromARGB(255, 3, 1, 36) : const Color.fromARGB(255, 255, 255, 255)
                           ),
@@ -587,7 +587,7 @@ void _showDurationPicker(BuildContext context, Map<String, dynamic> room, ThemeC
 void _sendReserveRequest(BuildContext context, Map<String, dynamic> room, int selectedReservationDuration) async {
   // Check if there is a pending request before proceeding
   final checkResponse = await http.get(
-    Uri.parse('https://rentconnect-backend-nodejs.onrender.com/inquiries/check-pending?userId=$userId&roomId=${room['_id']}'),
+    Uri.parse('http://192.168.1.18:3000/inquiries/check-pending?userId=$userId&roomId=${room['_id']}'),
     headers: {
       'Authorization': 'Bearer ${widget.token}',
     },
@@ -618,7 +618,7 @@ void _sendReserveRequest(BuildContext context, Map<String, dynamic> room, int se
 
       // Proceed with sending the reservation request
       final inquiryResponse = await http.post(
-        Uri.parse('https://rentconnect-backend-nodejs.onrender.com/inquiries/create'),
+        Uri.parse('http://192.168.1.18:3000/inquiries/create'),
         headers: {
           'Authorization': 'Bearer ${widget.token}',
           'Content-Type': 'application/json',
@@ -648,7 +648,7 @@ void _sendReserveRequest(BuildContext context, Map<String, dynamic> room, int se
 
         // Fetch landlord's email using the provided endpoint
         final landlordEmailResponse = await http.get(
-          Uri.parse('https://rentconnect-backend-nodejs.onrender.com/rooms/landlord-email/${room['_id']}'),
+          Uri.parse('http://192.168.1.18:3000/rooms/landlord-email/${room['_id']}'),
           headers: {
             'Authorization': 'Bearer ${widget.token}',
           },
@@ -670,7 +670,7 @@ void _sendReserveRequest(BuildContext context, Map<String, dynamic> room, int se
 
           // Send notification request
           final notificationResponse = await http.post(
-            Uri.parse('https://rentconnect-backend-nodejs.onrender.com/notification/create'),
+            Uri.parse('http://192.168.1.18:3000/notification/create'),
             headers: {
               'Authorization': 'Bearer ${widget.token}',
               'Content-Type': 'application/json',

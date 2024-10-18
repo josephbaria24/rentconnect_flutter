@@ -1,11 +1,13 @@
 // lib/components/payment_details.dart
 
+// ignore_for_file: prefer_const_constructors
+
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:rentcon/pages/fullscreenImage.dart';
 
-class PaymentDetails extends StatelessWidget {
+class PaymentDetails extends StatefulWidget {
   final Map<String, dynamic>? room;
   final DateTime? selectedDueDate;
   final String? selectedMonth;
@@ -20,7 +22,11 @@ class PaymentDetails extends StatelessWidget {
     required this.buildMonthButtons,
   });
 
+  @override
+  State<PaymentDetails> createState() => _PaymentDetailsState();
+}
 
+class _PaymentDetailsState extends State<PaymentDetails> {
   @override
   Widget build(BuildContext context) {
     return Column(
@@ -32,13 +38,13 @@ class PaymentDetails extends StatelessWidget {
         ),
         const SizedBox(height: 5),
         Text(
-          'Due Date: ${selectedDueDate != null ? DateFormat('MMMM dd, yyyy').format(selectedDueDate!) : 'N/A'}',
+          'Due Date: ${widget.selectedDueDate != null ? DateFormat('MMMM dd, yyyy').format(widget.selectedDueDate!) : 'N/A'}',
         ),
-        Text('Total Amount: ₱${room?['price'] ?? 'N/A'}'),
+        Text('Total Amount: ₱${widget.room?['price'] ?? 'N/A'}'),
         const SizedBox(height: 10),
 
         // Expanded Month Button
-        buildMonthButtons(room),
+        widget.buildMonthButtons(widget.room),
         const SizedBox(height: 10),
 
         Text(
@@ -46,7 +52,7 @@ class PaymentDetails extends StatelessWidget {
           style: TextStyle(fontWeight: FontWeight.bold),
         ),
         FutureBuilder<String?>(
-          future: proofFuture,
+          future: widget.proofFuture,
           builder: (context, snapshot) {
             if (snapshot.connectionState == ConnectionState.waiting) {
               return Container(
@@ -63,16 +69,41 @@ class PaymentDetails extends StatelessWidget {
             } else if (snapshot.hasData && snapshot.data != null) {
               return GestureDetector(
                 onTap: () {
-                  Navigator.push(context, MaterialPageRoute(builder: (context)=> FullscreenImage(imageUrl:snapshot.data!)));
+                  Navigator.push(context, MaterialPageRoute(builder: (context) => FullscreenImage(imageUrl: snapshot.data!)));
                 },
                 child: Container(
-                  height: 100,
+                  height: 150,
                   alignment: Alignment.center,
                   child: ClipRRect(
                     borderRadius: BorderRadius.circular(12),
-                    child: Image.network(
-                      snapshot.data!,
-                      fit: BoxFit.cover,
+                    child: Stack(
+                      children: [
+                        Image.network(
+                          snapshot.data!,
+                          fit: BoxFit.cover,
+                          width: double.infinity,
+                          height: double.infinity,
+                        ),
+                        Positioned(
+                          bottom: 8,
+                          left: 8,
+                          child: Text(
+                            '${widget.selectedMonth}',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                              shadows: [
+                                Shadow(
+                                  offset: Offset(1.5, 1.5),
+                                  blurRadius: 4.0,
+                                  color: Colors.black.withOpacity(0.5),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                 ),
@@ -81,7 +112,7 @@ class PaymentDetails extends StatelessWidget {
               return Container(
                 height: 100,
                 alignment: Alignment.center,
-                child: Text('No proof uploaded for $selectedMonth'),
+                child: Text('No proof uploaded for ${widget.selectedMonth}'),
               );
             }
           },

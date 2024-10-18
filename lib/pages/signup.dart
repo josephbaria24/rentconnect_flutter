@@ -10,6 +10,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:get/get.dart';
 import 'package:http/http.dart' as http;
+import 'package:rentcon/pages/toast.dart';
 import 'package:rentcon/theme_controller.dart';
 import 'package:rive/rive.dart' as rive;
 import 'package:shadcn_ui/shadcn_ui.dart';
@@ -38,13 +39,14 @@ class _RegistrationState extends State<SignUpPage> {
     Timer? _timer;
   bool _isCooldown = false;
   int _secondsRemaining = 60;
-
+   late ToastNotification toastNotification;
   // Stop the timer when dialog is dismissed or OTP is verified
 
   // Function to handle OTP resend
  @override
   void initState() {
     super.initState();
+        toastNotification = ToastNotification(context);
     SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle(
       statusBarColor: const Color.fromARGB(255, 255, 255, 255),
       statusBarIconBrightness: Brightness.dark,
@@ -106,7 +108,7 @@ void _handleRegistrationError(String errorMessage) {
     if (!_isCooldown) {
       try {
         var response = await http.post(
-          Uri.parse('https://rentconnect-backend-nodejs.onrender.com/resend-otp'), // Replace with your resend OTP endpoint
+          Uri.parse('http://192.168.1.18:3000/resend-otp'), // Replace with your resend OTP endpoint
           headers: {"Content-Type": "application/json"},
           body: jsonEncode({'email': email}),
         );
@@ -423,7 +425,7 @@ void registerUser() async {
 Future<bool> verifyOtp(String email, String otp, String hash) async {
   try {
     var response = await http.post(
-      Uri.parse('https://rentconnect-backend-nodejs.onrender.com/verify-email-otp'), // Replace with your verification endpoint
+      Uri.parse('http://192.168.1.18:3000/verify-email-otp'), // Replace with your verification endpoint
       headers: {"Content-Type": "application/json"},
       body: jsonEncode({
         'email': email,

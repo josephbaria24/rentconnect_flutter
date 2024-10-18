@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:fluttertoast/fluttertoast.dart';
+import 'package:get/get.dart';
+import 'package:rentcon/theme_controller.dart'; // Make sure to import your theme controller if needed
+import 'package:shadcn_ui/shadcn_ui.dart';
 import 'colors.dart'; // Import AppColors
+ // Import ShadToaster and ShadToast
 
 enum ToastType {
   info,
@@ -16,25 +19,25 @@ class ToastsColorProps {
 }
 
 class ToastNotification {
-  final FToast toast;
-
-  ToastNotification(this.toast);
+  final BuildContext context; // Context to show the ShadToast
+final ThemeController _themeController = Get.find<ThemeController>();
+  ToastNotification(this.context);
 
   ToastsColorProps _getToastColor(ToastType type) {
     switch (type) {
       case ToastType.success:
         return ToastsColorProps(
-          AppColors.successTextColor,
+          const Color.fromARGB(255, 1, 247, 177),
           AppColors.successBgColor,
         );
       case ToastType.error:
         return ToastsColorProps(
-          AppColors.errorTextColor,
+          const Color.fromARGB(255, 250, 45, 45),
           AppColors.errorBgColor,
         );
       case ToastType.warn:
         return ToastsColorProps(
-          AppColors.warnTextColor,
+          const Color.fromARGB(255, 245, 117, 19),
           AppColors.warnBgColor,
         );
       case ToastType.info:
@@ -46,56 +49,79 @@ class ToastNotification {
     }
   }
 
-  void _showToast(ToastType type, String content, IconData icon) {
-    toast.showToast(
-      child: _buildToast(type, content, icon),
-      gravity: ToastGravity.BOTTOM,
+  void _showToast(ToastType type, String content) {
+    IconData icon;
+    switch (type) {
+      case ToastType.success:
+        icon = Icons.check_circle_outline_outlined;
+        break;
+      case ToastType.error:
+        icon = Icons.error_outline_outlined;
+        break;
+      case ToastType.warn:
+        icon = Icons.warning_amber_rounded;
+        break;
+      case ToastType.info:
+      default:
+        icon = Icons.info_outline_rounded;
+        break;
+    }
+
+    ShadToaster.of(context).show(
+      ShadToast(
+        
+        title: Text(
+          _getToastTitle(type),
+          style: const TextStyle(fontWeight: FontWeight.bold),
+        ),
+        closeIcon: Icon(Icons.close_outlined, color: Colors.white,),
+        description: Row(
+          children: [
+            Icon(icon, color: _getToastColor(type).textColor),
+            SizedBox(width: 8), // Add some space between icon and text
+            Flexible(
+              child: Text(
+                content,
+                style: TextStyle(color: _getToastColor(type).textColor),
+              ),
+            ),
+          ],
+        ),
+        duration: Duration(milliseconds: 2000),
+        alignment: Alignment.topRight,
+        
+        
+      )
     );
   }
 
+  String _getToastTitle(ToastType type) {
+    switch (type) {
+      case ToastType.success:
+        return 'Success';
+      case ToastType.error:
+        return 'Error';
+      case ToastType.warn:
+        return 'Warning';
+      case ToastType.info:
+      default:
+        return 'Info';
+    }
+  }
+
   void success(String content) {
-    _showToast(ToastType.success, content, Icons.check);
+    _showToast(ToastType.success, content);
   }
 
   void error(String content) {
-    _showToast(ToastType.error, content, Icons.error);
+    _showToast(ToastType.error, content);
   }
 
   void info(String content) {
-    _showToast(ToastType.info, content, Icons.info);
+    _showToast(ToastType.info, content);
   }
 
   void warn(String content) {
-    _showToast(ToastType.warn, content, Icons.warning);
+    _showToast(ToastType.warn, content);
   }
-
-  Widget _buildToast(ToastType type, String content, IconData icon) =>
-      ConstrainedBox(
-        constraints: BoxConstraints(maxHeight: 540, maxWidth: 360),
-        child: Container(
-          padding: EdgeInsets.symmetric(horizontal: 14, vertical: 14),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(8),
-            color: _getToastColor(type).backgroundColor,
-          ),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Icon(icon, color: _getToastColor(type).textColor),
-              SizedBox(width: 16),
-              Flexible(
-                child: Text(
-                  content,
-                  style: TextStyle(
-                    color: _getToastColor(type).textColor,
-                    fontSize: 14,
-                    fontWeight: FontWeight.w500,
-                    fontFamily: 'GeistSans'
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-      );
 }
