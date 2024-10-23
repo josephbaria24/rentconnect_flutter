@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:jwt_decoder/jwt_decoder.dart';
+import 'package:lottie/lottie.dart';
 import 'package:rentcon/pages/profileSection/profile_details.dart';
 import 'personalInformation.dart'; // Import the PersonalInformation page
  // Import your ProfilePage that displays the profile details
@@ -31,7 +32,7 @@ class _ProfilePageCheckerState extends State<ProfilePageChecker> {
  
 
   Future<void> _checkProfileCompletion() async {
-  final url = Uri.parse('http://192.168.1.18:3000/profile/checkProfileCompletion/$userId');
+  final url = Uri.parse('http://192.168.1.4:3000/profile/checkProfileCompletion/$userId');
 
   try {
     final response = await http.get(url, headers: {'Authorization': 'Bearer ${widget.token}'});
@@ -79,8 +80,8 @@ class _ProfilePageCheckerState extends State<ProfilePageChecker> {
     return Scaffold(
       body: Center(
         child: isProfileComplete == null
-            ? CircularProgressIndicator() // Show loading while checking
-            : Text('Checking profile completion...'),
+            ? Center(child: Lottie.network("https://lottie.host/042642e6-74ec-4ee4-b839-9222ec9596ae/qSwWIkL0vW.json", height: 100)) // Show loading while checking
+            : Center(child: Lottie.network("https://lottie.host/042642e6-74ec-4ee4-b839-9222ec9596ae/qSwWIkL0vW.json", height: 100))
       ),
     );
   }

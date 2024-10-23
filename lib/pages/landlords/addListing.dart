@@ -14,6 +14,7 @@ import 'package:jwt_decoder/jwt_decoder.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:line_awesome_flutter/line_awesome_flutter.dart';
 import 'package:mime/mime.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'package:rentcon/pages/landlords/roomCreation.dart';
 import 'package:rentcon/pages/map/propertyLocationPicker.dart';
 import 'package:rentcon/theme_controller.dart';
@@ -135,6 +136,9 @@ class _AddlistingState extends State<Addlisting> {
 
 
 
+
+//amenities
+
   final List<String> amenities = ['WiFi', 'Laundry', 'Parking', 'Pool', 'Study lounge'];
   final List<IconData> icons = [
     LineAwesomeIcons.wifi_solid,
@@ -164,6 +168,8 @@ class _AddlistingState extends State<Addlisting> {
 }
 
 
+//
+
   @override
   void initState() {
     super.initState();
@@ -173,43 +179,82 @@ class _AddlistingState extends State<Addlisting> {
     
   }
 
-  Future<void> _selectPhoto(int index) async {
-    final pickedFile = await _picker.pickImage(source: ImageSource.gallery);
-    if (pickedFile != null) {
-      setState(() {
-        switch (index) {
-          case 1:
-            _photo = File(pickedFile.path);
-            break;
-          case 2:
-            _photo2 = File(pickedFile.path);
-            break;
-          case 3:
-            _photo3 = File(pickedFile.path);
-            break;
-        }
-      });
+Future<void> _selectPhoto(int index) async {
+  // Check and request permission
+  final status = await Permission.photos.status;
+
+  if (status.isDenied) {
+    // Request permission if not granted
+    final result = await Permission.photos.request();
+    if (result.isDenied) {
+      // If the user denies permission again, show a message
+      print('Permission denied. Cannot select photo.');
+      return;
     }
   }
 
-  Future<void> _selectLegalDocPhoto(int index) async {
-    final pickedFile = await _picker.pickImage(source: ImageSource.gallery);
-    if (pickedFile != null) {
-      setState(() {
-        switch (index) {
-          case 1:
-            _legalDocPhoto = File(pickedFile.path);
-            break;
-          case 2:
-            _legalDocPhoto2 = File(pickedFile.path);
-            break;
-          case 3:
-            _legalDocPhoto3 = File(pickedFile.path);
-            break;
-        }
-      });
+  // Proceed with picking the image
+  final pickedFile = await _picker.pickImage(source: ImageSource.gallery);
+  if (pickedFile != null) {
+    setState(() {
+      switch (index) {
+        case 1:
+          _photo = File(pickedFile.path);
+          break;
+        case 2:
+          _photo2 = File(pickedFile.path);
+          break;
+        case 3:
+          _photo3 = File(pickedFile.path);
+          break;
+      }
+    });
+    print('Photo selected for index $index: ${pickedFile.path}');
+  } else {
+    print('No photo selected.');
+  }
+}
+
+
+
+
+
+Future<void> _selectLegalDocPhoto(int index) async {
+  // Check and request permission
+  final status = await Permission.photos.status;
+
+  if (status.isDenied) {
+    // Request permission if not granted
+    final result = await Permission.photos.request();
+    if (result.isDenied) {
+      // If the user denies permission again, show a message
+      print('Permission denied. Cannot select legal document photo.');
+      return;
     }
   }
+
+  // Proceed with picking the image
+  final pickedFile = await _picker.pickImage(source: ImageSource.gallery);
+  if (pickedFile != null) {
+    setState(() {
+      switch (index) {
+        case 1:
+          _legalDocPhoto = File(pickedFile.path);
+          break;
+        case 2:
+          _legalDocPhoto2 = File(pickedFile.path);
+          break;
+        case 3:
+          _legalDocPhoto3 = File(pickedFile.path);
+          break;
+      }
+    });
+    print('Legal document photo selected for index $index: ${pickedFile.path}');
+  } else {
+    print('No legal document photo selected.');
+  }
+}
+
 
 
   Future<void> _pickLocation() async {
@@ -234,7 +279,7 @@ class _AddlistingState extends State<Addlisting> {
   }
 
   Future<void> _submitProperty() async {
-    var request = http.MultipartRequest('POST', Uri.parse('http://192.168.1.18:3000/storeProperty'));
+    var request = http.MultipartRequest('POST', Uri.parse('http://192.168.1.4:3000/storeProperty'));
 
     request.fields['userId'] = userId;
     request.fields['description'] = descriptionController.text;
@@ -534,49 +579,49 @@ Widget build(BuildContext context) {
             ),
           ),
           SizedBox(height: 5),
-          ShadSelect<String>.withSearch(
-  minWidth: 180,
-  placeholder: Text(
-    'Select Barangay...',
-    style: TextStyle(
-      color: _themeController.isDarkMode.value
-          ? const Color.fromARGB(255, 255, 255, 255)
-          : const Color.fromARGB(255, 134, 134, 134),
-    ),
-  ),
-  onSearchChanged: (value) => setState(() => searchValue = value),
-  searchPlaceholder: const Text('Search Barangay'),
-  options: [
-    if (filteredBarangays.isEmpty)
-      const Padding(
-        padding: EdgeInsets.symmetric(vertical: 24),
-        child: Text('No barangay found'),
-      ),
-    ...barangayList.map(
-      (barangay) {
-        return Offstage(
-          offstage: !filteredBarangays.containsKey(barangay),
-          child: ShadOption(
-            value: barangay,
-            child: Text(barangay),
+                  ShadSelect<String>.withSearch(
+          minWidth: 180,
+          placeholder: Text(
+            'Select Barangay...',
+            style: TextStyle(
+              color: _themeController.isDarkMode.value
+                  ? const Color.fromARGB(255, 255, 255, 255)
+                  : const Color.fromARGB(255, 134, 134, 134),
+            ),
           ),
-        );
-      },
-    ),
-  ],
-  initialValue: selectedBarangay.isNotEmpty ? selectedBarangay : null, // Initialize with the selected value
-  onChanged: (value) {
-    setState(() {
-      selectedBarangay = value ?? ''; // Store the selected barangay
-    });
-  },
-  selectedOptionBuilder: (context, value) => Text(
-    value ?? 'Select Barangay',
-    style: TextStyle(
-      color: _themeController.isDarkMode.value ? Colors.white : Colors.black,
-    ),
-  ),
-),
+          onSearchChanged: (value) => setState(() => searchValue = value),
+          searchPlaceholder: const Text('Search Barangay'),
+          options: [
+            if (filteredBarangays.isEmpty)
+              const Padding(
+                padding: EdgeInsets.symmetric(vertical: 24),
+                child: Text('No barangay found'),
+              ),
+            ...barangayList.map(
+              (barangay) {
+                return Offstage(
+                  offstage: !filteredBarangays.containsKey(barangay),
+                  child: ShadOption(
+                    value: barangay,
+                    child: Text(barangay),
+                  ),
+                );
+              },
+            ),
+          ],
+          initialValue: selectedBarangay.isNotEmpty ? selectedBarangay : null, // Initialize with the selected value
+          onChanged: (value) {
+            setState(() {
+              selectedBarangay = value ?? ''; // Store the selected barangay
+            });
+          },
+          selectedOptionBuilder: (context, value) => Text(
+            value ?? 'Select Barangay',
+            style: TextStyle(
+              color: _themeController.isDarkMode.value ? Colors.white : Colors.black,
+            ),
+          ),
+        ),
 
 
           SizedBox(height: 10,),
@@ -724,6 +769,7 @@ Widget build(BuildContext context) {
                     color: selectedLocation == null ? _themeController.isDarkMode.value? const Color.fromARGB(255, 0, 0, 0): Colors.white : Colors.green, // Change text color based on selection
                   ),
                 ),
+                Icon(Icons.add_location_alt_outlined)
               ],
             ),
           ),
@@ -739,6 +785,7 @@ Widget build(BuildContext context) {
             ),
           ),
           Row(
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: [
               _buildPhotoBox(1, _photo, _selectPhoto),
               SizedBox(width: 10),
@@ -758,6 +805,7 @@ Widget build(BuildContext context) {
             ),
           ),
           Row(
+             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: [
               Column(
                 children: [
@@ -884,7 +932,7 @@ Widget _buildPhotoBox(int index, File? photo, Function(int) onSelectPhoto) {
   return GestureDetector(
     onTap: () => onSelectPhoto(index),
     child: Container(
-      width: 100,
+      width: 70,
       height: 100,
       decoration: BoxDecoration(
         color: Colors.grey[300],

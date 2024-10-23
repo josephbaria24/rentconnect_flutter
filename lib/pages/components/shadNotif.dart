@@ -45,7 +45,7 @@ final ThemeController _themeController = Get.find<ThemeController>();
   Future<List<dynamic>> fetchNotifications(String userId, String token) async {
     try {
       final response = await http.get(
-        Uri.parse('http://192.168.1.18:3000/notification/unread/$userId'),
+        Uri.parse('http://192.168.1.4:3000/notification/unread/$userId'),
         headers: {
           'Authorization': 'Bearer $token',
           'Content-Type': 'application/json',
@@ -103,7 +103,7 @@ final ThemeController _themeController = Get.find<ThemeController>();
 
   Future<void> _markNotificationAsRead(String notificationId) async {
     final response = await http.patch(
-      Uri.parse('http://192.168.1.18:3000/notification/$notificationId/read'),
+      Uri.parse('http://192.168.1.4:3000/notification/$notificationId/read'),
       headers: {
         'Authorization': 'Bearer ${widget.token}',
         'Content-Type': 'application/json',

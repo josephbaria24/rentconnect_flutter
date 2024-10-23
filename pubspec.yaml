@@ -74,9 +74,25 @@ dependencies:
   connectivity_plus: ^6.0.5
   page_transition: ^2.1.0
   flutter_colorpicker: ^1.1.0
+  flutter_native_splash: ^2.4.2
+  provider: ^6.1.2
   
 
 
+
+
+
+
+flutter_native_splash:
+  android: true
+  ios: true
+  color: "#ffffff"
+  image: "assets/icons/android12below.png"
+
+
+  android_12:
+    color: "#ffffff"
+    image: "assets/icons/android12above.png"
 
 
 flutter_launcher_icons:

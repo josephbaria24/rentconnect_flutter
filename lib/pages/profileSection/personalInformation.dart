@@ -11,6 +11,7 @@ import 'package:jwt_decoder/jwt_decoder.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:http_parser/http_parser.dart';
 import 'package:mime/mime.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'package:rentcon/navigation_menu.dart';
 import 'package:rentcon/pages/home.dart';
 import 'package:rentcon/theme_controller.dart';
@@ -54,7 +55,7 @@ class _PersonalInformationState extends State<PersonalInformation> {
   }
 
 Future<void> _checkProfileCompletion() async {
-  final url = Uri.parse('http://192.168.1.18:3000/profile/checkProfileCompletion/$userId');
+  final url = Uri.parse('http://192.168.1.4:3000/profile/checkProfileCompletion/$userId');
   try {
     final response = await http.get(url, headers: {'Authorization': 'Bearer ${widget.token}'});
     if (response.statusCode == 200) {
@@ -127,7 +128,7 @@ void _showThankYouModal() {
 
 
 Future<void> _updateProfileCompletion() async {
-  final url = Uri.parse('http://192.168.1.18:3000/profile/updateProfile');
+  final url = Uri.parse('http://192.168.1.4:3000/profile/updateProfile');
   try {
     final response = await http.patch(
       url,
@@ -163,7 +164,7 @@ Future<void> _updateProfileCompletion() async {
 
 
   Future<void> _updateRole() async {
-    final url = Uri.parse('http://192.168.1.18:3000/updateUserInfo');
+    final url = Uri.parse('http://192.168.1.4:3000/updateUserInfo');
     try {
       final response = await http.patch(
         url,
@@ -193,7 +194,7 @@ Future<void> _updateProfileCompletion() async {
 
 Map<String, dynamic>? userDetails;
 Future<void> _fetchUserDetails() async {
-  final url = Uri.parse('http://192.168.1.18:3000/user/$userId'); // Your new endpoint
+  final url = Uri.parse('http://192.168.1.4:3000/user/$userId'); // Your new endpoint
   try {
     final response = await http.get(url, headers: {
       'Authorization': 'Bearer ${widget.token}',
@@ -225,7 +226,7 @@ Future<void> _fetchUserDetails() async {
     if (_validIdImage != null) {
       var request = http.MultipartRequest(
         'PATCH',
-        Uri.parse('http://192.168.1.18:3000/profile/uploadValidId')
+        Uri.parse('http://192.168.1.4:3000/profile/uploadValidId')
       );
       request.fields['userId'] = userId;
       String mimeType = lookupMimeType(_validIdImage!.path) ?? 'application/octet-stream';
@@ -254,14 +255,31 @@ Future<void> _fetchUserDetails() async {
     }
   }
 
-  void _selectValidIdImage() async {
-    final pickedFile = await _picker.pickImage(source: ImageSource.gallery);
-    if (pickedFile != null) {
-      setState(() {
-        _validIdImage = File(pickedFile.path);
-      });
+void _selectValidIdImage() async {
+  // Check and request permission
+  final status = await Permission.photos.status;
+
+  if (status.isDenied) {
+    // Request permission if not granted
+    final result = await Permission.photos.request();
+    if (result.isDenied) {
+      // If the user denies permission again, show a message
+      print('Permission denied. Cannot select ID image.');
+      return;
     }
   }
+
+  // Proceed with picking the image
+  final pickedFile = await _picker.pickImage(source: ImageSource.gallery);
+  if (pickedFile != null) {
+    setState(() {
+      _validIdImage = File(pickedFile.path);
+    });
+    print('ID image selected: ${pickedFile.path}');
+  } else {
+    print('No ID image selected.');
+  }
+}
 
   void _removeValidIdImage() {
     setState(() {
@@ -351,8 +369,8 @@ Widget build(BuildContext context) {
                   ),
                   SizedBox(height: 50.0),
                   // Add the Lottie animation here
-                  SvgPicture.asset(
-                    'assets/icons/waiting2.svg', // Update the path to your Lottie JSON file
+                  Lottie.network(
+                    'https://lottie.host/5f367402-5bb5-4034-8d24-e7afdc572eef/lwQlfdeQpt.json', // Update the path to your Lottie JSON file
                    height: 300,
                   ),
                   SizedBox(height: 20.0), // Space between icon and text

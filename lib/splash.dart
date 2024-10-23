@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:lottie/lottie.dart';
 import 'package:rentcon/pages/index.dart';
 
 class SplashScreen extends StatefulWidget {
@@ -28,8 +29,8 @@ class _SplashScreenState extends State<SplashScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Container(height: 130,width: 100,
-              child: Image.asset('assets/icons/ren.png')),
+            Container(height: 130,width: 130,
+              child: Lottie.asset('assets/icons/splash.json')),
               SizedBox(height: 20,),
             Container(
               child: Text(

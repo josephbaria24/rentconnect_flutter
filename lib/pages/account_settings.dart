@@ -37,7 +37,7 @@ class _AccountSettingsState extends State<AccountSettings> {
   }
 
   Future<void> _updateEmail(String newEmail) async {
-    final url = Uri.parse('http://192.168.1.18:3000/updateUserInfo');
+    final url = Uri.parse('http://192.168.1.4:3000/updateUserInfo');
     try {
       final response = await http.patch(
         url,
@@ -51,32 +51,44 @@ class _AccountSettingsState extends State<AccountSettings> {
         }),
       );
       if (response.statusCode == 200) {
-        Fluttertoast.showToast(
-          msg: 'Email updated successfully',
-          backgroundColor: Colors.green,
-          textColor: Colors.white,
-        );
+        Get.snackbar(
+        '', // Leave title empty because we're using titleText for customization
+        '', // Leave message empty because we're using messageText for customization
+        duration: Duration(milliseconds: 1500),
+        titleText: Text(
+          'Success',
+          style: TextStyle(color: Colors.green, fontWeight: FontWeight.bold), // Customize the color of 'Success'
+        ),
+        messageText: Text(
+          'Updated email successfully!', // Customize message text color if needed
+        ),
+      );
         setState(() {
           email = newEmail; // Update the displayed email
         });
       } else {
-        Fluttertoast.showToast(
-          msg: 'Failed to update email: ${response.body}',
-          backgroundColor: Colors.red,
-          textColor: Colors.white,
-        );
+        Get.snackbar(
+        '', // Leave title empty because we're using titleText for customization
+        '', // Leave message empty because we're using messageText for customization
+        duration: Duration(milliseconds: 1500),
+        titleText: Text(
+          'Failed',
+          style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold), // Customize the color of 'Success'
+        ),
+        messageText: Text(
+          'Failed to update email', // Customize message text color if needed
+        ),
+      );
       }
     } catch (error) {
-      Fluttertoast.showToast(
-        msg: 'Error updating email: $error',
-        backgroundColor: Colors.red,
-        textColor: Colors.white,
+      Get.snackbar(
+        'Error', 'Error updating email!',duration: Duration(milliseconds: 1500)
       );
     }
   }
 
   Future<void> _updatePassword(String currentPassword, String newPassword) async {
-    final url = Uri.parse('http://192.168.1.18:3000/updatePassword');
+    final url = Uri.parse('http://192.168.1.4:3000/updatePassword');
     try {
       final response = await http.patch(
         url,
@@ -91,29 +103,37 @@ class _AccountSettingsState extends State<AccountSettings> {
         }),
       );
       if (response.statusCode == 200) {
-        ShadToaster.of(context).show(
-          const ShadToast(
-            description: Text('Password Successfully Updated',
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.w500
-            ),),
-          ),
-        );
+       Get.snackbar(
+        '', // Leave title empty because we're using titleText for customization
+        '', // Leave message empty because we're using messageText for customization
+        duration: Duration(milliseconds: 1500),
+        titleText: Text(
+          'Success',
+          style: TextStyle(color: Colors.green, fontWeight: FontWeight.bold), // Customize the color of 'Success'
+        ),
+        messageText: Text(
+          'Password updated successfully!', // Customize message text color if needed
+        ),
+      );
+        
         // Optionally, log the user out or clear the passwords
       } else {
-        Fluttertoast.showToast(
-          msg: 'Failed to update password: ${response.body}',
-          backgroundColor: Colors.red,
-          textColor: Colors.white,
-        );
+        Get.snackbar(
+        '', // Leave title empty because we're using titleText for customization
+        '', // Leave message empty because we're using messageText for customization
+        duration: Duration(milliseconds: 1500),
+        titleText: Text(
+          'Failed',
+          style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold), // Customize the color of 'Success'
+        ),
+        messageText: Text(
+          'Failed to update password.', // Customize message text color if needed
+        ),
+      );
       }
     } catch (error) {
-      Fluttertoast.showToast(
-        msg: 'Error updating password: $error',
-        backgroundColor: Colors.red,
-        textColor: Colors.white,
-      );
+      Get.snackbar('Error','Error updating password!',duration: Duration(milliseconds: 1500)
+            );
     }
   }
 

@@ -20,8 +20,12 @@ import 'package:rentcon/pages/landlords/addListing.dart';
 import 'package:rentcon/pages/landlords/detailedProperty.dart';
 import 'package:rentcon/pages/landlords/manageProperty.dart';
 import 'package:rentcon/pages/landlords/roomCreation.dart';
+import 'package:rentcon/pages/landlords/updateListing.dart';
+import 'package:rentcon/pages/landlords/widgets/billsBoxes.dart';
+import 'package:rentcon/pages/landlords/widgets/copyOfpaymentdetails.dart';
 import 'package:rentcon/pages/landlords/widgets/editProperty.dart';
 import 'package:rentcon/pages/landlords/widgets/hasInquiry.dart';
+import 'package:rentcon/pages/landlords/widgets/helpScreen.dart';
 import 'package:rentcon/pages/landlords/widgets/no_inquiries_widget.dart';
 import 'package:rentcon/pages/landlords/widgets/occupant_list_widget.dart';
 import 'package:rentcon/pages/landlords/widgets/payment_details.dart';
@@ -72,9 +76,9 @@ class _CurrentListingPageState extends State<CurrentListingPage> {
     'July', 'August', 'September', 'October', 'November', 'December'
   ];
   late PageController _monthPageController;
-   bool _isTooltipVisible = false;
-   final GlobalKey _tooltipKey = GlobalKey();
 
+
+late ScrollController tab2ScrollController;
   @override
   void initState() {
     super.initState();
@@ -85,7 +89,8 @@ class _CurrentListingPageState extends State<CurrentListingPage> {
     _loading = true;
     fetchRoomInquiries;
      _monthPageController = PageController(initialPage: _currentMonthIndex); // Initialize the PageController
-      _fetchProofForAllMonths(room['_id'], widget.token); // Fetch proof when the widget is initialized
+      _fetchProofForAllMonths(room['_id'], widget.token); 
+    tab2ScrollController = ScrollController();
   }
 
 
@@ -95,7 +100,7 @@ class _CurrentListingPageState extends State<CurrentListingPage> {
       return const Color.fromARGB(255, 255, 196, 0); // Yellow for Waiting
     case 'Approved':
       return Colors.green; // Green for Approved
-    case 'Rejected':
+    case 'Rejectesd':
       return Colors.red; // Red for Rejected
     default:
       return _themeController.isDarkMode.value
@@ -104,9 +109,14 @@ class _CurrentListingPageState extends State<CurrentListingPage> {
   }
 }
 
+  @override
+  void dispose() {
+    tab2ScrollController.dispose(); // Dispose the controller
+    super.dispose();
+  }
 
 Future<String?> getProofOfPaymentForSelectedMonth(String roomId, String token, String selectedMonth) async {
-  final String apiUrl = 'http://192.168.1.18:3000/payment/room/$roomId/monthlyPayments';
+  final String apiUrl = 'http://192.168.1.4:3000/payment/room/$roomId/monthlyPayments';
 
   try {
     print('API URL: $apiUrl');
@@ -188,113 +198,9 @@ final List<String> rejectionReasons = [
   }
 
 
-Future<String?>? _proofFuture;
-String _selectedMonth = '';
-
-Future<void> _onMonthSelected(String month, Map<String, dynamic> room, BuildContext context) async {
-  if (!mounted) return;
-
-  _selectedMonth = month; // Update the selected month
-  _currentMonthIndex = months.indexOf(month); // Update the current month index
-  _proofFuture = getProofOfPaymentForSelectedMonth(room['_id'], widget.token, month);
-
-  // Close any existing dialogs
-  Navigator.of(context).pop(); // Close the previous showRoomDetailPopover
-
-  // Retrieve inquiries for the specific room
-  List<dynamic> inquiries = propertyInquiries[room['_id']] ?? []; // Provide a default empty list
-
-  // Open a new room detail popover and pass the selected month and current index
-  showRoomDetailPopover(context, room, userProfiles, inquiries, selectedMonth: month, currentMonthIndex: _currentMonthIndex, initialTabIndex: 1);
-}
-
-
-Widget buildMonthButtons(Map<String, dynamic> room, BuildContext context) {
-  List<String> months = [
-    'January', 'February', 'March', 'April', 'May', 'June',
-    'July', 'August', 'September', 'October', 'November', 'December'
-  ];
-
-  return Container(
-    height: 42, // Set a fixed height for the button row
-    width: double.infinity, // Set width to fill the dialog
-    child: Row(
-      children: [
-        // Left Arrow Indicator
-        if (months.isNotEmpty) 
-          Padding(
-            padding: const EdgeInsets.only(right: 6.0),
-            child: SizedBox(
-              width: 20, // Set a fixed width for the left arrow
-              child: IconButton(
-                icon: Icon(Icons.chevron_left_rounded),
-                onPressed: () {
-                  // Handle left arrow click (optional)
-                },
-              ),
-            ),
-          ),
-
-        // Month Buttons
-        Expanded(
-          child: ListView.builder(
-            scrollDirection: Axis.horizontal, // Enable horizontal scrolling
-            itemCount: months.length,
-            itemBuilder: (BuildContext context, int index) {
-              String? month = months[index];
-              return Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 2.0, vertical: 4), // Add horizontal padding
-                child: ElevatedButton(
-                  onPressed: () {
-                    // Pass the context to _onMonthSelected
-                    _onMonthSelected(month, room, context);
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color.fromARGB(255, 12, 0, 56), // Background color
-                    foregroundColor: Colors.white, // Text color
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10), // Rounded corners
-                    ),
-                    padding: EdgeInsets.symmetric(horizontal: 10, vertical: 8), // Increased padding inside the button
-                    elevation: 2, // Button shadow
-                  ),
-                  child: Text(
-                    month,
-                    style: TextStyle(
-                      fontSize: 13, // Font size of the text
-                      fontWeight: FontWeight.bold, 
-                      fontFamily: 'geistsans', // Bold text
-                    ),
-                  ),
-                ),
-              );
-            },
-          ),
-        ),
-
-        // Right Arrow Indicator
-        if (months.isNotEmpty)
-          Padding(
-            padding: const EdgeInsets.only(right: 8.0),
-            child: SizedBox(
-              width: 8, // Set a fixed width for the right arrow
-              child: IconButton(
-                icon: Icon(Icons.chevron_right_rounded),
-                onPressed: () {
-                  // Handle right arrow click (optional)
-                },
-              ),
-            ),
-          ),
-      ],
-    ),
-  );
-}
-
-
 Future<int?> getReservationDuration(String roomId, String token) async {
   final response = await http.get(
-    Uri.parse('http://192.168.1.18:3000/inquiries/rooms/$roomId'),
+    Uri.parse('http://192.168.1.4:3000/inquiries/rooms/$roomId'),
     headers: {
       'Authorization': 'Bearer $token', // If you're using token-based authentication
       'Content-Type': 'application/json',
@@ -327,27 +233,38 @@ Future<int?> getReservationDuration(String roomId, String token) async {
 
 
 
-void showRoomDetailPopover(BuildContext context, dynamic room, Map<String, dynamic> userProfiles, List<dynamic> inquiries, {String? selectedMonth, int currentMonthIndex = 0, int initialTabIndex = 0}) async {
-  ScrollController tab1ScrollController = ScrollController(); // Add ScrollController for Tab 1
-  ScrollController tab2ScrollController = ScrollController(); // Add ScrollController for Tab 2
+void showRoomDetailBottomSheet(BuildContext context, dynamic room, Map<String, dynamic> userProfiles, List<dynamic> inquiries, {String? selectedMonth, int currentMonthIndex = 0, int initialTabIndex = 0}) async {
+  ScrollController tab1ScrollController = ScrollController(); // ScrollController for Tab 1
+  ScrollController tab2ScrollController = ScrollController(); // ScrollController for Tab 2
   
   int? reservationDuration = await getReservationDuration(room['_id'], widget.token);
-  
-  showCupertinoDialog(
+  print("inquiry $inquiries");
+  showModalBottomSheet(
+    backgroundColor: _themeController.isDarkMode.value? const Color.fromARGB(255, 43, 45, 56): Colors.white,
     context: context,
-    barrierDismissible: true,
+    isScrollControlled: true, // Makes the modal sheet taller
+    shape: RoundedRectangleBorder(
+      borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+    ),
     builder: (context) {
-      int selectedDay = room['dueDate'] != null ? DateTime.parse(room['dueDate']).day : 5; // Default to the 5th day
+      int selectedDay = room['dueDate'] != null 
+          ? DateTime.parse(room['dueDate']).day 
+          : 5; // Default to the 5th day
       DateTime? _selectedDueDate;
 
       void calculateDueDate() {
         DateTime today = DateTime.now();
+
+        // Set the due date to the selected day of the current month
         _selectedDueDate = DateTime(today.year, today.month, selectedDay);
+        
+        // If today is past the selected day, move to the next month
         if (today.day > selectedDay) {
-          _selectedDueDate = DateTime(today.year, today.month + 1, selectedDay);
+          _selectedDueDate = DateTime(today.year, today.month + 1, selectedDay+1);
         }
       }
 
+      // Call the function to calculate due date
       calculateDueDate();
 
       List<String> photos = [
@@ -369,155 +286,133 @@ void showRoomDetailPopover(BuildContext context, dynamic room, Map<String, dynam
         List<dynamic> inquiries = propertyInquiries[room['_id']] ?? [];
         hasPendingInquiry = inquiries.any((inquiry) => inquiry['status'] == 'pending');
       }
+      
 
       return DefaultTabController(
         length: 2, // Two tabs
         initialIndex: initialTabIndex,
-        child: Dialog(
-          backgroundColor: Theme.of(context).brightness == Brightness.dark
-              ? const Color.fromARGB(255, 41, 43, 53)
-              : Colors.white,
-          insetPadding: EdgeInsets.symmetric(
-            horizontal: MediaQuery.of(context).size.width < 400 ? 9.0 : 30.0,
+        child: ConstrainedBox(
+          constraints: BoxConstraints(
+            maxHeight: MediaQuery.of(context).size.height * 0.90,
+            maxWidth: MediaQuery.of(context).size.width * 0.98,
           ),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(10),
-          ),
-          child: ConstrainedBox(
-            constraints: BoxConstraints(
-              maxHeight: MediaQuery.of(context).size.height * 0.67,
-              maxWidth: MediaQuery.of(context).size.width * 0.98,
-            ),
-            child: Column(
-              children: [
-                // Room Number and Close Button
-                Padding(
-                  padding: const EdgeInsets.all(10.0),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        'Room No. ${room['roomNumber']?.toString() ?? 'Unknown'}',
-                        style: const TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 20,
-                          fontFamily: 'GeistSans',
-                        ),
-                      ),
-                      ElevatedButton(
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: _themeController.isDarkMode.value
-                              ? const Color.fromARGB(0, 0, 0, 0)
-                              : const Color.fromARGB(255, 255, 255, 255),
-                          elevation: 0,
-                          minimumSize: const Size(0, 33),
-                          padding: EdgeInsets.zero,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8.0),
-                          ),
-                        ),
-                        onPressed: () {
-                          Navigator.pop(context);
-                        },
-                        child: Icon(
-                          Icons.close,
-                          color: _themeController.isDarkMode.value
-                              ? Colors.white
-                              : const Color.fromARGB(255, 11, 3, 39),
-                        ),
-                      ),
-                    ],
+          child: Column(
+            children: [
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 10.0, vertical: 10),
+                child: Container(
+                  margin: EdgeInsets.symmetric(horizontal: 130),  // indent and endIndent effect
+                  height: 6,  // thickness
+                  decoration: BoxDecoration(
+                    color: Colors.grey,  // Divider color
+                    borderRadius: BorderRadius.circular(10),  // Rounded corners
                   ),
                 ),
-                const SizedBox(height: 10),
-                
-                // TabBar
-                TabBar(
-                  labelColor: _themeController.isDarkMode.value? Colors.white: Colors.black,
-                  indicatorColor: _themeController.isDarkMode.value? Colors.white:Colors.black,
-                  tabs: [
-                    Tab(text: 'Room Details'),
-                    Tab(text: 'Payment Details'),
+              ),
+              Padding(
+                padding: const EdgeInsets.only(right: 10.0, left: 10),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      'Room No. ${room['roomNumber']?.toString() ?? 'Unknown'}',
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 20,
+                        fontFamily: 'GeistSans',
+                      ),
+                    ),
+                    
                   ],
                 ),
-
-                Expanded(
-                  child: TabBarView(
-                    children: [
-                      // Tab 1: Occupants, Room Photos, Agreement, etc.
-                      Padding(
-                        padding: const EdgeInsets.only(right: 3.0),
-                        child: Scrollbar(
-                          controller: tab1ScrollController, // Add ScrollController for Tab 1
-                          thickness: 4,
-                          radius: Radius.circular(10),
-                          thumbVisibility: true,
-                          child: SingleChildScrollView(
-                            controller: tab1ScrollController, // Assign ScrollController here too
-                            child: Padding(
-                              padding: const EdgeInsets.all(16.0),
-                              child: Column(
-                                children: [
-                                  if (hasOccupants)
-                                    OccupantListWidget(
-                                      propertyInquiries: propertyInquiries,
-                                      room: room,
-                                      occupantUsers: room['occupantUsers'],
-                                      userProfiles: userProfiles,
-                                      profilePic: profilePic,
-                                      fetchUserProfile: fetchUserProfile,
-                                      isDarkMode: _themeController.isDarkMode.value,
-                                    ),
-                                  if (hasReserver)
-                                    ReserverList(
-                                      hasReserver: hasReserver,
-                                      room: room,
-                                      userProfiles: userProfiles,
-                                      profilePic: profilePic,
-                                      themeController: _themeController,
-                                      fetchUserProfile: fetchUserProfile,
-                                    ),
-                                  SizedBox(height: 10),
-                                  Column( // Change Row to Column to stack photo and text vertically
-                                    children: [
-                                      Row(
-                                        mainAxisAlignment: MainAxisAlignment.spaceAround, // Aligns children evenly
-                                        children: [
-                                          SizedBox(
-                                            height: 150,
-                                            width: 150,
-                                            child: photos.isNotEmpty
-                                                ? PageView.builder(
-                                                    controller: pageController,
-                                                    itemCount: photos.length,
-                                                    itemBuilder: (context, index) {
-                                                      return GestureDetector(
-                                                        onTap: () {
-                                                          showFullscreenImage(context, photos[index]);
-                                                        },
-                                                        child: Container(
-                                                          decoration: BoxDecoration(
-                                                            border: Border.all(width: 1, color: _themeController.isDarkMode.value ? Colors.white : Colors.black),
+              ),
+              // TabBar
+              TabBar(
+                labelColor: _themeController.isDarkMode.value? Colors.white: Colors.black,
+                indicatorColor: _themeController.isDarkMode.value? Colors.white:Colors.black,
+                tabs: [
+                  Tab(text: 'Room'),
+                  Tab(text: 'Payment'),
+                ],
+              ),
+              Expanded(
+                child: TabBarView(
+                  children: [
+                    // Tab 1: Occupants, Room Photos, Agreement, etc.
+                    Padding(
+                      padding: const EdgeInsets.only(right: 3.0),
+                      child: Scrollbar(
+                        controller: tab1ScrollController, // Add ScrollController for Tab 1
+                        thickness: 4,
+                        radius: Radius.circular(10),
+                        thumbVisibility: true,
+                        child: SingleChildScrollView(
+                          controller: tab1ScrollController, // Assign ScrollController here too
+                          child: Padding(
+                            padding: const EdgeInsets.all(10.0),
+                            child: Column(
+                              children: [
+                                if (hasOccupants)
+                                  OccupantListWidget(
+                                    propertyInquiries: propertyInquiries,
+                                    room: room,
+                                    occupantUsers: room['occupantUsers'],
+                                    userProfiles: userProfiles,
+                                    profilePic: profilePic,
+                                    fetchUserProfile: fetchUserProfile,
+                                    isDarkMode: _themeController.isDarkMode.value,
+                                  ),
+                                if (hasReserver)
+                                  ReserverList(
+                                    hasReserver: hasReserver,
+                                    room: room,
+                                    userProfiles: userProfiles,
+                                    profilePic: profilePic,
+                                    themeController: _themeController,
+                                    fetchUserProfile: fetchUserProfile,
+                                  ),
+                                SizedBox(height: 10),
+                                Column( // Change Row to Column to stack photo and text vertically
+                                  children: [
+                                    Row(
+                                      mainAxisAlignment: MainAxisAlignment.spaceAround, // Aligns children evenly
+                                      children: [
+                                        SizedBox(
+                                          height: 150,
+                                          width: 150,
+                                          child: photos.isNotEmpty
+                                              ? PageView.builder(
+                                                  controller: pageController,
+                                                  itemCount: photos.length,
+                                                  itemBuilder: (context, index) {
+                                                    return GestureDetector(
+                                                      onTap: () {
+                                                        showFullscreenImage(context, photos[index]);
+                                                      },
+                                                      child: Container(
+                                                        decoration: BoxDecoration(
+                                                          border: Border.all(width: 1, color: _themeController.isDarkMode.value ? Colors.white : Colors.black),
+                                                          borderRadius: BorderRadius.circular(8),
+                                                        ),
+                                                        child: Padding(
+                                                          padding: const EdgeInsets.symmetric(vertical: 4.0, horizontal: 4),
+                                                          child: ClipRRect(
                                                             borderRadius: BorderRadius.circular(8),
-                                                          ),
-                                                          child: Padding(
-                                                            padding: const EdgeInsets.symmetric(vertical: 4.0, horizontal: 4),
-                                                            child: ClipRRect(
-                                                              borderRadius: BorderRadius.circular(8),
-                                                              child: FadeInImage.assetNetwork(
-                                                                placeholder: 'assets/images/placeholder.webp',
-                                                                image: photos[index],
-                                                                fit: BoxFit.cover,
-                                                              ),
+                                                            child: FadeInImage.assetNetwork(
+                                                              placeholder: 'assets/images/placeholder.webp',
+                                                              image: photos[index],
+                                                              fit: BoxFit.cover,
                                                             ),
                                                           ),
                                                         ),
-                                                      );
-                                                    },
-                                                  )
-                                                : const Center(child: Text("No photos available")),
-                                          ),
-                                          SizedBox(width: 10), // Spacing between the photo and texts
+                                                      ),
+                                                    );
+                                                  },
+                                                )
+                                              : const Center(child: Text("No photos available")),
+                                        ),
+                                        SizedBox(width: 10),
+                                        
                                           Expanded( // Makes the text take remaining space
                                             child: Column(
                                                   crossAxisAlignment: CrossAxisAlignment.start, // Aligns text to the start
@@ -606,149 +501,80 @@ void showRoomDetailPopover(BuildContext context, dynamic room, Map<String, dynam
                                                   ],
                                                 ),
 
-                                          ),
-                                        ],
-                                      ),
-                                      if (photos.isNotEmpty)
+                                          ), // Spacing between the photo and texts
+                                      ],
+                                    ),
+                                    if (photos.isNotEmpty)
                                       SizedBox(height: 5),
-                                          Padding(
-                                            padding: const EdgeInsets.only(left: 67.0),
-                                            child: Align(
-                                              alignment: Alignment.centerLeft, // Aligns to the left
-                                              child: SmoothPageIndicator(
-                                                controller: pageController,
-                                                count: photos.length,
-                                                effect: ExpandingDotsEffect(
-                                                  dotHeight: 5,
-                                                  dotWidth: 5,
-                                                  activeDotColor: Theme.of(context).brightness == Brightness.dark
-                                                      ? Colors.white
-                                                      : Colors.black,
-                                                  dotColor: Colors.grey,
-                                                ),
-                                              ),
-                                            ),
-                                          ),
-
-                                        if (hasOccupants && !isRented) ...[
-                                        Center(child: Text('Is the reservant moved-in?', style: TextStyle(
-                                          fontFamily: 'geistsans',
-                                          color: _themeController.isDarkMode.value? const Color.fromARGB(255, 216, 216, 216): const Color.fromARGB(193, 53, 53, 53),
-                                          fontSize: 13,
-                                        ),)),
-                                        Tooltip(
-                                          message: 'Is the reservant moved-in?',
-                                          child: Center(
-                                            child: ShadButton(
-                                              backgroundColor: _themeController.isDarkMode.value? Colors.white: const Color.fromARGB(255, 0, 16, 34),
-                                              onPressed: () async {
-                                                // Show confirmation dialog
-                                                showCupertinoDialog(
-                                                  context: context,
-                                                  builder: (BuildContext context) {
-                                                    return CupertinoAlertDialog(
-                                                      title: Text('Confirm Occupation'),
-                                                      content: Text('Are you sure you want to mark this room as occupied?'),
-                                                      actions: [
-                                                        CupertinoDialogAction(
-                                                          child: Text('Cancel'),
-                                                          isDefaultAction: true,
-                                                          onPressed: () {
-                                                            Navigator.of(context).pop(); // Close the dialog without action
-                                                          },
-                                                        ),
-                                                        CupertinoDialogAction(
-                                                          child: Text('Confirm'),
-                                                          isDestructiveAction: true,
-                                                          onPressed: () async {
-                                                            await markRoomAsOccupied(context,room["_id"]);
-
-                                                            Navigator.of(context).pop(); // Close confirmation dialog
-
-                                                            // Show success dialog
-                                                            showCupertinoDialog(
-                                                              context: context,
-                                                              builder: (BuildContext context) {
-                                                                return CupertinoAlertDialog(
-                                                                  title: Text('Success'),
-                                                                  content: Text('Successfully marked as occupied!'),
-                                                                  actions: [
-                                                                    CupertinoDialogAction(
-                                                                      child: Text('OK'),
-                                                                      onPressed: () {
-                                                                        Navigator.of(context).pop(); // Close success dialog
-                                                                        Navigator.pushReplacement(
-                                                                          context,
-                                                                          MaterialPageRoute(
-                                                                            builder: (context) => CurrentListingPage(token: widget.token),
-                                                                          ),
-                                                                        );
-                                                                      },
-                                                                    ),
-                                                                  ],
-                                                                );
-                                                              },
-                                                            );
-                                                          },
-                                                        ),
-                                                      ],
-                                                    );
-                                                  },
-                                                );
-                                              },
-                                              child: Text('Mark as Occupied', style: TextStyle(
-                                                color: _themeController.isDarkMode.value? Colors.black: Colors.white
-                                              ),),
-                                            ),
+                                    Padding(
+                                      padding: const EdgeInsets.only(left: 67.0),
+                                      child: Align(
+                                        alignment: Alignment.centerLeft, // Aligns to the left
+                                        child: SmoothPageIndicator(
+                                          controller: pageController,
+                                          count: photos.length,
+                                          effect: ExpandingDotsEffect(
+                                            dotHeight: 5,
+                                            dotWidth: 5,
+                                            activeDotColor: Theme.of(context).brightness == Brightness.dark
+                                                ? Colors.white
+                                                : Colors.black,
+                                            dotColor: Colors.grey,
                                           ),
                                         ),
-                                        ]
-                                    ],
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-
-                      // Tab 2: Payment Details with Scrollbar
-                      Scrollbar(
-                        controller: tab2ScrollController, // Add ScrollController for Tab 2
-                        thumbVisibility: true, // Show scrollbar
-                        child: SingleChildScrollView(
-                          controller: tab2ScrollController, // Assign ScrollController here too
-                          child: Padding(
-                            padding: const EdgeInsets.all(20.0),
-                            child: Column(
-                              children: [
-                                SizedBox(height: 5,),
-                                if (isReserved) ...[
-                                  ReservationDetails(room: room, token: widget.token, mounted: mounted, reservationDuration: reservationDuration!)
-                                ],
-                                if (isOccupied) ...[
-                                  PaymentDetails(
-                                    room: room,
-                                    selectedDueDate: _selectedDueDate,
-                                    selectedMonth: _selectedMonth,
-                                    proofFuture: _proofFuture,
-                                    buildMonthButtons: (room) => buildMonthButtons(room!, context),
-                                  ),
-                                ],
-                                if (isAvailable) ...[
-                                  NoInquiriesWidget(),
-                                ],
-                                 
+                                      ),
+                                    ),
+                                  ],
+                                ),
                               ],
                             ),
                           ),
                         ),
                       ),
-                    ],
-                  ),
+                    ),
+
+                    // Tab 2: Payment Details with Scrollbar
+                    // Tab 2: Payment Details with Scrollbar
+                    Padding(
+                      padding: const EdgeInsets.only(right: 4.0),
+                      child: Scrollbar(
+                        thickness: 4,
+                        radius: Radius.circular(10),
+                        controller: tab2ScrollController, // Add ScrollController for Tab 2
+                        thumbVisibility: true, // Show scrollbar
+                        child: SingleChildScrollView(
+                          controller: tab2ScrollController, // Assign ScrollController here too
+                          child: Padding(
+                          padding: const EdgeInsets.all(16.0),
+                          child: Column(
+                            children: [
+                              if (isOccupied) ...[
+                                PaymentDetails(
+                                  token: widget.token,
+                                  room: room,
+                                  selectedDueDate: _selectedDueDate,
+                                  selectedMonth: selectedMonth,
+                                ),
+                                SizedBox(height: 10,),
+                                Container(decoration: BoxDecoration(
+                                  color: _themeController.isDarkMode.value? Colors.white:Colors.black,
+                                  borderRadius: BorderRadius.circular(2)
+                                ),
+                                height: 2,),
+                                Billsboxes(
+                                  inquiries: inquiries
+
+                                )
+                              ],
+                            ],
+                          ),
+                        ),
+                      ),
+
+                 ))],
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
         ),
       );
@@ -758,37 +584,14 @@ void showRoomDetailPopover(BuildContext context, dynamic room, Map<String, dynam
 
 
 
-  Future<void> updateRoomDueDate(String roomId, DateTime dueDate) async {
-    try {
-      final response = await http.patch(
-        Uri.parse(
-            'http://192.168.1.18:3000/rooms/updateRoom/$roomId'), // Ensure the URL is correct
-        headers: <String, String>{
-          'Content-Type': 'application/json; charset=UTF-8',
-        },
-        body: jsonEncode({
-          'dueDate':
-              dueDate.toIso8601String(), // Send dueDate in ISO8601 format
-        }),
-      );
 
-      if (response.statusCode == 200) {
-        // Successfully updated the due date
-        print('Due date updated successfully');
-      } else {
-        // Handle error
-        print('Failed to update due date');
-      }
-    } catch (e) {
-      // Handle exception
-      print('Error updating due date: $e');
-    }
-  }
+
+
 
   Future<void> updateInquiryStatus(
       String? inquiryId, String? newStatus, String? token) async {
     final url = Uri.parse(
-        'http://192.168.1.18:3000/inquiries/update/$inquiryId'); // Match your backend route
+        'http://192.168.1.4:3000/inquiries/update/$inquiryId'); // Match your backend route
 
     try {
       final response = await http.patch(
@@ -826,7 +629,7 @@ Future<void> updateInquiryStatusAndRoom(
     String token,
     int? reservationDuration,
 ) async {
-    final url = 'http://192.168.1.18:3000/inquiries/update/$inquiryId'; // Update inquiry status
+    final url = 'http://192.168.1.4:3000/inquiries/update/$inquiryId'; // Update inquiry status
     try {
         final response = await http.patch(
             Uri.parse(url),
@@ -846,7 +649,7 @@ Future<void> updateInquiryStatusAndRoom(
         if (response.statusCode == 200) {
             // Get the occupant's email
             final emailResponse = await http.get(
-                Uri.parse('http://192.168.1.18:3000/inquiries/$inquiryId/email'),
+                Uri.parse('http://192.168.1.4:3000/inquiries/$inquiryId/email'),
                 headers: {
                     'Authorization': 'Bearer $token',
                     'Content-Type': 'application/json',
@@ -877,7 +680,7 @@ Future<void> updateInquiryStatusAndRoom(
 
 
 Future<void> _sendOccupantNotificationEmail(String occupantEmail, String message, String userId) async {
-    final emailServiceUrl = 'http://192.168.1.18:3000/notification/create'; // Endpoint to send notifications
+    final emailServiceUrl = 'http://192.168.1.4:3000/notification/create'; // Endpoint to send notifications
     try {
         final response = await http.post(
             Uri.parse(emailServiceUrl),
@@ -911,7 +714,7 @@ Future<void> rejectAndDeleteInquiry(String inquiryId, String token, String reaso
   try {
     // First, call your API to reject the inquiry and send the reason
     final response = await http.patch(
-      Uri.parse('http://192.168.1.18:3000/inquiries/reject/$inquiryId'), // Update the endpoint
+      Uri.parse('http://192.168.1.4:3000/inquiries/reject/$inquiryId'), // Update the endpoint
       headers: {
         'Authorization': 'Bearer $token',
         'Content-Type': 'application/json',
@@ -926,7 +729,7 @@ Future<void> rejectAndDeleteInquiry(String inquiryId, String token, String reaso
 
       // Get the inquiry details, including userId and occupant's email
       final inquiryResponse = await http.get(
-        Uri.parse('http://192.168.1.18:3000/inquiries/$inquiryId'), // Update the endpoint to get inquiry details
+        Uri.parse('http://192.168.1.4:3000/inquiries/$inquiryId'), // Update the endpoint to get inquiry details
         headers: {
           'Authorization': 'Bearer $token',
           'Content-Type': 'application/json',
@@ -956,7 +759,7 @@ Future<void> rejectAndDeleteInquiry(String inquiryId, String token, String reaso
 
 
   Future<bool> deleteProperty(String propertyId) async {
-    final response = await http.delete(Uri.parse('http://192.168.1.18:3000/deleteProperty/$propertyId'));
+    final response = await http.delete(Uri.parse('http://192.168.1.4:3000/deleteProperty/$propertyId'));
 
     if (response.statusCode == 200) {
       // Successfully deleted the property
@@ -1049,7 +852,8 @@ void _navigateToEditProperty(String propertyId) {
   Navigator.push(
     context,
     MaterialPageRoute(
-      builder: (context) => EditPropertyScreen(
+      builder: (context) => UpdateProperty(
+        token: widget.token,
         propertyId: propertyId,
         propertyDetails: selectedProperty,  // Passing the selected property details
       ),
@@ -1108,10 +912,25 @@ void _navigateToEditProperty(String propertyId) {
           ),
         ),
         actions: [
-          Padding(
+         GestureDetector(
+          onTap: () {
+            showDialog(
+              context: context,
+              builder: (BuildContext context) {
+                return Dialog(
+                  insetAnimationDuration: Duration(milliseconds: 300),
+                  insetAnimationCurve: Curves.easeInOut,
+                  child: const Helpscreen(),
+                );
+              },
+            );
+          },
+          child: Padding(
             padding: const EdgeInsets.only(right: 20.0),
             child: Icon(Icons.help_outline_rounded),
-          )
+          ),
+        ),
+
         ],
       ),
       body: RefreshIndicator(
@@ -1229,19 +1048,13 @@ void _navigateToEditProperty(String propertyId) {
                                                             : Colors.black,
                                                       ),
                                                     ),
-                                                    ShadTooltip(
-                                                      longPressDuration: Duration(microseconds: 01),
-                                                      builder: (context) => const Text(
-                                                        'Status of your request listing',
-                                                        style: TextStyle(
-                                                          fontFamily: 'geistsans',
-                                                        ),
-                                                      ),
+                                                    Tooltip(
+                                                      message: 'Property status: ${item['status']}',
                                                       child: Text(
                                                         item['status'] ?? 'No Status',
                                                         style: TextStyle(
                                                           fontWeight: FontWeight.bold,
-                                                          fontSize: 18,
+                                                          fontSize: 14,
                                                           color: getStatusColor(item['status']), // Call the function to get the color based on status
                                                         ),
                                                       ),
@@ -1396,7 +1209,7 @@ void _navigateToEditProperty(String propertyId) {
                                                   return Padding(
                                                     padding:
                                                         const EdgeInsets.all(
-                                                            8.0),
+                                                            2.0),
                                                     child: DecoratedBox(
                                                       decoration: BoxDecoration(
                                                          boxShadow: [
@@ -1427,7 +1240,7 @@ void _navigateToEditProperty(String propertyId) {
                                                         child: InkWell(
                                                         
                                                           onTap: () =>
-                                                              showRoomDetailPopover(
+                                                              showRoomDetailBottomSheet(
                                                                   context,
                                                                   room, userProfiles, inquiries),
                                                           child: Padding(
@@ -1444,42 +1257,31 @@ void _navigateToEditProperty(String propertyId) {
                                                                 Row(
                                                                   children: [
                                                                     ClipRRect(
-                                                                      borderRadius:
-                                                                          BorderRadius.circular(
-                                                                              10),
+                                                                      borderRadius: BorderRadius.circular(10),
                                                                       child: Image.network(
-                                                                          roomPhoto1,
-                                                                          width:
-                                                                              80,
-                                                                          height:
-                                                                              60,
-                                                                          fit: BoxFit
-                                                                              .cover),
+                                                                        roomPhoto1,
+                                                                        width: 80,
+                                                                        height: 60,
+                                                                        fit: BoxFit.cover,
+                                                                      ),
                                                                     ),
-                                                                    const SizedBox(
-                                                                        width:
-                                                                            12),
+                                                                    const SizedBox(width: 12),
                                                                     Expanded(
-                                                                      child:
-                                                                          Column(
-                                                                        crossAxisAlignment:
-                                                                            CrossAxisAlignment.start,
+                                                                      child: Column(
+                                                                        crossAxisAlignment: CrossAxisAlignment.start,
                                                                         children: [
                                                                           Text(
                                                                             'Room No. ${room['roomNumber']?.toString() ?? 'Unknown Room Number'}',
-                                                                            style:
-                                                                                TextStyle(
+                                                                            style: TextStyle(
                                                                               fontWeight: FontWeight.bold,
                                                                               fontSize: 14,
                                                                               color: _themeController.isDarkMode.value ? const Color.fromARGB(255, 255, 255, 255) : Colors.black,
                                                                             ),
                                                                           ),
-                                                                          const SizedBox(
-                                                                              height: 4),
+                                                                          const SizedBox(height: 4),
                                                                           Text(
                                                                             'Price: ₱${room['price']?.toString() ?? 'N/A'}',
-                                                                            style:
-                                                                                TextStyle(
+                                                                            style: TextStyle(
                                                                               fontSize: 12,
                                                                               fontWeight: FontWeight.w600,
                                                                               color: _themeController.isDarkMode.value ? const Color.fromARGB(255, 255, 255, 255) : const Color.fromARGB(255, 0, 0, 0),
@@ -1487,8 +1289,7 @@ void _navigateToEditProperty(String propertyId) {
                                                                           ),
                                                                           Text(
                                                                             'Capacity: ${room['capacity']?.toString() ?? 'N/A'}',
-                                                                            style:
-                                                                                TextStyle(
+                                                                            style: TextStyle(
                                                                               fontFamily: 'GeistSans',
                                                                               fontSize: 12,
                                                                               fontWeight: FontWeight.w600,
@@ -1506,19 +1307,25 @@ void _navigateToEditProperty(String propertyId) {
                                                                                   color: _themeController.isDarkMode.value ? const Color.fromARGB(255, 255, 255, 255) : const Color.fromARGB(255, 0, 0, 0),
                                                                                 ),
                                                                               ),
-                                                                              Container(
-                                                                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                                                                                decoration: BoxDecoration(
-                                                                                  color: _getRoomStatusColor(room['roomStatus']),
-                                                                                  borderRadius: BorderRadius.circular(5),
-                                                                                ),
-                                                                                child: Text(
-                                                                                  '${room['roomStatus']?.toString().toUpperCase() ?? 'N/A'}',
-                                                                                  style: TextStyle(
-                                                                                    fontFamily: 'GeistSans',
-                                                                                    fontWeight: FontWeight.w800,
-                                                                                    fontSize: 12,
-                                                                                    color: const Color.fromARGB(255, 5, 5, 5),
+                                                                              Flexible(
+                                                                                child: Container(
+                                                                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                                                                  decoration: BoxDecoration(
+                                                                                    color: _getRoomStatusColor(room['roomStatus']),
+                                                                                    borderRadius: BorderRadius.circular(5),
+                                                                                  ),
+                                                                                  child: Tooltip(
+                                                                                    message: 'this room is currently ${room['roomStatus']}',
+                                                                                    child: Text(
+                                                                                      '${room['roomStatus']?.toString().toUpperCase() ?? 'N/A'}',
+                                                                                      style: TextStyle(
+                                                                                        fontFamily: 'GeistSans',
+                                                                                        fontWeight: FontWeight.w800,
+                                                                                        fontSize: 12,
+                                                                                        color: const Color.fromARGB(255, 5, 5, 5),
+                                                                                      ),
+                                                                                      overflow: TextOverflow.ellipsis, // Prevent overflow by truncating the text
+                                                                                    ),
                                                                                   ),
                                                                                 ),
                                                                               ),
@@ -1529,6 +1336,7 @@ void _navigateToEditProperty(String propertyId) {
                                                                     ),
                                                                   ],
                                                                 ),
+
                                                                 const SizedBox(
                                                                     height: 10),
                                                                 // Only show inquiries if the room status is 'available'
@@ -1830,7 +1638,6 @@ void _navigateToEditProperty(String propertyId) {
         ),
       ),
       floatingActionButton: FloatingActionButton(
-        tooltip: 'Add property',
         shape: CircleBorder(),
         hoverColor: const Color.fromARGB(186, 0, 213, 241),
         backgroundColor: _themeController.isDarkMode.value?Colors.white: const Color.fromARGB(255, 0, 18, 32),
@@ -2064,7 +1871,7 @@ Future<void> getPropertyList(String userId) async {
   Future<void> fetchUserProfile(String userId) async {
     try {
       final response =
-          await http.get(Uri.parse('http://192.168.1.18:3000/user/$userId'));
+          await http.get(Uri.parse('http://192.168.1.4:3000/user/$userId'));
       if (response.statusCode == 200) {
         final user = json.decode(response.body);
         setState(() {
@@ -2086,7 +1893,7 @@ Future<void> getPropertyList(String userId) async {
 
 Future<void> fetchRoomInquiries(String roomId) async {
   try {
-    final response = await http.get(Uri.parse('http://192.168.1.18:3000/inquiries/rooms/$roomId'));
+    final response = await http.get(Uri.parse('http://192.168.1.4:3000/inquiries/rooms/$roomId'));
     
     if (response.statusCode == 200) {
       final inquiries = json.decode(response.body) as List<dynamic>; // Decode as List
@@ -2116,7 +1923,7 @@ Future<void> fetchRoomInquiries(String roomId) async {
   Future<void> fetchRooms(String propertyId) async {
     try {
       final response = await http.get(Uri.parse(
-          'http://192.168.1.18:3000/rooms/properties/$propertyId/rooms'));
+          'http://192.168.1.4:3000/rooms/properties/$propertyId/rooms'));
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
@@ -2155,7 +1962,7 @@ Future<void> fetchRoomInquiries(String roomId) async {
 
 
 Future<void> updateRoomStatus(String? roomId, String? newStatus) async {
-  final url = Uri.parse('http://192.168.1.18:3000/rooms/updateRoom/$roomId'); // Replace with your backend URL
+  final url = Uri.parse('http://192.168.1.4:3000/rooms/updateRoom/$roomId'); // Replace with your backend URL
   final headers = {
     'Content-Type': 'application/json',
     'Authorization': 'Bearer your_jwt_token' // Add your JWT token if required
@@ -2236,7 +2043,7 @@ Future<void> markRoomAsOccupied(BuildContext context, String roomId) async {
   if (selectedUserId != null) {
     try {
       final response = await http.patch(
-        Uri.parse('http://192.168.1.18:3000/rooms/$roomId/occupy'),
+        Uri.parse('http://192.168.1.4:3000/rooms/$roomId/occupy'),
         headers: {'Content-Type': 'application/json'},
         body: json.encode({
           'userId': selectedUserId, // Pass the userId from approved inquiry
@@ -2275,7 +2082,7 @@ Future<void> markRoomAsOccupied(BuildContext context, String roomId) async {
 Future<String?> fetchProofOfReservation(String roomId) async {
   try {
     // Example API call to fetch payment details
-    var response = await http.get(Uri.parse('http://192.168.1.18:3000/payment/room/$roomId/proofOfReservation'));
+    var response = await http.get(Uri.parse('http://192.168.1.4:3000/payment/room/$roomId/proofOfReservation'));
     if (response.statusCode == 200) {
       var data = jsonDecode(response.body);
       return data['proofOfReservation']; // Ensure the key matches your backend response
@@ -2367,6 +2174,23 @@ void showFullscreenImage(BuildContext context, String imageUrl) {
 }
 
 }
+
+
+
+
+
+
+                                        
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -2743,5 +2567,108 @@ void showFullscreenImage(BuildContext context, String imageUrl) {
 //         ),
 //       );
 //     },
+//   );
+// }
+
+// Future<String?>? _proofFuture;
+// String _selectedMonth = '';
+
+// Future<void> _onMonthSelected(String month, Map<String, dynamic> room, BuildContext context) async {
+//   if (!mounted) return;
+
+//   _selectedMonth = month; // Update the selected month
+//   _currentMonthIndex = months.indexOf(month); // Update the current month index
+//   _proofFuture = getProofOfPaymentForSelectedMonth(room['_id'], widget.token, month);
+
+//   // Close any existing dialogs
+//   Navigator.of(context).pop(); 
+
+//   // Open a new room detail popover and pass the selected month and current index
+//   showRoomDetailPopover(context, room, userProfiles, propertyInquiries[room['_id']] ?? [], 
+//     selectedMonth: month, currentMonthIndex: _currentMonthIndex, initialTabIndex: 1);
+// }
+
+// // Build month buttons
+// Widget buildMonthButtons(Map<String, dynamic> room, BuildContext context, int currentMonthIndex) {
+//   List<String> months = [
+//     'January', 'February', 'March', 'April', 'May', 'June',
+//     'July', 'August', 'September', 'October', 'November', 'December'
+//   ];
+
+//   return Container(
+//     height: 42,
+//     width: double.infinity,
+//     child: Row(
+//       children: [
+//         // Left Arrow Indicator
+//         if (months.isNotEmpty) 
+//           Padding(
+//             padding: const EdgeInsets.only(right: 6.0),
+//             child: SizedBox(
+//               width: 20,
+//               child: IconButton(
+//                 icon: Icon(Icons.chevron_left_rounded),
+//                 onPressed: () {
+//                   // Handle left arrow click (optional)
+//                 },
+//               ),
+//             ),
+//           ),
+
+//         // Month Buttons
+//         Expanded(
+//           child: ListView.builder(
+//             scrollDirection: Axis.horizontal,
+//             itemCount: months.length,
+//             itemBuilder: (BuildContext context, int index) {
+//               String month = months[index];
+//               bool isSelected = index == currentMonthIndex; // Check if this month is selected
+
+//               return Padding(
+//                 padding: const EdgeInsets.symmetric(horizontal: 2.0, vertical: 4),
+//                 child: ElevatedButton(
+//                   onPressed: () {
+//                     // Pass the context to _onMonthSelected
+//                     _onMonthSelected(month, room, context);
+//                   },
+//                   style: ElevatedButton.styleFrom(
+//                     backgroundColor: isSelected ? const Color.fromARGB(255, 26, 100, 238) : _themeController.isDarkMode.value? const Color.fromARGB(255, 134, 133, 133): Color.fromARGB(255, 163, 163, 163), // Highlight selected month
+//                     foregroundColor: Colors.white,
+//                     shape: RoundedRectangleBorder(
+//                       borderRadius: BorderRadius.circular(10),
+//                     ),
+//                     padding: EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+//                     elevation: 2,
+//                   ),
+//                   child: Text(
+//                     month,
+//                     style: TextStyle(
+//                       fontSize: 13,
+//                       fontWeight: FontWeight.bold,
+//                       fontFamily: 'geistsans',
+//                     ),
+//                   ),
+//                 ),
+//               );
+//             },
+//           ),
+//         ),
+
+//         // Right Arrow Indicator
+//         if (months.isNotEmpty)
+//           Padding(
+//             padding: const EdgeInsets.only(right: 8.0),
+//             child: SizedBox(
+//               width: 20,
+//               child: IconButton(
+//                 icon: Icon(Icons.chevron_right_rounded),
+//                 onPressed: () {
+//                   // Handle right arrow click (optional)
+//                 },
+//               ),
+//             ),
+//           ),
+//       ],
+//     ),
 //   );
 // }

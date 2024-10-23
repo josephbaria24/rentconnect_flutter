@@ -93,7 +93,18 @@ void loginUser() async {
         passwordController.clear();
 
         // Navigate to the main app screen
-        toastNotification.success('Login successful!');
+        Get.snackbar(
+        '', // Leave title empty because we're using titleText for customization
+        '', // Leave message empty because we're using messageText for customization
+        duration: Duration(milliseconds: 1500),
+        titleText: Text(
+          'Success',
+          style: TextStyle(color: Colors.green, fontWeight: FontWeight.bold), // Customize the color of 'Success'
+        ),
+        messageText: Text(
+          'Login successfully!', // Customize message text color if needed
+        ),
+      );
         Navigator.pushAndRemoveUntil(
           context,
           MaterialPageRoute(builder: (context) => NavigationMenu(token: myToken)),
@@ -197,19 +208,31 @@ void _showForgotPasswordDialog(BuildContext context) {
 
                           // Close the dialog
                           Navigator.of(context).pop();
-                          
-                          ShadToaster.of(context).show(
-                            ShadToast(
-                              title: Text('Success', style: TextStyle(
-                                fontWeight: FontWeight.bold
-                              )),
-                              description: Text('Reset password link sent to ${emailController.text}'),
-                            ),
-                          );
+                          Get.snackbar(
+        '', // Leave title empty because we're using titleText for customization
+        '', // Leave message empty because we're using messageText for customization
+        duration: Duration(milliseconds: 1500),
+        titleText: Text(
+          'Success',
+          style: TextStyle(color: Colors.green, fontWeight: FontWeight.bold), // Customize the color of 'Success'
+        ),
+        messageText: Text(
+          'Reset password link sent to ${emailController.text}', // Customize message text color if needed
+        ),
+      );
                         } else {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(content: Text('Failed to send reset link.')),
-                          );
+                          Get.snackbar(
+        '', // Leave title empty because we're using titleText for customization
+        '', // Leave message empty because we're using messageText for customization
+        duration: Duration(milliseconds: 1500),
+        titleText: Text(
+          'Failed',
+          style: TextStyle(color: Colors.orange, fontWeight: FontWeight.bold), // Customize the color of 'Success'
+        ),
+        messageText: Text(
+          'Failed to send reset link', // Customize message text color if needed
+        ),
+      );
                         }
                       },
                 child: _isSubmitting
@@ -229,7 +252,7 @@ Future<bool> _sendPasswordResetEmail(String email) async {
   // Replace with your actual endpoint and logic
   try {
     final response = await http.post(
-      Uri.parse('http://192.168.1.18:3000/forgot-password'), // Update with your API endpoint
+      Uri.parse('http://192.168.1.4:3000/forgot-password'), // Update with your API endpoint
       headers: <String, String>{
         'Content-Type': 'application/json; charset=UTF-8',
       },
@@ -439,7 +462,7 @@ Widget build(BuildContext context) {
                   ),
                 ],
               ),
-              const SizedBox(height: 200),
+              const SizedBox(height: 180),
               Column(
                 children: [
                   Wrap(

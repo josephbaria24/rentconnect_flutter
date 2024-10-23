@@ -485,7 +485,7 @@ class _OccupantInquiriesState extends State<OccupantInquiries> {
  Future<List<Map<String, dynamic>>> fetchInquiries(
       String userId, String token) async {
     final response = await http.get(
-      Uri.parse('http://192.168.1.18:3000/inquiries/occupant/$userId'),
+      Uri.parse('http://192.168.1.4:3000/inquiries/occupant/$userId'),
       headers: {
         'Authorization': 'Bearer $token',
         'Content-Type': 'application/json',
@@ -503,7 +503,7 @@ class _OccupantInquiriesState extends State<OccupantInquiries> {
   Map<String, dynamic>? propertyRoomDetails;
 
   Future<void> fetchPropertyDetails(String roomId) async {
-    final url = 'http://192.168.1.18:3000/inquiries/room/$roomId/property';
+    final url = 'http://192.168.1.4:3000/inquiries/room/$roomId/property';
 
     try {
       final response = await http.get(Uri.parse(url));
@@ -559,7 +559,7 @@ class _OccupantInquiriesState extends State<OccupantInquiries> {
     if (image != null) {
       final request = http.MultipartRequest(
         'POST',
-        Uri.parse('http://192.168.1.18:3000/payment/uploadProofOfReservation'),
+        Uri.parse('http://192.168.1.4:3000/payment/uploadProofOfReservation'),
       );
 
       request.headers['Authorization'] = 'Bearer ${widget.token}';
@@ -599,8 +599,18 @@ class _OccupantInquiriesState extends State<OccupantInquiries> {
         final responseData = await http.Response.fromStream(response);
 
         if (response.statusCode == 200) {
-          toastNotification.success('Proof of reservation uploaded successfully!'
-          );
+          Get.snackbar(
+        '', // Leave title empty because we're using titleText for customization
+        '', // Leave message empty because we're using messageText for customization
+        duration: Duration(milliseconds: 1500),
+        titleText: Text(
+          'Success',
+          style: TextStyle(color: Colors.green, fontWeight: FontWeight.bold), // Customize the color of 'Success'
+        ),
+        messageText: Text(
+          'Proof of reservation uploaded successfully!', // Customize message text color if needed
+        ),
+      );
           setState(() {});
         } else {
          toastNotification.error('Failed to upload proof of reservation: ${responseData.body}',
@@ -611,15 +621,24 @@ class _OccupantInquiriesState extends State<OccupantInquiries> {
         );
       }
     } else {
-      toastNotification.warn( 'No image selected.',
-   
+      Get.snackbar(
+        '', // Leave title empty because we're using titleText for customization
+        '', // Leave message empty because we're using messageText for customization
+        duration: Duration(milliseconds: 1500),
+        titleText: Text(
+          'Warning',
+          style: TextStyle(color: Colors.orange, fontWeight: FontWeight.bold), // Customize the color of 'Success'
+        ),
+        messageText: Text(
+          'No image selected.', // Customize message text color if needed
+        ),
       );
     }
   }
 
   Future<String?> getProofOfReservation(String roomId, String token) async {
     final url =
-        'http://192.168.1.18:3000/payment/room/$roomId/proofOfReservation';
+        'http://192.168.1.4:3000/payment/room/$roomId/proofOfReservation';
 
     try {
       final response = await http.get(
@@ -645,7 +664,7 @@ class _OccupantInquiriesState extends State<OccupantInquiries> {
   }
 
   Future<void> _getLandlordId(String roomId) async {
-    final uri = Uri.parse('http://192.168.1.18:3000/rooms/getRoom/$roomId');
+    final uri = Uri.parse('http://192.168.1.4:3000/rooms/getRoom/$roomId');
 
     final response = await http.get(uri);
 
@@ -676,7 +695,7 @@ class _OccupantInquiriesState extends State<OccupantInquiries> {
   }
 
   Future<void> _fetchLandlordId(String propertyId) async {
-    final uri = Uri.parse('http://192.168.1.18:3000/getPropertiesByIds');
+    final uri = Uri.parse('http://192.168.1.4:3000/getPropertiesByIds');
 
     final response = await http.post(
       uri,
@@ -712,7 +731,7 @@ class _OccupantInquiriesState extends State<OccupantInquiries> {
 
   Future<String?> getProofOfPayment(String roomId, String token) async {
     final String apiUrl =
-        'http://192.168.1.18:3000/room/$roomId/monthlyPayments'; // Update with your API endpoint
+        'http://192.168.1.4:3000/room/$roomId/monthlyPayments'; // Update with your API endpoint
 
     try {
       final response = await http.get(
@@ -761,7 +780,7 @@ class _OccupantInquiriesState extends State<OccupantInquiries> {
 
   Future<void> deleteProof(String roomId, String type) async {
     final url =
-        'http://192.168.1.18:3000/payment/room/$roomId/payment/month/proof/reservation';
+        'http://192.168.1.4:3000/payment/room/$roomId/payment/month/proof/reservation';
 
     print('Attempting to delete: $url'); // Print the URL for debugging
 
@@ -823,7 +842,7 @@ class _OccupantInquiriesState extends State<OccupantInquiries> {
         final paymentRequest = http.MultipartRequest(
           'POST',
           Uri.parse(
-              'http://192.168.1.18:3000/payment/createoraddMonthlyPayment'),
+              'http://192.168.1.4:3000/payment/createoraddMonthlyPayment'),
         );
 
         // Adding headers
@@ -888,7 +907,7 @@ class _OccupantInquiriesState extends State<OccupantInquiries> {
 
   Future<void> _cancelInquiry(String inquiryId, String token) async {
     final String apiUrl =
-        'http://192.168.1.18:3000/inquiries/delete/$inquiryId';
+        'http://192.168.1.4:3000/inquiries/delete/$inquiryId';
     try {
       final response = await http.delete(
         Uri.parse(apiUrl),

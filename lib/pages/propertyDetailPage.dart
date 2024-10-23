@@ -83,7 +83,7 @@ Future<void> fetchRooms() async {
     _loadingRooms = true;  // Start loading
   });
 
-  final response = await http.get(Uri.parse('http://192.168.1.18:3000/rooms/properties/${widget.property.id}/rooms'));
+  final response = await http.get(Uri.parse('http://192.168.1.4:3000/rooms/properties/${widget.property.id}/rooms'));
 
   if (response.statusCode == 200) {
     final data = jsonDecode(response.body);
@@ -103,7 +103,7 @@ Future<void> fetchRooms() async {
 
 Future<void> fetchNotifications() async {
   final response = await http.get(
-    Uri.parse('http://192.168.1.18:3000/notifications'),
+    Uri.parse('http://192.168.1.4:3000/notifications'),
     headers: {
       'Authorization': 'Bearer ${widget.token}', // Use the user's token for authentication
     },
@@ -308,7 +308,7 @@ void showRoomDetailsModal(BuildContext context, Map<String, dynamic> room) {
 void _sendRentRequest(BuildContext context, Map<String, dynamic> room, DateTime? proposedStartDate, String? customTerms) async {
   // Check if there is a pending request before proceeding
   final checkResponse = await http.get(
-    Uri.parse('http://192.168.1.18:3000/inquiries/check-pending?userId=$userId&roomId=${room['_id']}'),
+    Uri.parse('http://192.168.1.4:3000/inquiries/check-pending?userId=$userId&roomId=${room['_id']}'),
     headers: {
       'Authorization': 'Bearer ${widget.token}',
     },
@@ -321,15 +321,22 @@ void _sendRentRequest(BuildContext context, Map<String, dynamic> room, DateTime?
     final bool hasPendingRequest = checkData['hasPendingRequest'] ?? false;
 
     if (hasPendingRequest) {
-      Fluttertoast.showToast(
-        msg: 'You already have a pending request for this room.',
-        backgroundColor: Colors.orange,
-        textColor: Colors.white,
+      Get.snackbar(
+        '', // Leave title empty because we're using titleText for customization
+        '', // Leave message empty because we're using messageText for customization
+        duration: Duration(milliseconds: 1500),
+        titleText: Text(
+          'Failed',
+          style: TextStyle(color: Colors.orange, fontWeight: FontWeight.bold), // Customize the color of 'Success'
+        ),
+        messageText: Text(
+          'You already have a pending request to this room.', // Customize message text color if needed
+        ),
       );
     } else {
       // Proceed with sending the request
       final inquiryResponse = await http.post(
-        Uri.parse('http://192.168.1.18:3000/inquiries/create'),
+        Uri.parse('http://192.168.1.4:3000/inquiries/create'),
         headers: {
           'Authorization': 'Bearer ${widget.token}',
           'Content-Type': 'application/json',
@@ -347,10 +354,18 @@ void _sendRentRequest(BuildContext context, Map<String, dynamic> room, DateTime?
       print('Inquiry Response: ${inquiryResponse.statusCode} - ${inquiryResponse.body}'); // Debugging line
 
       if (inquiryResponse.statusCode == 201) {
-        Fluttertoast.showToast(
-          msg: 'Rent request sent!',
-          backgroundColor: _themeController.isDarkMode.value ? Colors.white : const Color.fromARGB(255, 0, 0, 0),
-        );
+        Get.snackbar(
+        '', // Leave title empty because we're using titleText for customization
+        '', // Leave message empty because we're using messageText for customization
+        duration: Duration(milliseconds: 1500),
+        titleText: Text(
+          'Success',
+          style: TextStyle(color: Colors.green, fontWeight: FontWeight.bold), // Customize the color of 'Success'
+        ),
+        messageText: Text(
+          'Rent request sent!', // Customize message text color if needed
+        ),
+      );
         
         // Disable further requests
         setState(() {
@@ -359,7 +374,7 @@ void _sendRentRequest(BuildContext context, Map<String, dynamic> room, DateTime?
 
         // Fetch landlord's email using the provided endpoint
         final landlordEmailResponse = await http.get(
-          Uri.parse('http://192.168.1.18:3000/rooms/landlord-email/${room['_id']}'),
+          Uri.parse('http://192.168.1.4:3000/rooms/landlord-email/${room['_id']}'),
           headers: {
             'Authorization': 'Bearer ${widget.token}',
           },
@@ -381,7 +396,7 @@ void _sendRentRequest(BuildContext context, Map<String, dynamic> room, DateTime?
 
           // Send notification request
           final notificationResponse = await http.post(
-            Uri.parse('http://192.168.1.18:3000/notification/create'),
+            Uri.parse('http://192.168.1.4:3000/notification/create'),
             headers: {
               'Authorization': 'Bearer ${widget.token}',
               'Content-Type': 'application/json',
@@ -522,10 +537,18 @@ void _showRentConfirmation(BuildContext context, Map<String, dynamic> room, Them
                         ),
                         onPressed: () {
                           if (_selectedStartDate == null) {
-                            Fluttertoast.showToast(
-                              msg: 'Please select a start date.',
-                              backgroundColor: Colors.red,
-                            );
+                            Get.snackbar(
+        '', // Leave title empty because we're using titleText for customization
+        '', // Leave message empty because we're using messageText for customization
+        duration: Duration(milliseconds: 1500),
+        titleText: Text(
+          'Failed',
+          style: TextStyle(color: Colors.orange, fontWeight: FontWeight.bold), // Customize the color of 'Success'
+        ),
+        messageText: Text(
+          'Please select start date!', // Customize message text color if needed
+        ),
+      );
                           } else {
                             Navigator.pop(context);
                             _sendRentRequest(context, room, _selectedStartDate, _termsController.text); // Proceed to send rent request
@@ -587,7 +610,7 @@ void _showDurationPicker(BuildContext context, Map<String, dynamic> room, ThemeC
 void _sendReserveRequest(BuildContext context, Map<String, dynamic> room, int selectedReservationDuration) async {
   // Check if there is a pending request before proceeding
   final checkResponse = await http.get(
-    Uri.parse('http://192.168.1.18:3000/inquiries/check-pending?userId=$userId&roomId=${room['_id']}'),
+    Uri.parse('http://192.168.1.4:3000/inquiries/check-pending?userId=$userId&roomId=${room['_id']}'),
     headers: {
       'Authorization': 'Bearer ${widget.token}',
     },
@@ -598,10 +621,17 @@ void _sendReserveRequest(BuildContext context, Map<String, dynamic> room, int se
     final bool hasPendingRequest = checkData['hasPendingRequest'] ?? false;
 
     if (hasPendingRequest) {
-      Fluttertoast.showToast(
-        msg: 'You already have a pending request for this room.',
-        backgroundColor: Colors.orange,
-        textColor: Colors.white,
+      Get.snackbar(
+        '', // Leave title empty because we're using titleText for customization
+        '', // Leave message empty because we're using messageText for customization
+        duration: Duration(milliseconds: 1500),
+        titleText: Text(
+          'Failed',
+          style: TextStyle(color: Colors.orange, fontWeight: FontWeight.bold), // Customize the color of 'Success'
+        ),
+        messageText: Text(
+          'You already have a pending request for this room', // Customize message text color if needed
+        ),
       );
     } else {
       // Prepare the request body for inquiry
@@ -618,7 +648,7 @@ void _sendReserveRequest(BuildContext context, Map<String, dynamic> room, int se
 
       // Proceed with sending the reservation request
       final inquiryResponse = await http.post(
-        Uri.parse('http://192.168.1.18:3000/inquiries/create'),
+        Uri.parse('http://192.168.1.4:3000/inquiries/create'),
         headers: {
           'Authorization': 'Bearer ${widget.token}',
           'Content-Type': 'application/json',
@@ -631,16 +661,18 @@ void _sendReserveRequest(BuildContext context, Map<String, dynamic> room, int se
       print('Inquiry Creation Request Response Body: ${inquiryResponse.body}');
 
       if (inquiryResponse.statusCode == 201) {
-        Fluttertoast.showToast(
-          msg: 'Reservation request sent!',
-          textColor: _themeController.isDarkMode.value
-              ? const Color.fromARGB(255, 0, 0, 0)
-              : const Color.fromARGB(255, 255, 255, 255),
-          backgroundColor: _themeController.isDarkMode.value
-              ? Colors.white
-              : const Color.fromARGB(255, 0, 0, 0),
-        );
-
+        Get.snackbar(
+        '', // Leave title empty because we're using titleText for customization
+        '', // Leave message empty because we're using messageText for customization
+        duration: Duration(milliseconds: 1500),
+        titleText: Text(
+          'Success',
+          style: TextStyle(color: Colors.green, fontWeight: FontWeight.bold), // Customize the color of 'Success'
+        ),
+        messageText: Text(
+          'Reservation request sent!', // Customize message text color if needed
+        ),
+      );
         // Disable further requests
         setState(() {
           room['pendingRequest'] = true; // Mark room as having a pending request
@@ -648,7 +680,7 @@ void _sendReserveRequest(BuildContext context, Map<String, dynamic> room, int se
 
         // Fetch landlord's email using the provided endpoint
         final landlordEmailResponse = await http.get(
-          Uri.parse('http://192.168.1.18:3000/rooms/landlord-email/${room['_id']}'),
+          Uri.parse('http://192.168.1.4:3000/rooms/landlord-email/${room['_id']}'),
           headers: {
             'Authorization': 'Bearer ${widget.token}',
           },
@@ -670,7 +702,7 @@ void _sendReserveRequest(BuildContext context, Map<String, dynamic> room, int se
 
           // Send notification request
           final notificationResponse = await http.post(
-            Uri.parse('http://192.168.1.18:3000/notification/create'),
+            Uri.parse('http://192.168.1.4:3000/notification/create'),
             headers: {
               'Authorization': 'Bearer ${widget.token}',
               'Content-Type': 'application/json',

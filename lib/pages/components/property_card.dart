@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:lottie/lottie.dart';
 import 'package:rentcon/models/property.dart';
 import 'package:rentcon/theme_controller.dart';
 import 'package:shadcn_ui/shadcn_ui.dart';
@@ -9,19 +10,16 @@ import '../fullscreenImage.dart';
 import 'package:http/http.dart' as http;
 import 'package:skeletonizer/skeletonizer.dart';
 
-class PropertyCard extends StatelessWidget {
+class PropertyCard extends StatefulWidget {
   final Property property;
   final String userEmail;
   final String imageUrl;
   final List<String> bookmarkedPropertyIds;
-  final Function(String) bookmarkProperty;
+  final Function(String propertyId) bookmarkProperty;
   final String priceRange;
   final bool isDarkMode;
   final String token; // Assuming you pass the token as a parameter
-  final String userId; // Assuming you pass the userId as a parameter
-
-  final ThemeController _themeController = Get.find<ThemeController>();
-
+  final String userId;
   PropertyCard({
     required this.property,
     required this.userEmail,
@@ -34,13 +32,67 @@ class PropertyCard extends StatelessWidget {
     required this.userId,
   });
 
+  @override
+  State<PropertyCard> createState() => _PropertyCardState();
+}
+
+class _PropertyCardState extends State<PropertyCard> with SingleTickerProviderStateMixin{
+ // Assuming you pass the userId as a parameter
+  final ThemeController _themeController = Get.find<ThemeController>();
+  late final AnimationController  _controller;
+   bool isBookmarked = false;
+
+@override
+void initState() {
+  super.initState();
+
+      // Initialize bookmark state
+    isBookmarked = widget.bookmarkedPropertyIds.contains(widget.property.id);
+
+  _controller = AnimationController(
+    duration: Duration(milliseconds: 1600),
+    vsync: this);
+     isBookmarked = widget.bookmarkedPropertyIds.contains(widget.property.id);
+      if (isBookmarked) {
+      _controller.value = 1.0; // Reverse position, indicating it's bookmarked
+    } else {
+      _controller.value = 0.0; // Initial position, indicating it's not bookmarked
+    }
+}
+
+@override
+void dispose() {
+  
+  super.dispose();
+  _controller.dispose();
+}
+
+
+  // Function to handle bookmarking without full page refresh
+  void _bookmarkProperty() async {
+    // Start the animation
+    if (!isBookmarked) {
+      _controller.forward();
+    } else {
+      _controller.reverse();
+    }
+
+    // Toggle the local bookmark state
+    setState(() {
+      isBookmarked = !isBookmarked;
+    });
+
+    // Call the actual bookmark function asynchronously (API, etc.)
+    await widget.bookmarkProperty(widget.property.id);
+  }
+
   Future<Map<String, String>> fetchUserProfileStatus() async {
-    final url = Uri.parse('http://192.168.1.18:3000/profile/checkProfileCompletion/$userId');
+    final url = Uri.parse('http://192.168.1.4:3000/profile/checkProfileCompletion/${widget.userId}');
     try {
       final response = await http.get(
         url,
         headers: {
-          'Authorization': 'Bearer $token',
+          'Authorization': 'Bearer ${widget.token}',
         },
       );
       if (response.statusCode == 200) {
@@ -58,6 +110,7 @@ class PropertyCard extends StatelessWidget {
       return {'profileStatus': 'none', 'userRole': 'none'};
     }
   }
+
 @override
 Widget build(BuildContext context) {
   return FutureBuilder<Map<String, String>>(
@@ -72,7 +125,7 @@ Widget build(BuildContext context) {
         final userRole = snapshot.data?['userRole'] ?? 'none';
 
         // Check if the property is bookmarked
-        final isBookmarked = bookmarkedPropertyIds.contains(property.id);
+        //final isBookmarked = widget.bookmarkedPropertyIds.contains(widget.property.id);
 
         return Skeletonizer(
           enabled: _loading,
@@ -91,9 +144,9 @@ Widget build(BuildContext context) {
                   context,
                   MaterialPageRoute(
                     builder: (context) => PropertyDetailPage(
-                      token: token,
-                      property: property,
-                      userEmail: userEmail,
+                      token: widget.token,
+                      property: widget.property,
+                      userEmail: widget.userEmail,
                       userRole: userRole,
                       profileStatus: profileStatus,
                     ),
@@ -111,7 +164,7 @@ Widget build(BuildContext context) {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              property.typeOfProperty ?? 'Unknown Property Type',
+                              widget.property.typeOfProperty ?? 'Unknown Property Type',
                               style: TextStyle(
                                 fontWeight: FontWeight.bold,
                                 fontSize: 18,
@@ -122,7 +175,7 @@ Widget build(BuildContext context) {
                             ),
                             const SizedBox(height: 8),
                             Text(
-                              'Price range: ₱$priceRange',
+                              'Price range: ₱${widget.priceRange}',
                               style: TextStyle(
                                 fontSize: 14,
                                 color: _themeController.isDarkMode.value
@@ -145,7 +198,7 @@ Widget build(BuildContext context) {
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     Text(
-                                      property.street ?? '',
+                                      widget.property.street ?? '',
                                       style: TextStyle(
                                         fontSize: 14,
                                         color: _themeController.isDarkMode.value
@@ -154,7 +207,7 @@ Widget build(BuildContext context) {
                                       ),
                                     ),
                                     Text(
-                                      '${property.barangay ?? ''}',
+                                      '${widget.property.barangay ?? ''}',
                                       style: TextStyle(
                                         fontSize: 14,
                                         color: _themeController.isDarkMode.value
@@ -168,7 +221,7 @@ Widget build(BuildContext context) {
                             ),
                             const SizedBox(height: 10),
                             Text(
-                              property.description,
+                              widget.property.description,
                               style: TextStyle(
                                 fontSize: 14,
                                 color: _themeController.isDarkMode.value
@@ -191,21 +244,21 @@ Widget build(BuildContext context) {
                                 context,
                                 MaterialPageRoute(
                                   builder: (context) => FullscreenImage(
-                                    imageUrl: imageUrl,
+                                    imageUrl: widget.imageUrl,
                                   ),
                                 ),
                               );
                             },
                             child: Hero(
-                              tag: imageUrl,
+                              tag: widget.imageUrl,
                               child: Container(
                                 width: 110,
                                 height: 100,
                                 color: _themeController.isDarkMode.value
                                     ? const Color.fromARGB(255, 52, 52, 52)
                                     : const Color.fromARGB(255, 240, 240, 240),
-                                child: imageUrl.isNotEmpty
-                                    ? Image.network(imageUrl, fit: BoxFit.cover)
+                                child: widget.imageUrl.isNotEmpty
+                                    ? Image.network(widget.imageUrl, fit: BoxFit.cover)
                                     : const Icon(Icons.image, color: Colors.grey),
                               ),
                             ),
@@ -231,9 +284,9 @@ Widget build(BuildContext context) {
                                     context,
                                     MaterialPageRoute(
                                       builder: (context) => PropertyDetailPage(
-                                        token: token,
-                                        property: property,
-                                        userEmail: userEmail,
+                                        token: widget.token,
+                                        property: widget.property,
+                                        userEmail: widget.userEmail,
                                         userRole: userRole,
                                         profileStatus: profileStatus,
                                       ),
@@ -251,19 +304,56 @@ Widget build(BuildContext context) {
                               ),
                             ),
                             const SizedBox(width: 2),
-                            ShadTooltip(
-                               builder: (context) => const Text('Save property'),
-                              child: IconButton(
-                                icon: Icon(
-                                  isBookmarked ? Icons.favorite : Icons.favorite_border_outlined,
-                                  color: isBookmarked ? const Color.fromARGB(255, 255, 7, 90) : Colors.grey,
-                                ),
-                                onPressed: () {
+                            // ShadTooltip(
+                            //    builder: (context) => const Text('Save property'),
+                            //   child: IconButton(
+                            //     icon: Icon(
+                            //       isBookmarked ? Icons.favorite : Icons.favorite_border_outlined,
+                            //       color: isBookmarked ? const Color.fromARGB(255, 255, 7, 90) : Colors.grey,
+                            //     ),
+                            //     onPressed: () {
                                   
-                                  bookmarkProperty(property.id);
-                                },
+                            //       widget.bookmarkProperty(widget.property.id);
+                            //     },
+                            //   ),
+                            // ),
+                             ShadTooltip(
+                                builder: (context) => const Text('Save property'),
+                                child: GestureDetector(
+                                  onTap: _bookmarkProperty,  // Use the new function
+                                  child: Lottie.network(
+                                    'https://lottie.host/03753c90-78ba-4e39-b02c-c590287b7f36/VBizI5alvT.json',
+                                    height: 40,
+                                    controller: _controller,
+                                    //repeat: false, // Animation plays once on tap
+                                  ),
+                                ),
                               ),
-                            ),
+                            
+//                             ShadTooltip(
+//   builder: (context) => const Text('Save property'),
+//   child: GestureDetector(
+//     onTap: () {
+//       if (isBookmarked == false) {
+//         isBookmarked = true;
+//         _controller.forward();
+//         //widget.bookmarkProperty(widget.property.id); // Bookmark the property
+//       } else {
+//         isBookmarked = false;
+//         _controller.reverse();
+//         // Un-bookmark or handle reverse action if needed
+//       }
+
+//       // Toggle the bookmark status
+//     },
+//     child: Lottie.network(
+//       'https://lottie.host/03753c90-78ba-4e39-b02c-c590287b7f36/VBizI5alvT.json',
+//       controller: _controller,
+//     ),
+//   ),
+// ),
+
+
                           ],
                         ),
                       ],
@@ -278,6 +368,4 @@ Widget build(BuildContext context) {
     },
   );
 }
-
-
 }

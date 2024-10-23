@@ -4,6 +4,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:get/get.dart';
 import 'package:http/http.dart' as http;
+import 'package:lottie/lottie.dart';
 import 'package:rentcon/pages/home.dart';
 import 'package:rentcon/theme_controller.dart';
 import 'toast.dart';
@@ -14,7 +15,7 @@ import 'package:fluttertoast/fluttertoast.dart';
  // Make sure to import your theme controller
 
 Future<List<Property>> getBookmarkedProperties(String token, String userId) async {
-  final url = Uri.parse('http://192.168.1.18:3000/getUserBookmarks/$userId'); 
+  final url = Uri.parse('http://192.168.1.4:3000/getUserBookmarks/$userId'); 
 
   try {
     final response = await http.get(
@@ -44,7 +45,7 @@ Future<List<Property>> getBookmarkedProperties(String token, String userId) asyn
 }
 
 Future<void> removeBookmark(String token, String userId, String propertyId) async {
-  final url = Uri.parse('http://192.168.1.18:3000/removeBookmark');
+  final url = Uri.parse('http://192.168.1.4:3000/removeBookmark');
 
   try {
     final response = await http.post(
@@ -116,10 +117,32 @@ class _BookmarkPageState extends State<BookmarkPage> {
   Future<void> handleRemoveBookmark(String propertyId) async {
     try {
       await removeBookmark(widget.token, userId, propertyId);
-      toast.success('Bookmark removed');
+      Get.snackbar(
+        '', // Leave title empty because we're using titleText for customization
+        '', // Leave message empty because we're using messageText for customization
+        duration: Duration(milliseconds: 1500),
+        titleText: Text(
+          'Success',
+          style: TextStyle(color: Colors.green, fontWeight: FontWeight.bold), // Customize the color of 'Success'
+        ),
+        messageText: Text(
+          'Successfully removed from bookmark!', // Customize message text color if needed
+        ),
+      );
       await refreshBookmarks(); // Refresh the list after removing
     } catch (error) {
-      toast.warn('Failed to remove bookmark');
+      Get.snackbar(
+        '', // Leave title empty because we're using titleText for customization
+        '', // Leave message empty because we're using messageText for customization
+        duration: Duration(milliseconds: 1500),
+        titleText: Text(
+          'Failed',
+          style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold), // Customize the color of 'Success'
+        ),
+        messageText: Text(
+          'Failed to remove from bookmarks!', // Customize message text color if needed
+        ),
+      );
     }
   }
 
@@ -149,7 +172,7 @@ class _BookmarkPageState extends State<BookmarkPage> {
               future: bookmarkedProperties,
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
-                  return GlobalLoadingIndicator();
+                  return Center(child: Lottie.network("https://lottie.host/042642e6-74ec-4ee4-b839-9222ec9596ae/qSwWIkL0vW.json", height: 130));
                 } else if (snapshot.hasError) {
                   return Center(child: Text('Error: ${snapshot.error}'));
                 } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
@@ -181,7 +204,7 @@ class _BookmarkPageState extends State<BookmarkPage> {
                       final property = snapshot.data![index];
                       final imageUrl = property.photo.startsWith('http')
                           ? property.photo
-                          : 'http://192.168.1.18:3000/${property.photo}';
+                          : 'http://192.168.1.4:3000/${property.photo}';
 
                       return Card(
                         color: _themeController.isDarkMode.value

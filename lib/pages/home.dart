@@ -5,6 +5,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:get/get.dart';
 import 'package:http/http.dart' as http;
 import 'package:jwt_decoder/jwt_decoder.dart';
+import 'package:lottie/lottie.dart';
 import 'package:rentcon/config.dart';
 import 'package:rentcon/pages/components/notification_stream.dart';
 import 'package:rentcon/pages/components/property_card.dart';
@@ -126,7 +127,7 @@ Stream<List<dynamic>> notificationStream = NotificationStream().stream.cast<List
 
   Future<void> fetchUserProfileStatus() async {
     final url = Uri.parse(
-        'http://192.168.1.18:3000/profile/checkProfileCompletion/$userId'); // Replace with your API endpoint
+        'http://192.168.1.4:3000/profile/checkProfileCompletion/$userId'); // Replace with your API endpoint
     try {
       final response = await http.get(
         url,
@@ -154,7 +155,7 @@ Stream<List<dynamic>> notificationStream = NotificationStream().stream.cast<List
 
   Future<void> fetchUserProfileStatusForNotification() async {
     final url = Uri.parse(
-        'http://192.168.1.18:3000/profile/checkProfileCompletion/$userId'); // Your API endpoint
+        'http://192.168.1.4:3000/profile/checkProfileCompletion/$userId'); // Your API endpoint
     try {
       final response = await http.get(
         url,
@@ -238,7 +239,7 @@ Future<List<Property>> fetchProperties() async {
   Future<List<dynamic>> fetchRooms(String propertyId) async {
     try {
       final response = await http.get(Uri.parse(
-          'http://192.168.1.18:3000/rooms/properties/$propertyId/rooms'));
+          'http://192.168.1.4:3000/rooms/properties/$propertyId/rooms'));
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         if (data['status']) {
@@ -315,7 +316,7 @@ Future<List<Property>> fetchProperties() async {
     try {
       final response = await http.get(
         Uri.parse(
-            'http://192.168.1.18:3000/getUserBookmarks/$userId'), // Adjust endpoint if necessary
+            'http://192.168.1.4:3000/getUserBookmarks/$userId'), // Adjust endpoint if necessary
         headers: {
           'Authorization': 'Bearer ${widget.token}',
         },
@@ -341,7 +342,7 @@ Future<List<Property>> fetchProperties() async {
   Future<String> fetchUserEmail(String userId) async {
     try {
       final response = await http.get(Uri.parse(
-          'http://192.168.1.18:3000/getUserEmail/$userId'));
+          'http://192.168.1.4:3000/getUserEmail/$userId'));
 
       if (response.statusCode == 200) {
         final Map<String, dynamic> json = jsonDecode(response.body);
@@ -355,24 +356,37 @@ Future<List<Property>> fetchProperties() async {
   }
 
   // Refresh function to reload the properties
-  Future<void> _refreshProperties() async {
+ Future<void> _refreshProperties() async {
+  try {
+    // Fetch updated properties
+    final properties = await fetchProperties();
+    
+    // Fetch user bookmarks (create a function to do this if not already implemented)
+    fetchUserBookmarks(); 
+
+    // Update the state with the new properties and bookmarks
     setState(() {
-      propertiesFuture = fetchProperties(); // Re-fetch properties on refresh
+      filteredProperties = properties; // Update the filtered properties
     });
+  } catch (error) {
+    print('Error refreshing properties: $error');
+    // You might want to show an error toast or notification here
   }
+}
 
 
 
 
- Future<void> bookmarkProperty(String propertyId) async {
-    final url = Uri.parse('http://192.168.1.18:3000/addBookmark');
+
+ Future<void> bookmarkProperty(String propertyId, Function onUpdate) async {
+    final url = Uri.parse('http://192.168.1.4:3000/addBookmark');
     final Map<String, dynamic> jwtDecodedToken = JwtDecoder.decode(widget.token);
     String userId = jwtDecodedToken['_id']?.toString() ?? 'Unknown user ID';
 
     try {
       if (bookmarkedPropertyIds.contains(propertyId)) {
         // If already bookmarked, remove it
-        final removeUrl = Uri.parse('http://192.168.1.18:3000/removeBookmark');
+        final removeUrl = Uri.parse('http://192.168.1.4:3000/removeBookmark');
         await http.post(removeUrl,
             headers: {
               'Authorization': 'Bearer ${widget.token}',
@@ -383,15 +397,27 @@ Future<List<Property>> fetchProperties() async {
               'propertyId': propertyId,
             }));
 
-        setState(() {
-          bookmarkedPropertyIds.remove(propertyId); // Update local state
-          filteredProperties = filteredProperties
-              .where((property) => property.id != propertyId)
-              .toList();
-        });
-
+        // setState(() {
+        //   bookmarkedPropertyIds.remove(propertyId); // Update local state
+        //   filteredProperties = filteredProperties
+        //       .where((property) => property.id != propertyId)
+        //       .toList();
+        // });
+          onUpdate(false);
         // Show success toast for removal
-        toastNotification.success('Property removed from bookmarks!');
+       Get.snackbar(
+        '', // Leave title empty because we're using titleText for customization
+        '', // Leave message empty because we're using messageText for customization
+        duration: Duration(milliseconds: 1500),
+        titleText: Text(
+          'Success',
+          style: TextStyle(color: _themeController.isDarkMode.value? Colors.green:Color.fromARGB(255, 0, 253, 8), fontWeight: FontWeight.bold, fontSize: 20) // Customize the color of 'Success'
+        ),
+        messageText: Text(
+          'Property removed from bookmarks!', // Customize message text color if needed
+        ),
+      );
+
       } else {
         // If not bookmarked, add it
         await http.post(url,
@@ -404,22 +430,38 @@ Future<List<Property>> fetchProperties() async {
               'propertyId': propertyId,
             }));
 
-        setState(() {
-          bookmarkedPropertyIds.add(propertyId); // Update local state
-        });
+        // setState(() {
+        //   bookmarkedPropertyIds.add(propertyId); // Update local state
+        // });
 
+
+        onUpdate(true);
         // Show success toast for addition
-        toastNotification.success('Property added to bookmarks!');
+        Get.snackbar(
+        '', // Leave title empty because we're using titleText for customization
+        '', // Leave message empty because we're using messageText for customization
+        duration: Duration(milliseconds: 1500),
+        titleText: Text(
+          'Success',
+          style: TextStyle(color: _themeController.isDarkMode.value? Colors.green:Color.fromARGB(255, 0, 253, 8), fontWeight: FontWeight.bold, fontSize: 20), // Customize the color of 'Success'
+        ),
+        messageText: Text(
+          'Property added to bookmarks!', // Customize message text color if needed
+        ),
+      );
       }
 
       // Refresh properties to reflect changes immediately
-      await _refreshProperties();
+      //await _refreshProperties();
     } catch (error) {
       print('Error toggling bookmark: $error');
       // Show error message with a toast
-      toastNotification.error('Failed to toggle bookmark');
+      Get.snackbar('Error','Error toggling bookmark!',duration: Duration(milliseconds: 1500)
+            );
     }
   }
+ 
+ 
   // Function to show Cupertino alert dialog
   void _showCupertinoAlertDialog(String message) {
     showCupertinoDialog(
@@ -518,7 +560,7 @@ Future<List<Property>> fetchProperties() async {
     try {
       final response = await http.get(
         Uri.parse(
-            'http://192.168.1.18:3000/notification/unread/$userId'),
+            'http://192.168.1.4:3000/notification/unread/$userId'),
         headers: {
           'Authorization': 'Bearer $token',
           'Content-Type': 'application/json',
@@ -612,7 +654,7 @@ void _showNotificationsModal(List<dynamic> notifications) {
     try {
       final response = await http.delete(
         Uri.parse(
-            'http://192.168.1.18:3000/notification/clear/$userId'),
+            'http://192.168.1.4:3000/notification/clear/$userId'),
         headers: {
           'Authorization': 'Bearer ${widget.token}',
         },
@@ -635,7 +677,7 @@ void _showNotificationsModal(List<dynamic> notifications) {
   Future<void> _markNotificationAsRead(String notificationId) async {
     final response = await http.patch(
       Uri.parse(
-          'http://192.168.1.18:3000/notification/$notificationId/read'),
+          'http://192.168.1.4:3000/notification/$notificationId/read'),
       headers: {
         'Authorization': 'Bearer ${widget.token}',
         'Content-Type': 'application/json',
@@ -894,7 +936,7 @@ body: Padding(
             future: propertiesFuture,
             builder: (context, snapshot) {
               if (snapshot.connectionState == ConnectionState.waiting) {
-                return GlobalLoadingIndicator();
+                return Center(child: Lottie.network("https://lottie.host/042642e6-74ec-4ee4-b839-9222ec9596ae/qSwWIkL0vW.json", height: 130));
               } else if (snapshot.hasError) {
                 if (snapshot.error.toString().contains('No internet connection')) {
                   return Center(
@@ -941,7 +983,7 @@ body: Padding(
                     final property = properties[index];
                     final imageUrl = property.photo.startsWith('http')
                         ? property.photo
-                        : 'http://192.168.1.18:3000/${property.photo}';
+                        : 'http://192.168.1.4:3000/${property.photo}';
 
                     return FutureBuilder<List<dynamic>>(
                       future: fetchRooms(property.id),
@@ -978,7 +1020,14 @@ body: Padding(
                                 userEmail: userEmail,
                                 imageUrl: imageUrl,
                                 bookmarkedPropertyIds: bookmarkedPropertyIds,
-                                bookmarkProperty: bookmarkProperty,
+                                bookmarkProperty: (propertyId) {
+                                  bookmarkProperty(propertyId, (bool isBookmarked) {
+                                    // This is where the state of the card will be updated
+                                    // setState(() {
+                                    //   // Optional if you want to refresh any list on the homepage
+                                    // });
+                                  });
+                                },
                                 priceRange: priceRange,
                                 isDarkMode: _themeController.isDarkMode.value,
                               );

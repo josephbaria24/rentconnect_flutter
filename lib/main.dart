@@ -153,6 +153,9 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:jwt_decoder/jwt_decoder.dart';
+import 'package:lottie/lottie.dart';
+import 'package:page_transition/page_transition.dart';
+import 'package:provider/provider.dart';
 import 'package:rentcon/colorController.dart';
 import 'package:rentcon/dbHelper/mongodb.dart';
 import 'package:rentcon/dependency_injection.dart';
@@ -160,6 +163,7 @@ import 'package:rentcon/navigation_menu.dart';
 import 'package:rentcon/pages/home.dart';
 import 'package:rentcon/pages/index.dart';
 import 'package:rentcon/pages/landlords/current_listing.dart';
+import 'package:rentcon/pages/landlords/services/getPaymentForSelectedMonth.dart';
 import 'package:rentcon/pages/login.dart';
 import 'package:rentcon/pages/loginOTP.dart';
 import 'package:rentcon/theme_controller.dart';
@@ -173,7 +177,10 @@ void main() async {
   Get.put(ColorController()); // Register ColorController
   Get.put(ThemeController()); // Ensure your ThemeController is also registered
   String? token = prefs.getString('token'); // Nullable token
-  runApp(MyApp(token: token));
+  runApp(ChangeNotifierProvider(
+     create: (context) => PaymentService(),
+    child: MyApp(token: token
+    )));
   DependencyInjection.init();
    
 }
@@ -271,17 +278,23 @@ Widget build(BuildContext context) {
             themeMode: isDarkMode ? ThemeMode.dark : ThemeMode.light,
             home: isAuthenticated
                 ? AnimatedSplashScreen(
-                    splash: Image.asset('assets/icons/ren.png'),
-                    duration: 2200,
-                    backgroundColor: const Color.fromARGB(255, 255, 255, 255),
-                    splashTransition: SplashTransition.fadeTransition,
-                    nextScreen: NavigationMenu(token: widget.token!))
-                : AnimatedSplashScreen(
-                    splash: Image.asset('assets/icons/ren.png'),
-                    duration: 2200,
-                    backgroundColor: const Color.fromARGB(255, 255, 255, 255),
-                    splashTransition: SplashTransition.fadeTransition,
-                    nextScreen: IndexPage()),
+          splash: Lottie.asset('assets/icons/splash.json'),
+          splashIconSize: 200,
+          duration: 2400,
+          backgroundColor: const Color.fromARGB(255, 255, 255, 255),
+          splashTransition: SplashTransition.fadeTransition,
+          nextScreen: NavigationMenu(token: widget.token!),
+          pageTransitionType: PageTransitionType.fade, // Use fade transition
+        )
+      : AnimatedSplashScreen(
+          splash: Lottie.asset('assets/icons/splash.json'),
+          splashIconSize: 200,
+          duration: 2400,
+          backgroundColor: const Color.fromARGB(255, 255, 255, 255),
+          splashTransition: SplashTransition.fadeTransition,
+          nextScreen: IndexPage(),
+          pageTransitionType: PageTransitionType.fade, // Use fade transition
+        ),
             routes: {
               '/login': (context) => LoginPage(),
               '/current-listing': (context) => CurrentListingPage(token: widget.token!),

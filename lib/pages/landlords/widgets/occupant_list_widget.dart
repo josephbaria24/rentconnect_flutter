@@ -30,46 +30,18 @@ class OccupantListWidget extends StatelessWidget {
   Widget build(BuildContext context) {
     return Column(
       children: [
-        Text(
-          'Occupants',
-          style: TextStyle(
-            fontWeight: FontWeight.bold,
-            fontSize: 18,
-            fontFamily: 'geistsans',
-          ),
-        ),
-        const SizedBox(height: 4),
-        // List of occupants
-        Container(
-          height: 71, // Adjust to fit within available space
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(10),
-            color: isDarkMode
-                ? Color.fromARGB(255, 41, 43, 53)
-                : Color.fromARGB(255, 255, 255, 255),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.2),
-                spreadRadius: 1,
-                blurRadius: 2,
-                offset: Offset(0, 3),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              'Occupants',
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                fontSize: 18,
+                fontFamily: 'geistsans',
               ),
-            ],
-          ),
-          child: occupantUsers.length > 3
-              ? SingleChildScrollView(
-                  scrollDirection: Axis.horizontal,
-                  child: Row(
-                    children: _buildOccupantRows(context), // Pass context here
-                  ),
-                )
-              : Row(
-                  children: _buildOccupantRows(context), // Pass context here
-                ),
-        ),
-        const SizedBox(height: 10),
-        // Add button to navigate to the agreement page
-        ElevatedButton(
+            ),
+            ElevatedButton(
           onPressed: () {
             // Access the inquiries for the specific room using room ID
             final inquiries = propertyInquiries[room['_id']];
@@ -103,12 +75,12 @@ class OccupantListWidget extends StatelessWidget {
             elevation: 0,
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(8), // Set the border radius
-              side: BorderSide(
-                color: isDarkMode
-                    ? Colors.white
-                    : Colors.black, // Set border color
-                width: 1, // Set border width
-              ),
+              // side: BorderSide(
+              //   color: isDarkMode
+              //       ? const Color.fromARGB(255, 146, 146, 146)
+              //       : Colors.black, // Set border color
+              //   width: 0.5, //0.5 Set border width
+              // ),
             ),
           ),
           child: Row(
@@ -117,16 +89,54 @@ class OccupantListWidget extends StatelessWidget {
             children: [
               Icon(Icons.assignment,
                   color: isDarkMode ? Colors.white : Colors.black),
-              const SizedBox(width: 7), // Space between icon and text
+              const SizedBox(width: 2), // Space between icon and text
               Text(
-                'View Agreement',
+                'Agreement',
                 style: TextStyle(
+                  fontFamily: 'geistsans',
+                  fontSize: 12,
+
                   color: isDarkMode ? Colors.white : Colors.black,
                 ),
               ), // Button text
             ],
           ),
         ),
+          ],
+        ),
+        
+        const SizedBox(height: 4),
+        // List of occupants
+        Container(
+          height: 71, // Adjust to fit within available space
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(10),
+            color: isDarkMode
+                ? Color.fromARGB(255, 41, 43, 53)
+                : Color.fromARGB(255, 255, 255, 255),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.2),
+                spreadRadius: 1,
+                blurRadius: 2,
+                offset: Offset(0, 3),
+              ),
+            ],
+          ),
+          child: occupantUsers.length > 3
+              ? SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: Row(
+                    children: _buildOccupantRows(context), // Pass context here
+                  ),
+                )
+              : Row(
+                  children: _buildOccupantRows(context), // Pass context here
+                ),
+        ),
+        const SizedBox(height: 10),
+        // Add button to navigate to the agreement page
+        
       ],
     );
   }
