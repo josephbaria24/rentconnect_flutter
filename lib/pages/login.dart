@@ -14,6 +14,9 @@ import 'package:http/http.dart' as http;
 import 'package:rentcon/config.dart';
 import 'toast.dart';
 import 'package:shadcn_ui/shadcn_ui.dart'; // Import Shadcn UI
+import 'package:onesignal_flutter/onesignal_flutter.dart';
+
+
 
 class LoginPage extends StatefulWidget {
   @override
@@ -35,11 +38,27 @@ class _LoginPageState extends State<LoginPage> {
     super.initState();
     initSharedPref();
      toastNotification = ToastNotification(context);
+      initOneSignal();
   }
 
   void initSharedPref() async {
     prefs = await SharedPreferences.getInstance();
   }
+
+var id = OneSignal.User.pushSubscription.id;
+
+void initOneSignal() async {
+  // Initialize OneSignal
+  OneSignal.initialize("af1220cb-edec-447f-a4e2-8bc6b7638322");
+
+  // Get the device state
+  OneSignal.User.pushSubscription.addObserver((state) {
+      print(OneSignal.User.pushSubscription.optedIn);
+      print(OneSignal.User.pushSubscription.id);
+      print(OneSignal.User.pushSubscription.token);
+      print(state.current.jsonRepresentation());
+    });
+}
 
 
 
@@ -252,7 +271,7 @@ Future<bool> _sendPasswordResetEmail(String email) async {
   // Replace with your actual endpoint and logic
   try {
     final response = await http.post(
-      Uri.parse('http://192.168.1.4:3000/forgot-password'), // Update with your API endpoint
+      Uri.parse('http://192.168.1.8:3000/forgot-password'), // Update with your API endpoint
       headers: <String, String>{
         'Content-Type': 'application/json; charset=UTF-8',
       },

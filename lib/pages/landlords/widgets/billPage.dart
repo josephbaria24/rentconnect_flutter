@@ -1,6 +1,7 @@
 // ignore_for_file: prefer_const_constructors, sort_child_properties_last, prefer_const_literals_to_create_immutables
 
 import 'dart:convert';
+import 'dart:io';
 import 'dart:typed_data';
 import 'dart:ui';
 import 'package:flutter/cupertino.dart';
@@ -9,11 +10,10 @@ import 'package:flutter/rendering.dart';
 import 'package:get/get.dart';
 import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
-import 'package:permission_handler/permission_handler.dart';
 import 'package:rentcon/theme_controller.dart';
-import 'package:path_provider/path_provider.dart';
-import 'dart:io';
 import 'package:saver_gallery/saver_gallery.dart';
+import 'package:flutter_email_sender/flutter_email_sender.dart';
+import 'package:path_provider/path_provider.dart';
 
 class ViewBillPage extends StatefulWidget {
   final String billId;
@@ -37,10 +37,44 @@ class _ViewBillPageState extends State<ViewBillPage> {
     fetchBillDetails(widget.billId);
   }
 
+
+
+  Future<void> sendBillViaEmail() async {
+  try {
+    // Get the temporary directory of the device
+    final directory = await getTemporaryDirectory();
+    final imagePath = '${directory.path}/bill_${widget.billId}.png';
+
+    // Save the image as a file in the temporary directory
+    File(imagePath).writeAsBytesSync(await _captureBillImage());
+
+    final Email email = Email(
+      body: 'Please find the attached bill.',
+      subject: 'Your Bill - ${widget.billId}',
+
+      recipients: ['luckybaria66@gmail.com'], // Replace with the recipient's email
+      attachmentPaths: [imagePath],
+      isHTML: false,
+    );
+
+    await FlutterEmailSender.send(email);
+    Get.snackbar('Success', 'Bill sent via email successfully!');
+  } catch (e) {
+    Get.snackbar('Error', 'An error occurred while sending the email: $e');
+  }
+}
+
+Future<Uint8List> _captureBillImage() async {
+  RenderRepaintBoundary boundary = _billKey.currentContext!.findRenderObject() as RenderRepaintBoundary;
+  final image = await boundary.toImage(pixelRatio: 3.0);
+  ByteData? byteData = await image.toByteData(format: ImageByteFormat.png);
+  return byteData!.buffer.asUint8List();
+}
+
   Future<void> fetchBillDetails(String billId) async {
     try {
       final response = await http.get(
-        Uri.parse('http://192.168.1.4:3000/inquiries/bills/getBillId/${widget.billId}'),
+        Uri.parse('http://192.168.1.8:3000/inquiries/bills/getBillId/${widget.billId}'),
       );
 
       if (response.statusCode == 200) {
@@ -66,7 +100,7 @@ class _ViewBillPageState extends State<ViewBillPage> {
   Future<void> deleteBill(String billId) async {
     try {
       final response = await http.delete(
-        Uri.parse('http://192.168.1.4:3000/inquiries/bill/delete/$billId'),
+        Uri.parse('http://192.168.1.8:3000/inquiries/bill/delete/$billId'),
       );
 
       if (response.statusCode == 200) {
@@ -79,6 +113,13 @@ class _ViewBillPageState extends State<ViewBillPage> {
       Get.snackbar('Error', 'An error occurred while deleting the bill: $e', snackPosition: SnackPosition.BOTTOM);
     }
   }
+
+
+
+
+
+
+
 Future<void> saveBillAsImage() async {
   try {
 
@@ -100,14 +141,47 @@ Future<void> saveBillAsImage() async {
 
     // Handle the result
     if (result.isSuccess) {
-      Get.snackbar('Success', 'Bill saved as image successfully!', snackPosition: SnackPosition.BOTTOM);
+      Get.snackbar('Success', 'Bill saved as image successfully!');
     } else {
-      Get.snackbar('Error', 'Failed to save image to gallery.', snackPosition: SnackPosition.BOTTOM);
+      Get.snackbar('Error', 'Failed to save image to gallery.');
     }
   } catch (e) {
-    Get.snackbar('Error', 'An error occurred while saving the bill as an image: $e', snackPosition: SnackPosition.BOTTOM);
+    Get.snackbar('Error', 'An error occurred while saving the bill as an image: $e');
   }
 }
+
+
+
+
+
+
+
+
+
+
+// Within your ViewBillPage class
+
+Future<void> markBillAsPaid(String billId) async {
+  try {
+    final response = await http.patch(
+      Uri.parse('http://192.168.1.8:3000/inquiries/bills/$billId/isPaid'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({'isPaid': true}),
+    );
+
+    if (response.statusCode == 200) {
+      setState(() {
+        bill?['isPaid'] = true;
+      });
+      Get.snackbar('Success', 'Bill marked as paid successfully');
+    } else {
+      Get.snackbar('Error', 'Failed to mark bill as paid');
+    }
+  } catch (e) {
+    Get.snackbar('Error', 'An error occurred: $e');
+  }
+}
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -121,6 +195,15 @@ Future<void> saveBillAsImage() async {
           ),
         ),
         backgroundColor: const Color.fromARGB(0, 0, 0, 0),
+        actions: [
+        if (!(bill?['isPaid'] ?? false))
+        Text('Mark as paid'), // Show if not already paid
+          IconButton(
+            icon: Icon(Icons.check_circle, color: Colors.green),
+            onPressed: () => markBillAsPaid(widget.billId),
+            tooltip: 'Mark as Paid',
+          ),
+      ],
         leading: Padding(
           padding: const EdgeInsets.symmetric(vertical: 11.0, horizontal: 12.0),
           child: SizedBox(
@@ -158,6 +241,9 @@ Future<void> saveBillAsImage() async {
               : buildBillDetails(),
     );
   }
+
+
+
 
 Widget buildBillDetails() {
   if (bill == null) {
@@ -209,12 +295,43 @@ Widget buildBillDetails() {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
+                      
                     Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        SizedBox(
-                          height: 30,
-                          child: Image.asset(_themeController.isDarkMode.value?'assets/icons/ren2.png':'assets/icons/ren.png')),
-                          Text('RentConnect', style: TextStyle(color: _themeController.isDarkMode.value? Colors.white:Colors.black, fontFamily: 'geistsans', fontSize: 15, fontWeight: FontWeight.w600),)
+                        Row(
+                          children: [
+                            SizedBox(
+                              height: 30,
+                              child: Image.asset(_themeController.isDarkMode.value?'assets/icons/ren2.png':'assets/icons/ren.png')),
+                              Text('RentConnect', style: TextStyle(color: _themeController.isDarkMode.value? Colors.white:Colors.black, fontFamily: 'geistsans', fontSize: 15, fontWeight: FontWeight.w600),),
+                          ],
+                        ),
+                          
+                           if (bill?['isPaid'] ?? false) // Display 'PAID' if isPaid is true
+                        Padding(
+                          padding: const EdgeInsets.only(left: 0.0),
+                          child: Text(
+                            'PAID',
+                            style: TextStyle(
+                              color: Colors.green,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 18,
+                            ),
+                          ),
+                        )
+                      else // Display 'UNPAID' if isPaid is false or null
+                        Padding(
+                          padding: const EdgeInsets.only(left: 0.0),
+                          child: Text(
+                            'UNPAID',
+                            style: TextStyle(
+                              color: Colors.red, // Color for unpaid status
+                              fontWeight: FontWeight.bold,
+                              fontSize: 18,
+                            ),
+                          ),
+                        ),
                       ],
                     ),
                     SizedBox(height: 20),
@@ -272,6 +389,7 @@ Widget buildBillDetails() {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: [
+                
                 ElevatedButton(
                   onPressed: saveBillAsImage, // Call save function
                   child: Row(
@@ -286,11 +404,31 @@ Widget buildBillDetails() {
                     backgroundColor: const Color.fromARGB(0, 255, 255, 255), // Button color for saving
                   ),
                 ),
-                ElevatedButton(
+
+                ElevatedButton.icon(
+            onPressed: sendBillViaEmail,
+            icon: Icon(Icons.email), // Use the email icon from Material Icons
+            label: Text('Send Bill via Email'),
+            style: ElevatedButton.styleFrom(
+              foregroundColor: Colors.amber,
+              backgroundColor: Colors.black87,
+              elevation: 0,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10), // Adjust the radius as needed
+              ),
+            ),
+          )
+                
+                
+              ],
+            ),
+            SizedBox(height: 10,),
+            ElevatedButton(
                   onPressed: () {
                     deleteBill(widget.billId); // Call the delete function
                   },
                   child: Row(
+                    mainAxisSize: MainAxisSize.min,
                     children: [
                       Icon(CupertinoIcons.trash, color: Colors.white, size: 18,),
                       SizedBox(width: 3,),
@@ -302,9 +440,6 @@ Widget buildBillDetails() {
                     backgroundColor: const Color.fromARGB(255, 226, 31, 74), // Button color
                   ),
                 ),
-                
-              ],
-            ),
           ],
         ),
       ),

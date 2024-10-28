@@ -279,7 +279,7 @@ Future<void> _selectLegalDocPhoto(int index) async {
   }
 
   Future<void> _submitProperty() async {
-    var request = http.MultipartRequest('POST', Uri.parse('http://192.168.1.4:3000/storeProperty'));
+    var request = http.MultipartRequest('POST', Uri.parse('http://192.168.1.8:3000/storeProperty'));
 
     request.fields['userId'] = userId;
     request.fields['description'] = descriptionController.text;

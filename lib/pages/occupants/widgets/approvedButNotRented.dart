@@ -2,11 +2,14 @@
 
 // ignore_for_file: prefer_const_constructors, prefer_const_literals_to_create_immutables
 
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:rentcon/pages/occupants/occupant_inquiries.dart';
 import 'package:shadcn_ui/shadcn_ui.dart';
+import 'package:http/http.dart' as http;
 
 class Approvedbutnotrented extends StatefulWidget {
   final Map<String, dynamic> inquiry;
@@ -16,7 +19,7 @@ class Approvedbutnotrented extends StatefulWidget {
   final String token;
   final Function(String inquiryId, String token) cancelInquiry;
   final Function(String roomId, String proofOfReservation) deleteProof;
-  final Function(String inquiryId, String userId, String roomId, String ownerId) uploadProofOfReservation;
+  final Function(String inquiryId, String userId, String roomId, String ownerId, String landlordEmail, String occupantName) uploadProofOfReservation;
   final bool isDarkMode; // Add this parameter
 
   const Approvedbutnotrented({
@@ -44,7 +47,48 @@ class _ApprovedbutnotrentedState extends State<Approvedbutnotrented> {
   @override
   void initState() {
     super.initState();
-    _proofOfReservation = widget.proofOfReservation; // Initialize with the widget's value
+    _proofOfReservation = widget.proofOfReservation;
+    _fetchLandlordProfile();
+    _fetchOccupantProfile(); // Initialize with the widget's value
+  }
+
+ Map<String, dynamic>? landlordDetails;
+ Map<String, dynamic>? occupantDetails;
+ Future<void> _fetchLandlordProfile() async {
+    final url = Uri.parse(
+        'http://192.168.1.8:3000/user/${widget.roomDetails['ownerId']}'); // Adjust the endpoint if needed
+    try {
+      final response = await http
+          .get(url, headers: {'Authorization': 'Bearer ${widget.token}'});
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        setState(() {
+          landlordDetails = jsonDecode(response.body);
+        });
+      } else {
+        print('No profile yet');
+      }
+    } catch (error) {
+      print('Error fetching profile data: $error');
+    }
+  }
+ Future<void> _fetchOccupantProfile() async {
+    final url = Uri.parse(
+        'http://192.168.1.8:3000/user/${widget.userId}'); // Adjust the endpoint if needed
+    try {
+      final response = await http
+          .get(url, headers: {'Authorization': 'Bearer ${widget.token}'});
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        setState(() {
+          occupantDetails = jsonDecode(response.body);
+        });
+      } else {
+        print('No profile yet');
+      }
+    } catch (error) {
+      print('Error fetching profile data: $error');
+    }
   }
 
 @override
@@ -220,7 +264,11 @@ Widget build(BuildContext context) {
                     widget.inquiry['_id'],
                     widget.userId,
                     widget.roomDetails['_id'],
-                    widget.roomDetails['ownerId']);
+                    widget.roomDetails['ownerId'],
+                    landlordDetails!['email'],
+                    occupantDetails!['profile']['firstName']
+                    );
+                    
                 setState(() {
                   _isUploading = false;
                 });
@@ -251,7 +299,9 @@ Widget build(BuildContext context) {
                 widget.inquiry['_id'],
                 widget.userId,
                 widget.roomDetails['_id'],
-                widget.roomDetails['ownerId']);
+                widget.roomDetails['ownerId'],
+                landlordDetails!['email'],
+                    occupantDetails!['profile']['firstName']);
             setState(() {
               _isUploading = false;
             });

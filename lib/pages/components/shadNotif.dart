@@ -12,11 +12,13 @@ import 'package:shadcn_ui/shadcn_ui.dart';
 class CardNotifications extends StatefulWidget {
   final String userId;
   final String token;
+  final Function(List<dynamic>) onNotificationsUpdated;
 
   const CardNotifications({
     Key? key,
     required this.userId,
     required this.token,
+    required this.onNotificationsUpdated, // Accept the callback
   }) : super(key: key);
 
   @override
@@ -27,7 +29,8 @@ class _CardNotificationsState extends State<CardNotifications> {
   List<dynamic> notifications = [];
   bool hasNewNotifications = false;
   ValueNotifier<bool> pushNotifications = ValueNotifier<bool>(false); // Initialize push notifications value
-final ThemeController _themeController = Get.find<ThemeController>();
+  final ThemeController _themeController = Get.find<ThemeController>();
+
   @override
   void initState() {
     super.initState();
@@ -37,15 +40,16 @@ final ThemeController _themeController = Get.find<ThemeController>();
   Future<void> _fetchNotifications() async {
     final fetchedNotifications = await fetchNotifications(widget.userId, widget.token);
     setState(() {
-      notifications = fetchedNotifications; // Update the state with fetched notifications
-      hasNewNotifications = notifications.isNotEmpty; // Check if there are new notifications
+      notifications = fetchedNotifications;
+      hasNewNotifications = notifications.isNotEmpty;
     });
+    widget.onNotificationsUpdated(notifications); // Notify parent of updates
   }
-
+  
   Future<List<dynamic>> fetchNotifications(String userId, String token) async {
     try {
       final response = await http.get(
-        Uri.parse('http://192.168.1.4:3000/notification/unread/$userId'),
+        Uri.parse('http://192.168.1.8:3000/notification/unread/$userId'),
         headers: {
           'Authorization': 'Bearer $token',
           'Content-Type': 'application/json',
@@ -103,7 +107,7 @@ final ThemeController _themeController = Get.find<ThemeController>();
 
   Future<void> _markNotificationAsRead(String notificationId) async {
     final response = await http.patch(
-      Uri.parse('http://192.168.1.4:3000/notification/$notificationId/read'),
+      Uri.parse('http://192.168.1.8:3000/notification/$notificationId/read'),
       headers: {
         'Authorization': 'Bearer ${widget.token}',
         'Content-Type': 'application/json',
@@ -112,91 +116,113 @@ final ThemeController _themeController = Get.find<ThemeController>();
 
     if (response.statusCode == 200) {
       print('Notification marked as read');
-      _fetchNotifications(); // Refresh notifications after marking as read
+      setState(() {
+        notifications.removeWhere((notification) => notification['_id'] == notificationId);
+        hasNewNotifications = notifications.isNotEmpty; // Update hasNewNotifications
+      });
+      // Optionally, you could fetch notifications again to ensure the latest data
+       _fetchNotifications(); 
     } else {
       print('Failed to mark notification as read');
     }
   }
 
-  @override
-  Widget build(BuildContext context) {
-    final theme = ShadTheme.of(context);
-    
-    return ShadCard(
-      width: 380,
-      title: const Text('Notifications'),
-      description: const Text('You have new notifications.'),
-      child: Column(
-        children: [
-          const SizedBox(height: 16),
-          // Add the Push Notifications Section
-          Row(
-            children: [
-              ShadImage.square(
-                LucideIcons.bellRing,
-                size: 24,
-                color: theme.colorScheme.foreground,
+@override
+Widget build(BuildContext context) {
+  final theme = ShadTheme.of(context);
+
+  return ShadCard(
+    width: 380,
+    title: const Text('Notifications'),
+    description: const Text('You have new notifications.'),
+    child: Column(
+      children: [
+        const SizedBox(height: 16),
+        // Add the Push Notifications Section
+        Row(
+          children: [
+            ShadImage.square(
+              LucideIcons.bellRing,
+              size: 24,
+              color: theme.colorScheme.foreground,
+            ),
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.only(left: 16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Push Notifications',
+                      style: theme.textTheme.small,
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      'Send notifications to device.',
+                      style: theme.textTheme.muted,
+                    ),
+                  ],
+                ),
               ),
-              Expanded(
-                child: Padding(
-                  padding: const EdgeInsets.only(left: 16),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Push Notifications',
-                        style: theme.textTheme.small,
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        'Send notifications to device.',
-                        style: theme.textTheme.muted,
-                      ),
-                    ],
+            ),
+            ValueListenableBuilder(
+              valueListenable: pushNotifications,
+              builder: (context, value, child) {
+                return ShadSwitch(
+                  value: value,
+                  onChanged: (v) {
+                    pushNotifications.value = v;
+                    // Handle enabling/disabling push notifications
+                    _handlePushNotifications(v);
+                  },
+                );
+              },
+            ),
+          ],
+        ),
+        const SizedBox(height: 16),
+        notifications.isNotEmpty
+            ? SizedBox(
+                height: 200, // Set a fixed height for scrollable area
+                child: Scrollbar(
+                  thumbVisibility: true, // Makes the scrollbar always visible
+                  child: ListView.builder(
+                    itemCount: notifications.length > 5 ? 5 : notifications.length,
+                    itemBuilder: (context, index) {
+                      final notification = notifications[index];
+                      return NotificationRow(
+                        message: notification['message'] ?? 'No message available',
+                        onTap: () => _markNotificationAsRead(notification['_id']),
+                      );
+                    },
+                  ),
+                ),
+              )
+            : Padding(
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                child: Text(
+                  'No notifications available.',
+                  style: TextStyle(
+                    color: _themeController.isDarkMode.value ? Colors.orange : Colors.orange,
                   ),
                 ),
               ),
-              ValueListenableBuilder(
-                valueListenable: pushNotifications,
-                builder: (context, value, child) {
-                  return ShadSwitch(
-                    value: value,
-                    onChanged: (v) {
-                      pushNotifications.value = v;
-                      // Handle enabling/disabling push notifications
-                      _handlePushNotifications(v);
-                    },
-                  );
-                },
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          ...notifications.map((n) {
-            return NotificationRow(
-              message: n['message'] ?? 'No message available',
-              onTap: () => _markNotificationAsRead(n['_id']),
-            );
-          }).toList(),
-          if (notifications.isEmpty)
-             Padding(
-              padding: EdgeInsets.symmetric(vertical: 16),
-              child: Text('No notifications available.', style: TextStyle(
-                color: _themeController.isDarkMode.value? Colors.orange: Colors.orange
-              ),),
-            ),
-          const SizedBox(height: 16),
-        ],
-      ),
-      footer: ShadButton(
-        width: double.infinity,
-        child: const Text('Mark all as read'),
-        onPressed: () async {
-          await _markAllAsRead();
-        },
-      ),
-    );
-  }
+        const SizedBox(height: 16),
+      ],
+    ),
+    footer: ShadButton(
+      width: double.infinity,
+      child: const Text('Mark all as read'),
+      onPressed: () async {
+        await _markAllAsRead();
+        // Automatically refresh notifications after marking all as read
+        await _fetchNotifications();
+      },
+    ),
+  );
+}
+
+
 
   Future<void> _handlePushNotifications(bool isEnabled) async {
     // Implement logic to enable or disable push notifications
@@ -210,8 +236,10 @@ final ThemeController _themeController = Get.find<ThemeController>();
         await _markNotificationAsRead(notification['_id']);
       }
     }
+    // You can call _fetchNotifications() again here, but it's done after the button is pressed
     setState(() {
-      hasNewNotifications = false;
+      hasNewNotifications = false; // Update the state
+      notifications.clear(); // Clear notifications after marking all as read
     });
     print('All notifications marked as read locally.');
   }

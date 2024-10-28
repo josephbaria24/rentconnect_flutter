@@ -147,6 +147,8 @@
 //   }
 // }
 
+// ignore_for_file: unused_import
+
 import 'package:animated_splash_screen/animated_splash_screen.dart';
 import 'package:app_links/app_links.dart';
 import 'package:flutter/cupertino.dart';
@@ -154,6 +156,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:jwt_decoder/jwt_decoder.dart';
 import 'package:lottie/lottie.dart';
+import 'package:onesignal_flutter/onesignal_flutter.dart';
 import 'package:page_transition/page_transition.dart';
 import 'package:provider/provider.dart';
 import 'package:rentcon/colorController.dart';
@@ -166,6 +169,8 @@ import 'package:rentcon/pages/landlords/current_listing.dart';
 import 'package:rentcon/pages/landlords/services/getPaymentForSelectedMonth.dart';
 import 'package:rentcon/pages/login.dart';
 import 'package:rentcon/pages/loginOTP.dart';
+import 'package:rentcon/pages/services/backend_service.dart';
+import 'package:rentcon/pages/toast.dart';
 import 'package:rentcon/theme_controller.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:shadcn_ui/shadcn_ui.dart'; // Import Shadcn UI
@@ -177,11 +182,20 @@ void main() async {
   Get.put(ColorController()); // Register ColorController
   Get.put(ThemeController()); // Ensure your ThemeController is also registered
   String? token = prefs.getString('token'); // Nullable token
+ 
+ 
+  await BackendService().init(); // Initialize the backend service
+
   runApp(ChangeNotifierProvider(
      create: (context) => PaymentService(),
     child: MyApp(token: token
     )));
   DependencyInjection.init();
+
+  OneSignal.Debug.setLogLevel(OSLogLevel.verbose);
+
+  OneSignal.initialize("af1220cb-edec-447f-a4e2-8bc6b7638322");
+  OneSignal.Notifications.requestPermission(true);
    
 }
 
@@ -242,7 +256,7 @@ class _MyAppState extends State<MyApp> {
 Widget build(BuildContext context) {
   // Check if token is null or expired
   bool isAuthenticated = widget.token != null && !JwtDecoder.isExpired(widget.token!);
-
+ final toastNotification = ToastNotification(context);
   return Obx(() {
     // Determine the theme mode
     final isDarkMode = themeController.isDarkMode.value;

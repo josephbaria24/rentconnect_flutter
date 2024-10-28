@@ -69,7 +69,7 @@ final ThemeController _themeController = Get.find<ThemeController>();
 
     ShadToaster.of(context).show(
       ShadToast(
-        
+        radius: BorderRadius.circular(20),
         title: Text(
           _getToastTitle(type),
           style: const TextStyle(fontWeight: FontWeight.bold),

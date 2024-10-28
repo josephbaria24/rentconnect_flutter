@@ -15,7 +15,7 @@ import 'package:fluttertoast/fluttertoast.dart';
  // Make sure to import your theme controller
 
 Future<List<Property>> getBookmarkedProperties(String token, String userId) async {
-  final url = Uri.parse('http://192.168.1.4:3000/getUserBookmarks/$userId'); 
+  final url = Uri.parse('http://192.168.1.8:3000/getUserBookmarks/$userId'); 
 
   try {
     final response = await http.get(
@@ -45,7 +45,7 @@ Future<List<Property>> getBookmarkedProperties(String token, String userId) asyn
 }
 
 Future<void> removeBookmark(String token, String userId, String propertyId) async {
-  final url = Uri.parse('http://192.168.1.4:3000/removeBookmark');
+  final url = Uri.parse('http://192.168.1.8:3000/removeBookmark');
 
   try {
     final response = await http.post(
@@ -204,7 +204,7 @@ class _BookmarkPageState extends State<BookmarkPage> {
                       final property = snapshot.data![index];
                       final imageUrl = property.photo.startsWith('http')
                           ? property.photo
-                          : 'http://192.168.1.4:3000/${property.photo}';
+                          : 'http://192.168.1.8:3000/${property.photo}';
 
                       return Card(
                         color: _themeController.isDarkMode.value

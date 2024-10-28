@@ -116,7 +116,7 @@ late ScrollController tab2ScrollController;
   }
 
 Future<String?> getProofOfPaymentForSelectedMonth(String roomId, String token, String selectedMonth) async {
-  final String apiUrl = 'http://192.168.1.4:3000/payment/room/$roomId/monthlyPayments';
+  final String apiUrl = 'http://192.168.1.8:3000/payment/room/$roomId/monthlyPayments';
 
   try {
     print('API URL: $apiUrl');
@@ -200,7 +200,7 @@ final List<String> rejectionReasons = [
 
 Future<int?> getReservationDuration(String roomId, String token) async {
   final response = await http.get(
-    Uri.parse('http://192.168.1.4:3000/inquiries/rooms/$roomId'),
+    Uri.parse('http://192.168.1.8:3000/inquiries/rooms/$roomId'),
     headers: {
       'Authorization': 'Bearer $token', // If you're using token-based authentication
       'Content-Type': 'application/json',
@@ -532,8 +532,6 @@ void showRoomDetailBottomSheet(BuildContext context, dynamic room, Map<String, d
                         ),
                       ),
                     ),
-
-                    // Tab 2: Payment Details with Scrollbar
                     // Tab 2: Payment Details with Scrollbar
                     Padding(
                       padding: const EdgeInsets.only(right: 4.0),
@@ -566,6 +564,9 @@ void showRoomDetailBottomSheet(BuildContext context, dynamic room, Map<String, d
 
                                 )
                               ],
+                              if (isReserved) ...[
+                                ReservationDetails(room: room, token: widget.token, mounted: mounted, reservationDuration: reservationDuration)
+                              ],
                             ],
                           ),
                         ),
@@ -591,7 +592,7 @@ void showRoomDetailBottomSheet(BuildContext context, dynamic room, Map<String, d
   Future<void> updateInquiryStatus(
       String? inquiryId, String? newStatus, String? token) async {
     final url = Uri.parse(
-        'http://192.168.1.4:3000/inquiries/update/$inquiryId'); // Match your backend route
+        'http://192.168.1.8:3000/inquiries/update/$inquiryId'); // Match your backend route
 
     try {
       final response = await http.patch(
@@ -629,7 +630,7 @@ Future<void> updateInquiryStatusAndRoom(
     String token,
     int? reservationDuration,
 ) async {
-    final url = 'http://192.168.1.4:3000/inquiries/update/$inquiryId'; // Update inquiry status
+    final url = 'http://192.168.1.8:3000/inquiries/update/$inquiryId'; // Update inquiry status
     try {
         final response = await http.patch(
             Uri.parse(url),
@@ -649,7 +650,7 @@ Future<void> updateInquiryStatusAndRoom(
         if (response.statusCode == 200) {
             // Get the occupant's email
             final emailResponse = await http.get(
-                Uri.parse('http://192.168.1.4:3000/inquiries/$inquiryId/email'),
+                Uri.parse('http://192.168.1.8:3000/inquiries/$inquiryId/email'),
                 headers: {
                     'Authorization': 'Bearer $token',
                     'Content-Type': 'application/json',
@@ -658,7 +659,7 @@ Future<void> updateInquiryStatusAndRoom(
             if (emailResponse.statusCode == 200) {
                 final occupantEmail = json.decode(emailResponse.body)['email'];
                 final message = status == 'approved'
-                    ? 'Your inquiry for room ${inquiry['roomId']['roomNumber']} has been approved. Please Settle all needed payment for reservation immediately.'
+                    ? 'Your inquiry for room ${inquiry['roomId']['roomNumber']} has been approved. Please Settle all needed payment immediately.'
                     : 'Your inquiry for room ${inquiry['roomNumber']} has been rejected.';
 
                 await _sendOccupantNotificationEmail(occupantEmail, message, inquiry['userId']);
@@ -680,7 +681,7 @@ Future<void> updateInquiryStatusAndRoom(
 
 
 Future<void> _sendOccupantNotificationEmail(String occupantEmail, String message, String userId) async {
-    final emailServiceUrl = 'http://192.168.1.4:3000/notification/create'; // Endpoint to send notifications
+    final emailServiceUrl = 'http://192.168.1.8:3000/notification/create'; // Endpoint to send notifications
     try {
         final response = await http.post(
             Uri.parse(emailServiceUrl),
@@ -714,7 +715,7 @@ Future<void> rejectAndDeleteInquiry(String inquiryId, String token, String reaso
   try {
     // First, call your API to reject the inquiry and send the reason
     final response = await http.patch(
-      Uri.parse('http://192.168.1.4:3000/inquiries/reject/$inquiryId'), // Update the endpoint
+      Uri.parse('http://192.168.1.8:3000/inquiries/reject/$inquiryId'), // Update the endpoint
       headers: {
         'Authorization': 'Bearer $token',
         'Content-Type': 'application/json',
@@ -729,7 +730,7 @@ Future<void> rejectAndDeleteInquiry(String inquiryId, String token, String reaso
 
       // Get the inquiry details, including userId and occupant's email
       final inquiryResponse = await http.get(
-        Uri.parse('http://192.168.1.4:3000/inquiries/$inquiryId'), // Update the endpoint to get inquiry details
+        Uri.parse('http://192.168.1.8:3000/inquiries/$inquiryId'), // Update the endpoint to get inquiry details
         headers: {
           'Authorization': 'Bearer $token',
           'Content-Type': 'application/json',
@@ -759,7 +760,7 @@ Future<void> rejectAndDeleteInquiry(String inquiryId, String token, String reaso
 
 
   Future<bool> deleteProperty(String propertyId) async {
-    final response = await http.delete(Uri.parse('http://192.168.1.4:3000/deleteProperty/$propertyId'));
+    final response = await http.delete(Uri.parse('http://192.168.1.8:3000/deleteProperty/$propertyId'));
 
     if (response.statusCode == 200) {
       // Successfully deleted the property
@@ -1871,7 +1872,7 @@ Future<void> getPropertyList(String userId) async {
   Future<void> fetchUserProfile(String userId) async {
     try {
       final response =
-          await http.get(Uri.parse('http://192.168.1.4:3000/user/$userId'));
+          await http.get(Uri.parse('http://192.168.1.8:3000/user/$userId'));
       if (response.statusCode == 200) {
         final user = json.decode(response.body);
         setState(() {
@@ -1893,7 +1894,7 @@ Future<void> getPropertyList(String userId) async {
 
 Future<void> fetchRoomInquiries(String roomId) async {
   try {
-    final response = await http.get(Uri.parse('http://192.168.1.4:3000/inquiries/rooms/$roomId'));
+    final response = await http.get(Uri.parse('http://192.168.1.8:3000/inquiries/rooms/$roomId'));
     
     if (response.statusCode == 200) {
       final inquiries = json.decode(response.body) as List<dynamic>; // Decode as List
@@ -1923,7 +1924,7 @@ Future<void> fetchRoomInquiries(String roomId) async {
   Future<void> fetchRooms(String propertyId) async {
     try {
       final response = await http.get(Uri.parse(
-          'http://192.168.1.4:3000/rooms/properties/$propertyId/rooms'));
+          'http://192.168.1.8:3000/rooms/properties/$propertyId/rooms'));
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
@@ -1962,7 +1963,7 @@ Future<void> fetchRoomInquiries(String roomId) async {
 
 
 Future<void> updateRoomStatus(String? roomId, String? newStatus) async {
-  final url = Uri.parse('http://192.168.1.4:3000/rooms/updateRoom/$roomId'); // Replace with your backend URL
+  final url = Uri.parse('http://192.168.1.8:3000/rooms/updateRoom/$roomId'); // Replace with your backend URL
   final headers = {
     'Content-Type': 'application/json',
     'Authorization': 'Bearer your_jwt_token' // Add your JWT token if required
@@ -2039,11 +2040,12 @@ Future<void> updateRoomStatus(String? roomId, String? newStatus) async {
     await getPropertyList(userId);
   }
 
+
 Future<void> markRoomAsOccupied(BuildContext context, String roomId) async {
   if (selectedUserId != null) {
     try {
       final response = await http.patch(
-        Uri.parse('http://192.168.1.4:3000/rooms/$roomId/occupy'),
+        Uri.parse('http://192.168.1.8:3000/rooms/$roomId/occupy'),
         headers: {'Content-Type': 'application/json'},
         body: json.encode({
           'userId': selectedUserId, // Pass the userId from approved inquiry
@@ -2082,7 +2084,7 @@ Future<void> markRoomAsOccupied(BuildContext context, String roomId) async {
 Future<String?> fetchProofOfReservation(String roomId) async {
   try {
     // Example API call to fetch payment details
-    var response = await http.get(Uri.parse('http://192.168.1.4:3000/payment/room/$roomId/proofOfReservation'));
+    var response = await http.get(Uri.parse('http://192.168.1.8:3000/payment/room/$roomId/proofOfReservation'));
     if (response.statusCode == 200) {
       var data = jsonDecode(response.body);
       return data['proofOfReservation']; // Ensure the key matches your backend response

@@ -2,22 +2,21 @@
 
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_svg/svg.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:get/get.dart';
 import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
-import 'package:lottie/lottie.dart';
 import 'package:rentcon/pages/fullscreenImage.dart';
+import 'package:rentcon/pages/landlords/current_listing.dart';
+import 'package:rentcon/pages/occupants/occupant_inquiries.dart';
 import 'package:rentcon/theme_controller.dart';
 import 'dart:convert';
 import 'package:shadcn_ui/shadcn_ui.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:skeletonizer/skeletonizer.dart';
-import 'package:timelines_plus/timelines_plus.dart';
 
 
-class PaymentUploadWidget extends StatefulWidget {
+class Bodypaymentuploadwidget extends StatefulWidget {
   final String inquiryId;
   final String userId;
   final Map<String, dynamic> roomDetails;
@@ -27,7 +26,7 @@ class PaymentUploadWidget extends StatefulWidget {
   final bool isDarkMode;
   final TextEditingController amountController;
 
-  const PaymentUploadWidget({
+  const Bodypaymentuploadwidget({
     required this.inquiryId,
     required this.userId,
     required this.roomDetails,
@@ -40,8 +39,8 @@ class PaymentUploadWidget extends StatefulWidget {
   }) : super(key: key);
 
     void showMonthSelectionDialog(BuildContext context) {
-    _PaymentUploadWidgetState? state =
-        context.findAncestorStateOfType<_PaymentUploadWidgetState>();
+    _BodypaymentuploadwidgetState? state =
+        context.findAncestorStateOfType<_BodypaymentuploadwidgetState>();
     if (state != null) {
       state._showMonthSelectionDialog();
     }
@@ -49,10 +48,10 @@ class PaymentUploadWidget extends StatefulWidget {
     // Define the button to trigger the month selection dialog
 
   @override
-  _PaymentUploadWidgetState createState() => _PaymentUploadWidgetState();
+  _BodypaymentuploadwidgetState createState() => _BodypaymentuploadwidgetState();
 }
 
-class _PaymentUploadWidgetState extends State<PaymentUploadWidget> {
+class _BodypaymentuploadwidgetState extends State<Bodypaymentuploadwidget> {
   final List<String> months = [
     'January', 'February', 'March', 'April', 'May', 'June',
     'July', 'August', 'September', 'October', 'November', 'December'
@@ -60,7 +59,6 @@ class _PaymentUploadWidgetState extends State<PaymentUploadWidget> {
   final ThemeController _themeController = Get.find<ThemeController>();
   
   String? proofOfPaymentUrl;
-  String? status;
    String? lastSelectedMonth; // New variable to store the last selected month
   List<Map<String, dynamic>> monthlyPayments = [];
   bool _isLoading = false;
@@ -95,195 +93,138 @@ class _PaymentUploadWidgetState extends State<PaymentUploadWidget> {
 
 
   // Method to expose just the "Select Month" button
-// Function to get the shortened name of the month
-String _getShortenedMonth(String? month) {
-  if (month == null || month.isEmpty) {
-    return 'N/A'; // or return an empty string
-  }
-  
-  final monthNames = {
-    'January': 'Jan',
-    'February': 'Feb',
-    'March': 'Mar',
-    'April': 'Apr',
-    'May': 'May',
-    'June': 'Jun',
-    'July': 'Jul',
-    'August': 'Aug',
-    'September': 'Sep',
-    'October': 'Oct',
-    'November': 'Nov',
-    'December': 'Dec',
-  };
 
-  return monthNames[month] ?? month; // Fallback to the full month name if not found
-}
 @override
 Widget build(BuildContext context) {
   return Column(
     crossAxisAlignment: CrossAxisAlignment.start,
     children: [
-      SizedBox(height: 10),
-      Container(
-        decoration: BoxDecoration(
-          border: Border.all(width: 0.3, color: _themeController.isDarkMode.value? Colors.white:Colors.black),
-          borderRadius: BorderRadius.circular(12),
-        ),
-        child: Row(
-          children: [
-            // Container to display the selected month
-            Container(
-              
-              decoration: BoxDecoration(
-                color:_themeController.isDarkMode.value? Colors.white: const Color.fromARGB(255, 0, 0, 0),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              width: 120,
-              height: 120,
-              alignment: Alignment.center,
-              child: GestureDetector(
-                onTap: _showMonthSelectionDialog, // Open month selection dialog on tap
-                child: Column(
-                  children: [
-                    SizedBox(height: 5,),
-
-                    _themeController.isDarkMode.value? Lottie.asset('assets/icons/calendar.json',repeat: false, height: 60) : Lottie.asset('assets/icons/calendarwhite.json',repeat: false, height: 60),
-                    Text(
-                      _getShortenedMonth(widget.selectedMonths[widget.inquiryId]),
-                      style: TextStyle(
-                        color: _themeController.isDarkMode.value?Colors.black: Colors.white,
-                        fontSize: 27,
-                        fontFamily: 'geistsans',
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ],
-                ),
+      SizedBox(height: 10,),
+      Divider(thickness: 1,height: 1,color: Colors.black,),
+      SizedBox(height: 10,),
+      Row(
+        children: [
+          Text('Select Month', style: TextStyle(
+            fontFamily: 'geistsans',
+            fontSize: 15
+          ),),
+          // Button to open the month selection dialog
+          ShadButton.secondary(
+            onPressed: _showMonthSelectionDialog,
+            child: Text(
+              widget.selectedMonths[widget.inquiryId] ?? 'Select Month',
+              style: TextStyle(
+                color: widget.selectedMonths[widget.inquiryId] != null ? Colors.white : Colors.black,
               ),
             ),
-            const SizedBox(width: 16), // Spacing between the month container and payment photo
-            Column(
-              children: [
-                 if (proofOfPaymentUrl != null)
-              GestureDetector(
+            backgroundColor: widget.selectedMonths[widget.inquiryId] != null 
+                ? const Color.fromARGB(255, 0, 24, 37) 
+                : const Color.fromARGB(255, 201, 200, 200),
+          ),
+        ],
+      ),
+
+      const SizedBox(height: 10),
+
+      // Amount Input Field
+      ShadInput(
+        controller: widget.amountController,
+        placeholder: Text('Amount(Optional):'),
+        keyboardType: TextInputType.number,
+      ),
+      const SizedBox(height: 16),
+
+      // Display proof of payment or upload button
+      if (proofOfPaymentUrl != null)
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            Text('Proof Of Payment:', style: TextStyle(
+              fontFamily: 'geistsans',
+              fontSize: 20,
+              fontWeight: FontWeight.bold
+            )),
+            Center(
+              child: GestureDetector(
                 onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => FullscreenImage(imageUrl: proofOfPaymentUrl!),
-                    ),
-                  );
+                  Navigator.push(context, MaterialPageRoute(builder: (context) => FullscreenImage(imageUrl: proofOfPaymentUrl!)));
                 },
                 child: Hero(
                   tag: proofOfPaymentUrl!,
                   child: Container(
                     decoration: BoxDecoration(
                       borderRadius: BorderRadius.circular(8),
-                      border: Border.all(
-                        width: 1,
-                        color: _themeController.isDarkMode.value ? Colors.white : Colors.black,
-                      ),
+                      border: Border.all(width: 1, color: _themeController.isDarkMode.value ? Colors.white : Colors.black)
                     ),
                     child: Padding(
-                      padding: const EdgeInsets.all(2.0),
-                      child: Image.network(
-                        proofOfPaymentUrl!,
-                        fit: BoxFit.fitWidth,
-                        height: 60,
-                        width: 70,
-                      ),
-                    ),
+                      padding: const EdgeInsets.all(8.0),
+                      child: Image.network(proofOfPaymentUrl!, fit: BoxFit.fitWidth, height: 200),
+                    )
                   ),
                 ),
-              )
-            else
-              Column(
-                children: [
-                  if (_hasPaymentForMonth(widget.selectedMonths[widget.inquiryId] ?? ''))
-                    SizedBox.shrink() // Hide if there is a payment
-                  else
-                    Column(
-                      children: [
-                        if (_isLoading) // Skeleton Loader for photo fetching
-                          Skeletonizer(
-                            enabled: _isLoading,
-                            child: Container(
-                              height: 60,
-                              width: 60,
-                              decoration: BoxDecoration(
-                                color: Colors.grey[300],
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                            ),
-                          )
-                        else
-                          Lottie.asset('assets/icons/empty.json', height: 60, repeat: false),
-                       // Text('Empty', style: TextStyle(color: Colors.red)),
-                      ],
-                    ),
-                ],
               ),
-                TextButton(
-                  onPressed: _uploadPayment,
-                  child: Text(
-                    proofOfPaymentUrl != null ? 'Change' : 'Upload',
-                    style: TextStyle(
-                      fontFamily: 'geistsans',
-                      fontSize: 13,
-                      color: proofOfPaymentUrl != null ? Colors.blue : Colors.grey,
-                    ),
-                  ),
-                ),
-              ],
             ),
-
-            // Status Icon based on `status` value
-            
-            const SizedBox(width: 36), // Spacing between image and icon
-            if (status != null)
-              Column(
-                children: [
-                  Text("Status", style: TextStyle(color: _themeController.isDarkMode.value? Colors.white:Colors.black, fontFamily: 'geistsans', fontWeight: FontWeight.w700),),
-                  Icon(
-                    status == 'pending'
-                        ? Icons.pending
-                        : status == 'completed'
-                            ? Icons.check_circle
-                            : Icons.cancel,
-                    color: status == 'pending'
-                        ? Colors.orange
-                        : status == 'completed'
-                            ? Colors.green
-                            : Colors.red,
-                    size: 24,
-                  ),
-                  SizedBox(height: 4), // Add space between icon and text
-                  Text(
-                    status == 'pending'
-                        ? 'Pending'
-                        : status == 'completed'
-                            ? 'Completed'
-                            : 'Rejected',
-                    style: TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.bold,
-                      color: status == 'pending'
-                          ? Colors.orange
-                          : status == 'completed'
-                              ? Colors.green
-                              : Colors.red,
-                    ),
-                  ),
-                ],
-              ),
+            const SizedBox(height: 8),
+            ShadButton(
+              onPressed: _uploadPayment,
+              child: _isLoading
+                  ? SizedBox(
+                      height: 20,
+                      width: 20,
+                      child: CircularProgressIndicator(
+                        valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                        strokeWidth: 2,
+                      ),
+                    )
+                  : const Text('Change Photo'),
+            ),
           ],
+        )
+      else
+        Center(
+          child: Column(
+            children: [
+              if (_hasPaymentForMonth(widget.selectedMonths[widget.inquiryId] ?? ''))
+                SizedBox.shrink() // Hide if there is a payment
+              else
+                Column(
+                  children: [
+                    if (_isLoading) // Skeleton Loader for photo fetching
+                      Skeletonizer(
+                        enabled: _isLoading,
+                        child: Container(
+                          height: 200,
+                          width: double.infinity,
+                          decoration: BoxDecoration(
+                            color: Colors.grey[300],
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                        ),
+                      )
+                    else
+                      Image.asset('assets/icons/emptypana.png', height: 200), // Replace with your "no payment" image
+                      Text('No payment for this month', style: TextStyle(color: Colors.red)),
+                  ],
+                ),
+              ShadButton(
+                onPressed: _uploadPayment,
+                child: _isLoading
+                    ? SizedBox(
+                        height: 20,
+                        width: 20,
+                        child: CircularProgressIndicator(
+                          valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                          strokeWidth: 2,
+                        ),
+                      )
+                    : const Text('Upload Proof of Payment'),
+              ),
+            ],
+          ),
         ),
-      ),
-      const SizedBox(height: 16),
     ],
   );
 }
-
 
 
   void _showMonthSelectionDialog() {
@@ -326,10 +267,9 @@ Widget build(BuildContext context) {
                   },
                   padding: EdgeInsets.zero,
                   child: Container(
-                    height: 40,
                     decoration: BoxDecoration(
                       color: isSelected
-                          ?  (_themeController.isDarkMode.value ? Colors.white: const Color.fromARGB(255, 0, 0, 0) )
+                          ? const Color.fromARGB(255, 0, 24, 37)
                           : const Color.fromARGB(0, 177, 177, 177),
                       borderRadius: BorderRadius.circular(8.0),
                     ),
@@ -340,7 +280,7 @@ Widget build(BuildContext context) {
                           month,
                           style: TextStyle(
                             color: isSelected
-                                ? (_themeController.isDarkMode.value ? const Color.fromARGB(255, 0, 0, 0) : Colors.white)
+                                ? (_themeController.isDarkMode.value ? const Color.fromARGB(255, 255, 255, 255) : Colors.white)
                                 : _themeController.isDarkMode.value ? const Color.fromARGB(255, 255, 255, 255) : Colors.black,
                             fontFamily: 'geistsans',
                             fontWeight: FontWeight.w600,
@@ -468,7 +408,6 @@ void _checkExistingPayment(String? selectedMonth) async {
               if (mounted) { // Check if the widget is still mounted before calling setState
                 setState(() {
                   proofOfPaymentUrl = payment['proofOfPayment'];
-                  status = payment['status'];
                 });
               }
               return;

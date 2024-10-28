@@ -23,7 +23,7 @@ class SearchFieldWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      margin: const EdgeInsets.only(top: 20, left: 20, right: 10),
+      margin: const EdgeInsets.only(top: 20, left: 10, right: 10),
       child: Row(
         children: [
           // Search Bar
@@ -37,7 +37,7 @@ class SearchFieldWidget extends StatelessWidget {
                       color: _themeController.isDarkMode.value
                           ? Colors.grey[900]!
                           : const Color(0xff101617).withOpacity(0.1),
-                      blurRadius: 10,
+                      blurRadius: 20,
                       spreadRadius: 1,
                     ),
                   ],
@@ -67,19 +67,28 @@ class SearchFieldWidget extends StatelessWidget {
                     prefixIcon: GestureDetector(
                       onTap: performSearch,
                       child: Padding(
-                        padding: const EdgeInsets.all(12),
-                        child: Image.asset(
-                          'assets/icons/search.png',
-                          color: _themeController.isDarkMode.value
-                              ? Colors.white
-                              : Colors.black,
-                          width: 16.0,
-                          height: 16.0,
+                        padding: const EdgeInsets.all(5),
+                        child: Container(
+                          decoration: BoxDecoration(
+                            color: Colors.amber,
+                            borderRadius: BorderRadius.circular(100)
+                          ),
+                          child: Padding(
+                            padding: const EdgeInsets.all(8.0),
+                            child: Image.asset(
+                              'assets/icons/search.png',
+                              color: _themeController.isDarkMode.value
+                                  ? Colors.black
+                                  : Colors.black,
+                              width: 16.0,
+                              height: 16.0,
+                            ),
+                          ),
                         ),
                       ),
                     ),
                     border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(15),
+                      borderRadius: BorderRadius.circular(20),
                       borderSide: BorderSide.none,
                     ),
                   ),
@@ -96,7 +105,7 @@ class SearchFieldWidget extends StatelessWidget {
             child: DecoratedBox(
               decoration: BoxDecoration(
                 color: isFilterApplied
-                    ? const Color.fromARGB(255, 0, 214, 150)
+                    ? Colors.amber
                     : _themeController.isDarkMode.value
                         ? const Color.fromARGB(255, 41, 43, 49)
                         : const Color.fromARGB(255, 10, 0, 40),
@@ -107,7 +116,7 @@ class SearchFieldWidget extends StatelessWidget {
                 child: Image.asset(
                   'assets/icons/filter.png',
                   color: isFilterApplied
-                      ? const Color.fromARGB(255, 255, 255, 255)
+                      ? const Color.fromARGB(255, 0, 0, 0)
                       : (_themeController.isDarkMode.value
                           ? Colors.white
                           : const Color.fromARGB(255, 255, 255, 255)),

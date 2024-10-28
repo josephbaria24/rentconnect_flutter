@@ -1,5 +1,6 @@
 // ignore_for_file: prefer_const_constructors, no_leading_underscores_for_local_identifiers
 
+import 'package:awesome_snackbar_content/awesome_snackbar_content.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
@@ -11,9 +12,11 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
+import 'package:rentcon/pages/components/awesome_snackbar.dart';
 import 'package:rentcon/pages/fullscreenImage.dart';
 import 'package:rentcon/pages/profileSection/personalInformation.dart';
 import 'package:rentcon/pages/profileSection/profileChecker.dart';
+import 'package:rentcon/pages/toast.dart';
 import 'package:rentcon/theme_controller.dart';
 import 'package:shadcn_ui/shadcn_ui.dart';
 import 'package:skeletonizer/skeletonizer.dart';
@@ -50,10 +53,11 @@ class _PropertyDetailPageState extends State<PropertyDetailPage> {
   bool _loadingRooms = true;
   final PageController _roomPageController = PageController();
   int _currentPageIndex = 0;
-
+ late ToastNotification toastNotification; 
   @override
   void initState() {
     super.initState();
+    toastNotification = ToastNotification(context);
     final Map<String, dynamic> jwtDecodedToken = JwtDecoder.decode(widget.token);
     
     // Safely extracting 'email' from the decoded token
@@ -83,7 +87,7 @@ Future<void> fetchRooms() async {
     _loadingRooms = true;  // Start loading
   });
 
-  final response = await http.get(Uri.parse('http://192.168.1.4:3000/rooms/properties/${widget.property.id}/rooms'));
+  final response = await http.get(Uri.parse('http://192.168.1.8:3000/rooms/properties/${widget.property.id}/rooms'));
 
   if (response.statusCode == 200) {
     final data = jsonDecode(response.body);
@@ -103,7 +107,7 @@ Future<void> fetchRooms() async {
 
 Future<void> fetchNotifications() async {
   final response = await http.get(
-    Uri.parse('http://192.168.1.4:3000/notifications'),
+    Uri.parse('http://192.168.1.8:3000/notifications'),
     headers: {
       'Authorization': 'Bearer ${widget.token}', // Use the user's token for authentication
     },
@@ -306,9 +310,9 @@ void showRoomDetailsModal(BuildContext context, Map<String, dynamic> room) {
 }
 
 void _sendRentRequest(BuildContext context, Map<String, dynamic> room, DateTime? proposedStartDate, String? customTerms) async {
-  // Check if there is a pending request before proceeding
+  // Check if the user can inquire and if there is a pending request before proceeding
   final checkResponse = await http.get(
-    Uri.parse('http://192.168.1.4:3000/inquiries/check-pending?userId=$userId&roomId=${room['_id']}'),
+    Uri.parse('http://192.168.1.8:3000/inquiries/check-pending?userId=$userId'),
     headers: {
       'Authorization': 'Bearer ${widget.token}',
     },
@@ -318,113 +322,114 @@ void _sendRentRequest(BuildContext context, Map<String, dynamic> room, DateTime?
 
   if (checkResponse.statusCode == 200) {
     final checkData = jsonDecode(checkResponse.body);
-    final bool hasPendingRequest = checkData['hasPendingRequest'] ?? false;
+    final bool hasPendingRequest = checkData['canInquire'] ?? false;
 
     if (hasPendingRequest) {
-      Get.snackbar(
-        '', // Leave title empty because we're using titleText for customization
-        '', // Leave message empty because we're using messageText for customization
-        duration: Duration(milliseconds: 1500),
-        titleText: Text(
-          'Failed',
-          style: TextStyle(color: Colors.orange, fontWeight: FontWeight.bold), // Customize the color of 'Success'
-        ),
-        messageText: Text(
-          'You already have a pending request to this room.', // Customize message text color if needed
-        ),
-      );
+      toastNotification.warn('You cannot inquire more than one room.');
     } else {
-      // Proceed with sending the request
-      final inquiryResponse = await http.post(
-        Uri.parse('http://192.168.1.4:3000/inquiries/create'),
+      // Check if the user can inquire about the room
+      final inquireCheckResponse = await http.get(
+        Uri.parse('http://192.168.1.8:3000/inquiries/check-pending?userId=$userId'), // New endpoint for inquiry check
         headers: {
           'Authorization': 'Bearer ${widget.token}',
-          'Content-Type': 'application/json',
         },
-        body: jsonEncode({
-          'roomId': '${room['_id']}',
-          'userId': userId,
-          'requestType': 'rent',
-          'status': 'pending',
-          'proposedStartDate': proposedStartDate?.toIso8601String(), // Send start date
-          'customTerms': customTerms, // Send custom terms
-        }),
       );
 
-      print('Inquiry Response: ${inquiryResponse.statusCode} - ${inquiryResponse.body}'); // Debugging line
+      if (inquireCheckResponse.statusCode == 200) {
+        final inquireCheckData = jsonDecode(inquireCheckResponse.body);
+        final bool canInquire = inquireCheckData['canInquire'] ?? false;
 
-      if (inquiryResponse.statusCode == 201) {
-        Get.snackbar(
-        '', // Leave title empty because we're using titleText for customization
-        '', // Leave message empty because we're using messageText for customization
-        duration: Duration(milliseconds: 1500),
-        titleText: Text(
-          'Success',
-          style: TextStyle(color: Colors.green, fontWeight: FontWeight.bold), // Customize the color of 'Success'
-        ),
-        messageText: Text(
-          'Rent request sent!', // Customize message text color if needed
-        ),
-      );
-        
-        // Disable further requests
-        setState(() {
-          room['pendingRequest'] = true; // Mark room as having a pending request
-        });
+        if (!canInquire) {
+          toastNotification.warn('You cannot inquire more than one room.');
+          return; // Exit the function if the user cannot inquire
+        }
 
-        // Fetch landlord's email using the provided endpoint
-        final landlordEmailResponse = await http.get(
-          Uri.parse('http://192.168.1.4:3000/rooms/landlord-email/${room['_id']}'),
+        // Proceed with sending the request
+        final inquiryResponse = await http.post(
+          Uri.parse('http://192.168.1.8:3000/inquiries/create'),
           headers: {
             'Authorization': 'Bearer ${widget.token}',
+            'Content-Type': 'application/json',
           },
+          body: jsonEncode({
+            'roomId': '${room['_id']}',
+            'userId': userId,
+            'requestType': 'rent',
+            'status': 'pending',
+            'proposedStartDate': proposedStartDate?.toIso8601String(), // Send start date
+            'customTerms': customTerms, // Send custom terms
+          }),
         );
 
-        if (landlordEmailResponse.statusCode == 200) {
-          final landlordData = jsonDecode(landlordEmailResponse.body);
-          final String landlordEmail = landlordData['landlordEmail']; // Adjust according to the response structure
+        print('Inquiry Response: ${inquiryResponse.statusCode} - ${inquiryResponse.body}'); // Debugging line
 
-          // Now send notification to landlord
-          final notificationBody = {
-            'userId': "${room['ownerId']}",
-            'message': 'You have a new rent inquiry for room ${room['roomNumber']}.',
-            'roomId': room['_id'],
-            'roomNumber': room['roomNumber'],
-            'requesterEmail': landlordEmail, // The email of the landlord
-            'inquiryId': jsonDecode(inquiryResponse.body)['_id'],
-          };
+        if (inquiryResponse.statusCode == 201) {
+          toastNotification.success('Rent request sent!');
 
-          // Send notification request
-          final notificationResponse = await http.post(
-            Uri.parse('http://192.168.1.4:3000/notification/create'),
+          // Disable further requests
+          setState(() {
+            room['pendingRequest'] = true; // Mark room as having a pending request
+          });
+
+          // Fetch landlord's email using the provided endpoint
+          final landlordEmailResponse = await http.get(
+            Uri.parse('http://192.168.1.8:3000/rooms/landlord-email/${room['_id']}'),
             headers: {
               'Authorization': 'Bearer ${widget.token}',
-              'Content-Type': 'application/json',
             },
-            body: jsonEncode(notificationBody),
           );
 
-          // Debugging: Print notification response status and body
-          print('Notification Request Status Code: ${notificationResponse.statusCode}');
-          print('Notification Request Response Body: ${notificationResponse.body}');
+          if (landlordEmailResponse.statusCode == 200) {
+            final landlordData = jsonDecode(landlordEmailResponse.body);
+            final String landlordEmail = landlordData['landlordEmail']; // Adjust according to the response structure
 
-          if (notificationResponse.statusCode == 201) {
-            print('Notification sent successfully.');
+            // Now send notification to landlord
+            final notificationBody = {
+              'userId': "${room['ownerId']}",
+              'message': 'You have a new rent inquiry for room ${room['roomNumber']}.',
+              'roomId': room['_id'],
+              'roomNumber': room['roomNumber'],
+              'requesterEmail': landlordEmail, // The email of the landlord
+              'inquiryId': jsonDecode(inquiryResponse.body)['_id'],
+            };
+
+            // Send notification request
+            final notificationResponse = await http.post(
+              Uri.parse('http://192.168.1.8:3000/notification/create'),
+              headers: {
+                'Authorization': 'Bearer ${widget.token}',
+                'Content-Type': 'application/json',
+              },
+              body: jsonEncode(notificationBody),
+            );
+
+            // Debugging: Print notification response status and body
+            print('Notification Request Status Code: ${notificationResponse.statusCode}');
+            print('Notification Request Response Body: ${notificationResponse.body}');
+
+            if (notificationResponse.statusCode == 201) {
+              print('Notification sent successfully.');
+            } else {
+              Fluttertoast.showToast(
+                msg: 'Failed to send notification to landlord.',
+                backgroundColor: Colors.red,
+              );
+            }
           } else {
             Fluttertoast.showToast(
-              msg: 'Failed to send notification to landlord.',
+              msg: 'Failed to fetch landlord email.',
               backgroundColor: Colors.red,
             );
           }
         } else {
           Fluttertoast.showToast(
-            msg: 'Failed to fetch landlord email.',
+            msg: 'Failed to send request',
             backgroundColor: Colors.red,
           );
         }
       } else {
         Fluttertoast.showToast(
-          msg: 'Failed to send request',
+          msg: 'Failed to check inquire status',
           backgroundColor: Colors.red,
         );
       }
@@ -536,19 +541,9 @@ void _showRentConfirmation(BuildContext context, Map<String, dynamic> room, Them
                           ),
                         ),
                         onPressed: () {
+                          Navigator.pop(context);
                           if (_selectedStartDate == null) {
-                            Get.snackbar(
-        '', // Leave title empty because we're using titleText for customization
-        '', // Leave message empty because we're using messageText for customization
-        duration: Duration(milliseconds: 1500),
-        titleText: Text(
-          'Failed',
-          style: TextStyle(color: Colors.orange, fontWeight: FontWeight.bold), // Customize the color of 'Success'
-        ),
-        messageText: Text(
-          'Please select start date!', // Customize message text color if needed
-        ),
-      );
+                            toastNotification.warn('Please select start date!');
                           } else {
                             Navigator.pop(context);
                             _sendRentRequest(context, room, _selectedStartDate, _termsController.text); // Proceed to send rent request
@@ -608,9 +603,11 @@ void _showDurationPicker(BuildContext context, Map<String, dynamic> room, ThemeC
 
 
 void _sendReserveRequest(BuildContext context, Map<String, dynamic> room, int selectedReservationDuration) async {
-  // Check if there is a pending request before proceeding
+  // Create an instance of ToastNotification
+
+  // Check if the user can inquire before proceeding
   final checkResponse = await http.get(
-    Uri.parse('http://192.168.1.4:3000/inquiries/check-pending?userId=$userId&roomId=${room['_id']}'),
+    Uri.parse('http://192.168.1.8:3000/inquiries/check-pending?userId=$userId'),
     headers: {
       'Authorization': 'Bearer ${widget.token}',
     },
@@ -618,133 +615,98 @@ void _sendReserveRequest(BuildContext context, Map<String, dynamic> room, int se
 
   if (checkResponse.statusCode == 200) {
     final checkData = jsonDecode(checkResponse.body);
-    final bool hasPendingRequest = checkData['hasPendingRequest'] ?? false;
+    final bool canInquire = checkData['canInquire'] ?? true; // Updated field for checking if inquiry can be made
 
-    if (hasPendingRequest) {
-      Get.snackbar(
-        '', // Leave title empty because we're using titleText for customization
-        '', // Leave message empty because we're using messageText for customization
-        duration: Duration(milliseconds: 1500),
-        titleText: Text(
-          'Failed',
-          style: TextStyle(color: Colors.orange, fontWeight: FontWeight.bold), // Customize the color of 'Success'
-        ),
-        messageText: Text(
-          'You already have a pending request for this room', // Customize message text color if needed
-        ),
-      );
-    } else {
-      // Prepare the request body for inquiry
-      final requestBody = {
-        'roomId': '${room['_id']}',
-        'userId': userId,
-        'requestType': 'reservation',
-        'status': 'pending',
-        'reservationDuration': selectedReservationDuration,
-      };
+    if (!canInquire) {
+      toastNotification.error('You already have a pending or approved request for this room');
+      return; // Exit early if the user can't inquire
+    }
 
-      // Debugging: Print request payload
-      print('Inquiry Creation Request Payload: $requestBody');
+    // Prepare the request body for inquiry
+    final requestBody = {
+      'roomId': '${room['_id']}',
+      'userId': userId,
+      'requestType': 'reservation',
+      'status': 'pending',
+      'reservationDuration': selectedReservationDuration,
+    };
 
-      // Proceed with sending the reservation request
-      final inquiryResponse = await http.post(
-        Uri.parse('http://192.168.1.4:3000/inquiries/create'),
+    // Debugging: Print request payload
+    print('Inquiry Creation Request Payload: $requestBody');
+
+    // Proceed with sending the reservation request
+    final inquiryResponse = await http.post(
+      Uri.parse('http://192.168.1.8:3000/inquiries/create'),
+      headers: {
+        'Authorization': 'Bearer ${widget.token}',
+        'Content-Type': 'application/json',
+      },
+      body: jsonEncode(requestBody),
+    );
+
+    // Debugging: Print response status and body
+    print('Inquiry Creation Request Status Code: ${inquiryResponse.statusCode}');
+    print('Inquiry Creation Request Response Body: ${inquiryResponse.body}');
+
+    if (inquiryResponse.statusCode == 201) {
+      toastNotification.success('Reservation request sent!');
+
+      // Disable further requests
+      setState(() {
+        room['pendingRequest'] = true; // Mark room as having a pending request
+      });
+
+      // Fetch landlord's email using the provided endpoint
+      final landlordEmailResponse = await http.get(
+        Uri.parse('http://192.168.1.8:3000/rooms/landlord-email/${room['_id']}'),
         headers: {
           'Authorization': 'Bearer ${widget.token}',
-          'Content-Type': 'application/json',
         },
-        body: jsonEncode(requestBody),
       );
 
-      // Debugging: Print response status and body
-      print('Inquiry Creation Request Status Code: ${inquiryResponse.statusCode}');
-      print('Inquiry Creation Request Response Body: ${inquiryResponse.body}');
+      if (landlordEmailResponse.statusCode == 200) {
+        final landlordData = jsonDecode(landlordEmailResponse.body);
+        final String landlordEmail = landlordData['landlordEmail']; // Adjust according to the response structure
 
-      if (inquiryResponse.statusCode == 201) {
-        Get.snackbar(
-        '', // Leave title empty because we're using titleText for customization
-        '', // Leave message empty because we're using messageText for customization
-        duration: Duration(milliseconds: 1500),
-        titleText: Text(
-          'Success',
-          style: TextStyle(color: Colors.green, fontWeight: FontWeight.bold), // Customize the color of 'Success'
-        ),
-        messageText: Text(
-          'Reservation request sent!', // Customize message text color if needed
-        ),
-      );
-        // Disable further requests
-        setState(() {
-          room['pendingRequest'] = true; // Mark room as having a pending request
-        });
+        // Now send notification to landlord
+        final notificationBody = {
+          'userId': room['ownerId'],
+          'message': 'You have a new reservation inquiry for room ${room['roomNumber']}.',
+          'roomId': room['_id'],
+          'roomNumber': room['roomNumber'],
+          'requesterEmail': landlordEmail, // The email of the landlord
+          'inquiryId': jsonDecode(inquiryResponse.body)['_id'],
+        };
 
-        // Fetch landlord's email using the provided endpoint
-        final landlordEmailResponse = await http.get(
-          Uri.parse('http://192.168.1.4:3000/rooms/landlord-email/${room['_id']}'),
+        // Send notification request
+        final notificationResponse = await http.post(
+          Uri.parse('http://192.168.1.8:3000/notification/create'),
           headers: {
             'Authorization': 'Bearer ${widget.token}',
+            'Content-Type': 'application/json',
           },
+          body: jsonEncode(notificationBody),
         );
 
-        if (landlordEmailResponse.statusCode == 200) {
-          final landlordData = jsonDecode(landlordEmailResponse.body);
-          final String landlordEmail = landlordData['landlordEmail']; // Adjust according to the response structure
+        // Debugging: Print notification response status and body
+        print('Notification Request Status Code: ${notificationResponse.statusCode}');
+        print('Notification Request Response Body: ${notificationResponse.body}');
 
-          // Now send notification to landlord
-          final notificationBody = {
-            'userId': room['ownerId'],
-            'message': 'You have a new reservation inquiry for room ${room['roomNumber']}.',
-            'roomId': room['_id'],
-            'roomNumber': room['roomNumber'],
-            'requesterEmail': landlordEmail, // The email of the landlord
-            'inquiryId': jsonDecode(inquiryResponse.body)['_id'],
-          };
-
-          // Send notification request
-          final notificationResponse = await http.post(
-            Uri.parse('http://192.168.1.4:3000/notification/create'),
-            headers: {
-              'Authorization': 'Bearer ${widget.token}',
-              'Content-Type': 'application/json',
-            },
-            body: jsonEncode(notificationBody),
-          );
-
-          // Debugging: Print notification response status and body
-          print('Notification Request Status Code: ${notificationResponse.statusCode}');
-          print('Notification Request Response Body: ${notificationResponse.body}');
-
-          if (notificationResponse.statusCode == 201) {
-            print('Notification sent successfully.');
-          } else {
-            Fluttertoast.showToast(
-              msg: 'Failed to send notification to landlord.',
-              backgroundColor: Colors.red,
-            );
-          }
+        if (notificationResponse.statusCode == 201) {
+          print('Notification sent successfully.');
         } else {
-          Fluttertoast.showToast(
-            msg: 'Failed to fetch landlord email.',
-            backgroundColor: Colors.red,
-          );
+          toastNotification.error('Failed to send notification to landlord.');
         }
       } else {
-        Fluttertoast.showToast(
-          msg: 'Failed to send request',
-          backgroundColor: Colors.red,
-        );
+        toastNotification.error('Failed to fetch landlord email.');
       }
+    } else {
+      toastNotification.error('Failed to send request');
     }
   } else {
-    Fluttertoast.showToast(
-      msg: 'Failed to check request status',
-      backgroundColor: Colors.red,
-    );
+    toastNotification.error('Failed to check request status');
   }
 }
-
-
-
 
 
 void _showReservationConfirmation(BuildContext context, Map<String, dynamic> room, ThemeController themeController, int selectedReservationDuration) {
@@ -766,7 +728,7 @@ void _showReservationConfirmation(BuildContext context, Map<String, dynamic> roo
               Text('Reservation Duration: $selectedReservationDuration Days'), // Show selected duration here
               const SizedBox(height: 16),
               const Text(
-                'Warning: The reservation fee is non-refundable.',
+                'Warning: The reservation fee might be non-refundable depends on the landlord.',
                 style: TextStyle(color: CupertinoColors.systemRed, fontWeight: FontWeight.bold),
               ),
             ],
@@ -785,7 +747,7 @@ void _showReservationConfirmation(BuildContext context, Map<String, dynamic> roo
                 _sendReserveRequest(context, room, selectedReservationDuration); // Pass selected duration to request
               },
               isDestructiveAction: true,
-              child: const Text('Send Reserve Request'),
+              child: const Text('Send Reserve Request', style: TextStyle(color: Colors.blue),),
             ),
           ],
         ),

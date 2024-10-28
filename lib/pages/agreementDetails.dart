@@ -31,7 +31,7 @@ class _AgreementDetailsState extends State<AgreementDetails> {
   }
 
   Future<void> fetchAgreementDetails() async {
-    final String apiUrl = 'http://192.168.1.4:3000/rental-agreement/inquiry/${widget.inquiryId}';
+    final String apiUrl = 'http://192.168.1.8:3000/rental-agreement/inquiry/${widget.inquiryId}';
     print('Fetching agreement details from: $apiUrl'); // Debugging statement
 
     try {
@@ -86,7 +86,7 @@ class _AgreementDetailsState extends State<AgreementDetails> {
         print('Fetching landlord details for ID: $landlordId'); // Debug log
 
         final landlordResponse = await http.get(
-          Uri.parse('http://192.168.1.4:3000/user/$landlordId'), // Correct URL
+          Uri.parse('http://192.168.1.8:3000/user/$landlordId'), // Correct URL
         );
 
         if (landlordResponse.statusCode == 200) {
@@ -108,7 +108,7 @@ class _AgreementDetailsState extends State<AgreementDetails> {
         print('Fetching occupant details for ID: $occupantId'); // Debug log
 
         final occupantResponse = await http.get(
-          Uri.parse('http://192.168.1.4:3000/user/$occupantId'), // Correct URL
+          Uri.parse('http://192.168.1.8:3000/user/$occupantId'), // Correct URL
         );
 
         if (occupantResponse.statusCode == 200) {

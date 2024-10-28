@@ -76,7 +76,15 @@ dependencies:
   flutter_colorpicker: ^1.1.0
   flutter_native_splash: ^2.4.2
   provider: ^6.1.2
-  
+  tutorial_coach_mark: ^1.2.11
+  flutter_email_sender: ^6.0.3
+  onesignal_flutter: ^5.2.6
+  percent_indicator: ^4.2.3
+  awesome_snackbar_content: ^0.1.4
+  cached_network_image: ^3.4.1
+  calendar_view: ^1.2.0
+  timelines_plus: ^1.0.3
+  animations: ^2.0.11
 
 
 

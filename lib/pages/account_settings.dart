@@ -37,7 +37,7 @@ class _AccountSettingsState extends State<AccountSettings> {
   }
 
   Future<void> _updateEmail(String newEmail) async {
-    final url = Uri.parse('http://192.168.1.4:3000/updateUserInfo');
+    final url = Uri.parse('http://192.168.1.8:3000/updateUserInfo');
     try {
       final response = await http.patch(
         url,
@@ -88,7 +88,7 @@ class _AccountSettingsState extends State<AccountSettings> {
   }
 
   Future<void> _updatePassword(String currentPassword, String newPassword) async {
-    final url = Uri.parse('http://192.168.1.4:3000/updatePassword');
+    final url = Uri.parse('http://192.168.1.8:3000/updatePassword');
     try {
       final response = await http.patch(
         url,

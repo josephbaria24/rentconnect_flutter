@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:awesome_snackbar_content/awesome_snackbar_content.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
@@ -6,29 +7,28 @@ import 'package:get/get.dart';
 import 'package:http/http.dart' as http;
 import 'package:jwt_decoder/jwt_decoder.dart';
 import 'package:lottie/lottie.dart';
+import 'package:onesignal_flutter/onesignal_flutter.dart';
 import 'package:rentcon/config.dart';
+import 'package:rentcon/pages/components/awesome_snackbar.dart';
+import 'package:rentcon/pages/components/filterChips.dart';
 import 'package:rentcon/pages/components/notification_stream.dart';
 import 'package:rentcon/pages/components/property_card.dart';
 import 'package:rentcon/pages/components/rangeSlider.dart';
 import 'package:rentcon/pages/components/searchField.dart';
 import 'package:rentcon/pages/components/setupProfileButton.dart';
 import 'package:rentcon/pages/components/shadNotif.dart';
-import 'package:rentcon/pages/components/showFilterDialog.dart';
-import 'package:rentcon/pages/fullscreenImage.dart';
 import 'package:rentcon/navigation_menu.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:rentcon/pages/landlords/current_listing.dart';
 import 'package:rentcon/pages/occupants/occupant_inquiries.dart';
-import 'package:rentcon/pages/propertyDetailPage.dart';
 import 'package:rentcon/pages/search_result.dart';
-import 'package:rentcon/pages/services/socket_service.dart';
 import 'package:shadcn_ui/shadcn_ui.dart';
 import 'toast.dart';
 import 'package:rentcon/theme_controller.dart';
 import '../models/property.dart';
 import 'global_loading_indicator.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
-
+import 'package:onesignal_flutter/onesignal_flutter.dart';
 
 class HomePage extends StatefulWidget {
   final String token;
@@ -64,6 +64,7 @@ class _HomePageState extends State<HomePage> {
   final TextEditingController _maxPriceController = TextEditingController();
   final ThemeController _themeController = Get.find<ThemeController>();
 late FToast fToast;
+
   @override
   void initState() {
     super.initState();
@@ -86,33 +87,49 @@ late FToast fToast;
       });
     });
     fetchUserProfileStatus();
-    
-    // Connect
-    
+    initPlatform();
+     _updateNotifications();
   }
 Stream<List<dynamic>> notificationStream = NotificationStream().stream.cast<List<dynamic>>();
 
 
 
-    void _showNewNotificationDialog(dynamic notificationData) {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: Text('New Notification'),
-          content: Text('You have a new inquiry: ${notificationData['message']}'),
-          actions: <Widget>[
-            TextButton(
-              child: Text('Close'),
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
-            ),
-          ],
-        );
-      },
-    );
+
+
+  // Method to fetch notifications and update state
+  Future<void> _updateNotifications() async {
+    // Your logic to fetch notifications goes here
+    final fetchedNotifications = await fetchNotifications(userId, widget.token); // Implement this
+    setState(() {
+      notifications = fetchedNotifications;
+      hasNewNotifications = notifications.isNotEmpty;
+    });
   }
+
+
+
+
+  void onNotificationsUpdated(List<dynamic> updatedNotifications) {
+    setState(() {
+      notifications = updatedNotifications;
+      hasNewNotifications = notifications.isNotEmpty;
+    });
+  }
+
+
+
+
+
+
+
+Future<void> initPlatform() async {
+  OneSignal.initialize("af1220cb-edec-447f-a4e2-8bc6b7638322");
+  await OneSignal.User.getOnesignalId().then(
+    (value) => {
+      print(value),
+    },); 
+}
+
 
   @override
   void dispose() {
@@ -127,7 +144,7 @@ Stream<List<dynamic>> notificationStream = NotificationStream().stream.cast<List
 
   Future<void> fetchUserProfileStatus() async {
     final url = Uri.parse(
-        'http://192.168.1.4:3000/profile/checkProfileCompletion/$userId'); // Replace with your API endpoint
+        'http://192.168.1.8:3000/profile/checkProfileCompletion/$userId'); // Replace with your API endpoint
     try {
       final response = await http.get(
         url,
@@ -155,7 +172,7 @@ Stream<List<dynamic>> notificationStream = NotificationStream().stream.cast<List
 
   Future<void> fetchUserProfileStatusForNotification() async {
     final url = Uri.parse(
-        'http://192.168.1.4:3000/profile/checkProfileCompletion/$userId'); // Your API endpoint
+        'http://192.168.1.8:3000/profile/checkProfileCompletion/$userId'); // Your API endpoint
     try {
       final response = await http.get(
         url,
@@ -239,7 +256,7 @@ Future<List<Property>> fetchProperties() async {
   Future<List<dynamic>> fetchRooms(String propertyId) async {
     try {
       final response = await http.get(Uri.parse(
-          'http://192.168.1.4:3000/rooms/properties/$propertyId/rooms'));
+          'http://192.168.1.8:3000/rooms/properties/$propertyId/rooms'));
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         if (data['status']) {
@@ -316,7 +333,7 @@ Future<List<Property>> fetchProperties() async {
     try {
       final response = await http.get(
         Uri.parse(
-            'http://192.168.1.4:3000/getUserBookmarks/$userId'), // Adjust endpoint if necessary
+            'http://192.168.1.8:3000/getUserBookmarks/$userId'), // Adjust endpoint if necessary
         headers: {
           'Authorization': 'Bearer ${widget.token}',
         },
@@ -342,7 +359,7 @@ Future<List<Property>> fetchProperties() async {
   Future<String> fetchUserEmail(String userId) async {
     try {
       final response = await http.get(Uri.parse(
-          'http://192.168.1.4:3000/getUserEmail/$userId'));
+          'http://192.168.1.8:3000/getUserEmail/$userId'));
 
       if (response.statusCode == 200) {
         final Map<String, dynamic> json = jsonDecode(response.body);
@@ -378,112 +395,9 @@ Future<List<Property>> fetchProperties() async {
 
 
 
- Future<void> bookmarkProperty(String propertyId, Function onUpdate) async {
-    final url = Uri.parse('http://192.168.1.4:3000/addBookmark');
-    final Map<String, dynamic> jwtDecodedToken = JwtDecoder.decode(widget.token);
-    String userId = jwtDecodedToken['_id']?.toString() ?? 'Unknown user ID';
 
-    try {
-      if (bookmarkedPropertyIds.contains(propertyId)) {
-        // If already bookmarked, remove it
-        final removeUrl = Uri.parse('http://192.168.1.4:3000/removeBookmark');
-        await http.post(removeUrl,
-            headers: {
-              'Authorization': 'Bearer ${widget.token}',
-              'Content-Type': 'application/json',
-            },
-            body: jsonEncode({
-              'userId': userId,
-              'propertyId': propertyId,
-            }));
-
-        // setState(() {
-        //   bookmarkedPropertyIds.remove(propertyId); // Update local state
-        //   filteredProperties = filteredProperties
-        //       .where((property) => property.id != propertyId)
-        //       .toList();
-        // });
-          onUpdate(false);
-        // Show success toast for removal
-       Get.snackbar(
-        '', // Leave title empty because we're using titleText for customization
-        '', // Leave message empty because we're using messageText for customization
-        duration: Duration(milliseconds: 1500),
-        titleText: Text(
-          'Success',
-          style: TextStyle(color: _themeController.isDarkMode.value? Colors.green:Color.fromARGB(255, 0, 253, 8), fontWeight: FontWeight.bold, fontSize: 20) // Customize the color of 'Success'
-        ),
-        messageText: Text(
-          'Property removed from bookmarks!', // Customize message text color if needed
-        ),
-      );
-
-      } else {
-        // If not bookmarked, add it
-        await http.post(url,
-            headers: {
-              'Authorization': 'Bearer ${widget.token}',
-              'Content-Type': 'application/json',
-            },
-            body: jsonEncode({
-              'userId': userId,
-              'propertyId': propertyId,
-            }));
-
-        // setState(() {
-        //   bookmarkedPropertyIds.add(propertyId); // Update local state
-        // });
-
-
-        onUpdate(true);
-        // Show success toast for addition
-        Get.snackbar(
-        '', // Leave title empty because we're using titleText for customization
-        '', // Leave message empty because we're using messageText for customization
-        duration: Duration(milliseconds: 1500),
-        titleText: Text(
-          'Success',
-          style: TextStyle(color: _themeController.isDarkMode.value? Colors.green:Color.fromARGB(255, 0, 253, 8), fontWeight: FontWeight.bold, fontSize: 20), // Customize the color of 'Success'
-        ),
-        messageText: Text(
-          'Property added to bookmarks!', // Customize message text color if needed
-        ),
-      );
-      }
-
-      // Refresh properties to reflect changes immediately
-      //await _refreshProperties();
-    } catch (error) {
-      print('Error toggling bookmark: $error');
-      // Show error message with a toast
-      Get.snackbar('Error','Error toggling bookmark!',duration: Duration(milliseconds: 1500)
-            );
-    }
-  }
  
  
-  // Function to show Cupertino alert dialog
-  void _showCupertinoAlertDialog(String message) {
-    showCupertinoDialog(
-      context: context,
-      builder: (context) {
-        return CupertinoAlertDialog(
-          title: const Text('Notification'),
-          content: Text(message),
-          actions: <Widget>[
-            CupertinoDialogAction(
-              onPressed: () {
-                Navigator.of(context).pop(); // Close the dialog
-              },
-              isDefaultAction: true,
-              child: const Text('OK'),
-            ),
-          ],
-        );
-      },
-    );
-  }
-
 
   void _performSearch() async {
     final query = _searchController.text;
@@ -560,16 +474,16 @@ Future<List<Property>> fetchProperties() async {
     try {
       final response = await http.get(
         Uri.parse(
-            'http://192.168.1.4:3000/notification/unread/$userId'),
+            'http://192.168.1.8:3000/notification/unread/$userId'),
         headers: {
           'Authorization': 'Bearer $token',
           'Content-Type': 'application/json',
         },
       );
 
-      // Print the status code and response body to debug
-      print('Response Status: ${response.statusCode}');
-      print('Response Body: ${response.body}');
+      // // Print the status code and response body to debug
+      // print('Response Status: ${response.statusCode}');
+      // print('Response Body: ${response.body}');
 
       if (response.statusCode == 200) {
         final Map<String, dynamic> data = jsonDecode(response.body);
@@ -594,47 +508,6 @@ Future<List<Property>> fetchProperties() async {
     }
   }
 
-void _showNotificationsModal(List<dynamic> notifications) {
-  showCupertinoModalPopup(
-    context: context,
-    builder: (BuildContext context) {
-      // Get the current theme's brightness
-      final isDarkMode = _themeController.isDarkMode.value;
-
-      return CupertinoActionSheet(
-        title: const Text('Notifications'),
-        message: notifications.isEmpty
-            ? const Text('No notifications available.')
-            : null,
-        actions: notifications.isNotEmpty
-            ? notifications.map((notification) {
-                final status = notification['status'] ?? 'No status available';
-
-                return CupertinoActionSheetAction(
-                  onPressed: () {
-                    // Optionally mark as read when tapped
-                    if (status == 'unread') {
-                      _markNotificationAsRead(notification['_id']);
-                    }
-                    Navigator.pop(context); // Close the modal
-                  },
-                  child: Text(notification['message'] ?? 'No message available'),
-                );
-              }).toList()
-            : [],
-        cancelButton: CupertinoActionSheetAction(
-          onPressed: () {
-            Navigator.pop(context); // Close the modal
-          },
-          isDefaultAction: true,
-          child: const Text('Close'),
-        ),
-      );
-    },
-  );
-}
-
-
 
   Future<void> _markAllAsRead() async {
     setState(() {
@@ -650,34 +523,11 @@ void _showNotificationsModal(List<dynamic> notifications) {
     print('All notifications marked as read locally.');
   }
 
-  Future<void> _clearNotifications() async {
-    try {
-      final response = await http.delete(
-        Uri.parse(
-            'http://192.168.1.4:3000/notification/clear/$userId'),
-        headers: {
-          'Authorization': 'Bearer ${widget.token}',
-        },
-      );
-
-      if (response.statusCode == 200) {
-        setState(() {
-          notifications.clear();
-          hasNewNotifications = false;
-        });
-        print('Notifications cleared successfully');
-      } else {
-        print('Failed to clear notifications: ${response.statusCode}');
-      }
-    } catch (e) {
-      print('Error clearing notifications: $e');
-    }
-  }
 
   Future<void> _markNotificationAsRead(String notificationId) async {
     final response = await http.patch(
       Uri.parse(
-          'http://192.168.1.4:3000/notification/$notificationId/read'),
+          'http://192.168.1.8:3000/notification/$notificationId/read'),
       headers: {
         'Authorization': 'Bearer ${widget.token}',
         'Content-Type': 'application/json',
@@ -691,15 +541,120 @@ void _showNotificationsModal(List<dynamic> notifications) {
     }
   }
 
-
+   final List<String> filters = ['All', 'Boarding House', 'Apartment'];
+    String selectedFilter = 'All'; // State for selected filter
   
+    
+void onSelected(String filter) async {
+  setState(() {
+    selectedFilter = filter; // Update the selected filter
+  });
+
+  // Fetch the properties again and filter them
+  final properties = await propertiesFuture; // Ensure propertiesFuture is a future that resolves to the property list
+
+  // Reset filtered properties based on the selection
+  List<Property> filteredProperties;
+
+  if (selectedFilter == 'All') {
+    // When 'All' is selected, use the entire properties list
+    filteredProperties = properties; // No filtering, show all
+  } else {
+    // Apply the filter for specific property types
+    filteredProperties = properties.where((property) => property.typeOfProperty?.toLowerCase() == selectedFilter.toLowerCase()).toList();
+  }
+
+  setState(() {
+    this.filteredProperties = filteredProperties; // Update the state with filtered properties
+  });
+}
+
+
+
+Future<void> bookmarkProperty(String propertyId, Function(bool isBookmarked) onUpdate) async {
+  final url = Uri.parse('http://192.168.1.8:3000/addBookmark');
+  final Map<String, dynamic> jwtDecodedToken = JwtDecoder.decode(widget.token);
+  String userId = jwtDecodedToken['_id']?.toString() ?? 'Unknown user ID';
+
+  try {
+    if (bookmarkedPropertyIds.contains(propertyId)) {
+      // If already bookmarked, remove it
+      final removeUrl = Uri.parse('http://192.168.1.8:3000/removeBookmark');
+      await http.post(removeUrl,
+          headers: {
+            'Authorization': 'Bearer ${widget.token}',
+            'Content-Type': 'application/json',
+          },
+          body: jsonEncode({
+            'userId': userId,
+            'propertyId': propertyId,
+          }));
+
+      // Immediately trigger the callback to indicate removal
+      onUpdate(false);
+
+      // Show success toast for removal
+      AwesomeSnackBarWidget.showSnackBar(
+        context: context,
+        title: 'Oh Hey!',
+        message: 'Successfully removed from bookmark!',
+        contentType: ContentType.warning,
+      );
+
+      // Update state after a 1.5-second delay
+      await Future.delayed(Duration(milliseconds: 0));
+      setState(() {
+        bookmarkedPropertyIds.remove(propertyId);
+       // filteredProperties = filteredProperties.where((property) => property.id != propertyId).toList();
+      });
+
+    } else {
+      // If not bookmarked, add it
+      await http.post(url,
+          headers: {
+            'Authorization': 'Bearer ${widget.token}',
+            'Content-Type': 'application/json',
+          },
+          body: jsonEncode({
+            'userId': userId,
+            'propertyId': propertyId,
+          }));
+
+      // Immediately trigger the callback to indicate addition
+      onUpdate(true);
+
+      // Show success toast for addition
+      AwesomeSnackBarWidget.showSnackBar(
+        context: context,
+        title: 'Oh Hey!',
+        message: 'Successfully added to bookmark!',
+        contentType: ContentType.success,
+      );
+
+      // Update state after a 1.5-second delay
+      await Future.delayed(Duration(milliseconds: 0));
+      setState(() {
+        bookmarkedPropertyIds.add(propertyId);
+      });
+    }
+  } catch (error) {
+    print('Error toggling bookmark: $error');
+    // Show error message with a toast
+    Get.snackbar(
+      'Error',
+      'Error toggling bookmark!',
+      duration: Duration(milliseconds: 1500),
+    );
+  }
+}
 
 @override
 Widget build(BuildContext context) {
-  print('Notifications fetched: ${notifications}');
+  //print('Notifications fetched: ${notifications}');
   ftoast = FToast();
   ftoast.init(context);
   final NavigationController controller = Get.find<NavigationController>();
+
 
   return Scaffold(
     appBar: AppBar(
@@ -840,6 +795,7 @@ Widget build(BuildContext context) {
                                             child: CardNotifications(
                                               userId: userId,
                                               token: widget.token,
+                                               onNotificationsUpdated: onNotificationsUpdated,
                                             ),
                                           ),
                                         );
@@ -926,7 +882,14 @@ body: Padding(
         },
         isFilterApplied: isFilterApplied,
       ),
-      SizedBox(height: 10),
+       SizedBox(height: 10),
+       // Updated FilterChips widget call
+          FilterChips(
+            filters: filters,
+            selectedFilter: selectedFilter,
+            onSelected: onSelected
+          ),
+          SizedBox(height: 5),
       Expanded(
         child: RefreshIndicator(
           color: Colors.black,
@@ -974,8 +937,11 @@ body: Padding(
                 return Center(child: Text('No properties available.'));
               } else {
                 final properties = searchQuery.isEmpty
-                    ? snapshot.data!
-                    : filteredProperties;
+                    // ? snapshot.data!
+                    // : filteredProperties;
+                      ? filteredProperties // Use the filtered properties here
+                        : filteredProperties; // You might want to modify this to include search query filtering too
+
 
                 return ListView.builder(
                   itemCount: properties.length,
@@ -983,7 +949,7 @@ body: Padding(
                     final property = properties[index];
                     final imageUrl = property.photo.startsWith('http')
                         ? property.photo
-                        : 'http://192.168.1.4:3000/${property.photo}';
+                        : 'http://192.168.1.8:3000/${property.photo}';
 
                     return FutureBuilder<List<dynamic>>(
                       future: fetchRooms(property.id),
@@ -1012,7 +978,9 @@ body: Padding(
                                 userSnapshot.data!.isEmpty) {
                               return Center(child: Text('No user email found.'));
                             } else {
+
                               final userEmail = userSnapshot.data!;
+                              
                               return PropertyCard(
                                 userId: userId,
                                 token: widget.token,

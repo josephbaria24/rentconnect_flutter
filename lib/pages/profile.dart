@@ -24,6 +24,7 @@ import 'package:rentcon/pages/landlords/try.dart';
 import 'package:rentcon/pages/login.dart';
 import 'package:rentcon/pages/occupants/occupant_inquiries.dart';
 import 'package:rentcon/pages/profileSection/profileChecker.dart';
+import 'package:rentcon/pages/services/backend_service.dart';
 import 'package:rentcon/pages/toast.dart';
 import 'package:rentcon/theme_controller.dart';
 import 'package:shadcn_ui/shadcn_ui.dart';
@@ -46,6 +47,7 @@ class ProfilePage extends StatefulWidget {
 
 class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStateMixin {
   bool _loading = false;
+  final backendService = BackendService();
   late String email;
   late String userId;
   File? _profileImage;
@@ -124,7 +126,7 @@ Future<void> _toggleTheme(bool isDark) async {
 
   Future<void> _fetchUserProfile() async {
     final url = Uri.parse(
-        'http://192.168.1.4:3000/user/$userId'); // Adjust the endpoint if needed
+        'http://192.168.1.8:3000/user/$userId'); // Adjust the endpoint if needed
     try {
       final response = await http
           .get(url, headers: {'Authorization': 'Bearer ${widget.token}'});
@@ -144,7 +146,7 @@ Future<void> _toggleTheme(bool isDark) async {
 
   Future<void> fetchUserProfileStatus() async {
     final url = Uri.parse(
-        'http://192.168.1.4:3000/profile/checkProfileCompletion/$userId'); // Replace with your API endpoint
+        'http://192.168.1.8:3000/profile/checkProfileCompletion/$userId'); // Replace with your API endpoint
     try {
       final response = await http.get(
         url,
@@ -263,7 +265,7 @@ void _showLogoutConfirmationDialog(BuildContext context) {
 Future<void> _uploadProfilePicture() async {
   if (_profileImage != null) {
     final url =
-        Uri.parse('http://192.168.1.4:3000/updateProfilePicture/$userId');
+        Uri.parse('http://192.168.1.8:3000/updateProfilePicture/$userId');
     var request = http.MultipartRequest('PATCH', url)
       ..headers['Authorization'] = 'Bearer ${widget.token}';
 
@@ -372,6 +374,7 @@ Future<void> _uploadProfilePicture() async {
                 ? const Color.fromARGB(0, 0, 0, 0)
                 : const Color.fromARGB(0, 241, 212, 212),
             actions: [
+              
               Align(
                 alignment: Alignment.topLeft,
                 child: Row(

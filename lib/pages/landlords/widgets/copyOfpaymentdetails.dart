@@ -1,6 +1,6 @@
 // lib/components/payment_details.dart
 
-// ignore_for_file: prefer_const_constructors
+// ignore_for_file: prefer_const_constructors, prefer_final_fields, prefer_const_literals_to_create_immutables
 
 import 'dart:convert';
 import 'package:flutter/cupertino.dart';
@@ -11,7 +11,11 @@ import 'package:lottie/lottie.dart';
 import 'package:rentcon/pages/fullscreenImage.dart';
 import 'package:http/http.dart' as http;
 import 'package:rentcon/theme_controller.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:tutorial_coach_mark/tutorial_coach_mark.dart';
 import 'package:shadcn_ui/shadcn_ui.dart';
+import 'package:rentcon/pages/components/tutorial_targets.dart';
+
 
 class PaymentDetails extends StatefulWidget {
   final Map<String, dynamic>? room;
@@ -52,6 +56,20 @@ class _PaymentDetailsState extends State<PaymentDetails> {
   late ScrollController _scrollController;
   int _currentMonthIndex = 0; // Track the current month index
 
+    List<TargetFocus> targets = [];
+
+    GlobalKey _dueDateKey = GlobalKey();
+    GlobalKey _paymentStatus = GlobalKey();
+    GlobalKey _proofOfPaymentKey = GlobalKey();
+    GlobalKey _monthlyPaymentKey = GlobalKey();
+
+
+
+
+
+
+
+
   @override
   void initState() {
     super.initState();
@@ -70,7 +88,60 @@ class _PaymentDetailsState extends State<PaymentDetails> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _scrollToSelectedMonth(_currentMonthIndex);
     });
+
+
+
+     // Check if the tutorial should be shown (every 2 days)
+  WidgetsBinding.instance.addPostFrameCallback((_) async {
+    await _checkAndShowTutorial();
+  });
+    // Initialize targets
+    targets = createTutorialTargets(
+      _dueDateKey,
+      _paymentStatus,
+      _proofOfPaymentKey,
+      _monthlyPaymentKey,
+    );
   }
+
+
+// Function to check and show tutorial only once every 2 days
+Future<void> _checkAndShowTutorial() async {
+  SharedPreferences prefs = await SharedPreferences.getInstance();
+  int? lastShownTimestamp = prefs.getInt('last_tutorial_timestamp');
+  int currentTimestamp = DateTime.now().millisecondsSinceEpoch;
+
+  // Check if lastShownTimestamp exists and if it's been 2 days (2 * 24 * 60 * 60 * 1000 milliseconds)
+  if (lastShownTimestamp == null || currentTimestamp - lastShownTimestamp >= 2 * 24 * 60 * 60 * 1000) {
+    // Delay for 1 second, then show tutorial
+    Future.delayed(Duration(seconds: 1), () {
+      _showTutorial();
+    });
+
+    // Update the last shown timestamp
+    await prefs.setInt('last_tutorial_timestamp', currentTimestamp);
+  }
+}
+
+
+void _showTutorial() {
+    TutorialCoachMark(
+      opacityShadow: 0.8,
+      targets: targets,
+      colorShadow:_themeController.isDarkMode.value? const Color.fromARGB(255, 102, 102, 102): Colors.black.withOpacity(0.8),
+      textSkip: "SKIP",
+      alignSkip: Alignment.topRight,
+      textStyleSkip: TextStyle(color: _themeController.isDarkMode.value? Colors.white: Colors.white, fontFamily: 'geistsans', fontSize: 17, fontWeight: FontWeight.w600),
+      onFinish: () {
+        print("Tutorial finished");
+      },
+      onSkip: () {
+        print("Tutorial skipped");
+        return true; 
+      },
+    ).show(context: context);
+  }
+
 
   @override
   void dispose() {
@@ -92,10 +163,13 @@ class _PaymentDetailsState extends State<PaymentDetails> {
     });
   }
 
+
+
+
   Future<Map<String, dynamic>?> getProofOfPaymentForSelectedMonth(
       String roomId, String token, String selectedMonth) async {
     final String apiUrl =
-        'http://192.168.1.4:3000/payment/room/${widget.room?['_id']}/monthlyPayments';
+        'http://192.168.1.8:3000/payment/room/${widget.room?['_id']}/monthlyPayments';
 
     try {
       print('API URL: $apiUrl');
@@ -347,7 +421,7 @@ class _PaymentDetailsState extends State<PaymentDetails> {
 
   Future<void> updatePaymentStatus(String monthPaymentId, String status) async {
     final String apiUrl =
-        'http://192.168.1.4:3000/payment/monthlyPayments/$monthPaymentId/status';
+        'http://192.168.1.8:3000/payment/monthlyPayments/$monthPaymentId/status';
 
     try {
       final response = await http.put(
@@ -399,93 +473,94 @@ class _PaymentDetailsState extends State<PaymentDetails> {
     }
   }
 
-  @override
+
+
+
+
+@override
 Widget build(BuildContext context) {
   print(widget.room?['_id']);
   return Column(
     crossAxisAlignment: CrossAxisAlignment.start,
     children: [
-      Text(
-        'Rent payment details',
-        style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, fontFamily: 'geistsans'),
+      Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(
+            'Rent payment details',
+            style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, fontFamily: 'geistsans'),
+          ),
+          
+          IconButton(
+                icon: Icon(Icons.help_rounded, color: Colors.blue,),
+                onPressed: _showTutorial, // Trigger the tutorial
+              ),
+        ],
       ),
       const SizedBox(height: 5),
-      SizedBox(
-        width: double.infinity,
-        child: InkWell(
+      InkWell(
+         key: _dueDateKey,
           onTap: () => _selectDueDate(context),
           borderRadius: BorderRadius.circular(10),
-          child: Container(
-            decoration: BoxDecoration(
-              color: _themeController.isDarkMode.value
-                  ? const Color.fromARGB(185, 0, 12, 20)
-                  : Color.fromARGB(28, 75, 198, 207),
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: Padding(
-              padding: const EdgeInsets.only(right: 10, left: 10),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Expanded(
-                    child: SingleChildScrollView(
-                      scrollDirection: Axis.horizontal,
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Due Date: ${widget.selectedDueDate != null ? DateFormat('MMMM dd, yyyy').format(widget.selectedDueDate!) : 'N/A'}',
-                            style: TextStyle(
-                              fontWeight: FontWeight.w600,
-                              color: _themeController.isDarkMode.value
-                                  ? Colors.white
-                                  : Colors.black,
-                            ),
-                          ),
-                          Text(
-                            'Tap here to set due date',
-                            style: TextStyle(
-                              color: _themeController.isDarkMode.value
-                                  ? Colors.blueAccent
-                                  : Colors.blueAccent,
-                              fontFamily: 'geistsans',
-                              fontSize: 14,
-                            ),
-                          ),
-                        ],
+          child: SizedBox(
+            width: 230, // Set the desired width here
+            child: Container(
+              decoration: BoxDecoration(
+                border: Border.all(width: 1, color: _themeController.isDarkMode.value? Colors.white:Colors.black),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 3),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Due Date: ',
+                      style: TextStyle(
+                        fontWeight: FontWeight.w600,
+                        color: _themeController.isDarkMode.value
+                            ? Colors.white
+                            : Colors.black,
                       ),
                     ),
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.all(5.0),
-                    child: Container(
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(8),
-                        color: const Color.fromARGB(255, 248, 249, 250),
-                      ),
-                      height: 45,
-                      width: 45,
-                      child: Lottie.asset(
-                        'assets/icons/calendar.json',
-                        repeat: false,
-                        fit: BoxFit.contain,
+                    Expanded(
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color: _themeController.isDarkMode.value
+                              ? Colors.white
+                              : const Color.fromARGB(255, 0, 0, 0),
+                          borderRadius: BorderRadius.circular(7),
+                        ),
+                        alignment: Alignment.center, // Aligns text centrally
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 5.0, vertical: 3),
+                          child: Text(
+                            widget.selectedDueDate != null
+                                ? DateFormat('MMMM dd, yyyy').format(widget.selectedDueDate!)
+                                : 'Tap to Select Due Date',
+                            style: TextStyle(
+                              color: _themeController.isDarkMode.value
+                                  ? Colors.black
+                                  : Colors.white,
+                            ),
+                          ),
+                        ),
                       ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
           ),
         ),
-      ),
-      
       const SizedBox(height: 5),
       Container(
         padding: const EdgeInsets.all(10.0), // Add padding to the container
         decoration: BoxDecoration(
+          border: Border.all(width: 0.6),
           color: _themeController.isDarkMode.value
               ? const Color.fromARGB(185, 0, 12, 20) // Dark mode background
-              : const Color.fromARGB(28, 75, 148, 207), // Light mode background
+              : const Color.fromARGB(0, 75, 148, 207), // Light mode background
           borderRadius: BorderRadius.circular(10),
         ),
         child: Column(
@@ -513,6 +588,7 @@ Widget build(BuildContext context) {
 
             const SizedBox(height: 5),
             Row(
+              
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
@@ -530,7 +606,9 @@ Widget build(BuildContext context) {
               ],
             ),
             const SizedBox(height: 5),
-            buildMonthButtons(widget.room!, context, _currentMonthIndex),
+            Container(
+              key: _monthlyPaymentKey,
+              child: buildMonthButtons(widget.room!, context, _currentMonthIndex)),
             const SizedBox(height: 4),
             Text(
               'Proof of Payment:',
@@ -569,6 +647,7 @@ Widget build(BuildContext context) {
                             );
                           },
                           child: Container(
+                            key: _proofOfPaymentKey,
                             height: 130,
                             alignment: Alignment.center,
                             child: ClipRRect(
@@ -629,6 +708,7 @@ Widget build(BuildContext context) {
                           style: TextStyle(fontWeight: FontWeight.bold),
                         ),
                         Row(
+                          key: _paymentStatus,
                           children: [
                             ShadButton(
                               backgroundColor: _themeController.isDarkMode.value
@@ -667,40 +747,59 @@ Widget build(BuildContext context) {
                                 ),
                               ),
                             ),
-                            Row(
+                            SizedBox(width: 20),
+                           Wrap(
+                              spacing: 10.0,
+                              runSpacing: 5.0,
+                              alignment: WrapAlignment.start,
                               children: [
-                                Checkbox(
-                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(5)),
-                                  activeColor: const Color.fromARGB(255, 4, 230, 154),
-                                  value: _status == 'completed',
-                                  onChanged: (bool? value) {
-                                    setState(() {
-                                      if (value == true) {
-                                        _status = 'completed';
-                                      }
-                                    });
-                                  },
+                                Column(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    const Text(
+                                      'Complete',
+                                      style: TextStyle(fontFamily: 'geistsans', fontSize: 12, fontWeight: FontWeight.w600),
+                                      textAlign: TextAlign.center,
+                                    ),
+                                    Checkbox(
+                                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(5)),
+                                      activeColor: const Color.fromARGB(255, 4, 230, 154),
+                                      value: _status == 'completed',
+                                      onChanged: (bool? value) {
+                                        setState(() {
+                                          if (value == true) {
+                                            _status = 'completed';
+                                          }
+                                        });
+                                      },
+                                    ),
+                                  ],
                                 ),
-                                const Text('Complete', style: TextStyle(fontFamily: 'geistsans', fontSize: 12, fontWeight: FontWeight.w600)),
-                              ],
-                            ),
-                            Row(
-                              children: [
-                                Checkbox(
-                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(5)),
-                                  activeColor: const Color.fromARGB(255, 221, 6, 53),
-                                  value: _status == 'rejected',
-                                  onChanged: (bool? value) {
-                                    setState(() {
-                                      if (value == true) {
-                                        _status = 'rejected';
-                                      }
-                                    });
-                                  },
+                                Column(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    const Text(
+                                      'Reject',
+                                      style: TextStyle(fontFamily: 'geistsans', fontSize: 12, fontWeight: FontWeight.w600),
+                                      textAlign: TextAlign.center,
+                                    ),
+                                    Checkbox(
+                                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(5)),
+                                      activeColor: const Color.fromARGB(255, 221, 6, 53),
+                                      value: _status == 'rejected',
+                                      onChanged: (bool? value) {
+                                        setState(() {
+                                          if (value == true) {
+                                            _status = 'rejected';
+                                          }
+                                        });
+                                      },
+                                    ),
+                                  ],
                                 ),
-                                const Text('Reject', style: TextStyle(fontFamily: 'geistsans', fontSize: 12, fontWeight: FontWeight.w600)),
                               ],
-                            ),
+                            )
+
                           ],
                         ),
                       ],
@@ -721,6 +820,9 @@ Widget build(BuildContext context) {
     ],
   );
 }
+
+
+
 
 // Function to show Cupertino Dialog with payment status
 // Function to show Cupertino Dialog with all payment statuses (legend)
@@ -777,7 +879,7 @@ Widget build(BuildContext context) {
   Future<void> updateDueDate(
       String roomId, DateTime dueDate, String token) async {
     final String apiUrl =
-        'http://192.168.1.4:3000/rooms/${widget.room!['_id']}/due-date';
+        'http://192.168.1.8:3000/rooms/${widget.room!['_id']}/due-date';
 
     try {
       final response = await http.put(
@@ -851,7 +953,7 @@ Widget build(BuildContext context) {
 
 // Future<Map<String, dynamic>?> getProofOfPaymentForSelectedMonth(
 //     String roomId, String token, String selectedMonth) async {
-//   final String apiUrl = 'http://192.168.1.4:3000/payment/room/$roomId/monthlyPayments';
+//   final String apiUrl = 'http://192.168.1.8:3000/payment/room/$roomId/monthlyPayments';
 
 //   try {
 //     print('API URL: $apiUrl');

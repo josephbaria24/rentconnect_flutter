@@ -8,6 +8,7 @@ import 'package:http/http.dart' as http;
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:rentcon/pages/fullscreenImage.dart';
 import 'package:rentcon/pages/landlords/current_listing.dart';
 import 'package:rentcon/theme_controller.dart';
 import 'package:shadcn_ui/shadcn_ui.dart';
@@ -16,7 +17,7 @@ class ReservationDetails extends StatefulWidget {
   final Map<String, dynamic> room;
   final String token;
   final bool mounted;
-  final int reservationDuration; // Add reservationDuration field
+  final int? reservationDuration; // Add reservationDuration field
 
   ReservationDetails({
     required this.room,
@@ -31,8 +32,20 @@ class ReservationDetails extends StatefulWidget {
 
 class _ReservationDetailsState extends State<ReservationDetails> {
   Future<String?> fetchProofOfReservation(String roomId) async {
-    // Add your implementation here for fetching the proof of reservation
-    return null; // Placeholder
+    try {
+    // Example API call to fetch payment details
+    var response = await http.get(Uri.parse('http://192.168.1.8:3000/payment/room/$roomId/proofOfReservation'));
+    if (response.statusCode == 200) {
+      var data = jsonDecode(response.body);
+      return data['proofOfReservation']; // Ensure the key matches your backend response
+    } else {
+      // Handle error, return null if not available
+      return null;
+    }
+  } catch (e) {
+    // Handle any errors during the request
+    return null;
+  }
   }
   String? selectedUserId; 
 
@@ -40,7 +53,7 @@ Future<void> markRoomAsOccupied(String roomId) async {
   if (selectedUserId != null) {
     try {
       final response = await http.patch(
-        Uri.parse('http://192.168.1.4:3000/rooms/$roomId/occupy'),
+        Uri.parse('http://192.168.1.8:3000/rooms/$roomId/occupy'),
         headers: {'Content-Type': 'application/json'},
         body: json.encode({
           'userId': selectedUserId, // Pass the userId from approved inquiry
@@ -65,9 +78,6 @@ Future<void> markRoomAsOccupied(String roomId) async {
   }
 }
 
-  void showFullscreenImage(BuildContext context, String imageUrl) {
-    // Your logic to show a fullscreen image
-  }
 
 final ThemeController _themeController = Get.find<ThemeController>();
 
@@ -107,7 +117,7 @@ final ThemeController _themeController = Get.find<ThemeController>();
             } else if (snapshot.hasData && snapshot.data != null) {
               return GestureDetector(
                 onTap: () {
-                  showFullscreenImage(context, snapshot.data!);
+                 Navigator.push(context, MaterialPageRoute(builder: (context)=>  FullscreenImage(imageUrl: snapshot.data!)));
                 },
                 child: Container(
                   height: 100,

@@ -1,4 +1,4 @@
-// ignore_for_file: prefer_const_constructors, no_leading_underscores_for_local_identifiers
+// ignore_for_file: prefer_const_constructors, no_leading_underscores_for_local_identifiers, sort_child_properties_last
 
 import 'dart:convert';
 import 'package:flutter/cupertino.dart';
@@ -23,6 +23,7 @@ class Billsboxes extends StatefulWidget {
 }
 
 class _BillsboxesState extends State<Billsboxes> {
+  bool _isLoading = false;
   final ThemeController _themeController = Get.find<ThemeController>();
   final Map<String, List<Map<String, dynamic>>> _savedBillsByType = {
     'electricity': [],
@@ -52,118 +53,72 @@ class _BillsboxesState extends State<Billsboxes> {
               ),
             ],
           ),
-          // Due Date picker for all bills
-                SizedBox(
-        width: double.infinity,
-        child: InkWell(
-          onTap: () => showDatePicker(context:context,
-                    initialDate: DateTime.now(),
-                    firstDate: DateTime(2000),
-                    lastDate: DateTime(2101),),
-                    
-          borderRadius: BorderRadius.circular(10),
-          child: Container(
-            decoration: BoxDecoration(
-              color: _themeController.isDarkMode.value
-                  ? const Color.fromARGB(185, 0, 12, 20)
-                  : Color.fromARGB(28, 75, 198, 207),
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: Padding(
-              padding: const EdgeInsets.only(right: 10, left: 10),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Expanded(
-                    child: SingleChildScrollView(
-                      scrollDirection: Axis.horizontal,
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Due Date:',
-                            style: TextStyle(
-                              fontWeight: FontWeight.w600,
-                              color: _themeController.isDarkMode.value
-                                  ? Colors.white
-                                  : Colors.black,
-                            ),
-                          ),
-                          Text(
-                            'Tap here to set due date',
-                            style: TextStyle(
-                              color: _themeController.isDarkMode.value
-                                  ? Colors.blueAccent
-                                  : Colors.blueAccent,
-                              fontFamily: 'geistsans',
-                              fontSize: 14,
-                            ),
-                          ),
-                        ],
+          // Due Date picker for all bills      
+         Row(
+          mainAxisAlignment: MainAxisAlignment.start,
+          children: [
+            Container(
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(width: 1, color: _themeController.isDarkMode.value? Colors.white:Colors.black),
+              ),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 5.0, vertical: 3),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.center, // Aligns both widgets vertically
+                  children: [
+                    Text(
+                      'Due Date: ',
+                      style: TextStyle(
+                        fontWeight: FontWeight.w600,
+                        fontSize: 13,
+                        color:_themeController.isDarkMode.value?Colors.white: Colors.black,
                       ),
                     ),
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.all(5.0),
-                    child: Container(
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(8),
-                        color: const Color.fromARGB(255, 248, 249, 250),
-                      ),
-                      height: 45,
-                      width: 45,
-                      child: Lottie.asset(
-                        'assets/icons/calendar.json',
-                        repeat: false,
-                        fit: BoxFit.contain,
+                    Container(
+                      decoration: BoxDecoration(color: _themeController.isDarkMode.value? Colors.white:const Color.fromARGB(255, 0, 0, 0),
+                      borderRadius: BorderRadius.circular(7)),
+                      alignment: Alignment.center, // Ensures text aligns centrally
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 5.0,vertical: 3),
+                        child: TextButton(
+                          
+                          onPressed: () async {
+                            final DateTime? picked = await showDatePicker(
+                              context: context,
+                              initialDate: DateTime.now(),
+                              firstDate: DateTime(2000),
+                              lastDate: DateTime(2101),
+                            );
+                            if (picked != null) {
+                              setState(() {
+                                _dueDate = "${picked.toLocal()}".split(' ')[0];
+                              });
+                            }
+                          },
+                          child: Text(
+                            _dueDate.isEmpty ? 'Tap to Select Due Date' : _dueDate,
+                            style: TextStyle(
+                              color:_themeController.isDarkMode.value? Colors.black:Colors.white,
+                            ),
+                          ),
+                          style: TextButton.styleFrom(
+                            padding: EdgeInsets.zero, // Removes default padding
+                            minimumSize: Size(0, 0), // Ensures minimal size
+                            visualDensity: VisualDensity.compact, // Reduces the size of the button
+                            tapTargetSize: MaterialTapTargetSize.shrinkWrap, // Shrinks tap target
+                          ),
+                        ),
                       ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
-          ),
+          ],
         ),
-      ),
-      
-          Row(
-            mainAxisAlignment: MainAxisAlignment.start,
-            children: [
-              Container(
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(100),
-                  color: Colors.amberAccent
-                ),
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 10.0, vertical: 4),
-                  child: Text(
-                    'Due Date: ',
-                    style: TextStyle(
-                      fontWeight: FontWeight.w600,
-                      fontSize: 13,
-                      color: Colors.black
-                    ),
-                  ),
-                ),
-              ),
-              TextButton(
-                onPressed: () async {
-                  final DateTime? picked = await showDatePicker(
-                    context: context,
-                    initialDate: DateTime.now(),
-                    firstDate: DateTime(2000),
-                    lastDate: DateTime(2101),
-                  );
-                  if (picked != null) {
-                    setState(() {
-                      _dueDate = "${picked.toLocal()}".split(' ')[0];
-                    });
-                  }
-                },
-                child: Text(_dueDate.isEmpty ? 'Select Due Date' : _dueDate),
-              ),
-            ],
-          ),
+
+
           SizedBox(height: 10),
 
           Wrap(
@@ -184,7 +139,7 @@ class _BillsboxesState extends State<Billsboxes> {
                           ],
                         ),
                       ),
-                      SizedBox(width: 5),
+                      SizedBox(width: 3),
                       Expanded(
                         child: Column(
                           children: [
@@ -228,10 +183,17 @@ class _BillsboxesState extends State<Billsboxes> {
 
           SizedBox(height: 16),
           ShadButton(
-            backgroundColor: _themeController.isDarkMode.value? Colors.white:const Color.fromARGB(255, 0, 6, 22),
-            onPressed: _submitAllBills,
-            child: Text('Create', style: TextStyle(color: _themeController.isDarkMode.value? Colors.black:Colors.white),),
-          ),
+          backgroundColor: _themeController.isDarkMode.value ? Colors.white : const Color.fromARGB(255, 0, 6, 22),
+          onPressed: _isLoading ? null : _submitAllBills, // Disable button if loading
+          child: _isLoading
+              ? CupertinoActivityIndicator(color: _themeController.isDarkMode.value? Colors.black:Colors.white,) // Show spinner when loading
+              : Text(
+                  'Create',
+                  style: TextStyle(
+                    color: _themeController.isDarkMode.value ? Colors.black : Colors.white,
+                  ),
+                ),
+        ),
         ],
       ),
     );
@@ -253,8 +215,8 @@ class _BillsboxesState extends State<Billsboxes> {
           children: [
             Row(
               children: [
-                Icon(icon, size: 24, color: color),
-                SizedBox(width: 4),
+                Icon(icon, size: 20, color: color),
+                SizedBox(width: 2),
                 Text(
                   title,
                   style: TextStyle(
@@ -271,70 +233,92 @@ class _BillsboxesState extends State<Billsboxes> {
     );
   }
 
-  void _showBillPopover(BuildContext context, String title, IconData icon, Color color, String inquiryId, String billType) {
-    showDialog(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: Text(title),
-          content: _buildPopoverForm(icon, color, title, inquiryId, billType),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
-              child: Text('Close'),
-            ),
-          ],
-        );
-      },
-    );
-  }
-
-  Widget _buildPopoverForm(IconData icon, Color color, String title, String inquiryId, String billType) {
-    final TextEditingController _amountController = TextEditingController();
-    bool _isPaid = false;
-
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        TextField(
-          controller: _amountController,
-          keyboardType: TextInputType.number,
-          decoration: InputDecoration(
-            labelText: 'Amount',
-            border: OutlineInputBorder(),
+void _showBillPopover(BuildContext context, String title, IconData icon, Color color, String inquiryId, String billType) {
+  showDialog(
+    context: context,
+    builder: (context) {
+      return AlertDialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(8), // Decreased border radius
+        ),
+        title: Text(title, style: TextStyle(fontFamily: 'geistsans', fontWeight: FontWeight.w600),),
+        content: _buildPopoverForm(icon, color, title, inquiryId, billType),
+        actions: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              TextButton(
+                onPressed: () {
+                  Navigator.of(context).pop();
+                },
+                child: Text('Close',style: TextStyle(color: Colors.redAccent),),
+              ),
+              
+            ],
           ),
+        ],
+      );
+    },
+  );
+}
+
+Widget _buildPopoverForm(IconData icon, Color color, String title, String inquiryId, String billType) {
+  final TextEditingController _amountController = TextEditingController();
+  bool _isPaid = false;
+
+  return Column(
+    mainAxisSize: MainAxisSize.min,
+    children: [
+      TextField(
+        controller: _amountController,
+        keyboardType: TextInputType.number,
+        decoration: InputDecoration(
+        labelStyle: TextStyle(
+          fontFamily: 'geistsans',
+          fontSize: 14, color:_themeController.isDarkMode.value? Colors.white:Colors.black
         ),
-        SizedBox(height: 10),
-        ElevatedButton(
-          onPressed: () {
-            setState(() {
-              _isPaid = !_isPaid;
-            });
-          },
-          child: Text(_isPaid ? 'Mark as Unpaid' : 'Mark as Paid'),
+        labelText: 'Amount',
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(10),
         ),
-        SizedBox(height: 10),
-        ElevatedButton(
-          onPressed: () {
-            final amount = _amountController.text;
+        enabledBorder: OutlineInputBorder(
+          borderSide: BorderSide(
+            color: Colors.grey, // Border color when not focused
+            width: 1.0,
+          ),
+          borderRadius: BorderRadius.circular(10),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderSide: BorderSide(
+            color: _themeController.isDarkMode.value?Colors.white: const Color.fromARGB(255, 0, 0, 0), // Border color when focused (pressed)
+            width: 2.0, // You can adjust the width of the focused border
+          ),
+          borderRadius: BorderRadius.circular(10),
+        ),
+      ),
+      
+
+            ),
+            SizedBox(height: 7),
+            ShadButton(
+                backgroundColor: _themeController.isDarkMode.value?Colors.white:Colors.black,
+                onPressed: () {
+                   final amount = _amountController.text;
 
             // Validate the amount and prevent empty submission
             if (amount.isEmpty) {
               Get.snackbar('Error', 'Please enter a valid amount');
               return; // Stop execution if amount is invalid
             }
-
-            // Ensure the bill data is correctly updated
             _updateBillData(billType, amount, _dueDate, _isPaid);
             Navigator.of(context).pop(); // Close popover after saving
-          },
-          child: Text('Save Bill'),
-        ),
-      ],
-    );
-  }
+                },
+                child: Text('Save Bill',style: TextStyle(color: _themeController.isDarkMode.value? Colors.black:Colors.white),)
+              ),
+          ],
+        );
+      }
+
 
   void _updateBillData(String billType, String amount, String dueDate, bool isPaid) {
     // Add the saved bill to the list for display, replacing the existing one
@@ -353,9 +337,8 @@ class _BillsboxesState extends State<Billsboxes> {
 
 
 
-void _submitAllBills() async {
-  print('Inquiries: ${widget.inquiries}'); // Debug statement
 
+void _submitAllBills() async {
   // Check if there are inquiries available
   if (widget.inquiries == null || widget.inquiries!.isEmpty) {
     Get.snackbar('Error', 'No inquiries available to submit bills.');
@@ -375,6 +358,10 @@ void _submitAllBills() async {
     return; // Stop execution if no bills are present
   }
 
+  setState(() {
+    _isLoading = true; // Start loading
+  });
+
   try {
     // Prepare bill data for the request
     Map<String, dynamic> requestBody = {
@@ -390,7 +377,7 @@ void _submitAllBills() async {
     final inquiryId = widget.inquiries!.first['_id'];
 
     final response = await http.post(
-      Uri.parse('http://192.168.1.4:3000/inquiries/$inquiryId/add'),
+      Uri.parse('http://192.168.1.8:3000/inquiries/$inquiryId/add'),
       headers: {
         'Content-Type': 'application/json',
       },
@@ -415,6 +402,10 @@ void _submitAllBills() async {
   } catch (e) {
     print('Error occurred during bill submission: $e');
     Get.snackbar('Error', 'An error occurred: $e');
+  } finally {
+    setState(() {
+      _isLoading = false; // End loading
+    });
   }
 }
 
@@ -423,7 +414,7 @@ void _submitAllBills() async {
 
 Future<dynamic> fetchExistingBill(String billId) async {
   final response = await http.get(
-    Uri.parse('http://192.168.1.4:3000/inquiries/bills/getBillId/$billId'),
+    Uri.parse('http://192.168.1.8:3000/inquiries/bills/getBillId/$billId'),
   );
 
   print('Response status: ${response.statusCode}');
