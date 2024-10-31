@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "662943159644",
+    "project_id": "rentconnectmessage",
+    "storage_bucket": "rentconnectmessage.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:662943159644:android:e28cf32a645991ce27dd99",
+        "android_client_info": {
+          "package_name": "com.rentconnect.it"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyC8mwMja7AmTkTDhfNO_lEmk9IMo3qd_JE"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

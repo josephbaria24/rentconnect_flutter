@@ -15,7 +15,7 @@ import 'package:fluttertoast/fluttertoast.dart';
  // Make sure to import your theme controller
 
 Future<List<Property>> getBookmarkedProperties(String token, String userId) async {
-  final url = Uri.parse('http://192.168.1.8:3000/getUserBookmarks/$userId'); 
+  final url = Uri.parse('http://192.168.1.5:3000/getUserBookmarks/$userId'); 
 
   try {
     final response = await http.get(
@@ -45,7 +45,7 @@ Future<List<Property>> getBookmarkedProperties(String token, String userId) asyn
 }
 
 Future<void> removeBookmark(String token, String userId, String propertyId) async {
-  final url = Uri.parse('http://192.168.1.8:3000/removeBookmark');
+  final url = Uri.parse('http://192.168.1.5:3000/removeBookmark');
 
   try {
     final response = await http.post(
@@ -172,7 +172,7 @@ class _BookmarkPageState extends State<BookmarkPage> {
               future: bookmarkedProperties,
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
-                  return Center(child: Lottie.network("https://lottie.host/042642e6-74ec-4ee4-b839-9222ec9596ae/qSwWIkL0vW.json", height: 130));
+                  return Center(child: Lottie.asset("assets/icons/loading.json", height: 60));
                 } else if (snapshot.hasError) {
                   return Center(child: Text('Error: ${snapshot.error}'));
                 } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
@@ -204,7 +204,7 @@ class _BookmarkPageState extends State<BookmarkPage> {
                       final property = snapshot.data![index];
                       final imageUrl = property.photo.startsWith('http')
                           ? property.photo
-                          : 'http://192.168.1.8:3000/${property.photo}';
+                          : 'http://192.168.1.5:3000/${property.photo}';
 
                       return Card(
                         color: _themeController.isDarkMode.value

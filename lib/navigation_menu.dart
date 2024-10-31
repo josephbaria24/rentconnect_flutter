@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:rentcon/models/user_class.dart';
 import 'package:rentcon/pages/bookmark.dart';
 import 'package:rentcon/pages/home.dart';
 import 'package:rentcon/pages/message.dart';
@@ -179,7 +180,7 @@ class NavigationController extends GetxController {
     screens.addAll([
       HomePage(token: token),
       BookmarkPage(token: token),
-      TrendPage(token: token),
+      TrendPage(token: token, ),
       MessagePage(token: token),
       ProfilePage(token: token),
       

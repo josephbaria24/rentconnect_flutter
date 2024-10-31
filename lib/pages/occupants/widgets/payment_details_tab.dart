@@ -38,7 +38,7 @@
 //  Future<List<Map<String, dynamic>>> fetchInquiries(
 //       String userId, String token) async {
 //     final response = await http.get(
-//       Uri.parse('http://192.168.1.8:3000/inquiries/occupant/$userId'),
+//       Uri.parse('http://192.168.1.5:3000/inquiries/occupant/$userId'),
 //       headers: {
 //         'Authorization': 'Bearer $token',
 //         'Content-Type': 'application/json',
@@ -57,7 +57,7 @@
   
 //   Future<void> _cancelInquiry(String inquiryId, String token) async {
 //     final String apiUrl =
-//         'http://192.168.1.8:3000/inquiries/delete/$inquiryId';
+//         'http://192.168.1.5:3000/inquiries/delete/$inquiryId';
 //     try {
 //       final response = await http.delete(
 //         Uri.parse(apiUrl),

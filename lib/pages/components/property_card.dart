@@ -75,7 +75,7 @@ void dispose() {
 
  void _fetchAverageRating() async {
   // Replace with your actual API endpoint
-  final url = Uri.parse('http://192.168.1.8:3000/averageRating/${widget.property.id}');
+  final url = Uri.parse('http://192.168.1.5:3000/averageRating/${widget.property.id}');
   try {
     final response = await http.get(
       url,
@@ -128,7 +128,7 @@ void _bookmarkProperty() {
 
 
   Future<Map<String, String>> fetchUserProfileStatus() async {
-    final url = Uri.parse('http://192.168.1.8:3000/profile/checkProfileCompletion/${widget.userId}');
+    final url = Uri.parse('http://192.168.1.5:3000/profile/checkProfileCompletion/${widget.userId}');
     try {
       final response = await http.get(
         url,
@@ -154,8 +154,38 @@ void _bookmarkProperty() {
 
 
 
+
+
+
+
+
+Future<void> triggerView() async {
+    final userId = widget.userId; // Get the current user's ID from your auth system
+
+    final response = await http.post(
+      Uri.parse('http://192.168.1.5:3000/properties/${widget.property.id}/view'),
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer YOUR_JWT_TOKEN', // If you're using JWT for auth
+      },
+      body: jsonEncode({'userId': userId}), // Include userId in the request body
+    );
+
+    if (response.statusCode == 200) {
+      // Successfully triggered the view
+      print('View recorded!');
+    } else {
+      // Handle the error
+      print('Failed to record view: ${response.body}');
+    }
+}
+
+
+
+
 @override
 Widget build(BuildContext context) {
+  print("property id: ${widget.property.id}");
   return FutureBuilder<Map<String, String>>(
     future: fetchUserProfileStatus(),
     
@@ -180,7 +210,8 @@ Widget build(BuildContext context) {
               borderRadius: BorderRadius.circular(12),
             ),
             child: InkWell(
-              onTap: () {
+              onTap: () async {
+                await triggerView();
                 Navigator.push(
                   context,
                   MaterialPageRoute(

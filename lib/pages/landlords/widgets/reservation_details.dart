@@ -18,12 +18,13 @@ class ReservationDetails extends StatefulWidget {
   final String token;
   final bool mounted;
   final int? reservationDuration; // Add reservationDuration field
-
+  final String selectedUserId;
   ReservationDetails({
     required this.room,
     required this.token,
     required this.mounted,
-    required this.reservationDuration, // Accept reservationDuration as a parameter
+    required this.reservationDuration,
+    required this.selectedUserId,
   });
 
   @override
@@ -34,7 +35,7 @@ class _ReservationDetailsState extends State<ReservationDetails> {
   Future<String?> fetchProofOfReservation(String roomId) async {
     try {
     // Example API call to fetch payment details
-    var response = await http.get(Uri.parse('http://192.168.1.8:3000/payment/room/$roomId/proofOfReservation'));
+    var response = await http.get(Uri.parse('http://192.168.1.5:3000/payment/room/$roomId/proofOfReservation'));
     if (response.statusCode == 200) {
       var data = jsonDecode(response.body);
       return data['proofOfReservation']; // Ensure the key matches your backend response
@@ -50,13 +51,13 @@ class _ReservationDetailsState extends State<ReservationDetails> {
   String? selectedUserId; 
 
 Future<void> markRoomAsOccupied(String roomId) async {
-  if (selectedUserId != null) {
+  if (widget.selectedUserId != null) {
     try {
       final response = await http.patch(
-        Uri.parse('http://192.168.1.8:3000/rooms/$roomId/occupy'),
+        Uri.parse('http://192.168.1.5:3000/rooms/$roomId/occupy'),
         headers: {'Content-Type': 'application/json'},
         body: json.encode({
-          'userId': selectedUserId, // Pass the userId from approved inquiry
+          'userId': widget.selectedUserId, // Pass the userId from approved inquiry
         }),
       );
 
@@ -83,6 +84,7 @@ final ThemeController _themeController = Get.find<ThemeController>();
 
   @override
   Widget build(BuildContext context) {
+    print("userId${widget.selectedUserId}");
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [

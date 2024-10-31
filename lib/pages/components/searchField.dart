@@ -80,7 +80,7 @@ class SearchFieldWidget extends StatelessWidget {
                               color: _themeController.isDarkMode.value
                                   ? Colors.black
                                   : Colors.black,
-                              width: 16.0,
+                              width: 15.0,
                               height: 16.0,
                             ),
                           ),

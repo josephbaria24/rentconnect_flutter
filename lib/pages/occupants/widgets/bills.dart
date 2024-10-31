@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 import 'package:http/http.dart' as http;
+import 'package:lottie/lottie.dart';
 import 'dart:convert';
 
 import 'package:rentcon/theme_controller.dart';
@@ -35,7 +36,7 @@ class _AllBillsWidgetState extends State<AllBillsWidget> {
 
  
 Future<void> _fetchInquiries() async {
-  final url = 'http://192.168.1.8:3000/inquiries/occupant/${widget.userId}';
+  final url = 'http://192.168.1.5:3000/inquiries/occupant/${widget.userId}';
 
   try {
     final response = await http.get(Uri.parse(url));
@@ -119,7 +120,67 @@ Future<void> _fetchInquiries() async {
     }
 
     if (roomBills.isEmpty) {
-      return Center(child: Text('No bills available.'));
+      return Scaffold(
+        appBar: AppBar(
+        title: Text('All Bills', style: TextStyle(
+          fontFamily: 'geistsans',
+          fontSize: 20,
+          fontWeight: FontWeight.w500
+        ),),
+        backgroundColor: _themeController.isDarkMode.value? const Color.fromARGB(255, 15, 16, 22): Colors.white,
+        leading: Padding(
+            padding:
+                const EdgeInsets.symmetric(vertical: 11.0, horizontal: 11.0),
+            child: SizedBox(
+              height: 40, // Set a specific height for the button
+              width: 40, // Set a specific width to make it a square button
+              child: ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors
+                      .transparent, // Transparent background to simulate outline
+                  side: BorderSide(
+                    color: _themeController.isDarkMode.value
+                        ? Colors.white
+                        : Colors.black, // Outline color
+                    width: 0.90, // Outline width
+                  ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius:
+                        BorderRadius.circular(8.0), // Optional rounded corners
+                  ),
+                  elevation: 0, // Remove elevation to get the outline effect
+                  padding: EdgeInsets.all(
+                      0), // Remove any padding to center the icon
+                ),
+                onPressed: () {
+                  Navigator.pop(context);
+                },
+                child: Container(
+                  child: Icon(
+                    Icons.chevron_left,
+                    weight: 20,
+                    color: _themeController.isDarkMode.value
+                        ? Colors.white
+                        : Colors.black, // Icon color based on theme
+                    size: 20, // Icon size
+                  ),
+                ),
+              ),
+            ),
+          ),
+      ),
+        body:
+            Container(
+            color: _themeController.isDarkMode.value? const Color.fromARGB(255, 15, 16, 22): Colors.white,
+            child: Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Lottie.asset('assets/icons/empty.json', height: 200, repeat: false),
+                Text('No bills available.', style: TextStyle(fontFamily: 'geistsans', fontSize: 18,color: _themeController.isDarkMode.value? Colors.white:Colors.black),),
+              ],
+            ))),
+      );
     }
 
     // Get unique months from room bills

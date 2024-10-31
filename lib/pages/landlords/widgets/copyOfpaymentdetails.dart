@@ -7,7 +7,6 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
-import 'package:lottie/lottie.dart';
 import 'package:rentcon/pages/fullscreenImage.dart';
 import 'package:http/http.dart' as http;
 import 'package:rentcon/theme_controller.dart';
@@ -169,7 +168,7 @@ void _showTutorial() {
   Future<Map<String, dynamic>?> getProofOfPaymentForSelectedMonth(
       String roomId, String token, String selectedMonth) async {
     final String apiUrl =
-        'http://192.168.1.8:3000/payment/room/${widget.room?['_id']}/monthlyPayments';
+        'http://192.168.1.5:3000/payment/room/${widget.room?['_id']}/monthlyPayments';
 
     try {
       print('API URL: $apiUrl');
@@ -421,7 +420,7 @@ void _showTutorial() {
 
   Future<void> updatePaymentStatus(String monthPaymentId, String status) async {
     final String apiUrl =
-        'http://192.168.1.8:3000/payment/monthlyPayments/$monthPaymentId/status';
+        'http://192.168.1.5:3000/payment/monthlyPayments/$monthPaymentId/status';
 
     try {
       final response = await http.put(
@@ -879,7 +878,7 @@ Widget build(BuildContext context) {
   Future<void> updateDueDate(
       String roomId, DateTime dueDate, String token) async {
     final String apiUrl =
-        'http://192.168.1.8:3000/rooms/${widget.room!['_id']}/due-date';
+        'http://192.168.1.5:3000/rooms/${widget.room!['_id']}/due-date';
 
     try {
       final response = await http.put(
@@ -953,7 +952,7 @@ Widget build(BuildContext context) {
 
 // Future<Map<String, dynamic>?> getProofOfPaymentForSelectedMonth(
 //     String roomId, String token, String selectedMonth) async {
-//   final String apiUrl = 'http://192.168.1.8:3000/payment/room/$roomId/monthlyPayments';
+//   final String apiUrl = 'http://192.168.1.5:3000/payment/room/$roomId/monthlyPayments';
 
 //   try {
 //     print('API URL: $apiUrl');

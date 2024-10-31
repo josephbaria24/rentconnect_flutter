@@ -74,7 +74,7 @@ class _RemainingTimeWidgetState extends State<RemainingTimeWidget> {
         padding: const EdgeInsets.all(8.0),
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(12),
-          color: _themeController.isDarkMode.value ? Colors.black : Colors.black,
+          color: _themeController.isDarkMode.value ? const Color.fromARGB(255, 69, 70, 83) : Colors.black,
         ),
         child: CircularPercentIndicator(
           // animation: true,

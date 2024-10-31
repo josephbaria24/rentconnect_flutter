@@ -112,18 +112,7 @@ void loginUser() async {
         passwordController.clear();
 
         // Navigate to the main app screen
-        Get.snackbar(
-        '', // Leave title empty because we're using titleText for customization
-        '', // Leave message empty because we're using messageText for customization
-        duration: Duration(milliseconds: 1500),
-        titleText: Text(
-          'Success',
-          style: TextStyle(color: Colors.green, fontWeight: FontWeight.bold), // Customize the color of 'Success'
-        ),
-        messageText: Text(
-          'Login successfully!', // Customize message text color if needed
-        ),
-      );
+        toastNotification.success("Logged in successfully!");
         Navigator.pushAndRemoveUntil(
           context,
           MaterialPageRoute(builder: (context) => NavigationMenu(token: myToken)),
@@ -271,7 +260,7 @@ Future<bool> _sendPasswordResetEmail(String email) async {
   // Replace with your actual endpoint and logic
   try {
     final response = await http.post(
-      Uri.parse('http://192.168.1.8:3000/forgot-password'), // Update with your API endpoint
+      Uri.parse('http://192.168.1.5:3000/forgot-password'), // Update with your API endpoint
       headers: <String, String>{
         'Content-Type': 'application/json; charset=UTF-8',
       },

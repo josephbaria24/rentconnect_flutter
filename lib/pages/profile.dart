@@ -36,6 +36,7 @@ import 'package:http/http.dart' as http; // For HTTP requests
 import 'package:mime/mime.dart'; // For lookupMimeType
 import 'package:http_parser/http_parser.dart'; // For MediaType
 import 'package:skeletonizer/skeletonizer.dart';
+import 'package:lottie/lottie.dart';
 
 class ProfilePage extends StatefulWidget {
   final String token;
@@ -126,7 +127,7 @@ Future<void> _toggleTheme(bool isDark) async {
 
   Future<void> _fetchUserProfile() async {
     final url = Uri.parse(
-        'http://192.168.1.8:3000/user/$userId'); // Adjust the endpoint if needed
+        'http://192.168.1.5:3000/user/$userId'); // Adjust the endpoint if needed
     try {
       final response = await http
           .get(url, headers: {'Authorization': 'Bearer ${widget.token}'});
@@ -146,7 +147,7 @@ Future<void> _toggleTheme(bool isDark) async {
 
   Future<void> fetchUserProfileStatus() async {
     final url = Uri.parse(
-        'http://192.168.1.8:3000/profile/checkProfileCompletion/$userId'); // Replace with your API endpoint
+        'http://192.168.1.5:3000/profile/checkProfileCompletion/$userId'); // Replace with your API endpoint
     try {
       final response = await http.get(
         url,
@@ -176,18 +177,7 @@ Future<void> _logout(BuildContext context) async {
   await prefs.clear();
 
   // Show a toast notification before navigating to the login page
-  Get.snackbar(
-    '', // Leave title empty because we're using titleText for customization
-    '', // Leave message empty because we're using messageText for customization
-    duration: Duration(milliseconds: 1500),
-    titleText: Text(
-      'Success',
-      style: TextStyle(color: Colors.green, fontWeight: FontWeight.bold), // Customize the color of 'Success'
-    ),
-    messageText: Text(
-      'You have been logged out successfully!', // Customize message text color if needed
-    ),
-  );
+  toastNotification.success('You have been logged out successfully!');
 
   // Immediately schedule navigation in a stable lifecycle phase
   if (mounted) {
@@ -265,7 +255,7 @@ void _showLogoutConfirmationDialog(BuildContext context) {
 Future<void> _uploadProfilePicture() async {
   if (_profileImage != null) {
     final url =
-        Uri.parse('http://192.168.1.8:3000/updateProfilePicture/$userId');
+        Uri.parse('http://192.168.1.5:3000/updateProfilePicture/$userId');
     var request = http.MultipartRequest('PATCH', url)
       ..headers['Authorization'] = 'Bearer ${widget.token}';
 
@@ -630,34 +620,68 @@ Future<void> _uploadProfilePicture() async {
                   SizedBox(height: 20),
                   if (userRole == 'landlord' &&
                       profileStatus == 'approved') ...[
-                    DeviceCard1(
-                      title: "Listing",
-                      icon: SvgPicture.asset('assets/icons/listing2.svg',
-                          height: 20,
-                          color: themeController.isDarkMode.value
-                              ? const Color.fromARGB(255, 253, 253, 253)
-                              : const Color.fromARGB(255, 0, 0, 0)),
-                      
-                      textColor: themeController.isDarkMode.value
-                          ? Colors.white
-                          : const Color.fromARGB(255, 255, 255, 255),
-                      endIcon: true,
-                      icon2: Icon(Icons.chevron_right_outlined,
-                          size: 20,
-                          color: themeController.isDarkMode.value
-                              ? const Color.fromARGB(255, 253, 253, 253)
-                              : const Color.fromARGB(255, 0, 0, 0)),
-                      
-                      onPress: () {
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                      children: [
+                        DeviceCard1(
+                          title: "Listing",
+                          icon: SvgPicture.asset('assets/icons/listing2.svg',
+                              height: 20,
+                              color: themeController.isDarkMode.value
+                                  ? const Color.fromARGB(255, 0, 0, 0)
+                                  : const Color.fromARGB(255, 255, 255, 255)),
+                          
+                          textColor: themeController.isDarkMode.value
+                              ? Colors.white
+                              : const Color.fromARGB(255, 255, 255, 255),
+                          endIcon: true,
+                          icon2: Icon(Icons.chevron_right_outlined,
+                              size: 20,
+                              color: themeController.isDarkMode.value
+                                  ? const Color.fromARGB(255, 253, 253, 253)
+                                  : const Color.fromARGB(255, 0, 0, 0)),
+                          
+                          onPress: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) =>
+                                    CurrentListingPage(token: widget.token),
+                              ),
+                            );
+                          },
+                        ),
+                       
+                        DeviceCard2(
+                                              icon: Lottie.asset(
+                        'assets/icons/faq.json',
+                        repeat: false,
+                        height: 30,
+                                              ),
+                                              title: "FAQs",
+                                              textColor: themeController.isDarkMode.value
+                          ? Colors.black
+                          : Colors.black,
+                                              icon2: Icon(
+                        Icons.chevron_right_outlined,
+                        size: 20,
+                        color: themeController.isDarkMode.value
+                            ? const Color.fromARGB(213, 253, 253, 253)
+                            : const Color.fromARGB(146, 0, 0, 0),
+                                              ),
+                                              onPress: () {
                         Navigator.push(
                           context,
                           MaterialPageRoute(
-                            builder: (context) =>
-                                CurrentListingPage(token: widget.token),
+                            builder: (context) => Faqs(
+                            ),
                           ),
                         );
-                      },
+                                              },
+                                            ),
+                      ],
                     ),
+                    
                   ] else if (userRole == 'occupant' &&
                       profileStatus == 'approved') ...[
                     Row(
@@ -669,8 +693,8 @@ Future<void> _uploadProfilePicture() async {
         icon: SvgPicture.asset(
           'assets/icons/occupanthome.svg',
           color: themeController.isDarkMode.value
-              ? const Color.fromARGB(255, 255, 255, 255)
-              : const Color.fromARGB(255, 0, 0, 0),
+              ? const Color.fromARGB(255, 0, 0, 0)
+              : const Color.fromARGB(255, 255, 255, 255),
           height: 20,
           width: 20,
         ),
@@ -702,14 +726,12 @@ Future<void> _uploadProfilePicture() async {
     // Adaptable DeviceCard2
     Flexible(
       child: DeviceCard2(
-        icon: SvgPicture.asset(
-          'assets/icons/roommate.svg',
-          color: themeController.isDarkMode.value
-              ? const Color.fromARGB(255, 255, 255, 255)
-              : const Color.fromARGB(255, 0, 0, 0),
-          height: 20,
+        icon: Lottie.asset(
+          'assets/icons/faq.json',
+          repeat: false,
+          height: 30,
         ),
-        title: "Roommates",
+        title: "FAQs",
         textColor: themeController.isDarkMode.value
             ? Colors.black
             : Colors.black,
@@ -724,9 +746,7 @@ Future<void> _uploadProfilePicture() async {
           Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (context) => OccupantInquiries(
-                userId: userId,
-                token: widget.token,
+              builder: (context) => Faqs(
               ),
             ),
           );
@@ -750,22 +770,6 @@ Future<void> _uploadProfilePicture() async {
                     ),
                   ),
                   const SizedBox(height: 2),
-                  ProfileMenuWidget(
-                    title: "FAQs",
-                    icon: Icons.question_answer_outlined,
-                    textColor: themeController.isDarkMode.value
-                        ? Colors.white
-                        : Colors.black,
-                    onPress: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) =>
-                              Faqs(),
-                        ),
-                      );
-                    },
-                  ),
                   ProfileMenuWidget(
                     title: "Personal Information",
                     icon: LineAwesomeIcons.user,
@@ -866,15 +870,15 @@ class DeviceCard1 extends StatelessWidget {
             width: MediaQuery.of(context).size.width * 0.40,
             decoration: BoxDecoration(
               color: _themeController.isDarkMode.value
-                  ? const Color.fromARGB(255, 0, 202, 169)
-                  : const Color.fromARGB(255, 208, 252, 244),
+                  ? const Color.fromARGB(255, 255, 255, 255)
+                  : const Color.fromARGB(255, 0, 0, 0),
               borderRadius: BorderRadius.circular(17),
             ),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.start,
               children: [
                 Padding(
-                  padding: const EdgeInsets.all(8.0),
+                  padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 13),
                   child: icon,
                 ),
                 // Wrap the text and icon in Flexible to prevent overflow
@@ -883,8 +887,8 @@ class DeviceCard1 extends StatelessWidget {
                     title,
                     style: TextStyle(
                       color: _themeController.isDarkMode.value
-                          ? Colors.white
-                          : const Color.fromARGB(255, 0, 0, 0),
+                          ? Colors.black
+                          : const Color.fromARGB(255, 255, 255, 255),
                       fontSize: 14,
                       fontWeight: FontWeight.w600,
                       fontFamily: 'geistsans',
@@ -898,7 +902,7 @@ class DeviceCard1 extends StatelessWidget {
                     child: Container(
                       decoration: BoxDecoration(
                         borderRadius: BorderRadius.circular(50),
-                        color: const Color.fromARGB(8, 0, 0, 0),
+                        color: _themeController.isDarkMode.value? const Color.fromARGB(80, 0, 0, 0): const Color.fromARGB(255, 255, 255, 255),
                       ),
                       child: icon2,
                     ),
@@ -925,7 +929,7 @@ class DeviceCard2 extends StatelessWidget {
   }) : super(key: key);
 
   final String title;
-  final SvgPicture icon;
+  final LottieBuilder icon;
   final Icon? icon2;
   final VoidCallback onPress;
   final bool endIcon;
@@ -944,15 +948,16 @@ class DeviceCard2 extends StatelessWidget {
             width: MediaQuery.of(context).size.width * 0.40,
             decoration: BoxDecoration(
               color: _themeController.isDarkMode.value
-                  ? const Color.fromARGB(255, 0, 202, 108)
-                  : const Color.fromARGB(255, 208, 252, 212),
+                  ? const Color.fromARGB(255, 42, 43, 51)
+                  : const Color.fromARGB(255, 255, 255, 255),
               borderRadius: BorderRadius.circular(17),
+              border: Border.all(width: 0.5)
             ),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.start,
               children: [
                 Padding(
-                  padding: const EdgeInsets.all(8.0),
+                  padding: const EdgeInsets.fromLTRB(16, 8, 3, 8),
                   child: icon,
                 ),
                 // Make title flexible to avoid overflow
@@ -972,7 +977,7 @@ class DeviceCard2 extends StatelessWidget {
                 ),
                 if (icon2 != null)
                   Padding(
-                    padding: const EdgeInsets.only(left: 6.0),
+                    padding: const EdgeInsets.only(left: 6.0, right: 10),
                     child: Container(
                       decoration: BoxDecoration(
                         borderRadius: BorderRadius.circular(50),

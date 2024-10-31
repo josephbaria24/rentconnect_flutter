@@ -1,4 +1,3 @@
-
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -7,10 +6,10 @@ import 'package:rentcon/theme_controller.dart';
 
 class BarChartSample2 extends StatefulWidget {
   BarChartSample2({super.key});
-   final Color leftBarColor = const Color.fromARGB(255, 0, 243, 223);
+  final Color leftBarColor = const Color.fromARGB(255, 0, 243, 223);
   final Color rightBarColor = const Color.fromARGB(230, 238, 2, 112);
-  final Color avgColor =
-      const Color.fromARGB(255, 0, 240, 12);
+  final Color avgColor = const Color.fromARGB(255, 0, 240, 12);
+
   @override
   State<StatefulWidget> createState() => BarChartSample2State();
 }
@@ -27,13 +26,20 @@ class BarChartSample2State extends State<BarChartSample2> {
   @override
   void initState() {
     super.initState();
-    final barGroup1 = makeGroupData(0, 5, 12);
-    final barGroup2 = makeGroupData(1, 16, 12);
-    final barGroup3 = makeGroupData(2, 18, 5);
-    final barGroup4 = makeGroupData(3, 20, 16);
-    final barGroup5 = makeGroupData(4, 17, 6);
-    final barGroup6 = makeGroupData(5, 19, 1.5);
-    final barGroup7 = makeGroupData(6, 10, 1.5);
+
+    // Static data for views per month
+    final barGroup1 = makeGroupData(0, 5, 0);  // January
+    final barGroup2 = makeGroupData(1, 10, 0); // February
+    final barGroup3 = makeGroupData(2, 15, 0); // March
+    final barGroup4 = makeGroupData(3, 20, 0); // April
+    final barGroup5 = makeGroupData(4, 25, 0); // May
+    final barGroup6 = makeGroupData(5, 30, 0); // June
+    final barGroup7 = makeGroupData(6, 35, 0); // July
+    final barGroup8 = makeGroupData(7, 28, 0); // August
+    final barGroup9 = makeGroupData(8, 22, 0); // September
+    final barGroup10 = makeGroupData(9, 18, 0); // October
+    final barGroup11 = makeGroupData(10, 12, 0); // November
+    final barGroup12 = makeGroupData(11, 8, 0); // December
 
     final items = [
       barGroup1,
@@ -43,10 +49,14 @@ class BarChartSample2State extends State<BarChartSample2> {
       barGroup5,
       barGroup6,
       barGroup7,
+      barGroup8,
+      barGroup9,
+      barGroup10,
+      barGroup11,
+      barGroup12,
     ];
 
     rawBarGroups = items;
-
     showingBarGroups = rawBarGroups;
   }
 
@@ -63,30 +73,28 @@ class BarChartSample2State extends State<BarChartSample2> {
               mainAxisSize: MainAxisSize.min,
               children: <Widget>[
                 makeTransactionsIcon(),
-                const SizedBox(
-                  width: 38,
+                const SizedBox(width: 38),
+                Text(
+                  'Monthly Views',
+                  style: TextStyle(
+                    color: themeController.isDarkMode.value
+                        ? Colors.white
+                        : Colors.black,
+                    fontSize: 22,
+                  ),
                 ),
-                 Text(
-                  'Transactions',
-                  
-                  style: TextStyle(color: themeController.isDarkMode.value ?Colors.white: Colors.black, fontSize: 22),
-                ),
-                const SizedBox(
-                  width: 4,
-                ),
+                const SizedBox(width: 4),
                 const Text(
-                  'state',
+                  'Overview',
                   style: TextStyle(color: Color(0xff77839a), fontSize: 16),
                 ),
               ],
             ),
-            const SizedBox(
-              height: 38,
-            ),
+            const SizedBox(height: 38),
             Expanded(
               child: BarChart(
                 BarChartData(
-                  maxY: 20,
+                  maxY: 40, // Adjust maxY to fit your data
                   barTouchData: BarTouchData(
                     touchTooltipData: BarTouchTooltipData(
                       getTooltipColor: ((group) {
@@ -155,7 +163,7 @@ class BarChartSample2State extends State<BarChartSample2> {
                       sideTitles: SideTitles(
                         showTitles: true,
                         reservedSize: 28,
-                        interval: 1,
+                        interval: 5, // Adjust interval as needed
                         getTitlesWidget: leftTitles,
                       ),
                     ),
@@ -168,9 +176,7 @@ class BarChartSample2State extends State<BarChartSample2> {
                 ),
               ),
             ),
-            const SizedBox(
-              height: 12,
-            ),
+            const SizedBox(height: 12),
           ],
         ),
       ),
@@ -185,11 +191,15 @@ class BarChartSample2State extends State<BarChartSample2> {
     );
     String text;
     if (value == 0) {
-      text = '1K';
+      text = '0';
     } else if (value == 10) {
-      text = '5K';
-    } else if (value == 19) {
-      text = '10K';
+      text = '10';
+    } else if (value == 20) {
+      text = '20';
+    } else if (value == 30) {
+      text = '30';
+    } else if (value == 40) {
+      text = '40';
     } else {
       return Container();
     }
@@ -201,7 +211,9 @@ class BarChartSample2State extends State<BarChartSample2> {
   }
 
   Widget bottomTitles(double value, TitleMeta meta) {
-    final titles = <String>['Mn', 'Te', 'Wd', 'Tu', 'Fr', 'St', 'Su'];
+    final titles = <String>[
+      'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
+    ];
 
     final Widget text = Text(
       titles[value.toInt()],
@@ -247,39 +259,41 @@ class BarChartSample2State extends State<BarChartSample2> {
         Container(
           width: width,
           height: 10,
-          color: themeController.isDarkMode.value? Colors.white.withOpacity(0.4):Colors.black.withOpacity(0.4),
+          color: themeController.isDarkMode.value
+              ? Colors.white.withOpacity(0.4)
+              : Colors.black.withOpacity(0.4),
         ),
-        const SizedBox(
-          width: space,
-        ),
+        const SizedBox(width: space),
         Container(
           width: width,
           height: 28,
-          color: themeController.isDarkMode.value? Colors.white.withOpacity(0.8):Colors.black.withOpacity(0.8),
+          color: themeController.isDarkMode.value
+              ? Colors.white.withOpacity(0.8)
+              : Colors.black.withOpacity(0.8),
         ),
-        const SizedBox(
-          width: space,
-        ),
+        const SizedBox(width: space),
         Container(
           width: width,
           height: 42,
-          color: themeController.isDarkMode.value? Colors.white.withOpacity(1):Colors.black.withOpacity(1),
+          color: themeController.isDarkMode.value
+              ? Colors.white.withOpacity(1)
+              : Colors.black.withOpacity(1),
         ),
-        const SizedBox(
-          width: space,
-        ),
+        const SizedBox(width: space),
         Container(
           width: width,
           height: 28,
-          color: themeController.isDarkMode.value? Colors.white.withOpacity(0.8):Colors.black.withOpacity(0.8),
+          color: themeController.isDarkMode.value
+              ? Colors.white.withOpacity(0.8)
+              : Colors.black.withOpacity(0.8),
         ),
-        const SizedBox(
-          width: space,
-        ),
+        const SizedBox(width: space),
         Container(
           width: width,
           height: 10,
-          color: themeController.isDarkMode.value? Colors.white.withOpacity(0.4):Colors.black.withOpacity(0.4),
+          color: themeController.isDarkMode.value
+              ? Colors.white.withOpacity(0.4)
+              : Colors.black.withOpacity(0.4),
         ),
       ],
     );

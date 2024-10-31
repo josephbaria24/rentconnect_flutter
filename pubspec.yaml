@@ -85,6 +85,7 @@ dependencies:
   calendar_view: ^1.2.0
   timelines_plus: ^1.0.3
   animations: ^2.0.11
+  timeline_tile: ^2.0.0
 
 
 

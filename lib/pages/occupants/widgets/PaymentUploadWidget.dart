@@ -379,7 +379,7 @@ void _fetchMonthlyPayments() async {
   });
 
   try {
-    final response = await http.get(Uri.parse('http://192.168.1.8:3000/payment/room/${widget.roomDetails['_id']}/monthlyPayments'));
+    final response = await http.get(Uri.parse('http://192.168.1.5:3000/payment/room/${widget.roomDetails['_id']}/monthlyPayments'));
 
     print('Response status: ${response.statusCode}');
     print('Response body: ${response.body}');
@@ -449,7 +449,7 @@ void _checkExistingPayment(String? selectedMonth) async {
 
     try {
       // Call the API to get monthly payments
-      final response = await http.get(Uri.parse('http://192.168.1.8:3000/payment/room/${widget.roomDetails['_id']}/monthlyPayments'));
+      final response = await http.get(Uri.parse('http://192.168.1.5:3000/payment/room/${widget.roomDetails['_id']}/monthlyPayments'));
 
       // Debugging: Print the response status and body
       print('Response status: ${response.statusCode}');

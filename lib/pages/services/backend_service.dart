@@ -22,7 +22,7 @@ class BackendService {
   }
 
    Future<Map<String, dynamic>?> fetchUserProfile(String userId, String token) async {
-    final url = Uri.parse('http://192.168.1.8:3000/user/$userId'); // Adjust the endpoint if needed
+    final url = Uri.parse('http://192.168.1.5:3000/user/$userId'); // Adjust the endpoint if needed
     try {
       final response = await http.get(url, headers: {'Authorization': 'Bearer $token'});
       if (response.statusCode == 200) {

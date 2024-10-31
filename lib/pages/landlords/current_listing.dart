@@ -32,6 +32,7 @@ import 'package:rentcon/pages/landlords/widgets/payment_details.dart';
 import 'package:rentcon/pages/landlords/widgets/reservation_details.dart';
 import 'package:rentcon/pages/landlords/widgets/reserver_list.dart';
 import 'package:rentcon/pages/profile.dart';
+import 'package:rentcon/pages/toast.dart';
 import 'package:rentcon/theme_controller.dart';
 import 'package:rentcon/pages/propertyDetailPage.dart';
 import 'package:shadcn_ui/shadcn_ui.dart';
@@ -53,6 +54,7 @@ class CurrentListingPage extends StatefulWidget {
 class _CurrentListingPageState extends State<CurrentListingPage> {
   late String userId;
   late String email;
+  late String roomId;
   List<dynamic>? items;
   String? responseBody;
   DateTime? _selectedDueDate;
@@ -76,9 +78,10 @@ class _CurrentListingPageState extends State<CurrentListingPage> {
     'July', 'August', 'September', 'October', 'November', 'December'
   ];
   late PageController _monthPageController;
+  late ToastNotification toastNotification;
+  late ScrollController tab2ScrollController;
 
 
-late ScrollController tab2ScrollController;
   @override
   void initState() {
     super.initState();
@@ -91,6 +94,18 @@ late ScrollController tab2ScrollController;
      _monthPageController = PageController(initialPage: _currentMonthIndex); // Initialize the PageController
       _fetchProofForAllMonths(room['_id'], widget.token); 
     tab2ScrollController = ScrollController();
+     if (mounted) {
+    toastNotification = ToastNotification(context);
+  }
+     // Fetch property list first
+  getPropertyList(userId).then((_) {
+    // Once property list is fetched, initialize roomId
+    initializeRoomId();
+    // Now it's safe to call fetchRoomInquiries with roomId
+    if (roomId.isNotEmpty) {
+      fetchRoomInquiries(roomId);
+    }
+  });
   }
 
 
@@ -116,7 +131,7 @@ late ScrollController tab2ScrollController;
   }
 
 Future<String?> getProofOfPaymentForSelectedMonth(String roomId, String token, String selectedMonth) async {
-  final String apiUrl = 'http://192.168.1.8:3000/payment/room/$roomId/monthlyPayments';
+  final String apiUrl = 'http://192.168.1.5:3000/payment/room/$roomId/monthlyPayments';
 
   try {
     print('API URL: $apiUrl');
@@ -200,7 +215,7 @@ final List<String> rejectionReasons = [
 
 Future<int?> getReservationDuration(String roomId, String token) async {
   final response = await http.get(
-    Uri.parse('http://192.168.1.8:3000/inquiries/rooms/$roomId'),
+    Uri.parse('http://192.168.1.5:3000/inquiries/rooms/$roomId'),
     headers: {
       'Authorization': 'Bearer $token', // If you're using token-based authentication
       'Content-Type': 'application/json',
@@ -230,7 +245,29 @@ Future<int?> getReservationDuration(String roomId, String token) async {
 
 
 
+  Future<void> markAsAvailable() async {
+    try {
+      // Replace with your actual backend API endpoint
+      final response = await http.put(
+        Uri.parse('http://192.168.1.5:3000/rooms/room/${roomID}/markAsAvailable'),
+        headers: {'Authorization': 'Bearer ${widget.token}'},
+      );
 
+      if (response.statusCode == 200) {
+        // Successfully marked as available, update local room status
+        setState(() {
+          room['roomStatus'] = 'available';
+        });
+        toastNotification.success("Room marked as available");
+      } else {
+         print('Failed to mark room as available: ${response.body}');
+         toastNotification.error("Failed to mark room as available");
+      }
+    } catch (e) {
+      print("Error marking room as available: $e");
+         toastNotification.error("Error marking room as available");
+    }
+  }
 
 
 void showRoomDetailBottomSheet(BuildContext context, dynamic room, Map<String, dynamic> userProfiles, List<dynamic> inquiries, {String? selectedMonth, int currentMonthIndex = 0, int initialTabIndex = 0}) async {
@@ -526,6 +563,98 @@ void showRoomDetailBottomSheet(BuildContext context, dynamic room, Map<String, d
                                     ),
                                   ],
                                 ),
+                                 if (isOccupied || isReserved)
+                                  Padding(
+                                    padding: const EdgeInsets.all(8.0),
+                                    child: ElevatedButton(
+                                      onPressed: () async {
+                                        // Show confirmation dialog
+                                        bool? confirmed = await showDialog(
+                                          context: context,
+                                          builder: (context) {
+                                            bool isHolding = false;
+                                            double progress = 0.0;
+
+                                            return StatefulBuilder(
+                                              builder: (context, setState) {
+                                                void startHold() {
+                                                  setState(() => isHolding = true);
+                                                  Future.delayed(const Duration(milliseconds: 30), () {
+                                                    if (isHolding && progress < 1.0) {
+                                                      setState(() => progress += 0.01);
+                                                      startHold();
+                                                    } else if (progress >= 1.0) {
+                                                      Navigator.of(context).pop(true); // Confirm action
+                                                    }
+                                                  });
+                                                }
+
+                                                void stopHold() {
+                                                  setState(() {
+                                                    isHolding = false;
+                                                    progress = 0.0;
+                                                  });
+                                                }
+
+                                                return AlertDialog(
+                                                  title: Text("Confirmation"),
+                                                  content: Text("This action is irreversible and will remove all the occupants record from your room. Do you want to proceed?"),
+                                                  actions: [
+                                                    TextButton(
+                                                      onPressed: () {
+                                                        Navigator.of(context).pop(false); // Cancel action
+                                                      },
+                                                      child: Text("Cancel"),
+                                                    ),
+                                                    GestureDetector(
+                                                      onTapDown: (_) => startHold(),
+                                                      onTapUp: (_) => stopHold(),
+                                                      onTapCancel: stopHold,
+                                                      child: Stack(
+                                                        alignment: Alignment.center,
+                                                        children: [
+                                                          Container(
+                                                            width: 130,
+                                                            height: 40,
+                                                            child: LinearProgressIndicator(
+                                                              borderRadius: BorderRadius.circular(12),
+                                                              value: progress,
+                                                              backgroundColor: const Color.fromARGB(255, 179, 179, 179),
+                                                              color: _themeController.isDarkMode.value ? Colors.white : const Color.fromARGB(255, 224, 11, 64),
+                                                            ),
+                                                          ),
+                                                          Text("Hold to Proceed", style: TextStyle(color: isHolding ? const Color.fromARGB(255, 255, 255, 255) : Colors.black)),
+                                                        ],
+                                                      ),
+                                                    ),
+                                                  ],
+                                                );
+                                              },
+                                            );
+                                          },
+                                        );
+
+                                        // If confirmed, mark as available
+                                        if (confirmed == true) {
+                                          await markAsAvailable();
+                                        }
+                                      },
+                                      child: Text(
+                                        "Mark as Available",
+                                        style: TextStyle(
+                                          fontFamily: 'geistsans',
+                                          color: _themeController.isDarkMode.value ? Colors.black : Colors.white,
+                                        ),
+                                      ),
+                                      style: ElevatedButton.styleFrom(
+                                        backgroundColor: _themeController.isDarkMode.value ? Colors.white : Colors.black,
+                                        textStyle: TextStyle(
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+
                               ],
                             ),
                           ),
@@ -565,7 +694,7 @@ void showRoomDetailBottomSheet(BuildContext context, dynamic room, Map<String, d
                                 )
                               ],
                               if (isReserved) ...[
-                                ReservationDetails(room: room, token: widget.token, mounted: mounted, reservationDuration: reservationDuration)
+                                ReservationDetails(room: room, token: widget.token, mounted: mounted, reservationDuration: reservationDuration, selectedUserId: selectedUserId!,)
                               ],
                             ],
                           ),
@@ -592,7 +721,7 @@ void showRoomDetailBottomSheet(BuildContext context, dynamic room, Map<String, d
   Future<void> updateInquiryStatus(
       String? inquiryId, String? newStatus, String? token) async {
     final url = Uri.parse(
-        'http://192.168.1.8:3000/inquiries/update/$inquiryId'); // Match your backend route
+        'http://192.168.1.5:3000/inquiries/update/$inquiryId'); // Match your backend route
 
     try {
       final response = await http.patch(
@@ -630,7 +759,7 @@ Future<void> updateInquiryStatusAndRoom(
     String token,
     int? reservationDuration,
 ) async {
-    final url = 'http://192.168.1.8:3000/inquiries/update/$inquiryId'; // Update inquiry status
+    final url = 'http://192.168.1.5:3000/inquiries/update/$inquiryId'; // Update inquiry status
     try {
         final response = await http.patch(
             Uri.parse(url),
@@ -650,7 +779,7 @@ Future<void> updateInquiryStatusAndRoom(
         if (response.statusCode == 200) {
             // Get the occupant's email
             final emailResponse = await http.get(
-                Uri.parse('http://192.168.1.8:3000/inquiries/$inquiryId/email'),
+                Uri.parse('http://192.168.1.5:3000/inquiries/$inquiryId/email'),
                 headers: {
                     'Authorization': 'Bearer $token',
                     'Content-Type': 'application/json',
@@ -681,7 +810,7 @@ Future<void> updateInquiryStatusAndRoom(
 
 
 Future<void> _sendOccupantNotificationEmail(String occupantEmail, String message, String userId) async {
-    final emailServiceUrl = 'http://192.168.1.8:3000/notification/create'; // Endpoint to send notifications
+    final emailServiceUrl = 'http://192.168.1.5:3000/notification/create'; // Endpoint to send notifications
     try {
         final response = await http.post(
             Uri.parse(emailServiceUrl),
@@ -715,7 +844,7 @@ Future<void> rejectAndDeleteInquiry(String inquiryId, String token, String reaso
   try {
     // First, call your API to reject the inquiry and send the reason
     final response = await http.patch(
-      Uri.parse('http://192.168.1.8:3000/inquiries/reject/$inquiryId'), // Update the endpoint
+      Uri.parse('http://192.168.1.5:3000/inquiries/reject/$inquiryId'), // Update the endpoint
       headers: {
         'Authorization': 'Bearer $token',
         'Content-Type': 'application/json',
@@ -730,7 +859,7 @@ Future<void> rejectAndDeleteInquiry(String inquiryId, String token, String reaso
 
       // Get the inquiry details, including userId and occupant's email
       final inquiryResponse = await http.get(
-        Uri.parse('http://192.168.1.8:3000/inquiries/$inquiryId'), // Update the endpoint to get inquiry details
+        Uri.parse('http://192.168.1.5:3000/inquiries/$inquiryId'), // Update the endpoint to get inquiry details
         headers: {
           'Authorization': 'Bearer $token',
           'Content-Type': 'application/json',
@@ -760,7 +889,7 @@ Future<void> rejectAndDeleteInquiry(String inquiryId, String token, String reaso
 
 
   Future<bool> deleteProperty(String propertyId) async {
-    final response = await http.delete(Uri.parse('http://192.168.1.8:3000/deleteProperty/$propertyId'));
+    final response = await http.delete(Uri.parse('http://192.168.1.5:3000/deleteProperty/$propertyId'));
 
     if (response.statusCode == 200) {
       // Successfully deleted the property
@@ -864,7 +993,9 @@ void _navigateToEditProperty(String propertyId) {
 
   @override
   Widget build(BuildContext context) {
-    print('Property $items');
+    print('selected UserId from inquiry: $selectedUserId');
+      print("roomID${roomID}");
+
     return Scaffold(
       backgroundColor: _themeController.isDarkMode.value
           ? Color.fromARGB(255, 28, 29, 34)
@@ -1872,7 +2003,7 @@ Future<void> getPropertyList(String userId) async {
   Future<void> fetchUserProfile(String userId) async {
     try {
       final response =
-          await http.get(Uri.parse('http://192.168.1.8:3000/user/$userId'));
+          await http.get(Uri.parse('http://192.168.1.5:3000/user/$userId'));
       if (response.statusCode == 200) {
         final user = json.decode(response.body);
         setState(() {
@@ -1890,25 +2021,29 @@ Future<void> getPropertyList(String userId) async {
     }
   }
 
-
+ String? roomID;
 
 Future<void> fetchRoomInquiries(String roomId) async {
   try {
-    final response = await http.get(Uri.parse('http://192.168.1.8:3000/inquiries/rooms/$roomId'));
+    final response = await http.get(Uri.parse('http://192.168.1.5:3000/inquiries/rooms/$roomId'));
     
     if (response.statusCode == 200) {
       final inquiries = json.decode(response.body) as List<dynamic>; // Decode as List
       setState(() {
-        propertyInquiries[roomId] = inquiries; // Store inquiries by room ID
+        propertyInquiries[roomId] = inquiries; 
+        initializeRoomId();// Store inquiries by room ID
       });
-
+      
       // Fetch user profiles for each inquiry
       for (var inquiry in inquiries) {
       final userId = inquiry['userId'];
+      roomID = inquiry['roomId']['_id'];
       if (inquiry['status'] == 'approved') {
         selectedUserId = userId; // Store userId of the approved inquiry
       }
+      
       print('UserId from inquiry: $userId'); // Print the userId for debugging
+      print('RoomId from inquiry: $roomID'); // Print the userId for debugging
       await fetchUserProfile(userId); // Fetch user profile if needed
     }
     } else {
@@ -1919,12 +2054,19 @@ Future<void> fetchRoomInquiries(String roomId) async {
   }
 }
 
-
-
+void initializeRoomId() {
+  if (propertyInquiries.isNotEmpty) {
+    String firstKey = propertyInquiries.keys.first;
+    if (propertyInquiries[firstKey] != null && propertyInquiries[firstKey]!.isNotEmpty) {
+      roomId = propertyInquiries[firstKey]![0]['roomId']['_id'];
+      print("Initialized roomId: $roomId");
+    }
+  }
+}
   Future<void> fetchRooms(String propertyId) async {
     try {
       final response = await http.get(Uri.parse(
-          'http://192.168.1.8:3000/rooms/properties/$propertyId/rooms'));
+          'http://192.168.1.5:3000/rooms/properties/$propertyId/rooms'));
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
@@ -1933,8 +2075,9 @@ Future<void> fetchRoomInquiries(String roomId) async {
         if (data['status']) {
           setState(() {
             propertyRooms[propertyId] = data['rooms'] ?? [];
+            //roomId= data['rooms']['_id'];
           });
-
+        
           // Fetch inquiries and user profiles for each room
           for (var room in data['rooms']) {
             String roomId = room['_id'];
@@ -1963,7 +2106,7 @@ Future<void> fetchRoomInquiries(String roomId) async {
 
 
 Future<void> updateRoomStatus(String? roomId, String? newStatus) async {
-  final url = Uri.parse('http://192.168.1.8:3000/rooms/updateRoom/$roomId'); // Replace with your backend URL
+  final url = Uri.parse('http://192.168.1.5:3000/rooms/updateRoom/$roomId'); // Replace with your backend URL
   final headers = {
     'Content-Type': 'application/json',
     'Authorization': 'Bearer your_jwt_token' // Add your JWT token if required
@@ -2045,7 +2188,7 @@ Future<void> markRoomAsOccupied(BuildContext context, String roomId) async {
   if (selectedUserId != null) {
     try {
       final response = await http.patch(
-        Uri.parse('http://192.168.1.8:3000/rooms/$roomId/occupy'),
+        Uri.parse('http://192.168.1.5:3000/rooms/$roomID/occupy'),
         headers: {'Content-Type': 'application/json'},
         body: json.encode({
           'userId': selectedUserId, // Pass the userId from approved inquiry
@@ -2084,7 +2227,7 @@ Future<void> markRoomAsOccupied(BuildContext context, String roomId) async {
 Future<String?> fetchProofOfReservation(String roomId) async {
   try {
     // Example API call to fetch payment details
-    var response = await http.get(Uri.parse('http://192.168.1.8:3000/payment/room/$roomId/proofOfReservation'));
+    var response = await http.get(Uri.parse('http://192.168.1.5:3000/payment/room/$roomId/proofOfReservation'));
     if (response.statusCode == 200) {
       var data = jsonDecode(response.body);
       return data['proofOfReservation']; // Ensure the key matches your backend response
