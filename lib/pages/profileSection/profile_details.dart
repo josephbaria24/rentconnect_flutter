@@ -19,6 +19,7 @@ class _ProfileDetailsState extends State<ProfileDetails> {
   late String userId;
   Map<String, dynamic>? userDetails;
   final ThemeController _themeController = Get.find<ThemeController>();
+
   @override
   void initState() {
     super.initState();
@@ -29,7 +30,7 @@ class _ProfileDetailsState extends State<ProfileDetails> {
   }
 
   Future<void> _fetchUserDetails() async {
-    final url = Uri.parse('http://192.168.1.5:3000/user/$userId'); // Your new endpoint
+    final url = Uri.parse('https://rentconnect-backend-nodejs.onrender.com/user/$userId');
     try {
       final response = await http.get(url, headers: {
         'Authorization': 'Bearer ${widget.token}',
@@ -51,33 +52,33 @@ class _ProfileDetailsState extends State<ProfileDetails> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Profile Details'),
+        title: Text('Profile Details', style: TextStyle(fontFamily: 'Manrope')),
         backgroundColor: const Color.fromARGB(0, 247, 247, 247),
         leading: Padding(
           padding: const EdgeInsets.symmetric(vertical: 11.0, horizontal: 12.0),
           child: SizedBox(
-            height: 40,  // Set a specific height for the button
-            width: 40,   // Set a specific width to make it a square button
+            height: 40,
+            width: 40,
             child: ElevatedButton(
               style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.transparent, // Transparent background to simulate outline
+                backgroundColor: Colors.transparent,
                 side: BorderSide(
-                  color: _themeController.isDarkMode.value ? Colors.white : Colors.black, // Outline color
-                  width: 0.90, // Outline width
+                  color: _themeController.isDarkMode.value ? Colors.white : Colors.black,
+                  width: 0.90,
                 ),
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8.0), // Optional rounded corners
+                  borderRadius: BorderRadius.circular(8.0),
                 ),
-                elevation: 0, // Remove elevation to get the outline effect
-                padding: EdgeInsets.all(0), // Remove any padding to center the icon
+                elevation: 0,
+                padding: EdgeInsets.all(0),
               ),
               onPressed: () {
                 Navigator.pop(context);
               },
               child: Icon(
                 Icons.chevron_left,
-                color: _themeController.isDarkMode.value ? Colors.white : Colors.black, // Icon color based on theme
-                size: 16, // Icon size
+                color: _themeController.isDarkMode.value ? Colors.white : Colors.black,
+                size: 16,
               ),
             ),
           ),
@@ -92,7 +93,7 @@ class _ProfileDetailsState extends State<ProfileDetails> {
                   // Profile Header
                   Container(
                     decoration: BoxDecoration(
-                      color: const Color.fromARGB(136, 76, 245, 208),
+                      color: const Color.fromARGB(255, 0, 0, 0),
                       borderRadius: BorderRadius.circular(10),
                     ),
                     child: Padding(
@@ -100,25 +101,23 @@ class _ProfileDetailsState extends State<ProfileDetails> {
                       child: Row(
                         children: [
                           CircleAvatar(
-                          radius: 30,
-                          backgroundColor: Colors.white,
-                          backgroundImage: userDetails?['profilePicture'] != null
-                              ? NetworkImage('${userDetails?['profilePicture']}')
-                              : null,
-                          child: userDetails?['profilePicture'] == null
-                              ? Icon(Icons.person, size: 40)
-                              : null,  
-                        ),
-                        
-
+                            radius: 30,
+                            backgroundColor: Colors.white,
+                            backgroundImage: userDetails?['profilePicture'] != null
+                                ? NetworkImage('${userDetails?['profilePicture']}')
+                                : null,
+                            child: userDetails?['profilePicture'] == null
+                                ? Icon(Icons.person, size: 40)
+                                : null,
+                          ),
                           SizedBox(width: 16),
                           Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
                                 '${userDetails?['profile']?['firstName'] ?? email} ${userDetails?['profile']?['lastName'] ?? ''}',
-                                style: TextStyle(fontSize: 18, color: Colors.white),
-                              )
+                                style: TextStyle(fontSize: 18, color: Colors.white, fontFamily: 'Manrope'),
+                              ),
                             ],
                           ),
                         ],
@@ -128,31 +127,31 @@ class _ProfileDetailsState extends State<ProfileDetails> {
                   SizedBox(height: 16),
 
                   // Profile Details
-                  Text('Profile Details', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                  Text('Profile Details', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, fontFamily: 'Manrope')),
                   SizedBox(height: 8),
                   ListTile(
-                    title: Text('User ID'),
-                    subtitle: Text(userDetails?['_id'] ?? 'N/A'),
+                    title: Text('User ID', style: TextStyle(fontFamily: 'Manrope')),
+                    subtitle: Text(userDetails?['_id'] ?? 'N/A', style: TextStyle(fontFamily: 'Manrope')),
                   ),
                   ListTile(
-                    title: Text('Email'),
-                    subtitle: Text(userDetails?['email'] ?? 'N/A'),
+                    title: Text('Email', style: TextStyle(fontFamily: 'Manrope')),
+                    subtitle: Text(userDetails?['email'] ?? 'N/A', style: TextStyle(fontFamily: 'Manrope')),
                   ),
                   ListTile(
-                    title: Text('Role'),
-                    subtitle: Text(userDetails?['role'] ?? 'N/A'),
+                    title: Text('Role', style: TextStyle(fontFamily: 'Manrope')),
+                    subtitle: Text(userDetails?['role'] ?? 'N/A', style: TextStyle(fontFamily: 'Manrope')),
                   ),
                   ListTile(
-                    title: Text('Phone'),
-                    subtitle: Text(userDetails?['profile']?['contactDetails']?['phone'] ?? 'N/A'),
+                    title: Text('Phone', style: TextStyle(fontFamily: 'Manrope')),
+                    subtitle: Text(userDetails?['profile']?['contactDetails']?['phone'] ?? 'N/A', style: TextStyle(fontFamily: 'Manrope')),
                   ),
                   ListTile(
-                    title: Text('Address'),
-                    subtitle: Text(userDetails?['profile']?['contactDetails']?['address'] ?? 'N/A'),
+                    title: Text('Address', style: TextStyle(fontFamily: 'Manrope')),
+                    subtitle: Text(userDetails?['profile']?['contactDetails']?['address'] ?? 'N/A', style: TextStyle(fontFamily: 'Manrope')),
                   ),
                   ListTile(
-                    title: Text('Profile Complete'),
-                    subtitle: Text(userDetails?['isProfileComplete'] == true ? "Yes" : "No"),
+                    title: Text('Profile Complete', style: TextStyle(fontFamily: 'Manrope')),
+                    subtitle: Text(userDetails?['isProfileComplete'] == true ? "Yes" : "No", style: TextStyle(fontFamily: 'Manrope')),
                   ),
                 ],
               ),

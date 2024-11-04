@@ -23,7 +23,7 @@ class Hasinquiry extends StatelessWidget {
       children: [
         Text(
           'Occupants',
-          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18, fontFamily: 'geistsans'),
+          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18, fontFamily: 'manrope'),
         ),
         const SizedBox(height: 10),
         // List of occupants

@@ -41,7 +41,7 @@ List<TargetFocus> createTutorialTargets(
                     'This is the room image section. Tap here to view the room images.',
                     style: TextStyle(
                       color: Colors.white,
-                      fontFamily: 'geistsans',
+                      fontFamily: 'manrope',
                       fontSize: 15,
                       fontWeight: FontWeight.w500,
                     ),
@@ -52,7 +52,7 @@ List<TargetFocus> createTutorialTargets(
                     'Ito ang bahagi ng larawan ng silid. Pindutin ito upang tingnan ang mga larawan ng silid.',
                     style: TextStyle(
                       color: const Color.fromARGB(199, 255, 255, 255),
-                      fontFamily: 'geistsans',
+                      fontFamily: 'manrope',
                       fontSize: 15,
                       fontWeight: FontWeight.w500,
                     ),
@@ -63,7 +63,7 @@ List<TargetFocus> createTutorialTargets(
                     'Tap to next',
                     style: TextStyle(
                       color: const Color.fromARGB(199, 255, 255, 255),
-                      fontFamily: 'geistsans',
+                      fontFamily: 'manrope',
                       fontSize: 15,
                       fontWeight: FontWeight.w500,
                     ),
@@ -102,7 +102,7 @@ List<TargetFocus> createTutorialTargets(
                     'Here are the details of the room. Check for amenities and other specifications.',
                     style: TextStyle(
                       color: Colors.white,
-                      fontFamily: 'geistsans',
+                      fontFamily: 'manrope',
                       fontSize: 15,
                       fontWeight: FontWeight.w500,
                     ),
@@ -113,7 +113,7 @@ List<TargetFocus> createTutorialTargets(
                     'Narito ang mga detalye ng silid. Suriin ang mga amenities at iba pang mga detalye.',
                     style: TextStyle(
                       color: const Color.fromARGB(199, 255, 255, 255),
-                      fontFamily: 'geistsans',
+                      fontFamily: 'manrope',
                       fontSize: 15,
                       fontWeight: FontWeight.w500,
                     ),
@@ -124,7 +124,7 @@ List<TargetFocus> createTutorialTargets(
                     'Tap to next',
                     style: TextStyle(
                       color: const Color.fromARGB(199, 255, 255, 255),
-                      fontFamily: 'geistsans',
+                      fontFamily: 'manrope',
                       fontSize: 15,
                       fontWeight: FontWeight.w500,
                     ),
@@ -165,7 +165,7 @@ List<TargetFocus> createTutorialTargets(
                 'You can see here the days left to occupy the reserved room. Failure to occupy within this duration might forfeit your reservation fee. Please occupy the room before the duration runs out.',
                 style: TextStyle(
                   color: const Color.fromARGB(199, 255, 255, 255),
-                  fontFamily: 'geistsans',
+                  fontFamily: 'manrope',
                   fontSize: 13,
                   fontWeight: FontWeight.w400,
                 ),
@@ -176,7 +176,7 @@ List<TargetFocus> createTutorialTargets(
                 'Makikita mo rito ang natitirang araw upang i-occupy ang nakareserve na room. Ang hindi pag-okupa sa loob ng takdang oras ay maaaring magresulta sa pagkawala ng iyong reservation fee. Mangyaring okupahan ang silid bago matapos ang takdang panahon.',
                 style: TextStyle(
                   color: const Color.fromARGB(199, 255, 255, 255),
-                  fontFamily: 'geistsans',
+                  fontFamily: 'manrope',
                   fontSize: 13,
                   fontWeight: FontWeight.w400,
                 ),
@@ -187,7 +187,7 @@ List<TargetFocus> createTutorialTargets(
                 'Tap to finish',
                 style: TextStyle(
                   color: const Color.fromARGB(199, 255, 255, 255),
-                  fontFamily: 'geistsans',
+                  fontFamily: 'manrope',
                   fontSize: 15,
                   fontWeight: FontWeight.w500,
                 ),
@@ -226,7 +226,7 @@ List<TargetFocus> createTutorialTargets(
                     'This section lists all bills associated with the property. Review them regularly.',
                     style: TextStyle(
                       color: Colors.white,
-                      fontFamily: 'geistsans',
+                      fontFamily: 'manrope',
                       fontSize: 15,
                       fontWeight: FontWeight.w500,
                     ),
@@ -237,7 +237,7 @@ List<TargetFocus> createTutorialTargets(
                     'Ang seksyon na ito ay naglalaman ng lahat ng mga bill na kaugnay ng ari-arian. Suriin ang mga ito nang regular.',
                     style: TextStyle(
                       color: const Color.fromARGB(199, 255, 255, 255),
-                      fontFamily: 'geistsans',
+                      fontFamily: 'manrope',
                       fontSize: 15,
                       fontWeight: FontWeight.w500,
                     ),
@@ -248,7 +248,7 @@ List<TargetFocus> createTutorialTargets(
                     'Tap to next',
                     style: TextStyle(
                       color: const Color.fromARGB(199, 255, 255, 255),
-                      fontFamily: 'geistsans',
+                      fontFamily: 'manrope',
                       fontSize: 15,
                       fontWeight: FontWeight.w500,
                     ),
@@ -287,7 +287,7 @@ List<TargetFocus> createTutorialTargets(
                     'This is where you can manage payment information. Press the month box and you can upload the receipt or any proof of your payment in every month.',
                     style: TextStyle(
                       color: Colors.white,
-                      fontFamily: 'geistsans',
+                      fontFamily: 'manrope',
                       fontSize: 15,
                       fontWeight: FontWeight.w500,
                     ),
@@ -298,7 +298,7 @@ List<TargetFocus> createTutorialTargets(
                     'Dito mo maaring i-manage ang impormasyon ng pagbabayad.Pindutin ang box na may buwan at maaari kang mag-upload kada buwan ng patunay ng iyong bayad.',
                     style: TextStyle(
                       color: const Color.fromARGB(199, 255, 255, 255),
-                      fontFamily: 'geistsans',
+                      fontFamily: 'manrope',
                       fontSize: 15,
                       fontWeight: FontWeight.w500,
                     ),
@@ -309,7 +309,7 @@ List<TargetFocus> createTutorialTargets(
                     'Tap to next',
                     style: TextStyle(
                       color: const Color.fromARGB(199, 255, 255, 255),
-                      fontFamily: 'geistsans',
+                      fontFamily: 'manrope',
                       fontSize: 15,
                       fontWeight: FontWeight.w500,
                     ),
@@ -348,7 +348,7 @@ List<TargetFocus> createTutorialTargets(
                     'Here you can see all the roommates in the property. You can manage their details here.',
                     style: TextStyle(
                       color: Colors.white,
-                      fontFamily: 'geistsans',
+                      fontFamily: 'manrope',
                       fontSize: 15,
                       fontWeight: FontWeight.w500,
                     ),
@@ -359,7 +359,7 @@ List<TargetFocus> createTutorialTargets(
                     'Dito mo makikita ang lahat ng mga kasama sa bahay. Maaari mong pamahalaan ang kanilang mga detalye dito.',
                     style: TextStyle(
                       color: const Color.fromARGB(199, 255, 255, 255),
-                      fontFamily: 'geistsans',
+                      fontFamily: 'manrope',
                       fontSize: 15,
                       fontWeight: FontWeight.w500,
                     ),
@@ -370,7 +370,7 @@ List<TargetFocus> createTutorialTargets(
                     'Tap to next',
                     style: TextStyle(
                       color: const Color.fromARGB(199, 255, 255, 255),
-                      fontFamily: 'geistsans',
+                      fontFamily: 'manrope',
                       fontSize: 15,
                       fontWeight: FontWeight.w500,
                     ),
@@ -409,7 +409,7 @@ List<TargetFocus> createTutorialTargets(
                     'Here, you can view and add ratings for the property. Your feedback matters!',
                     style: TextStyle(
                       color: Colors.white,
-                      fontFamily: 'geistsans',
+                      fontFamily: 'manrope',
                       fontSize: 15,
                       fontWeight: FontWeight.w500,
                     ),
@@ -420,7 +420,7 @@ List<TargetFocus> createTutorialTargets(
                     'Dito, maaari mong tingnan at idagdag ang mga rating para sa ari-arian. Mahalaga ang iyong feedback!',
                     style: TextStyle(
                       color: const Color.fromARGB(199, 255, 255, 255),
-                      fontFamily: 'geistsans',
+                      fontFamily: 'manrope',
                       fontSize: 15,
                       fontWeight: FontWeight.w500,
                     ),
@@ -431,7 +431,7 @@ List<TargetFocus> createTutorialTargets(
                     'Tap to finish',
                     style: TextStyle(
                       color: const Color.fromARGB(199, 255, 255, 255),
-                      fontFamily: 'geistsans',
+                      fontFamily: 'manrope',
                       fontSize: 15,
                       fontWeight: FontWeight.w500,
                     ),

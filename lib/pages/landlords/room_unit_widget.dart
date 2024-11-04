@@ -98,7 +98,7 @@ class _RoomUnitWidgetState extends State<RoomUnitWidget> {
                         'Room No.',
                         style: TextStyle(
                           fontSize: 20,
-                          fontFamily: 'GeistSans',
+                          fontFamily: 'manrope',
                           fontWeight: FontWeight.bold,
                           color: _themeController.isDarkMode.value ? Colors.white : Colors.black,
                         ),
@@ -111,7 +111,7 @@ class _RoomUnitWidgetState extends State<RoomUnitWidget> {
                             Text(
                               'Completed',
                               style: TextStyle(color: Colors.green,
-                              fontFamily: 'geistsans',
+                              fontFamily: 'manrope',
                               fontSize: 10),
                             ),
                             Icon(
@@ -150,7 +150,7 @@ class _RoomUnitWidgetState extends State<RoomUnitWidget> {
                 placeholder: Text('Enter Room No.'),
                 style: TextStyle(
                   fontSize: 16,
-                  fontFamily: 'GeistSans',
+                  fontFamily: 'manrope',
                   color: _themeController.isDarkMode.value ? Colors.white : Colors.black,
                 ),
                 controller: widget.room.roomNumberController,
@@ -164,7 +164,7 @@ class _RoomUnitWidgetState extends State<RoomUnitWidget> {
                   'Price',
                   style: TextStyle(
                     fontSize: 20,
-                    fontFamily: 'GeistSans',
+                    fontFamily: 'manrope',
                     fontWeight: FontWeight.bold,
                     color: _themeController.isDarkMode.value ? Colors.white : Colors.black,
                   ),
@@ -172,7 +172,7 @@ class _RoomUnitWidgetState extends State<RoomUnitWidget> {
                 ShadInput(
                   style: TextStyle(
                     fontSize: 16,
-                    fontFamily: 'GeistSans',
+                    fontFamily: 'manrope',
                     color: _themeController.isDarkMode.value ? Colors.white : Colors.black,
                   ),
                   cursorColor: _themeController.isDarkMode.value ? Colors.white : Colors.black,
@@ -186,7 +186,7 @@ class _RoomUnitWidgetState extends State<RoomUnitWidget> {
                   'Capacity',
                   style: TextStyle(
                     fontSize: 20,
-                    fontFamily: 'GeistSans',
+                    fontFamily: 'manrope',
                     fontWeight: FontWeight.bold,
                     color: _themeController.isDarkMode.value ? Colors.white : Colors.black,
                   ),
@@ -194,7 +194,7 @@ class _RoomUnitWidgetState extends State<RoomUnitWidget> {
                 ShadInput(
                   style: TextStyle(
                     fontSize: 16,
-                    fontFamily: 'GeistSans',
+                    fontFamily: 'manrope',
                     color: _themeController.isDarkMode.value ? Colors.white : Colors.black,
                   ),
                   cursorColor: _themeController.isDarkMode.value ? Colors.white : Colors.black,
@@ -208,7 +208,7 @@ class _RoomUnitWidgetState extends State<RoomUnitWidget> {
                   'Deposit',
                   style: TextStyle(
                     fontSize: 20,
-                    fontFamily: 'GeistSans',
+                    fontFamily: 'manrope',
                     fontWeight: FontWeight.bold,
                     color: _themeController.isDarkMode.value ? Colors.white : Colors.black,
                   ),
@@ -218,7 +218,7 @@ class _RoomUnitWidgetState extends State<RoomUnitWidget> {
                       'Select Deposit',
                       style: TextStyle(
                         fontSize: 16,
-                        fontFamily: 'GeistSans',
+                        fontFamily: 'manrope',
                         color: _themeController.isDarkMode.value ? Colors.white : const Color.fromARGB(255, 70, 69, 69),
                       ),
                     ),
@@ -236,7 +236,7 @@ class _RoomUnitWidgetState extends State<RoomUnitWidget> {
                       depositDurations[value]!,
                       style: TextStyle(
                         fontSize: 16,
-                        fontFamily: 'GeistSans',
+                        fontFamily: 'manrope',
                         color: _themeController.isDarkMode.value ? Colors.white : Colors.black,
                       ),
                     ),
@@ -252,7 +252,7 @@ class _RoomUnitWidgetState extends State<RoomUnitWidget> {
                       'Select Advance payment',
                       style: TextStyle(
                         fontSize: 16,
-                        fontFamily: 'GeistSans',
+                        fontFamily: 'manrope',
                         color: _themeController.isDarkMode.value ? Colors.white : const Color.fromARGB(255, 78, 78, 78),
                       ),
                     ),
@@ -270,7 +270,7 @@ class _RoomUnitWidgetState extends State<RoomUnitWidget> {
                       depositDurations[value]!,
                       style: TextStyle(
                         fontSize: 16,
-                        fontFamily: 'GeistSans',
+                        fontFamily: 'manrope',
                         color: _themeController.isDarkMode.value ? Colors.white : Colors.black,
                       ),
                     ),
@@ -288,7 +288,7 @@ class _RoomUnitWidgetState extends State<RoomUnitWidget> {
                   'Reservation Fee',
                   style: TextStyle(
                     fontSize: 20,
-                    fontFamily: 'GeistSans',
+                    fontFamily: 'manrope',
                     fontWeight: FontWeight.bold,
                     color: _themeController.isDarkMode.value ? Colors.white : Colors.black,
                   ),
@@ -296,7 +296,7 @@ class _RoomUnitWidgetState extends State<RoomUnitWidget> {
                 ShadInput(
                   style: TextStyle(
                     fontSize: 16,
-                    fontFamily: 'GeistSans',
+                    fontFamily: 'manrope',
                     color: _themeController.isDarkMode.value ? Colors.white : Colors.black,
                   ),
                   cursorColor: _themeController.isDarkMode.value ? Colors.white : Colors.black,
@@ -308,14 +308,14 @@ class _RoomUnitWidgetState extends State<RoomUnitWidget> {
                 Text('Room Photos:',
                  style: TextStyle(
                     fontSize: 20,
-                    fontFamily: 'GeistSans',
+                    fontFamily: 'manrope',
                     fontWeight: FontWeight.bold,
                     color: _themeController.isDarkMode.value ? Colors.white : Colors.black,
                   ),),
                 Text('Upload ateast one photo',
                  style: TextStyle(
                     fontSize: 14,
-                    fontFamily: 'GeistSans',
+                    fontFamily: 'manrope',
                     fontWeight: FontWeight.w500,
                     color: _themeController.isDarkMode.value ? const Color.fromARGB(255, 128, 128, 128) : const Color.fromARGB(255, 78, 78, 78),
                   ),),

@@ -62,7 +62,7 @@ class _HelpscreenState extends State<Helpscreen> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text('How to add a property?', style: TextStyle(
-                  fontFamily: 'geistsans',
+                  fontFamily: 'manrope',
                   fontSize: 14,
                   fontWeight: FontWeight.w600
                 ),),

@@ -81,7 +81,7 @@ class _SetupprofilebuttonState extends State<Setupprofilebutton>
                 child: Text(
                   'Setup your profile now!',
                   style: TextStyle(
-                    fontFamily: 'GeistSans',
+                    fontFamily: 'manrope',
                     fontWeight: FontWeight.w600,
                     fontSize: 13, // Increased font size for visibility
                     color: Colors.white, // Setting text color to white for visibility

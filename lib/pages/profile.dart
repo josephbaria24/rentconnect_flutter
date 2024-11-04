@@ -127,7 +127,7 @@ Future<void> _toggleTheme(bool isDark) async {
 
   Future<void> _fetchUserProfile() async {
     final url = Uri.parse(
-        'http://192.168.1.5:3000/user/$userId'); // Adjust the endpoint if needed
+        'https://rentconnect-backend-nodejs.onrender.com/user/$userId'); // Adjust the endpoint if needed
     try {
       final response = await http
           .get(url, headers: {'Authorization': 'Bearer ${widget.token}'});
@@ -147,7 +147,7 @@ Future<void> _toggleTheme(bool isDark) async {
 
   Future<void> fetchUserProfileStatus() async {
     final url = Uri.parse(
-        'http://192.168.1.5:3000/profile/checkProfileCompletion/$userId'); // Replace with your API endpoint
+        'https://rentconnect-backend-nodejs.onrender.com/profile/checkProfileCompletion/$userId'); // Replace with your API endpoint
     try {
       final response = await http.get(
         url,
@@ -255,7 +255,7 @@ void _showLogoutConfirmationDialog(BuildContext context) {
 Future<void> _uploadProfilePicture() async {
   if (_profileImage != null) {
     final url =
-        Uri.parse('http://192.168.1.5:3000/updateProfilePicture/$userId');
+        Uri.parse('https://rentconnect-backend-nodejs.onrender.com/updateProfilePicture/$userId');
     var request = http.MultipartRequest('PATCH', url)
       ..headers['Authorization'] = 'Bearer ${widget.token}';
 
@@ -508,7 +508,7 @@ Future<void> _uploadProfilePicture() async {
                     '${userDetails?['profile']?['firstName'] ?? email} ${userDetails?['profile']?['lastName'] ?? ''}',
                     style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                           fontWeight: FontWeight.bold,
-                          fontFamily: 'GeistSans',
+                          fontFamily: 'manrope',
                           color: themeController.isDarkMode.value
                               ? Colors.white
                               : Colors.black,
@@ -538,7 +538,7 @@ Future<void> _uploadProfilePicture() async {
                             Text(
                               'Verified',
                               style: TextStyle(
-                                fontFamily: 'geistsans',
+                                fontFamily: 'manrope',
                                 fontWeight: FontWeight.w700,
                                 color: themeController.isDarkMode.value
                                     ? const Color.fromARGB(255, 255, 255, 255)
@@ -574,7 +574,7 @@ Future<void> _uploadProfilePicture() async {
                             Text(
                               'Unverified',
                               style: TextStyle(
-                                fontFamily: 'geistsans',
+                                fontFamily: 'manrope',
                                 fontWeight: FontWeight.w700,
                                 color: themeController.isDarkMode.value
                                     ? const Color.fromARGB(255, 255, 255, 255)
@@ -891,7 +891,7 @@ class DeviceCard1 extends StatelessWidget {
                           : const Color.fromARGB(255, 255, 255, 255),
                       fontSize: 14,
                       fontWeight: FontWeight.w600,
-                      fontFamily: 'geistsans',
+                      fontFamily: 'manrope',
                       overflow: TextOverflow.ellipsis, // Add ellipsis to avoid overflow
                     ),
                   ),
@@ -970,7 +970,7 @@ class DeviceCard2 extends StatelessWidget {
                           : const Color.fromARGB(255, 0, 0, 0),
                       fontSize: 13,
                       fontWeight: FontWeight.w600,
-                      fontFamily: 'geistsans',
+                      fontFamily: 'manrope',
                       overflow: TextOverflow.ellipsis, // Avoid overflow with ellipsis
                     ),
                   ),
@@ -995,8 +995,6 @@ class DeviceCard2 extends StatelessWidget {
   }
 }
 
-
-
 class ProfileMenuWidget extends StatelessWidget {
   ProfileMenuWidget({
     Key? key,
@@ -1016,61 +1014,68 @@ class ProfileMenuWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-  height: 55,
-  width: double.infinity,
-  margin: const EdgeInsets.only(bottom: 10), // Adds space between tiles
-  decoration: BoxDecoration(
-    color: _themeController.isDarkMode.value
-        ? const Color.fromARGB(255, 36, 37, 43)
-        : const Color.fromARGB(255, 241, 241, 241), // Box background color
-    borderRadius: BorderRadius.circular(12),
-  ),
-  child: Center( // Center the ListTile within the Container
-    child: ListTile(
+    return GestureDetector(
       onTap: onPress,
-      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 0), // Adjust vertical padding
-      leading: Container(
-        width: 40,
-        height: 40,
+      child: Container(
+        height: 50,
+        width: double.infinity,
+        margin: const EdgeInsets.only(bottom: 10),
+        padding: const EdgeInsets.symmetric(horizontal: 16),
         decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(100),
-          color: const Color.fromARGB(0, 28, 28, 30), // Icon background
-        ),
-        child: Icon(
-          icon,
           color: _themeController.isDarkMode.value
-              ? const Color.fromARGB(255, 226, 226, 226)
-              : const Color.fromARGB(255, 0, 0, 0),
+              ? const Color.fromARGB(0, 36, 37, 43)
+              : const Color.fromARGB(0, 241, 241, 241),
+          borderRadius: BorderRadius.circular(25),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Row(
+              children: [
+                Container(
+                  width: 40,
+                  height: 40,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(15),
+                    color: _themeController.isDarkMode.value? const Color.fromARGB(206, 61, 61, 63): const Color.fromARGB(15, 54, 54, 54),
+                  ),
+                  child: Icon(
+                    icon,
+                    color: _themeController.isDarkMode.value
+                        ? const Color.fromARGB(255, 226, 226, 226)
+                        : const Color.fromARGB(255, 0, 0, 0),
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Text(
+                  title,
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        fontWeight: FontWeight.w500,
+                        fontSize: 15,
+                        fontFamily: 'manrope',
+                      )?.apply(color: textColor ?? Colors.white),
+                ),
+              ],
+            ),
+            if (endIcon)
+              Container(
+                padding: const EdgeInsets.all(4),
+                decoration: BoxDecoration(
+                  color: const Color.fromARGB(0, 28, 28, 30),
+                  borderRadius: BorderRadius.circular(50),
+                ),
+                child: Icon(
+                  Icons.chevron_right_outlined,
+                  size: 20.0,
+                  color: _themeController.isDarkMode.value
+                      ? const Color.fromARGB(255, 226, 226, 226)
+                      : const Color.fromARGB(255, 0, 0, 0),
+                ),
+              ),
+          ],
         ),
       ),
-      title: Text(
-        title,
-        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-              fontWeight: FontWeight.w500,
-              fontSize: 16,
-              fontFamily: 'GeistSans',
-            )?.apply(color: textColor ?? Colors.white),
-      ),
-      trailing: endIcon
-          ? Container(
-              padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
-              decoration: BoxDecoration(
-                color: const Color.fromARGB(8, 28, 28, 30), // Trailing icon box background
-                borderRadius: BorderRadius.circular(50),
-              ),
-              child: Icon(
-                Icons.chevron_right_outlined,
-                size: 20.0,
-                color: _themeController.isDarkMode.value
-                    ? const Color.fromARGB(255, 226, 226, 226)
-                    : const Color.fromARGB(255, 0, 0, 0),
-              ),
-            )
-          : null,
-    ),
-  ),
-);
-
+    );
   }
 }
+

@@ -32,7 +32,7 @@ class ReserverList extends StatelessWidget {
           style: TextStyle(
             fontWeight: FontWeight.bold,
             fontSize: 18,
-            fontFamily: 'geistsans',
+            fontFamily: 'manrope',
           ),
           textAlign: TextAlign.center,
         ),
@@ -111,7 +111,7 @@ class ReserverList extends StatelessWidget {
                     fullName,
                     overflow: TextOverflow.ellipsis,
                     style: TextStyle(
-                      fontFamily: 'GeistSans',
+                      fontFamily: 'manrope',
                       fontWeight: FontWeight.w600,
                       fontSize: 12.0,
                     ),
@@ -138,7 +138,7 @@ class ReserverList extends StatelessWidget {
                   'Loading...',
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
-                    fontFamily: 'GeistSans',
+                    fontFamily: 'manrope',
                     fontWeight: FontWeight.w600,
                     fontSize: 12.0,
                   ),

@@ -164,7 +164,7 @@ if (widget.inquiry['status'] == 'pending' &&
               'Cancel Inquiry',
               style: TextStyle(
                 color: Colors.red,
-                fontFamily: 'geistsans',
+                fontFamily: 'manrope',
                 fontWeight: FontWeight.w700,
               ),
             ),
@@ -231,7 +231,7 @@ if (widget.inquiry['status'] == 'pending' &&
               'Cancel Inquiry',
               style: TextStyle(
                 color: Colors.red,
-                fontFamily: 'geistsans',
+                fontFamily: 'manrope',
                 fontWeight: FontWeight.w700,
               ),
             ),

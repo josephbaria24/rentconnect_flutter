@@ -85,7 +85,7 @@ class _PaymentUploadWidgetState extends State<PaymentUploadWidget> {
           Column(
             children: [
               Text('Proof Of Payment:', style: TextStyle(
-                fontFamily: 'geistsans',
+                fontFamily: 'manrope',
                 fontSize: 20,
                 fontWeight: FontWeight.bold
               ),),
@@ -225,7 +225,7 @@ class _PaymentUploadWidgetState extends State<PaymentUploadWidget> {
                             color: isSelected
                                 ? (_themeController.isDarkMode.value ? const Color.fromARGB(255, 255, 255, 255) : Colors.white)
                                 : _themeController.isDarkMode.value ? const Color.fromARGB(255, 0, 0, 0) : Colors.black,
-                            fontFamily: 'geistsans',
+                            fontFamily: 'manrope',
                             fontWeight: FontWeight.w600,
                             fontSize: 13,
                           ),
@@ -259,7 +259,7 @@ class _PaymentUploadWidgetState extends State<PaymentUploadWidget> {
 
 void _fetchMonthlyPayments() async {
     try {
-      final response = await http.get(Uri.parse('http://192.168.1.5:3000/payment/room/${widget.roomDetails['_id']}/monthlyPayments'));
+      final response = await http.get(Uri.parse('https://rentconnect-backend-nodejs.onrender.com/payment/room/${widget.roomDetails['_id']}/monthlyPayments'));
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
         if (data['status']) {
@@ -297,7 +297,7 @@ void _fetchMonthlyPayments() async {
     if (selectedMonth != null) {
       try {
         // Call the API to get monthly payments
-        final response = await http.get(Uri.parse('http://192.168.1.5:3000/payment/room/${widget.roomDetails['_id']}/monthlyPayments'));
+        final response = await http.get(Uri.parse('https://rentconnect-backend-nodejs.onrender.com/payment/room/${widget.roomDetails['_id']}/monthlyPayments'));
 
         // Debugging: Print the response status and body
         print('Response status: ${response.statusCode}');

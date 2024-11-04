@@ -35,7 +35,7 @@ List<TargetFocus> createTutorialTargets(
                     'This is the due date section. Tap here to select a due date for rental payment.',
                     style: TextStyle(
                       color: Colors.white,
-                      fontFamily: 'geistsans',
+                      fontFamily: 'manrope',
                       fontSize: 15,
                       fontWeight: FontWeight.w500,
                     ),
@@ -46,7 +46,7 @@ List<TargetFocus> createTutorialTargets(
                     'Ito ang bahagi ng petsa ng pagbabayad. Pindutin ito upang pumili ng petsa ng pagbabayad ng renta.',
                     style: TextStyle(
                       color: const Color.fromARGB(199, 255, 255, 255),
-                      fontFamily: 'geistsans',
+                      fontFamily: 'manrope',
                       fontSize: 15,
                       fontWeight: FontWeight.w500,
                     ),
@@ -57,7 +57,7 @@ List<TargetFocus> createTutorialTargets(
                     'Tap to next',
                     style: TextStyle(
                       color: const Color.fromARGB(199, 255, 255, 255),
-                      fontFamily: 'geistsans',
+                      fontFamily: 'manrope',
                       fontSize: 15,
                       fontWeight: FontWeight.w500,
                     ),
@@ -97,7 +97,7 @@ List<TargetFocus> createTutorialTargets(
                     'These months show proof of rental payments from occupants. Press to check for any uploaded payment proof.',
                     style: TextStyle(
                       color: Colors.white,
-                      fontFamily: 'geistsans',
+                      fontFamily: 'manrope',
                       fontSize: 15,
                       fontWeight: FontWeight.w500,
                     ),
@@ -108,7 +108,7 @@ List<TargetFocus> createTutorialTargets(
                     'Ipinapakita ng mga buwang ito ang katibayan ng mga pagbabayad ng renta mula sa mga umuupa. I-tap upang suriin ang anumang na-upload na katibayan ng pagbabayad.',
                     style: TextStyle(
                       color: const Color.fromARGB(199, 255, 255, 255),
-                      fontFamily: 'geistsans',
+                      fontFamily: 'manrope',
                       fontSize: 15,
                       fontWeight: FontWeight.w500,
                     ),
@@ -119,7 +119,7 @@ List<TargetFocus> createTutorialTargets(
                     'Tap to next',
                     style: TextStyle(
                       color: const Color.fromARGB(199, 255, 255, 255),
-                      fontFamily: 'geistsans',
+                      fontFamily: 'manrope',
                       fontSize: 15,
                       fontWeight: FontWeight.w500,
                     ),
@@ -158,7 +158,7 @@ List<TargetFocus> createTutorialTargets(
                     'This section shows the proof of payment uploaded by occupants of your room. You can view fullscreen by tapping.',
                     style: TextStyle(
                       color: Colors.white,
-                      fontFamily: 'geistsans',
+                      fontFamily: 'manrope',
                       fontSize: 15,
                       fontWeight: FontWeight.w500,
                     ),
@@ -169,7 +169,7 @@ List<TargetFocus> createTutorialTargets(
                     'Ipinapakita ng seksyon na ito ang katibayan ng pagbabayad na na-upload ng mga umuupa ng iyong silid. Maaari mong tingnan ito sa fullscreen sa pamamagitan ng pag-tap.',
                     style: TextStyle(
                       color: const Color.fromARGB(199, 255, 255, 255),
-                      fontFamily: 'geistsans',
+                      fontFamily: 'manrope',
                       fontSize: 15,
                       fontWeight: FontWeight.w500,
                     ),
@@ -181,7 +181,7 @@ List<TargetFocus> createTutorialTargets(
                     'Tap to next',
                     style: TextStyle(
                       color: const Color.fromARGB(199, 255, 255, 255),
-                      fontFamily: 'geistsans',
+                      fontFamily: 'manrope',
                       fontSize: 15,
                       fontWeight: FontWeight.w500,
                     ),
@@ -220,7 +220,7 @@ List<TargetFocus> createTutorialTargets(
                     text: TextSpan(
                       style: TextStyle(
                         color: Colors.white,
-                        fontFamily: 'geistsans',
+                        fontFamily: 'manrope',
                         fontSize: 15,
                         fontWeight: FontWeight.w500,
                       ),
@@ -245,7 +245,7 @@ List<TargetFocus> createTutorialTargets(
                     text: TextSpan(
                       style: TextStyle(
                         color: const Color.fromARGB(199, 255, 255, 255),
-                        fontFamily: 'geistsans',
+                        fontFamily: 'manrope',
                         fontSize: 15,
                         fontWeight: FontWeight.w500,
                       ),
@@ -270,7 +270,7 @@ List<TargetFocus> createTutorialTargets(
                     'Done',
                     style: TextStyle(
                       color: const Color.fromARGB(199, 255, 255, 255),
-                      fontFamily: 'geistsans',
+                      fontFamily: 'manrope',
                       fontSize: 15,
                       fontWeight: FontWeight.w500,
                     ),

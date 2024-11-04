@@ -56,7 +56,7 @@ class _LineChartSample2State extends State<LineChartSample2> {
                         const Text(
                           "Overall occupancy rate",
                           style: TextStyle(
-                            fontFamily: 'geistsans',
+                            fontFamily: 'manrope',
                             fontWeight: FontWeight.bold,
                             fontSize: 15,
                           ),
@@ -95,7 +95,7 @@ class _LineChartSample2State extends State<LineChartSample2> {
                     Row(
                       children: [
                         Text('Select Year:', style: TextStyle(
-                                      fontFamily: "geistsans",
+                                      fontFamily: "manrope",
                                       fontWeight: FontWeight.w400
                                     ),),
                                     const SizedBox(width: 5),
@@ -107,7 +107,7 @@ class _LineChartSample2State extends State<LineChartSample2> {
                           return DropdownMenuItem(
                             value: year,
                             child: Text(year.toString(),style: TextStyle(
-                        fontFamily: "geistsans",
+                        fontFamily: "manrope",
                         fontWeight: FontWeight.w600
                       ),),
                           );
@@ -145,7 +145,7 @@ class _LineChartSample2State extends State<LineChartSample2> {
 
   Widget bottomTitleWidgets(double value, TitleMeta meta) {
     const style = TextStyle(
-      fontFamily: 'geistsans',
+      fontFamily: 'manrope',
       fontWeight: FontWeight.w600,
       fontSize: 10,
     );
@@ -218,7 +218,7 @@ class _LineChartSample2State extends State<LineChartSample2> {
               return Text(
                 '${(value * 1).toInt()}',
                 style: const TextStyle(
-                  fontFamily: 'geistsans',
+                  fontFamily: 'manrope',
                   fontWeight: FontWeight.bold,
                   fontSize: 14,
                 ),

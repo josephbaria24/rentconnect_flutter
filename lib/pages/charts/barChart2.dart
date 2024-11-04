@@ -19,7 +19,7 @@
 //               reservedSize: 38,
 //               getTitlesWidget: (value, meta) {
 //                 const style = TextStyle(
-//                   fontFamily: 'geistsans',
+//                   fontFamily: 'manrope',
 //                   fontWeight: FontWeight.w500,
 //                   fontSize: 10,
 //                 );

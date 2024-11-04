@@ -3,7 +3,7 @@ import 'package:get/get.dart';
 import 'package:rentcon/models/user_class.dart';
 import 'package:rentcon/pages/bookmark.dart';
 import 'package:rentcon/pages/home.dart';
-import 'package:rentcon/pages/message.dart';
+import 'package:rentcon/message/message.dart';
 import 'package:rentcon/pages/profile.dart';
 import 'package:rentcon/pages/trends.dart';
 import 'package:jwt_decoder/jwt_decoder.dart';
@@ -47,7 +47,7 @@ class _NavigationMenuState extends State<NavigationMenu> {
 
   @override
   Widget build(BuildContext context) {
-    final controller = Get.put(NavigationController(token: widget.token, initialIndex: _selectedIndex));
+    final controller = Get.put(NavigationController(token: widget.token, initialIndex: _selectedIndex, email: email));
 
     return Scaffold(
       backgroundColor: themeController.isDarkMode.value
@@ -89,7 +89,7 @@ class _NavigationMenuState extends State<NavigationMenu> {
                     : const Color.fromARGB(255, 255, 255, 255),
                 tabBackgroundColor: themeController.isDarkMode.value
                     ? const Color.fromARGB(255, 255, 255, 255)
-                    : const Color.fromARGB(255, 42, 36, 59),
+                    : const Color.fromARGB(255, 0, 0, 0),
                 gap: 8,
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
                 selectedIndex: _selectedIndex,
@@ -168,11 +168,12 @@ class _NavigationMenuState extends State<NavigationMenu> {
 class NavigationController extends GetxController {
   final Rx<int> selectedIndex;
   final String token;
-
-  NavigationController({required this.token, required int initialIndex})
+  final String email;
+  NavigationController({required this.token, required this.email,required int initialIndex})
       : selectedIndex = initialIndex.obs;
 
   final screens = <Widget>[];
+  
 
   @override
   void onInit() {
@@ -181,7 +182,7 @@ class NavigationController extends GetxController {
       HomePage(token: token),
       BookmarkPage(token: token),
       TrendPage(token: token, ),
-      MessagePage(token: token),
+      MessagePage(token: token, email: email,),
       ProfilePage(token: token),
       
     ]);

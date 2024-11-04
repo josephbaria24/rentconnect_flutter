@@ -279,7 +279,7 @@ Future<void> _selectLegalDocPhoto(int index) async {
   }
 
   Future<void> _submitProperty() async {
-    var request = http.MultipartRequest('POST', Uri.parse('http://192.168.1.5:3000/storeProperty'));
+    var request = http.MultipartRequest('POST', Uri.parse('https://rentconnect-backend-nodejs.onrender.com/storeProperty'));
 
     request.fields['userId'] = userId;
     request.fields['description'] = descriptionController.text;
@@ -469,7 +469,7 @@ Widget build(BuildContext context) {
       backgroundColor: _themeController.isDarkMode.value? Color.fromARGB(255, 28, 29, 34) : Colors.white ,
       title: Text('Setup Your Property',
       style: TextStyle(
-        fontFamily: 'GeistSans',
+        fontFamily: 'manrope',
         fontWeight: FontWeight.bold
       ),),
       leading: Padding(
@@ -520,7 +520,7 @@ Widget build(BuildContext context) {
             style: TextStyle(
               color: _themeController.isDarkMode.value? const Color.fromARGB(255, 255, 255, 255): Colors.black,
               fontSize: 20,
-              fontFamily: 'GeistSans',
+              fontFamily: 'manrope',
               fontWeight: FontWeight.bold,
             ),),
             placeholder: const Text('Enter description'),
@@ -549,7 +549,7 @@ Widget build(BuildContext context) {
             style: TextStyle(
               color: _themeController.isDarkMode.value? const Color.fromARGB(255, 255, 255, 255): Colors.black,
               fontSize: 20,
-              fontFamily: 'GeistSans',
+              fontFamily: 'manrope',
               fontWeight: FontWeight.bold,
             ),),
             placeholder: const Text('Enter street'),
@@ -574,7 +574,7 @@ Widget build(BuildContext context) {
             style: TextStyle(
               color: _themeController.isDarkMode.value? const Color.fromARGB(255, 255, 255, 255): Colors.black,
               fontSize: 20,
-              fontFamily: 'GeistSans',
+              fontFamily: 'manrope',
               fontWeight: FontWeight.bold,
             ),
           ),
@@ -638,7 +638,7 @@ Widget build(BuildContext context) {
             style: TextStyle(
               color: _themeController.isDarkMode.value? const Color.fromARGB(255, 255, 255, 255): Colors.black,
               fontSize: 20,
-              fontFamily: 'GeistSans',
+              fontFamily: 'manrope',
               fontWeight: FontWeight.bold,
             ),),
             placeholder: Text('Puerto Princesa City',
@@ -654,7 +654,7 @@ Widget build(BuildContext context) {
             'Amenities',
             style: TextStyle(
               fontSize: 20,
-              fontFamily: 'GeistSans',
+              fontFamily: 'manrope',
               fontWeight: FontWeight.bold,
               color: _themeController.isDarkMode.value ? Colors.white : Colors.black,
             ),
@@ -686,7 +686,7 @@ Widget build(BuildContext context) {
           ShadInput(
             style: TextStyle(
               fontSize: 16,
-              fontFamily: 'GeistSans',
+              fontFamily: 'manrope',
               //fontWeight: FontWeight.normal,
               color: _themeController.isDarkMode.value ? Colors.white : Colors.black,
             ),
@@ -699,7 +699,7 @@ Widget build(BuildContext context) {
             'Type Of Property',
             style: TextStyle(
               fontSize: 20,
-              fontFamily: 'GeistSans',
+              fontFamily: 'manrope',
               fontWeight: FontWeight.bold,
               color: _themeController.isDarkMode.value ? Colors.white : Colors.black,
             ),
@@ -723,7 +723,7 @@ Widget build(BuildContext context) {
           selectedOptionBuilder: (context, value) => Text(
             value ?? 'Select Type of Property',
             style: TextStyle(
-              fontFamily: 'geistsans',
+              fontFamily: 'manrope',
               fontWeight: FontWeight.w500,
               color: _themeController.isDarkMode.value ? Colors.white : Colors.black,
             ),
@@ -744,7 +744,7 @@ Widget build(BuildContext context) {
             'Select Location',
             style: TextStyle(
               fontSize: 20,
-              fontFamily: 'GeistSans',
+              fontFamily: 'manrope',
               fontWeight: FontWeight.bold,
               color: _themeController.isDarkMode.value ? Colors.white : Colors.black,
             ),
@@ -779,7 +779,7 @@ Widget build(BuildContext context) {
             'Property Photos',
             style: TextStyle(
               fontSize: 20,
-              fontFamily: 'GeistSans',
+              fontFamily: 'manrope',
               fontWeight: FontWeight.bold,
               color: _themeController.isDarkMode.value ? Colors.white : Colors.black,
             ),
@@ -799,7 +799,7 @@ Widget build(BuildContext context) {
             'Legal Document Photos',
             style: TextStyle(
               fontSize: 20,
-              fontFamily: 'GeistSans',
+              fontFamily: 'manrope',
               fontWeight: FontWeight.bold,
               color: _themeController.isDarkMode.value ? Colors.white : Colors.black,
             ),
@@ -941,7 +941,7 @@ Widget _buildPhotoBox(int index, File? photo, Function(int) onSelectPhoto) {
       child: photo == null
           ? Center(child: Text('Photo $index',
           style: TextStyle(
-            fontFamily: 'geistsans',
+            fontFamily: 'manrope',
             color: _themeController.isDarkMode.value
                 ? const Color.fromARGB(255, 0, 0, 0)
                 : const Color.fromARGB(255, 255, 255, 255),

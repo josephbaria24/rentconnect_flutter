@@ -15,7 +15,7 @@ import 'package:fluttertoast/fluttertoast.dart';
  // Make sure to import your theme controller
 
 Future<List<Property>> getBookmarkedProperties(String token, String userId) async {
-  final url = Uri.parse('http://192.168.1.5:3000/getUserBookmarks/$userId'); 
+  final url = Uri.parse('https://rentconnect-backend-nodejs.onrender.com/getUserBookmarks/$userId'); 
 
   try {
     final response = await http.get(
@@ -45,7 +45,7 @@ Future<List<Property>> getBookmarkedProperties(String token, String userId) asyn
 }
 
 Future<void> removeBookmark(String token, String userId, String propertyId) async {
-  final url = Uri.parse('http://192.168.1.5:3000/removeBookmark');
+  final url = Uri.parse('https://rentconnect-backend-nodejs.onrender.com/removeBookmark');
 
   try {
     final response = await http.post(
@@ -94,13 +94,14 @@ class _BookmarkPageState extends State<BookmarkPage> {
   late FToast ftoast;
   late ToastNotification toast;
   final ThemeController _themeController = Get.find<ThemeController>();
-
+ late ToastNotification toastNotification;
 
   @override
   void initState() {
     super.initState();
     ftoast = FToast();
     ftoast.init(context);
+    toastNotification = ToastNotification(context);
     final Map<String, dynamic> jwtDecodedToken = JwtDecoder.decode(widget.token);
     email = jwtDecodedToken['email']?.toString() ?? 'Unknown email';
     userId = jwtDecodedToken['_id']?.toString() ?? 'Unknown userID';
@@ -117,32 +118,10 @@ class _BookmarkPageState extends State<BookmarkPage> {
   Future<void> handleRemoveBookmark(String propertyId) async {
     try {
       await removeBookmark(widget.token, userId, propertyId);
-      Get.snackbar(
-        '', // Leave title empty because we're using titleText for customization
-        '', // Leave message empty because we're using messageText for customization
-        duration: Duration(milliseconds: 1500),
-        titleText: Text(
-          'Success',
-          style: TextStyle(color: Colors.green, fontWeight: FontWeight.bold), // Customize the color of 'Success'
-        ),
-        messageText: Text(
-          'Successfully removed from bookmark!', // Customize message text color if needed
-        ),
-      );
+      toastNotification.success("Successfully removed from bookmark!");
       await refreshBookmarks(); // Refresh the list after removing
     } catch (error) {
-      Get.snackbar(
-        '', // Leave title empty because we're using titleText for customization
-        '', // Leave message empty because we're using messageText for customization
-        duration: Duration(milliseconds: 1500),
-        titleText: Text(
-          'Failed',
-          style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold), // Customize the color of 'Success'
-        ),
-        messageText: Text(
-          'Failed to remove from bookmarks!', // Customize message text color if needed
-        ),
-      );
+      toastNotification.error("Failed to remove from bookmarks!");
     }
   }
 
@@ -187,7 +166,7 @@ class _BookmarkPageState extends State<BookmarkPage> {
                           Text(
                             'No bookmarked properties.',
                             style: TextStyle(
-                              fontFamily: 'geistsans',
+                              fontFamily: 'manrope',
                               fontWeight: FontWeight.bold,
                               fontSize: 18, // Font size for the text
                               color:_themeController.isDarkMode.value? Colors.white: Colors.black, // Text color
@@ -204,7 +183,7 @@ class _BookmarkPageState extends State<BookmarkPage> {
                       final property = snapshot.data![index];
                       final imageUrl = property.photo.startsWith('http')
                           ? property.photo
-                          : 'http://192.168.1.5:3000/${property.photo}';
+                          : 'https://rentconnect-backend-nodejs.onrender.com/${property.photo}';
 
                       return Card(
                         color: _themeController.isDarkMode.value

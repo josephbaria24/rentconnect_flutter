@@ -45,7 +45,7 @@ class _BillsboxesState extends State<Billsboxes> {
               Text(
                 'Create billing statement',
                 style: TextStyle(
-                  fontFamily: 'geistsans',
+                  fontFamily: 'manrope',
                   fontWeight: FontWeight.bold,
                   fontSize: 20,
                   color: _themeController.isDarkMode.value ? Colors.white : Colors.black,
@@ -241,7 +241,7 @@ void _showBillPopover(BuildContext context, String title, IconData icon, Color c
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(8), // Decreased border radius
         ),
-        title: Text(title, style: TextStyle(fontFamily: 'geistsans', fontWeight: FontWeight.w600),),
+        title: Text(title, style: TextStyle(fontFamily: 'manrope', fontWeight: FontWeight.w600),),
         content: _buildPopoverForm(icon, color, title, inquiryId, billType),
         actions: [
           Row(
@@ -274,7 +274,7 @@ Widget _buildPopoverForm(IconData icon, Color color, String title, String inquir
         keyboardType: TextInputType.number,
         decoration: InputDecoration(
         labelStyle: TextStyle(
-          fontFamily: 'geistsans',
+          fontFamily: 'manrope',
           fontSize: 14, color:_themeController.isDarkMode.value? Colors.white:Colors.black
         ),
         labelText: 'Amount',
@@ -377,7 +377,7 @@ void _submitAllBills() async {
     final inquiryId = widget.inquiries!.first['_id'];
 
     final response = await http.post(
-      Uri.parse('http://192.168.1.5:3000/inquiries/$inquiryId/add'),
+      Uri.parse('https://rentconnect-backend-nodejs.onrender.com/inquiries/$inquiryId/add'),
       headers: {
         'Content-Type': 'application/json',
       },
@@ -414,7 +414,7 @@ void _submitAllBills() async {
 
 Future<dynamic> fetchExistingBill(String billId) async {
   final response = await http.get(
-    Uri.parse('http://192.168.1.5:3000/inquiries/bills/getBillId/$billId'),
+    Uri.parse('https://rentconnect-backend-nodejs.onrender.com/inquiries/bills/getBillId/$billId'),
   );
 
   print('Response status: ${response.statusCode}');

@@ -74,7 +74,7 @@ class _PropertyDetailsWidgetState extends State<PropertyDetailsWidget> {
 
   Future<Map<String, dynamic>?> fetchUserProfile(String? userId, String token) async {
     if (userId == null) return null;
-    final url = Uri.parse('http://192.168.1.5:3000/user/$userId');
+    final url = Uri.parse('https://rentconnect-backend-nodejs.onrender.com/user/$userId');
     try {
       final response = await http.get(url, headers: {'Authorization': 'Bearer $token'});
       if (response.statusCode == 200) {
@@ -104,7 +104,7 @@ class _PropertyDetailsWidgetState extends State<PropertyDetailsWidget> {
         title: Text(
           'Property Room Details',
           style: TextStyle(
-            fontFamily: 'GeistSans',
+            fontFamily: 'manrope',
             fontWeight: FontWeight.w600,
           ),
         ),
@@ -171,7 +171,7 @@ class _PropertyDetailsWidgetState extends State<PropertyDetailsWidget> {
                           style: TextStyle(
                             fontSize: 18,
                             fontWeight: FontWeight.bold,
-                            fontFamily: 'geistsans',
+                            fontFamily: 'manrope',
                             color: _themeController.isDarkMode.value ? Colors.black : Colors.white,
                           ),
                         ),
@@ -180,7 +180,7 @@ class _PropertyDetailsWidgetState extends State<PropertyDetailsWidget> {
                           style: TextStyle(
                             fontSize: 14,
                             fontWeight: FontWeight.w300,
-                            fontFamily: 'geistsans',
+                            fontFamily: 'manrope',
                             color: _themeController.isDarkMode.value ? Colors.black : Colors.white,
                           ),
                         ),
@@ -207,7 +207,7 @@ class _PropertyDetailsWidgetState extends State<PropertyDetailsWidget> {
                           style: TextStyle(
                             fontSize: 18,
                             fontWeight: FontWeight.bold,
-                            fontFamily: 'geistsans',
+                            fontFamily: 'manrope',
                             color: _themeController.isDarkMode.value ? Colors.white : Colors.black,
                           ),
                         ),
@@ -216,7 +216,7 @@ class _PropertyDetailsWidgetState extends State<PropertyDetailsWidget> {
                           style: TextStyle(
                             fontSize: 14,
                             fontWeight: FontWeight.w300,
-                            fontFamily: 'geistsans',
+                            fontFamily: 'manrope',
                             color: _themeController.isDarkMode.value ? Colors.white : Colors.black,
                           ),
                         ),
@@ -225,7 +225,7 @@ class _PropertyDetailsWidgetState extends State<PropertyDetailsWidget> {
                           style: TextStyle(
                             fontSize: 14,
                             fontWeight: FontWeight.w300,
-                            fontFamily: 'geistsans',
+                            fontFamily: 'manrope',
                             color: _themeController.isDarkMode.value ? Colors.white : Colors.black,
                           ),
                         ),
@@ -234,7 +234,7 @@ class _PropertyDetailsWidgetState extends State<PropertyDetailsWidget> {
                           style: TextStyle(
                             fontSize: 14,
                             fontWeight: FontWeight.w300,
-                            fontFamily: 'geistsans',
+                            fontFamily: 'manrope',
                             color: _themeController.isDarkMode.value ? Colors.white : Colors.black,
                           ),
                         ),
@@ -291,7 +291,7 @@ class _PropertyDetailsWidgetState extends State<PropertyDetailsWidget> {
                   style: TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
-                    fontFamily: 'geistsans',
+                    fontFamily: 'manrope',
                   ),
                 ),
                 const SizedBox(height: 2),
@@ -301,7 +301,7 @@ class _PropertyDetailsWidgetState extends State<PropertyDetailsWidget> {
                   'Where to locate?',
                   style: TextStyle(
                     fontSize: 14,
-                    fontFamily: 'geistsans',
+                    fontFamily: 'manrope',
                     fontWeight: FontWeight.w500,
                     color: Color.fromARGB(255, 114, 114, 114),
                   ),

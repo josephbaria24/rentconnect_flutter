@@ -24,7 +24,7 @@ class _PropertyDetailsBoxState extends State<PropertyDetailsBox> {
 
   
   Future<Map<String, int>> fetchPropertyViews(String propertyId) async {
-    final String url = 'http://192.168.1.5:3000/properties/$propertyId/views';
+    final String url = 'https://rentconnect-backend-nodejs.onrender.com/properties/$propertyId/views';
     
     try {
       final response = await http.get(Uri.parse(url));
@@ -163,7 +163,7 @@ final _themeController = Get.find<ThemeController>();
                                       value.toInt().toString(),
                                       style: const TextStyle(
                                         fontSize: 12,
-                                        fontFamily: 'geistsans',
+                                        fontFamily: 'manrope',
                                         fontWeight: FontWeight.w700,
                                       ),
                                     );
@@ -182,7 +182,7 @@ final _themeController = Get.find<ThemeController>();
                                     padding: const EdgeInsets.only(top: 8.0),
                                     child: Text(
                                       months[value.toInt()],
-                                      style: const TextStyle(fontSize: 10, fontFamily: 'geistsans', fontWeight: FontWeight.w700),
+                                      style: const TextStyle(fontSize: 10, fontFamily: 'manrope', fontWeight: FontWeight.w700),
                                     ),
                                   );
                                 },

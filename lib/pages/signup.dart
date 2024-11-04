@@ -108,7 +108,7 @@ void _handleRegistrationError(String errorMessage) {
     if (!_isCooldown) {
       try {
         var response = await http.post(
-          Uri.parse('http://192.168.1.5:3000/resend-otp'), // Replace with your resend OTP endpoint
+          Uri.parse('https://rentconnect-backend-nodejs.onrender.com/resend-otp'), // Replace with your resend OTP endpoint
           headers: {"Content-Type": "application/json"},
           body: jsonEncode({'email': email}),
         );
@@ -425,7 +425,7 @@ void registerUser() async {
 Future<bool> verifyOtp(String email, String otp, String hash) async {
   try {
     var response = await http.post(
-      Uri.parse('http://192.168.1.5:3000/verify-email-otp'), // Replace with your verification endpoint
+      Uri.parse('https://rentconnect-backend-nodejs.onrender.com/verify-email-otp'), // Replace with your verification endpoint
       headers: {"Content-Type": "application/json"},
       body: jsonEncode({
         'email': email,
@@ -521,7 +521,7 @@ bool isChecked = false;
                       child: Image.asset('assets/icons/ren.png'),
                     ),
                     Text('RentConnect', style: TextStyle(
-                      fontFamily: 'geistsans',
+                      fontFamily: 'manrope',
                       fontWeight: FontWeight.w700,
                       color: Colors.black
                     )),
@@ -533,7 +533,7 @@ bool isChecked = false;
                 const Text(
                   'Sign Up',
                   style: TextStyle(
-                    fontFamily: 'GeistSans',
+                    fontFamily: 'manrope',
                     fontWeight: FontWeight.bold,
                     fontSize: 24.0,
                     color: Colors.black,
@@ -613,7 +613,7 @@ bool isChecked = false;
                       text: TextSpan(
                         style: const TextStyle(
                           color: Color.fromARGB(255, 73, 73, 73),
-                          fontFamily: 'geistsans',
+                          fontFamily: 'manrope',
                           fontSize: 12,
                           fontWeight: FontWeight.w500
                         ),
@@ -624,7 +624,7 @@ bool isChecked = false;
                             style: const TextStyle(
                               color: Colors.blue,
                               decoration: TextDecoration.underline,
-                              fontFamily: 'geistsans',
+                              fontFamily: 'manrope',
                           fontSize: 12,
                           fontWeight: FontWeight.w500
                             ),
@@ -644,7 +644,7 @@ bool isChecked = false;
                   Text(
                     'Please check the box of agreement to proceed.',
                     style: TextStyle(color: Colors.red[700],
-                    fontFamily: 'geistsans',
+                    fontFamily: 'manrope',
                           fontSize: 12,
                           fontWeight: FontWeight.w500),
                   ),
@@ -674,7 +674,7 @@ bool isChecked = false;
                     const Text('Already have an account?',
                     style: TextStyle(
                       color: Colors.black,
-                      fontFamily: 'geistsans'
+                      fontFamily: 'manrope'
                     )),
                     TextButton(
                       onPressed: () {
@@ -686,7 +686,7 @@ bool isChecked = false;
                       child: const Text(
                         'Login',
                         style: TextStyle(color: Colors.black,
-                        fontFamily: 'geistsans',
+                        fontFamily: 'manrope',
                         fontWeight: FontWeight.w700),
                       ),
                     ),

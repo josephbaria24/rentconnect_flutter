@@ -36,7 +36,7 @@ class _AllBillsWidgetState extends State<AllBillsWidget> {
 
  
 Future<void> _fetchInquiries() async {
-  final url = 'http://192.168.1.5:3000/inquiries/occupant/${widget.userId}';
+  final url = 'https://rentconnect-backend-nodejs.onrender.com/inquiries/occupant/${widget.userId}';
 
   try {
     final response = await http.get(Uri.parse(url));
@@ -123,7 +123,7 @@ Future<void> _fetchInquiries() async {
       return Scaffold(
         appBar: AppBar(
         title: Text('All Bills', style: TextStyle(
-          fontFamily: 'geistsans',
+          fontFamily: 'manrope',
           fontSize: 20,
           fontWeight: FontWeight.w500
         ),),
@@ -177,7 +177,7 @@ Future<void> _fetchInquiries() async {
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Lottie.asset('assets/icons/empty.json', height: 200, repeat: false),
-                Text('No bills available.', style: TextStyle(fontFamily: 'geistsans', fontSize: 18,color: _themeController.isDarkMode.value? Colors.white:Colors.black),),
+                Text('No bills available.', style: TextStyle(fontFamily: 'manrope', fontSize: 18,color: _themeController.isDarkMode.value? Colors.white:Colors.black),),
               ],
             ))),
       );
@@ -191,7 +191,7 @@ Future<void> _fetchInquiries() async {
     return Scaffold(
       appBar: AppBar(
         title: Text('All Bills', style: TextStyle(
-          fontFamily: 'geistsans',
+          fontFamily: 'manrope',
           fontSize: 20,
           fontWeight: FontWeight.w500
         ),),
@@ -267,7 +267,7 @@ Future<void> _fetchInquiries() async {
                           child: Text(
                             month,
                             style: TextStyle(
-                              fontFamily: 'geistsans',
+                              fontFamily: 'manrope',
                               fontSize: 14,
                               decoration: TextDecoration.none,
                               color: selectedMonth == month ? Colors.white : Colors.black,
@@ -320,7 +320,7 @@ Future<void> _fetchInquiries() async {
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
                                 Text(getMonthName(dueDate), style: TextStyle(
-                                    fontFamily: 'geistsans',
+                                    fontFamily: 'manrope',
                                     fontSize: 20,
                                     fontWeight: FontWeight.bold
                                 )),

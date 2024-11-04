@@ -115,7 +115,7 @@ late FToast fToast;
 
 
 Future<void> incrementPropertyViews(String propertyId) async {
-    final url = Uri.parse('https://192.168.1.5:3000/properties/$propertyId/view');
+    final url = Uri.parse('https://192.168.1.12:3000/properties/$propertyId/view');
 
     try {
       final response = await http.post(url);
@@ -153,9 +153,9 @@ Widget build(BuildContext context) {
           child: Text(
             'Home',
             style: TextStyle(
-              fontSize: 20.0,
-              fontWeight: FontWeight.w800,
-              fontFamily: 'GeistSans',
+              fontSize: 22.0,
+              fontWeight: FontWeight.w700,
+              fontFamily: 'manrope',
               color: _themeController.isDarkMode.value
                   ? Colors.white
                   : const Color.fromARGB(255, 10, 0, 40),
@@ -401,7 +401,7 @@ body: Padding(
                         Text(
                           'No Internet Connection',
                           style: TextStyle(fontSize: 18, color: _themeController.isDarkMode.value? Colors.white: Colors.black,
-                          fontFamily: 'geistsans',
+                          fontFamily: 'manrope',
                           fontWeight: FontWeight.bold),
                         ),
                         SizedBox(height: 20),
@@ -435,7 +435,7 @@ body: Padding(
                     final property = properties[index];
                     final imageUrl = property.photo.startsWith('http')
                         ? property.photo
-                        : 'http://192.168.1.5:3000/${property.photo}';
+                        : 'https://rentconnect-backend-nodejs.onrender.com/${property.photo}';
 
                     return FutureBuilder<List<dynamic>>(
                       future: fetchRooms(property.id),
@@ -548,7 +548,7 @@ Future<void> initPlatform() async {
 
   Future<void> fetchUserProfileStatus() async {
     final url = Uri.parse(
-        'http://192.168.1.5:3000/profile/checkProfileCompletion/$userId'); // Replace with your API endpoint
+        'https://rentconnect-backend-nodejs.onrender.com/profile/checkProfileCompletion/$userId'); // Replace with your API endpoint
     try {
       final response = await http.get(
         url,
@@ -576,7 +576,7 @@ Future<void> initPlatform() async {
 
   Future<void> fetchUserProfileStatusForNotification() async {
     final url = Uri.parse(
-        'http://192.168.1.5:3000/profile/checkProfileCompletion/$userId'); // Your API endpoint
+        'https://rentconnect-backend-nodejs.onrender.com/profile/checkProfileCompletion/$userId'); // Your API endpoint
     try {
       final response = await http.get(
         url,
@@ -660,7 +660,7 @@ Future<List<Property>> fetchProperties() async {
   Future<List<dynamic>> fetchRooms(String propertyId) async {
     try {
       final response = await http.get(Uri.parse(
-          'http://192.168.1.5:3000/rooms/properties/$propertyId/rooms'));
+          'https://rentconnect-backend-nodejs.onrender.com/rooms/properties/$propertyId/rooms'));
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         if (data['status']) {
@@ -737,7 +737,7 @@ Future<List<Property>> fetchProperties() async {
     try {
       final response = await http.get(
         Uri.parse(
-            'http://192.168.1.5:3000/getUserBookmarks/$userId'), // Adjust endpoint if necessary
+            'https://rentconnect-backend-nodejs.onrender.com/getUserBookmarks/$userId'), // Adjust endpoint if necessary
         headers: {
           'Authorization': 'Bearer ${widget.token}',
         },
@@ -763,7 +763,7 @@ Future<List<Property>> fetchProperties() async {
   Future<String> fetchUserEmail(String userId) async {
     try {
       final response = await http.get(Uri.parse(
-          'http://192.168.1.5:3000/getUserEmail/$userId'));
+          'https://rentconnect-backend-nodejs.onrender.com/getUserEmail/$userId'));
 
       if (response.statusCode == 200) {
         final Map<String, dynamic> json = jsonDecode(response.body);
@@ -878,7 +878,7 @@ Future<List<Property>> fetchProperties() async {
     try {
       final response = await http.get(
         Uri.parse(
-            'http://192.168.1.5:3000/notification/unread/$userId'),
+            'https://rentconnect-backend-nodejs.onrender.com/notification/unread/$userId'),
         headers: {
           'Authorization': 'Bearer $token',
           'Content-Type': 'application/json',
@@ -931,7 +931,7 @@ Future<List<Property>> fetchProperties() async {
   Future<void> _markNotificationAsRead(String notificationId) async {
     final response = await http.patch(
       Uri.parse(
-          'http://192.168.1.5:3000/notification/$notificationId/read'),
+          'https://rentconnect-backend-nodejs.onrender.com/notification/$notificationId/read'),
       headers: {
         'Authorization': 'Bearer ${widget.token}',
         'Content-Type': 'application/json',
@@ -976,14 +976,14 @@ void onSelected(String filter) async {
 
 
 Future<void> bookmarkProperty(String propertyId, Function(bool isBookmarked) onUpdate) async {
-  final url = Uri.parse('http://192.168.1.5:3000/addBookmark');
+  final url = Uri.parse('https://rentconnect-backend-nodejs.onrender.com/addBookmark');
   final Map<String, dynamic> jwtDecodedToken = JwtDecoder.decode(widget.token);
   String userId = jwtDecodedToken['_id']?.toString() ?? 'Unknown user ID';
 
   try {
     if (bookmarkedPropertyIds.contains(propertyId)) {
       // If already bookmarked, remove it
-      final removeUrl = Uri.parse('http://192.168.1.5:3000/removeBookmark');
+      final removeUrl = Uri.parse('https://rentconnect-backend-nodejs.onrender.com/removeBookmark');
       await http.post(removeUrl,
           headers: {
             'Authorization': 'Bearer ${widget.token}',
@@ -998,12 +998,7 @@ Future<void> bookmarkProperty(String propertyId, Function(bool isBookmarked) onU
       onUpdate(false);
 
       // Show success toast for removal
-      AwesomeSnackBarWidget.showSnackBar(
-        context: context,
-        title: 'Oh Hey!',
-        message: 'Successfully removed from bookmark!',
-        contentType: ContentType.warning,
-      );
+      toastNotification.warn("Successfully removed from bookmark!");
 
       // Update state after a 1.5-second delay
       await Future.delayed(Duration(milliseconds: 0));
@@ -1028,12 +1023,7 @@ Future<void> bookmarkProperty(String propertyId, Function(bool isBookmarked) onU
       onUpdate(true);
 
       // Show success toast for addition
-      AwesomeSnackBarWidget.showSnackBar(
-        context: context,
-        title: 'Oh Hey!',
-        message: 'Successfully added to bookmark!',
-        contentType: ContentType.success,
-      );
+      toastNotification.success("Successfully added to bookmark!");
 
       // Update state after a 1.5-second delay
       await Future.delayed(Duration(milliseconds: 0));

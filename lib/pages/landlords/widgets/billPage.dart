@@ -74,7 +74,7 @@ Future<Uint8List> _captureBillImage() async {
   Future<void> fetchBillDetails(String billId) async {
     try {
       final response = await http.get(
-        Uri.parse('http://192.168.1.5:3000/inquiries/bills/getBillId/${widget.billId}'),
+        Uri.parse('https://rentconnect-backend-nodejs.onrender.com/inquiries/bills/getBillId/${widget.billId}'),
       );
 
       if (response.statusCode == 200) {
@@ -100,7 +100,7 @@ Future<Uint8List> _captureBillImage() async {
   Future<void> deleteBill(String billId) async {
     try {
       final response = await http.delete(
-        Uri.parse('http://192.168.1.5:3000/inquiries/bill/delete/$billId'),
+        Uri.parse('https://rentconnect-backend-nodejs.onrender.com/inquiries/bill/delete/$billId'),
       );
 
       if (response.statusCode == 200) {
@@ -164,7 +164,7 @@ Future<void> saveBillAsImage() async {
 Future<void> markBillAsPaid(String billId) async {
   try {
     final response = await http.patch(
-      Uri.parse('http://192.168.1.5:3000/inquiries/bills/$billId/isPaid'),
+      Uri.parse('https://rentconnect-backend-nodejs.onrender.com/inquiries/bills/$billId/isPaid'),
       headers: {'Content-Type': 'application/json'},
       body: jsonEncode({'isPaid': true}),
     );
@@ -189,7 +189,7 @@ Future<void> markBillAsPaid(String billId) async {
         title: Text(
           'View bills',
           style: TextStyle(
-            fontFamily: 'geistsans',
+            fontFamily: 'manrope',
             fontWeight: FontWeight.w600,
             color: _themeController.isDarkMode.value ? Colors.white : Colors.black,
           ),
@@ -304,7 +304,7 @@ Widget buildBillDetails() {
                             SizedBox(
                               height: 30,
                               child: Image.asset(_themeController.isDarkMode.value?'assets/icons/ren2.png':'assets/icons/ren.png')),
-                              Text('RentConnect', style: TextStyle(color: _themeController.isDarkMode.value? Colors.white:Colors.black, fontFamily: 'geistsans', fontSize: 15, fontWeight: FontWeight.w600),),
+                              Text('RentConnect', style: TextStyle(color: _themeController.isDarkMode.value? Colors.white:Colors.black, fontFamily: 'manrope', fontSize: 15, fontWeight: FontWeight.w600),),
                           ],
                         ),
                           
@@ -341,7 +341,7 @@ Widget buildBillDetails() {
                         fontSize: 24,
                         fontWeight: FontWeight.bold,
                         decoration: TextDecoration.none,
-                        fontFamily: 'geistsans',
+                        fontFamily: 'manrope',
                       ),
                     ),
                     SizedBox(height: 20),
@@ -352,7 +352,7 @@ Widget buildBillDetails() {
                           style: TextStyle(
                             fontSize: 20,
                             fontWeight: FontWeight.bold,
-                            fontFamily: 'geistsans',
+                            fontFamily: 'manrope',
                           ),
                         ),
                       ],
@@ -378,7 +378,7 @@ Widget buildBillDetails() {
                       style: TextStyle(
                         fontSize: 16,
                         fontStyle: FontStyle.italic,
-                        fontFamily: 'geistsans',
+                        fontFamily: 'manrope',
                       ),
                     ),
                   ],
@@ -459,14 +459,14 @@ Widget buildBillDetails() {
             style: TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.bold,
-              fontFamily: 'geistsans', // Font family applied
+              fontFamily: 'manrope', // Font family applied
             ),
           ),
           Text(
             value,
             style: TextStyle(
               fontSize: 16,
-              fontFamily: 'geistsans', // Font family applied
+              fontFamily: 'manrope', // Font family applied
             ),
           ),
         ],

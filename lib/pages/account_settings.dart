@@ -37,7 +37,7 @@ class _AccountSettingsState extends State<AccountSettings> {
   }
 
   Future<void> _updateEmail(String newEmail) async {
-    final url = Uri.parse('http://192.168.1.5:3000/updateUserInfo');
+    final url = Uri.parse('https://rentconnect-backend-nodejs.onrender.com/updateUserInfo');
     try {
       final response = await http.patch(
         url,
@@ -88,7 +88,7 @@ class _AccountSettingsState extends State<AccountSettings> {
   }
 
   Future<void> _updatePassword(String currentPassword, String newPassword) async {
-    final url = Uri.parse('http://192.168.1.5:3000/updatePassword');
+    final url = Uri.parse('https://rentconnect-backend-nodejs.onrender.com/updatePassword');
     try {
       final response = await http.patch(
         url,
@@ -175,7 +175,7 @@ Widget build(BuildContext context) {
       title: const Text(
         'Account Settings',
         style: TextStyle(
-          fontFamily: 'GeistSans',
+          fontFamily: 'manrope',
           fontWeight: FontWeight.bold,
         ),
       ),

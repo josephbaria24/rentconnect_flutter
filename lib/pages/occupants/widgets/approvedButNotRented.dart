@@ -63,7 +63,7 @@ class _ApprovedbutnotrentedState extends State<Approvedbutnotrented> {
  Map<String, dynamic>? occupantDetails;
  Future<void> _fetchLandlordProfile() async {
     final url = Uri.parse(
-        'http://192.168.1.5:3000/user/${widget.roomDetails['ownerId']}'); // Adjust the endpoint if needed
+        'https://rentconnect-backend-nodejs.onrender.com/user/${widget.roomDetails['ownerId']}'); // Adjust the endpoint if needed
     try {
       final response = await http
           .get(url, headers: {'Authorization': 'Bearer ${widget.token}'});
@@ -81,7 +81,7 @@ class _ApprovedbutnotrentedState extends State<Approvedbutnotrented> {
   }
  Future<void> _fetchOccupantProfile() async {
     final url = Uri.parse(
-        'http://192.168.1.5:3000/user/${widget.userId}'); // Adjust the endpoint if needed
+        'https://rentconnect-backend-nodejs.onrender.com/user/${widget.userId}'); // Adjust the endpoint if needed
     try {
       final response = await http
           .get(url, headers: {'Authorization': 'Bearer ${widget.token}'});
@@ -130,7 +130,7 @@ Widget build(BuildContext context) {
           Text(
             'Proof of reservation',
             style: TextStyle(
-              fontFamily: 'Geistsans',
+              fontFamily: 'manrope',
               fontSize: 16,
               color: _themeController.isDarkMode.value
                   ? Colors.white
@@ -468,7 +468,7 @@ Widget build(BuildContext context) {
           'Cancel Inquiry',
           style: TextStyle(
             color: widget.isDarkMode ? Colors.red : Colors.red,
-            fontFamily: 'geistsans',
+            fontFamily: 'manrope',
             fontWeight: FontWeight.w700,
           ),
         ),

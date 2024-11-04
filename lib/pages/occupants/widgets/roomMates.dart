@@ -42,7 +42,7 @@ class _RoommatesWidgetState extends State<RoommatesWidget> {
       ..addAll(List<String>.from(widget.roomDetails['occupantNonUsers']));
     
     // Fetch occupant details using IDs
-    final response = await http.get(Uri.parse('http://192.168.1.5:3000/occupant/getAll'));
+    final response = await http.get(Uri.parse('https://rentconnect-backend-nodejs.onrender.com/occupant/getAll'));
 
     if (response.statusCode == 200) {
       final data = json.decode(response.body);
@@ -63,7 +63,7 @@ class _RoommatesWidgetState extends State<RoommatesWidget> {
 
 Future<void> _addOccupant(String name, String gender, int age, String contactNumber, String emergencyNumber) async {
   final response = await http.post(
-    Uri.parse('http://192.168.1.5:3000/occupant/create/room/${widget.roomDetails["_id"]}'),
+    Uri.parse('https://rentconnect-backend-nodejs.onrender.com/occupant/create/room/${widget.roomDetails["_id"]}'),
     headers: {'Content-Type': 'application/json'},
     body: json.encode({
       'name': name,
@@ -96,7 +96,7 @@ Future<void> _addOccupant(String name, String gender, int age, String contactNum
 
   Future<void> _updateOccupant(String id, String newName) async {
     final response = await http.put(
-      Uri.parse('http://192.168.1.5:3000/occupant/update/$id'),
+      Uri.parse('https://rentconnect-backend-nodejs.onrender.com/occupant/update/$id'),
       headers: {'Content-Type': 'application/json'},
       body: json.encode({'name': newName}),
     );
@@ -111,7 +111,7 @@ Future<void> _addOccupant(String name, String gender, int age, String contactNum
 
   Future<void> _deleteOccupant(String id) async {
     final response = await http.delete(
-      Uri.parse('http://192.168.1.5:3000/occupant/delete/$id'),
+      Uri.parse('https://rentconnect-backend-nodejs.onrender.com/occupant/delete/$id'),
     );
 
     if (response.statusCode == 200) {
@@ -183,7 +183,7 @@ Widget build(BuildContext context) {
                                 Text(
                                   occupant['name'],
                                   style: TextStyle(
-                                    fontFamily: 'geistsans',
+                                    fontFamily: 'manrope',
                                     fontWeight: FontWeight.w500,
                                     color: _themeController.isDarkMode.value
                                         ? const Color.fromARGB(255, 0, 0, 0)
@@ -361,7 +361,7 @@ void _showAddDialog() {
                 Navigator.of(context).pop();
               }
             },
-            child: Text('Add', style: TextStyle(fontFamily: 'geistsans',fontWeight: FontWeight.w700,color: _themeController.isDarkMode.value? Colors.white:Colors.black),),
+            child: Text('Add', style: TextStyle(fontFamily: 'manrope',fontWeight: FontWeight.w700,color: _themeController.isDarkMode.value? Colors.white:Colors.black),),
           ),
         ],
       );
@@ -393,7 +393,7 @@ void _showAddDialog() {
                   Navigator.of(context).pop();
                 }
               },
-              child: Text('Update' ,style: TextStyle(fontFamily: 'geistsans',fontWeight: FontWeight.w700,color: _themeController.isDarkMode.value? Colors.white:Colors.black),),
+              child: Text('Update' ,style: TextStyle(fontFamily: 'manrope',fontWeight: FontWeight.w700,color: _themeController.isDarkMode.value? Colors.white:Colors.black),),
             ),
           ],
         );

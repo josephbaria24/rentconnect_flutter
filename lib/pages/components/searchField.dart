@@ -28,69 +28,67 @@ class SearchFieldWidget extends StatelessWidget {
         children: [
           // Search Bar
           Expanded(
-            child: SizedBox(
-              height: 43,
-              child: Container(
-                decoration: BoxDecoration(
-                  boxShadow: [
-                    BoxShadow(
-                      color: _themeController.isDarkMode.value
-                          ? Colors.grey[900]!
-                          : const Color(0xff101617).withOpacity(0.1),
-                      blurRadius: 20,
-                      spreadRadius: 1,
-                    ),
-                  ],
-                ),
-                child: TextField(
-                  controller: searchController,
-                  textInputAction: TextInputAction.search,  // Use search icon on the keyboard
-                  onSubmitted: (value) {
-                    performSearch();  // Trigger search when the search icon is pressed
-                  },
-                  onChanged: (value) {
-                    handleSearch(value);  // Handle real-time search input
-                  },
-                  decoration: InputDecoration(
-                    filled: true,
-                    fillColor: _themeController.isDarkMode.value
-                        ? const Color.fromARGB(255, 36, 38, 43)
-                        : Colors.white,
-                    contentPadding: const EdgeInsets.all(15),
-                    hintText: 'Search',
-                    hintStyle: TextStyle(
-                      color: _themeController.isDarkMode.value
-                          ? Colors.grey
-                          : const Color(0xffDDDADA),
-                      fontSize: 14,
-                    ),
-                    prefixIcon: GestureDetector(
-                      onTap: performSearch,
-                      child: Padding(
-                        padding: const EdgeInsets.all(5),
-                        child: Container(
-                          decoration: BoxDecoration(
-                            color: Colors.amber,
-                            borderRadius: BorderRadius.circular(100)
-                          ),
-                          child: Padding(
-                            padding: const EdgeInsets.all(8.0),
-                            child: Image.asset(
-                              'assets/icons/search.png',
-                              color: _themeController.isDarkMode.value
-                                  ? Colors.black
-                                  : Colors.black,
-                              width: 15.0,
-                              height: 16.0,
-                            ),
+            child: Container(
+              height: 42,
+              decoration: BoxDecoration(
+                boxShadow: [
+                  BoxShadow(
+                    color: _themeController.isDarkMode.value
+                        ? Colors.grey[900]!
+                        : const Color(0xff101617).withOpacity(0.1),
+                    blurRadius: 20,
+                    spreadRadius: 1,
+                  ),
+                ],
+              ),
+              child: TextField(
+                controller: searchController,
+                textInputAction: TextInputAction.search,  // Use search icon on the keyboard
+                onSubmitted: (value) {
+                  performSearch();  // Trigger search when the search icon is pressed
+                },
+                onChanged: (value) {
+                  handleSearch(value);  // Handle real-time search input
+                },
+                decoration: InputDecoration(
+                  filled: true,
+                  fillColor: _themeController.isDarkMode.value
+                      ? const Color.fromARGB(255, 36, 38, 43)
+                      : Colors.white,
+                  contentPadding: const EdgeInsets.all(15),
+                  hintText: 'Search',
+                  hintStyle: TextStyle(
+                    color: _themeController.isDarkMode.value
+                        ? Colors.grey
+                        : const Color(0xffDDDADA),
+                    fontSize: 14,
+                  ),
+                  prefixIcon: GestureDetector(
+                    onTap: performSearch,
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 7),
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color: Colors.amber,
+                          borderRadius: BorderRadius.circular(100)
+                        ),
+                        child: Padding(
+                          padding: const EdgeInsets.all(7.0),
+                          child: Image.asset(
+                            'assets/icons/search.png',
+                            color: _themeController.isDarkMode.value
+                                ? Colors.black
+                                : Colors.black,
+                            width: 13.0,
+                            height: 14.0,
                           ),
                         ),
                       ),
                     ),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(20),
-                      borderSide: BorderSide.none,
-                    ),
+                  ),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(25),
+                    borderSide: BorderSide.none,
                   ),
                 ),
               ),
@@ -131,97 +129,3 @@ class SearchFieldWidget extends StatelessWidget {
     );
   }
 }
-
-
-
- //SearchFieldWidget()
-  // Container _searchField() {
-  //   return Container(
-  //     margin: EdgeInsets.only(top: 20, left: 20, right: 20),
-  //     decoration: BoxDecoration(
-  //       boxShadow: [
-  //         BoxShadow(
-  //           color: _themeController.isDarkMode.value
-  //               ? Colors.grey[900]!
-  //               : Color(0xff101617).withOpacity(0.1),
-  //           blurRadius: 10,
-  //           spreadRadius: 1,
-  //         ),
-  //       ],
-  //     ),
-  //     child: TextField(
-  //       controller: _searchController,
-  //       onChanged: (value) {
-  //         _handleSearch(value);
-  //       },
-  //       decoration: InputDecoration(
-  //         filled: true,
-  //         fillColor: _themeController.isDarkMode.value
-  //             ? Colors.grey[850]
-  //             : Colors.white,
-  //         contentPadding: EdgeInsets.all(15),
-  //         hintText: 'Search',
-  //         hintStyle: TextStyle(
-  //           color: _themeController.isDarkMode.value
-  //               ? Colors.grey
-  //               : Color(0xffDDDADA),
-  //           fontSize: 14,
-  //         ),
-  //         prefixIcon: GestureDetector(
-  //           onTap: () {
-  //             // Trigger search action
-  //             _performSearch();
-  //           },
-  //           child: Padding(
-  //             padding: const EdgeInsets.all(12),
-  //             child: Image.asset(
-  //               'assets/icons/search.png',
-  //               color: _themeController.isDarkMode.value
-  //                   ? Colors.white
-  //                   : Colors.black,
-  //               width: 16.0,
-  //               height: 16.0,
-  //             ),
-  //           ),
-  //         ),
-  //         suffixIcon: GestureDetector(
-  //           onTap: () {
-  //             // Trigger filter action
-  //             _showFilterDialog();
-  //           },
-  //           child: Container(
-  //             width: 100,
-  //             child: IntrinsicHeight(
-  //               child: Row(
-  //                 mainAxisAlignment: MainAxisAlignment.end,
-  //                 children: [
-  //                   VerticalDivider(
-  //                     indent: 10,
-  //                     endIndent: 10,
-  //                     color: Colors.black,
-  //                     thickness: 0.1,
-  //                   ),
-  //                   Padding(
-  //                     padding: const EdgeInsets.all(12),
-  //                     child: Image.asset(
-  //                       'assets/icons/filter.png',
-  //                       color: _themeController.isDarkMode.value
-  //                           ? Colors.white
-  //                           : Colors.black,
-  //                       width: 20.0,
-  //                       height: 20.0,
-  //                     ),
-  //                   ),
-  //                 ],
-  //               ),
-  //             ),
-  //           ),
-  //         ),
-  //         border: OutlineInputBorder(
-  //           borderRadius: BorderRadius.circular(15),
-  //           borderSide: BorderSide.none,
-  //         ),
-  //       ),
-  //     ),
-  //   );
-  // }

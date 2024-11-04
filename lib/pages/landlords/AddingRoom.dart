@@ -102,7 +102,7 @@ void _submitRooms() async {
   }
 
   // If all fields are valid, proceed to submit the form
-  var request = http.MultipartRequest('POST', Uri.parse('http://192.168.1.5:3000/rooms/createRoom'));
+  var request = http.MultipartRequest('POST', Uri.parse('https://rentconnect-backend-nodejs.onrender.com/rooms/createRoom'));
 
   // Prepare data for all rooms
   for (int i = 0; i < roomUnits.length; i++) {
@@ -176,7 +176,7 @@ void _submitRooms() async {
   Future<void> _deleteProperty() async {
     try {
       final response = await http.delete(
-        Uri.parse('http://192.168.1.5:3000/deleteProperty/${widget.propertyId}'),
+        Uri.parse('https://rentconnect-backend-nodejs.onrender.com/deleteProperty/${widget.propertyId}'),
       );
 
       if (response.statusCode == 200) {
@@ -204,7 +204,7 @@ Widget build(BuildContext context) {
       backgroundColor:_themeController.isDarkMode.value? Color.fromARGB(255, 28, 29, 34): Colors.white,
       scrolledUnderElevation: 0,
       title: Text('Add Rooms', style: TextStyle(
-        fontFamily: 'geistsans',
+        fontFamily: 'manrope',
         fontSize: 22,
         fontWeight: FontWeight.w600
       ),),
@@ -322,7 +322,7 @@ Widget build(BuildContext context) {
             ),
             content: Text(
               'Please upload at least one photo for all rooms before submitting.',
-              style: TextStyle(fontSize: 13, fontFamily: 'geistsans'),
+              style: TextStyle(fontSize: 13, fontFamily: 'manrope'),
             ),
             actions: <CupertinoDialogAction>[
               CupertinoDialogAction(

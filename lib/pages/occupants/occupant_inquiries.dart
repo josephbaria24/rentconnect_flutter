@@ -140,7 +140,7 @@ void _showTutorial() {
       colorShadow:_themeController.isDarkMode.value? const Color.fromARGB(255, 102, 102, 102): Colors.black.withOpacity(0.8),
       textSkip: "SKIP",
       alignSkip: Alignment.topRight,
-      textStyleSkip: TextStyle(color: _themeController.isDarkMode.value? Colors.white: Colors.white, fontFamily: 'geistsans', fontSize: 17, fontWeight: FontWeight.w600),
+      textStyleSkip: TextStyle(color: _themeController.isDarkMode.value? Colors.white: Colors.white, fontFamily: 'manrope', fontSize: 17, fontWeight: FontWeight.w600),
       onFinish: () {
         print("Tutorial finished");
       },
@@ -200,7 +200,7 @@ Future<void> _initializeInquiries() async {
  Future<List<Map<String, dynamic>>> fetchInquiries(
       String userId, String token) async {
     final response = await http.get(
-      Uri.parse('http://192.168.1.5:3000/inquiries/occupant/$userId'),
+      Uri.parse('https://rentconnect-backend-nodejs.onrender.com/inquiries/occupant/$userId'),
       headers: {
         'Authorization': 'Bearer $token',
         'Content-Type': 'application/json',
@@ -216,7 +216,7 @@ Future<void> _initializeInquiries() async {
   }
 
   Future<void> fetchPropertyDetails(String roomId) async {
-    final url = 'http://192.168.1.5:3000/inquiries/room/$roomId/property';
+    final url = 'https://rentconnect-backend-nodejs.onrender.com/inquiries/room/$roomId/property';
 
     try {
       final response = await http.get(Uri.parse(url));
@@ -272,7 +272,7 @@ Future<void> _uploadProofOfReservation(
   if (image != null) {
     final request = http.MultipartRequest(
       'POST',
-      Uri.parse('http://192.168.1.5:3000/payment/uploadProofOfReservation'),
+      Uri.parse('https://rentconnect-backend-nodejs.onrender.com/payment/uploadProofOfReservation'),
     );
 
     request.headers['Authorization'] = 'Bearer ${widget.token}';
@@ -342,7 +342,7 @@ Future<void> _uploadProofOfReservation(
 
           // Send notification request
           final notificationResponse = await http.post(
-            Uri.parse('http://192.168.1.5:3000/notification/create'),
+            Uri.parse('https://rentconnect-backend-nodejs.onrender.com/notification/create'),
             headers: {
               'Authorization': 'Bearer ${widget.token}',
               'Content-Type': 'application/json',
@@ -387,7 +387,7 @@ Future<void> _uploadProofOfReservation(
 
   Future<String?> getProofOfReservation(String roomId, String token) async {
     final url =
-        'http://192.168.1.5:3000/payment/room/$roomId/proofOfReservation';
+        'https://rentconnect-backend-nodejs.onrender.com/payment/room/$roomId/proofOfReservation';
 
     try {
       final response = await http.get(
@@ -413,7 +413,7 @@ Future<void> _uploadProofOfReservation(
   }
 
   Future<void> _getLandlordId(String roomId) async {
-    final uri = Uri.parse('http://192.168.1.5:3000/rooms/getRoom/$roomId');
+    final uri = Uri.parse('https://rentconnect-backend-nodejs.onrender.com/rooms/getRoom/$roomId');
 
     final response = await http.get(uri);
 
@@ -454,7 +454,7 @@ void printPropertyId(Map<String, dynamic> propertyDetail) {
 
 
 Future<void> _fetchLandlordId(String propertyId) async {
-  final uri = Uri.parse('http://192.168.1.5:3000/getPropertiesByIds?ids=${propertyRoomDetails!['_id']}');
+  final uri = Uri.parse('https://rentconnect-backend-nodejs.onrender.com/getPropertiesByIds?ids=${propertyRoomDetails!['_id']}');
 
   final response = await http.get(
     uri,
@@ -497,7 +497,7 @@ Future<void> _fetchLandlordId(String propertyId) async {
 
   Future<String?> getProofOfPayment(String roomId, String token) async {
     final String apiUrl =
-        'http://192.168.1.5:3000/room/$roomId/monthlyPayments'; // Update with your API endpoint
+        'https://rentconnect-backend-nodejs.onrender.com/room/$roomId/monthlyPayments'; // Update with your API endpoint
 
     try {
       final response = await http.get(
@@ -546,7 +546,7 @@ Future<void> _fetchLandlordId(String propertyId) async {
 
   Future<void> deleteProof(String roomId, String type) async {
     final url =
-        'http://192.168.1.5:3000/payment/room/$roomId/payment/month/proof/reservation';
+        'https://rentconnect-backend-nodejs.onrender.com/payment/room/$roomId/payment/month/proof/reservation';
 
     print('Attempting to delete: $url'); // Print the URL for debugging
 
@@ -576,7 +576,7 @@ Future<void> _fetchLandlordId(String propertyId) async {
   }
 
 Future<String?> fetchLandlordEmail(String ownerId, String token) async {
-  final url = Uri.parse('http://192.168.1.5:3000/user/$ownerId');
+  final url = Uri.parse('https://rentconnect-backend-nodejs.onrender.com/user/$ownerId');
   try {
     final response = await http.get(url, headers: {'Authorization': 'Bearer $token'});
     if (response.statusCode == 200) {
@@ -626,7 +626,7 @@ Future<void> uploadProofOfPayment(
       // Creating the multipart request
       final paymentRequest = http.MultipartRequest(
         'POST',
-        Uri.parse('http://192.168.1.5:3000/payment/createoraddMonthlyPayment'),
+        Uri.parse('https://rentconnect-backend-nodejs.onrender.com/payment/createoraddMonthlyPayment'),
       );
 
       // Adding headers
@@ -686,7 +686,7 @@ Future<void> uploadProofOfPayment(
 
           // Send notification request
           final notificationResponse = await http.post(
-            Uri.parse('http://192.168.1.5:3000/notification/create'),
+            Uri.parse('https://rentconnect-backend-nodejs.onrender.com/notification/create'),
             headers: {
               'Authorization': 'Bearer $token',
               'Content-Type': 'application/json',
@@ -729,7 +729,7 @@ Future<void> uploadProofOfPayment(
 
   Future<void> _cancelInquiry(String inquiryId, String token) async {
     final String apiUrl =
-        'http://192.168.1.5:3000/inquiries/delete/$inquiryId';
+        'https://rentconnect-backend-nodejs.onrender.com/inquiries/delete/$inquiryId';
     try {
       final response = await http.delete(
         Uri.parse(apiUrl),
@@ -787,7 +787,7 @@ Future<void> uploadProofOfPayment(
           title: const Text(
             'My Home & Inquiries',
             style: TextStyle(
-              fontFamily: 'GeistSans',
+              fontFamily: 'manrope',
               fontWeight: FontWeight.bold,
             ),
           ),
@@ -865,7 +865,7 @@ Future<void> uploadProofOfPayment(
                               repeat: false),
                               Text('No inquiries found.', style: TextStyle(
                                 color: _themeController.isDarkMode.value? Colors.white:Colors.black,
-                                fontFamily: 'geistsans',
+                                fontFamily: 'manrope',
                                 fontWeight: FontWeight.bold,
                                 fontSize: 20
                               ),),
@@ -1081,7 +1081,7 @@ Future<void> uploadProofOfPayment(
                                                               Text(
                                                                 'Room: ${roomDetails?['roomNumber']}',
                                                                 style: TextStyle(
-                                                                  fontFamily: 'GeistSans',
+                                                                  fontFamily: 'manrope',
                                                                   fontSize: 17,
                                                                   fontWeight: FontWeight.w700,
                                                                   color: _themeController.isDarkMode.value
@@ -1153,7 +1153,7 @@ Future<void> uploadProofOfPayment(
                                                               Icon(Icons.electric_bolt_outlined, color: Colors.amber, size: 29,),
                                                               Text(
                                                                 'Bills', style: TextStyle(
-                                                                  fontFamily: 'geistsans',
+                                                                  fontFamily: 'manrope',
                                                                   fontWeight: FontWeight.w700,
                                                                   color: _themeController.isDarkMode.value? Colors.black:Colors.white
                                                                 ),
@@ -1221,7 +1221,7 @@ Future<void> uploadProofOfPayment(
                                                 Text(
                                                   'Payment section',
                                                   style: TextStyle(
-                                                    fontFamily: 'Geistsans',
+                                                    fontFamily: 'manrope',
                                                     fontSize: 16,
                                                     color: _themeController.isDarkMode.value ? Colors.white : const Color.fromARGB(255, 53, 53, 53),
                                                     fontWeight: FontWeight.w400,
@@ -1275,7 +1275,7 @@ Future<void> uploadProofOfPayment(
                                            ),
                                            Text('Manage Roommates',
                                                   style: TextStyle(
-                                                    fontFamily: 'Geistsans',
+                                                    fontFamily: 'manrope',
                                                     fontSize: 16,
                                                     color: _themeController.isDarkMode.value ? Colors.white : const Color.fromARGB(255, 53, 53, 53),
                                                     fontWeight: FontWeight.w400,

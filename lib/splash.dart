@@ -37,7 +37,7 @@ class _SplashScreenState extends State<SplashScreen> {
                 'RentConnect',
                 style: TextStyle(
                   color: Colors.black,
-                  fontFamily: 'GeistSans',
+                  fontFamily: 'manrope',
                   fontSize: 18,
             
                   

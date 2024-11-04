@@ -61,7 +61,7 @@ dependencies:
   blur: ^4.0.0
   shadcn_flutter: ^0.0.20
   shadcn_ui: ^0.9.7
-  socket_io_client: ^2.0.3+1
+  socket_io_client: ^3.0.0
   permission_handler: ^11.3.1
   flare_flutter: ^3.0.2
   rive: ^0.13.14
@@ -173,6 +173,21 @@ flutter:
           weight: 400
         - asset: fonts/Poppins-SemiBold.ttf
           weight: 600
+
+    - family: Manrope
+      fonts:
+        - asset: fonts/Manrope-ExtraBold.ttf
+          weight: 800
+        - asset: fonts/Manrope-Bold.ttf
+          weight: 700
+        - asset: fonts/Manrope-Medium.ttf
+          weight: 500
+        - asset: fonts/Manrope-Regular.ttf
+          weight: 400
+        - asset: fonts/Manrope-SemiBold.ttf
+          weight: 600
+        - asset: fonts/Manrope-Light.ttf
+          weight: 300
 
     - family: RadixIcons
       fonts:

@@ -17,7 +17,7 @@ class Faqs extends StatelessWidget {
         title: Text(
           'Frequently Asked Questions',
           style: TextStyle(
-            fontFamily: 'geistsans',
+            fontFamily: 'manrope',
             fontSize: 18,
             color: themeController.isDarkMode.value ? Colors.white : Colors.black,
           ),
@@ -71,8 +71,8 @@ class Faqs extends StatelessWidget {
             _buildFaqItem(
               context,
               themeController,
-              question: "How do I create an account?",
-              answer: "You can create an account by downloading the app and following the registration process.",
+              question: "How do I get verified?",
+              answer: "By setting up your profile and provide needed and correct informations.",
             ),
             const SizedBox(height: 10),
             _buildFaqItem(
@@ -81,6 +81,7 @@ class Faqs extends StatelessWidget {
               question: "What should I do if I forget my password?",
               answer: "You can reset your password by clicking the 'Forgot Password' link on the login screen.",
             ),
+            
             // Add more FAQs here...
           ],
         ),

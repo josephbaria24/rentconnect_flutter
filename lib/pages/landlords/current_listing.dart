@@ -80,6 +80,7 @@ class _CurrentListingPageState extends State<CurrentListingPage> {
   late PageController _monthPageController;
   late ToastNotification toastNotification;
   late ScrollController tab2ScrollController;
+  String? roomID;
 
 
   @override
@@ -131,7 +132,7 @@ class _CurrentListingPageState extends State<CurrentListingPage> {
   }
 
 Future<String?> getProofOfPaymentForSelectedMonth(String roomId, String token, String selectedMonth) async {
-  final String apiUrl = 'http://192.168.1.5:3000/payment/room/$roomId/monthlyPayments';
+  final String apiUrl = 'https://rentconnect-backend-nodejs.onrender.com/payment/room/$roomId/monthlyPayments';
 
   try {
     print('API URL: $apiUrl');
@@ -215,7 +216,7 @@ final List<String> rejectionReasons = [
 
 Future<int?> getReservationDuration(String roomId, String token) async {
   final response = await http.get(
-    Uri.parse('http://192.168.1.5:3000/inquiries/rooms/$roomId'),
+    Uri.parse('https://rentconnect-backend-nodejs.onrender.com/inquiries/rooms/$roomId'),
     headers: {
       'Authorization': 'Bearer $token', // If you're using token-based authentication
       'Content-Type': 'application/json',
@@ -245,11 +246,14 @@ Future<int?> getReservationDuration(String roomId, String token) async {
 
 
 
-  Future<void> markAsAvailable() async {
+ 
+
+void showRoomDetailBottomSheet(BuildContext context, dynamic room, Map<String, dynamic> userProfiles, List<dynamic> inquiries, {String? selectedMonth, int currentMonthIndex = 0, int initialTabIndex = 0}) async {
+   Future<void> markAsAvailable() async {
     try {
       // Replace with your actual backend API endpoint
       final response = await http.put(
-        Uri.parse('http://192.168.1.5:3000/rooms/room/${roomID}/markAsAvailable'),
+        Uri.parse('https://rentconnect-backend-nodejs.onrender.com/rooms/room/${room['_id']}/markAsAvailable'),
         headers: {'Authorization': 'Bearer ${widget.token}'},
       );
 
@@ -269,11 +273,10 @@ Future<int?> getReservationDuration(String roomId, String token) async {
     }
   }
 
-
-void showRoomDetailBottomSheet(BuildContext context, dynamic room, Map<String, dynamic> userProfiles, List<dynamic> inquiries, {String? selectedMonth, int currentMonthIndex = 0, int initialTabIndex = 0}) async {
   ScrollController tab1ScrollController = ScrollController(); // ScrollController for Tab 1
   ScrollController tab2ScrollController = ScrollController(); // ScrollController for Tab 2
-  
+    print('UserId from inquiry: $userId'); // Print the userId for debugging
+      print('RoomId from inquiry: ${room['_id']}');
   int? reservationDuration = await getReservationDuration(room['_id'], widget.token);
   print("inquiry $inquiries");
   showModalBottomSheet(
@@ -356,7 +359,7 @@ void showRoomDetailBottomSheet(BuildContext context, dynamic room, Map<String, d
                       style: const TextStyle(
                         fontWeight: FontWeight.bold,
                         fontSize: 20,
-                        fontFamily: 'GeistSans',
+                        fontFamily: 'manrope',
                       ),
                     ),
                     
@@ -460,7 +463,7 @@ void showRoomDetailBottomSheet(BuildContext context, dynamic room, Map<String, d
                                                           TextSpan(
                                                             text: 'Monthly rent: ', 
                                                             style: TextStyle(
-                                                              fontFamily: 'geistsans',
+                                                              fontFamily: 'manrope',
                                                               fontWeight: FontWeight.bold,
                                                               fontSize: 13
                                                             ),
@@ -468,7 +471,7 @@ void showRoomDetailBottomSheet(BuildContext context, dynamic room, Map<String, d
                                                           TextSpan(
                                                             text: '₱${room['price'] ?? 'N/A'}',
                                                             style: TextStyle(
-                                                              fontFamily: 'geistsans',
+                                                              fontFamily: 'manrope',
                                                               fontWeight: FontWeight.normal,
                                                             ),
                                                           ),
@@ -481,14 +484,14 @@ void showRoomDetailBottomSheet(BuildContext context, dynamic room, Map<String, d
                                                           TextSpan(
                                                             text: 'Capacity: ', 
                                                             style: TextStyle(
-                                                              fontFamily: 'geistsans',
+                                                              fontFamily: 'manrope',
                                                               fontWeight: FontWeight.bold,
                                                             ),
                                                           ),
                                                           TextSpan(
                                                             text: '${room['capacity'] ?? 'N/A'}',
                                                             style: TextStyle(
-                                                              fontFamily: 'geistsans',
+                                                              fontFamily: 'manrope',
                                                               fontWeight: FontWeight.normal,
                                                             ),
                                                           ),
@@ -501,14 +504,14 @@ void showRoomDetailBottomSheet(BuildContext context, dynamic room, Map<String, d
                                                           TextSpan(
                                                             text: 'Month Deposit: ', 
                                                             style: TextStyle(
-                                                              fontFamily: 'geistsans',
+                                                              fontFamily: 'manrope',
                                                               fontWeight: FontWeight.bold,
                                                             ),
                                                           ),
                                                           TextSpan(
                                                             text: '${room['deposit'] ?? 'N/A'}',
                                                             style: TextStyle(
-                                                              fontFamily: 'geistsans',
+                                                              fontFamily: 'manrope',
                                                               fontWeight: FontWeight.normal,
                                                             ),
                                                           ),
@@ -521,14 +524,14 @@ void showRoomDetailBottomSheet(BuildContext context, dynamic room, Map<String, d
                                                           TextSpan(
                                                             text: 'Month Advance: ', 
                                                             style: TextStyle(
-                                                              fontFamily: 'geistsans',
+                                                              fontFamily: 'manrope',
                                                               fontWeight: FontWeight.bold,
                                                             ),
                                                           ),
                                                           TextSpan(
                                                             text: '${room['advance'] ?? 'N/A'}',
                                                             style: TextStyle(
-                                                              fontFamily: 'geistsans',
+                                                              fontFamily: 'manrope',
                                                               fontWeight: FontWeight.normal,
                                                             ),
                                                           ),
@@ -642,7 +645,7 @@ void showRoomDetailBottomSheet(BuildContext context, dynamic room, Map<String, d
                                       child: Text(
                                         "Mark as Available",
                                         style: TextStyle(
-                                          fontFamily: 'geistsans',
+                                          fontFamily: 'manrope',
                                           color: _themeController.isDarkMode.value ? Colors.black : Colors.white,
                                         ),
                                       ),
@@ -721,7 +724,7 @@ void showRoomDetailBottomSheet(BuildContext context, dynamic room, Map<String, d
   Future<void> updateInquiryStatus(
       String? inquiryId, String? newStatus, String? token) async {
     final url = Uri.parse(
-        'http://192.168.1.5:3000/inquiries/update/$inquiryId'); // Match your backend route
+        'https://rentconnect-backend-nodejs.onrender.com/inquiries/update/$inquiryId'); // Match your backend route
 
     try {
       final response = await http.patch(
@@ -747,6 +750,8 @@ void showRoomDetailBottomSheet(BuildContext context, dynamic room, Map<String, d
       // Optionally, show an error message in the UI
     }
   }
+  bool _isLoading = false;
+
 
 
 // Approve and update the room
@@ -759,7 +764,7 @@ Future<void> updateInquiryStatusAndRoom(
     String token,
     int? reservationDuration,
 ) async {
-    final url = 'http://192.168.1.5:3000/inquiries/update/$inquiryId'; // Update inquiry status
+    final url = 'https://rentconnect-backend-nodejs.onrender.com/inquiries/update/$inquiryId'; // Update inquiry status
     try {
         final response = await http.patch(
             Uri.parse(url),
@@ -779,7 +784,7 @@ Future<void> updateInquiryStatusAndRoom(
         if (response.statusCode == 200) {
             // Get the occupant's email
             final emailResponse = await http.get(
-                Uri.parse('http://192.168.1.5:3000/inquiries/$inquiryId/email'),
+                Uri.parse('https://rentconnect-backend-nodejs.onrender.com/inquiries/$inquiryId/email'),
                 headers: {
                     'Authorization': 'Bearer $token',
                     'Content-Type': 'application/json',
@@ -805,12 +810,12 @@ Future<void> updateInquiryStatusAndRoom(
     } catch (e) {
         // Handle exceptions (like network errors)
         print('Error updating inquiry and room: $e');
-    }
+    } 
 }
 
 
 Future<void> _sendOccupantNotificationEmail(String occupantEmail, String message, String userId) async {
-    final emailServiceUrl = 'http://192.168.1.5:3000/notification/create'; // Endpoint to send notifications
+    final emailServiceUrl = 'https://rentconnect-backend-nodejs.onrender.com/notification/create'; // Endpoint to send notifications
     try {
         final response = await http.post(
             Uri.parse(emailServiceUrl),
@@ -844,7 +849,7 @@ Future<void> rejectAndDeleteInquiry(String inquiryId, String token, String reaso
   try {
     // First, call your API to reject the inquiry and send the reason
     final response = await http.patch(
-      Uri.parse('http://192.168.1.5:3000/inquiries/reject/$inquiryId'), // Update the endpoint
+      Uri.parse('https://rentconnect-backend-nodejs.onrender.com/inquiries/reject/$inquiryId'), // Update the endpoint
       headers: {
         'Authorization': 'Bearer $token',
         'Content-Type': 'application/json',
@@ -859,7 +864,7 @@ Future<void> rejectAndDeleteInquiry(String inquiryId, String token, String reaso
 
       // Get the inquiry details, including userId and occupant's email
       final inquiryResponse = await http.get(
-        Uri.parse('http://192.168.1.5:3000/inquiries/$inquiryId'), // Update the endpoint to get inquiry details
+        Uri.parse('https://rentconnect-backend-nodejs.onrender.com/inquiries/$inquiryId'), // Update the endpoint to get inquiry details
         headers: {
           'Authorization': 'Bearer $token',
           'Content-Type': 'application/json',
@@ -889,7 +894,7 @@ Future<void> rejectAndDeleteInquiry(String inquiryId, String token, String reaso
 
 
   Future<bool> deleteProperty(String propertyId) async {
-    final response = await http.delete(Uri.parse('http://192.168.1.5:3000/deleteProperty/$propertyId'));
+    final response = await http.delete(Uri.parse('https://rentconnect-backend-nodejs.onrender.com/deleteProperty/$propertyId'));
 
     if (response.statusCode == 200) {
       // Successfully deleted the property
@@ -994,7 +999,7 @@ void _navigateToEditProperty(String propertyId) {
   @override
   Widget build(BuildContext context) {
     print('selected UserId from inquiry: $selectedUserId');
-      print("roomID${roomID}");
+      print("roomID ${room['_id']}");
 
     return Scaffold(
       backgroundColor: _themeController.isDarkMode.value
@@ -1010,7 +1015,7 @@ void _navigateToEditProperty(String propertyId) {
           style: TextStyle(
             color:
                 _themeController.isDarkMode.value ? Colors.white : Colors.black,
-            fontFamily: 'GeistSans',
+            fontFamily: 'manrope',
             fontWeight: FontWeight.w600,
           ),
         ),
@@ -1103,7 +1108,7 @@ void _navigateToEditProperty(String propertyId) {
                                     color: _themeController.isDarkMode.value
                                         ? const Color.fromARGB(255, 255, 255, 255)
                                         : const Color.fromARGB(255, 0, 0, 0),
-                                    fontFamily: 'Geistsans',
+                                    fontFamily: 'manrope',
                                     fontWeight: FontWeight.bold
                                   ),
                                 ),
@@ -1122,7 +1127,7 @@ void _navigateToEditProperty(String propertyId) {
                                     color: _themeController.isDarkMode.value
                                         ? Colors.white70
                                         : Colors.black54,
-                                        fontFamily: 'Geistsans',
+                                        fontFamily: 'manrope',
                                     fontWeight: FontWeight.w500
                                   ),
                                 ),
@@ -1422,7 +1427,7 @@ void _navigateToEditProperty(String propertyId) {
                                                                           Text(
                                                                             'Capacity: ${room['capacity']?.toString() ?? 'N/A'}',
                                                                             style: TextStyle(
-                                                                              fontFamily: 'GeistSans',
+                                                                              fontFamily: 'manrope',
                                                                               fontSize: 12,
                                                                               fontWeight: FontWeight.w600,
                                                                               color: _themeController.isDarkMode.value ? const Color.fromARGB(255, 255, 255, 255) : const Color.fromARGB(255, 0, 0, 0),
@@ -1433,7 +1438,7 @@ void _navigateToEditProperty(String propertyId) {
                                                                               Text(
                                                                                 'Room Status: ',
                                                                                 style: TextStyle(
-                                                                                  fontFamily: 'GeistSans',
+                                                                                  fontFamily: 'manrope',
                                                                                   fontSize: 12,
                                                                                   fontWeight: FontWeight.w600,
                                                                                   color: _themeController.isDarkMode.value ? const Color.fromARGB(255, 255, 255, 255) : const Color.fromARGB(255, 0, 0, 0),
@@ -1451,7 +1456,7 @@ void _navigateToEditProperty(String propertyId) {
                                                                                     child: Text(
                                                                                       '${room['roomStatus']?.toString().toUpperCase() ?? 'N/A'}',
                                                                                       style: TextStyle(
-                                                                                        fontFamily: 'GeistSans',
+                                                                                        fontFamily: 'manrope',
                                                                                         fontWeight: FontWeight.w800,
                                                                                         fontSize: 12,
                                                                                         color: const Color.fromARGB(255, 5, 5, 5),
@@ -2003,7 +2008,7 @@ Future<void> getPropertyList(String userId) async {
   Future<void> fetchUserProfile(String userId) async {
     try {
       final response =
-          await http.get(Uri.parse('http://192.168.1.5:3000/user/$userId'));
+          await http.get(Uri.parse('https://rentconnect-backend-nodejs.onrender.com/user/$userId'));
       if (response.statusCode == 200) {
         final user = json.decode(response.body);
         setState(() {
@@ -2021,11 +2026,10 @@ Future<void> getPropertyList(String userId) async {
     }
   }
 
- String? roomID;
 
 Future<void> fetchRoomInquiries(String roomId) async {
   try {
-    final response = await http.get(Uri.parse('http://192.168.1.5:3000/inquiries/rooms/$roomId'));
+    final response = await http.get(Uri.parse('https://rentconnect-backend-nodejs.onrender.com/inquiries/rooms/$roomId'));
     
     if (response.statusCode == 200) {
       final inquiries = json.decode(response.body) as List<dynamic>; // Decode as List
@@ -2066,7 +2070,7 @@ void initializeRoomId() {
   Future<void> fetchRooms(String propertyId) async {
     try {
       final response = await http.get(Uri.parse(
-          'http://192.168.1.5:3000/rooms/properties/$propertyId/rooms'));
+          'https://rentconnect-backend-nodejs.onrender.com/rooms/properties/$propertyId/rooms'));
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
@@ -2106,7 +2110,7 @@ void initializeRoomId() {
 
 
 Future<void> updateRoomStatus(String? roomId, String? newStatus) async {
-  final url = Uri.parse('http://192.168.1.5:3000/rooms/updateRoom/$roomId'); // Replace with your backend URL
+  final url = Uri.parse('https://rentconnect-backend-nodejs.onrender.com/rooms/updateRoom/$roomId'); // Replace with your backend URL
   final headers = {
     'Content-Type': 'application/json',
     'Authorization': 'Bearer your_jwt_token' // Add your JWT token if required
@@ -2184,11 +2188,11 @@ Future<void> updateRoomStatus(String? roomId, String? newStatus) async {
   }
 
 
-Future<void> markRoomAsOccupied(BuildContext context, String roomId) async {
+Future<void> markRoomAsOccupied(BuildContext context, String roomID) async {
   if (selectedUserId != null) {
     try {
       final response = await http.patch(
-        Uri.parse('http://192.168.1.5:3000/rooms/$roomID/occupy'),
+        Uri.parse('https://rentconnect-backend-nodejs.onrender.com/rooms/$roomID/occupy'),
         headers: {'Content-Type': 'application/json'},
         body: json.encode({
           'userId': selectedUserId, // Pass the userId from approved inquiry
@@ -2227,7 +2231,7 @@ Future<void> markRoomAsOccupied(BuildContext context, String roomId) async {
 Future<String?> fetchProofOfReservation(String roomId) async {
   try {
     // Example API call to fetch payment details
-    var response = await http.get(Uri.parse('http://192.168.1.5:3000/payment/room/$roomId/proofOfReservation'));
+    var response = await http.get(Uri.parse('https://rentconnect-backend-nodejs.onrender.com/payment/room/$roomId/proofOfReservation'));
     if (response.statusCode == 200) {
       var data = jsonDecode(response.body);
       return data['proofOfReservation']; // Ensure the key matches your backend response
@@ -2421,7 +2425,7 @@ void showFullscreenImage(BuildContext context, String imageUrl) {
 //                           style: const TextStyle(
 //                               fontWeight: FontWeight.bold,
 //                               fontSize: 20,
-//                               fontFamily: 'GeistSans'),
+//                               fontFamily: 'manrope'),
 //                         ),
 //                         ElevatedButton(
 //                         style: ElevatedButton.styleFrom(
@@ -2611,7 +2615,7 @@ void showFullscreenImage(BuildContext context, String imageUrl) {
     //     ),
     //     const SizedBox(height: 10),
     //     Center(child: Text('Is the reservant moved-in?', style: TextStyle(
-    //       fontFamily: 'geistsans',
+    //       fontFamily: 'manrope',
     //       color: _themeController.isDarkMode.value? const Color.fromARGB(255, 216, 216, 216): const Color.fromARGB(193, 53, 53, 53),
     //       fontSize: 13,
     //     ),)),
@@ -2790,7 +2794,7 @@ void showFullscreenImage(BuildContext context, String imageUrl) {
 //                     style: TextStyle(
 //                       fontSize: 13,
 //                       fontWeight: FontWeight.bold,
-//                       fontFamily: 'geistsans',
+//                       fontFamily: 'manrope',
 //                     ),
 //                   ),
 //                 ),

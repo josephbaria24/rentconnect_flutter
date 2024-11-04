@@ -31,7 +31,7 @@ class _AgreementDetailsState extends State<AgreementDetails> {
   }
 
   Future<void> fetchAgreementDetails() async {
-    final String apiUrl = 'http://192.168.1.5:3000/rental-agreement/inquiry/${widget.inquiryId}';
+    final String apiUrl = 'https://rentconnect-backend-nodejs.onrender.com/rental-agreement/inquiry/${widget.inquiryId}';
     print('Fetching agreement details from: $apiUrl'); // Debugging statement
 
     try {
@@ -86,7 +86,7 @@ class _AgreementDetailsState extends State<AgreementDetails> {
         print('Fetching landlord details for ID: $landlordId'); // Debug log
 
         final landlordResponse = await http.get(
-          Uri.parse('http://192.168.1.5:3000/user/$landlordId'), // Correct URL
+          Uri.parse('https://rentconnect-backend-nodejs.onrender.com/user/$landlordId'), // Correct URL
         );
 
         if (landlordResponse.statusCode == 200) {
@@ -108,7 +108,7 @@ class _AgreementDetailsState extends State<AgreementDetails> {
         print('Fetching occupant details for ID: $occupantId'); // Debug log
 
         final occupantResponse = await http.get(
-          Uri.parse('http://192.168.1.5:3000/user/$occupantId'), // Correct URL
+          Uri.parse('https://rentconnect-backend-nodejs.onrender.com/user/$occupantId'), // Correct URL
         );
 
         if (occupantResponse.statusCode == 200) {
@@ -221,20 +221,20 @@ Widget build(BuildContext context) {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('Room ID:', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, fontFamily: 'GeistSans')),
-                    Text('$roomId', style: const TextStyle(fontSize: 16, fontFamily: 'GeistSans')),
+                    Text('Room ID:', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, fontFamily: 'manrope')),
+                    Text('$roomId', style: const TextStyle(fontSize: 16, fontFamily: 'manrope')),
                     const SizedBox(height: 10),
-                    Text('Landlord Name:', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, fontFamily: 'GeistSans')),
-                    Text('${landlordName ?? 'Loading...'}', style: const TextStyle(fontSize: 16, fontFamily: 'GeistSans')),
+                    Text('Landlord Name:', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, fontFamily: 'manrope')),
+                    Text('${landlordName ?? 'Loading...'}', style: const TextStyle(fontSize: 16, fontFamily: 'manrope')),
                     const SizedBox(height: 10),
-                    Text('Landlord Email:', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, fontFamily: 'GeistSans')),
-                    Text('${landlordEmail ?? 'Loading...'}', style: const TextStyle(fontSize: 16, fontFamily: 'GeistSans')),
+                    Text('Landlord Email:', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, fontFamily: 'manrope')),
+                    Text('${landlordEmail ?? 'Loading...'}', style: const TextStyle(fontSize: 16, fontFamily: 'manrope')),
                     const SizedBox(height: 10),
-                    Text('Occupant Name:', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, fontFamily: 'GeistSans')),
-                    Text('${occupantName ?? 'Loading...'}', style: const TextStyle(fontSize: 16, fontFamily: 'GeistSans')),
+                    Text('Occupant Name:', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, fontFamily: 'manrope')),
+                    Text('${occupantName ?? 'Loading...'}', style: const TextStyle(fontSize: 16, fontFamily: 'manrope')),
                     const SizedBox(height: 10),
-                    Text('Occupant Email:', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, fontFamily: 'GeistSans')),
-                    Text('${occupantEmail ?? 'Loading...'}', style: const TextStyle(fontSize: 16, fontFamily: 'GeistSans')),
+                    Text('Occupant Email:', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, fontFamily: 'manrope')),
+                    Text('${occupantEmail ?? 'Loading...'}', style: const TextStyle(fontSize: 16, fontFamily: 'manrope')),
                   ],
                 ),
               ),
@@ -247,23 +247,23 @@ Widget build(BuildContext context) {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('Monthly Rent:', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, fontFamily: 'GeistSans')),
-                    Text('\$${monthlyRent.toStringAsFixed(2)}', style: const TextStyle(fontSize: 16, fontFamily: 'GeistSans')),
+                    Text('Monthly Rent:', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, fontFamily: 'manrope')),
+                    Text('\$${monthlyRent.toStringAsFixed(2)}', style: const TextStyle(fontSize: 16, fontFamily: 'manrope')),
                     const SizedBox(height: 10),
-                    Text('Security Deposit:', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, fontFamily: 'GeistSans')),
-                    Text('\$${securityDeposit}', style: const TextStyle(fontSize: 16, fontFamily: 'GeistSans')),
+                    Text('Security Deposit:', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, fontFamily: 'manrope')),
+                    Text('\$${securityDeposit}', style: const TextStyle(fontSize: 16, fontFamily: 'manrope')),
                     const SizedBox(height: 10),
-                    Text('Lease Start Date:', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, fontFamily: 'GeistSans')),
-                    Text('$leaseStartDate', style: const TextStyle(fontSize: 16, fontFamily: 'GeistSans')),
+                    Text('Lease Start Date:', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, fontFamily: 'manrope')),
+                    Text('$leaseStartDate', style: const TextStyle(fontSize: 16, fontFamily: 'manrope')),
                     const SizedBox(height: 10),
-                    Text('Lease End Date:', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, fontFamily: 'GeistSans')),
-                    Text('$leaseEndDate', style: const TextStyle(fontSize: 16, fontFamily: 'GeistSans')),
+                    Text('Lease End Date:', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, fontFamily: 'manrope')),
+                    Text('$leaseEndDate', style: const TextStyle(fontSize: 16, fontFamily: 'manrope')),
                     const SizedBox(height: 10),
-                    Text('Terms:', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, fontFamily: 'GeistSans')),
-                    Text('$terms', style: const TextStyle(fontSize: 16, fontFamily: 'GeistSans')),
+                    Text('Terms:', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, fontFamily: 'manrope')),
+                    Text('$terms', style: const TextStyle(fontSize: 16, fontFamily: 'manrope')),
                     const SizedBox(height: 10),
-                    Text('Status:', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, fontFamily: 'GeistSans')),
-                    Text('$status', style: const TextStyle(fontSize: 16, fontFamily: 'GeistSans')),
+                    Text('Status:', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, fontFamily: 'manrope')),
+                    Text('$status', style: const TextStyle(fontSize: 16, fontFamily: 'manrope')),
                   ],
                 ),
               ),

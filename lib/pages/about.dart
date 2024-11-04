@@ -4,7 +4,8 @@ import 'package:get/get.dart';
 import 'package:jwt_decoder/jwt_decoder.dart';
 import 'package:rentcon/theme_controller.dart';
 import 'package:shadcn_ui/shadcn_ui.dart';
-import 'package:flutter_svg/flutter_svg.dart'; // Include this for SVG support
+import 'package:flutter_svg/flutter_svg.dart';
+import 'package:url_launcher/url_launcher.dart'; // Import url_launcher
 
 class AboutPage extends StatefulWidget {
   final String token;
@@ -22,6 +23,20 @@ class _AboutPageState extends State<AboutPage> {
   void initState() {
     super.initState();
     email = JwtDecoder.decode(widget.token)['email']?.toString() ?? 'Unknown email';
+  }
+
+  // Method to open Gmail with a specific recipient
+  Future<void> _sendEmail() async {
+    final Uri emailUri = Uri(
+      scheme: 'mailto',
+      path: 'rentconnect.it@gmail.com',
+      query: 'subject=Inquiry from RentConnect App',
+    );
+    if (await canLaunchUrl(emailUri)) {
+      await launchUrl(emailUri);
+    } else {
+      throw 'Could not launch $emailUri';
+    }
   }
 
   @override
@@ -71,12 +86,12 @@ class _AboutPageState extends State<AboutPage> {
               child: Container(
                 width: 100,
                 height: 100,
-                color: const Color.fromARGB(0, 224, 224, 224), // Placeholder for the background
-                child: _themeController.isDarkMode.value? Image.asset(
-                  'assets/icons/ren2.png', // Updated asset
+                color: const Color.fromARGB(0, 224, 224, 224),
+                child: _themeController.isDarkMode.value ? Image.asset(
+                  'assets/icons/ren2.png',
                   fit: BoxFit.cover,
                 ) : Image.asset(
-                  'assets/icons/ren.png', // Updated asset
+                  'assets/icons/ren.png',
                   fit: BoxFit.cover,
                 ),
               ),
@@ -87,7 +102,7 @@ class _AboutPageState extends State<AboutPage> {
             Text(
               'RentConnect',
               style: TextStyle(
-                fontFamily: 'geistsans',
+                fontFamily: 'manrope',
                 fontSize: 28,
                 fontWeight: FontWeight.bold,
                 color: _themeController.isDarkMode.value ? Colors.white : Colors.black,
@@ -96,9 +111,9 @@ class _AboutPageState extends State<AboutPage> {
             Text(
               'Connecting Landlords and Occupants Seamlessly',
               style: TextStyle(
-                fontFamily: 'geistsans',
+                fontFamily: 'manrope',
                 fontSize: 18,
-                color: _themeController.isDarkMode.value? const Color.fromARGB(255, 255, 255, 255): Colors.black,
+                color: _themeController.isDarkMode.value ? const Color.fromARGB(255, 255, 255, 255) : Colors.black,
               ),
               textAlign: TextAlign.center,
             ),
@@ -108,11 +123,11 @@ class _AboutPageState extends State<AboutPage> {
             Text(
               'At RentConnect, we strive to create a reliable platform for landlords and occupants. Our aim is to facilitate seamless communication, efficient management, and enjoyable rental experiences.',
               style: TextStyle(
-                fontFamily: 'geistsans',
+                fontFamily: 'manrope',
                 fontSize: 16,
-                color:  _themeController.isDarkMode.value ? Colors.white : const Color.fromARGB(209, 0, 0, 0),
+                color: _themeController.isDarkMode.value ? Colors.white : const Color.fromARGB(209, 0, 0, 0),
               ),
-              textAlign: TextAlign.justify,
+              textAlign: TextAlign.center,
             ),
             const SizedBox(height: 20),
 
@@ -120,18 +135,10 @@ class _AboutPageState extends State<AboutPage> {
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
+
                 IconButton(
-                  icon: Icon(Icons.facebook),
-                  onPressed: () {
-                    // Add your action here
-                  },
-                ),
-                
-                IconButton(
-                  icon: Icon(Icons.email),
-                  onPressed: () {
-                    // Add your action here
-                  },
+                  icon: Icon(Icons.mail_rounded),
+                  onPressed: _sendEmail, // Opens Gmail with recipient email
                 ),
               ],
             ),

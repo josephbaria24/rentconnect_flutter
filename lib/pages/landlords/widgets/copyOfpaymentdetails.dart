@@ -130,7 +130,7 @@ void _showTutorial() {
       colorShadow:_themeController.isDarkMode.value? const Color.fromARGB(255, 102, 102, 102): Colors.black.withOpacity(0.8),
       textSkip: "SKIP",
       alignSkip: Alignment.topRight,
-      textStyleSkip: TextStyle(color: _themeController.isDarkMode.value? Colors.white: Colors.white, fontFamily: 'geistsans', fontSize: 17, fontWeight: FontWeight.w600),
+      textStyleSkip: TextStyle(color: _themeController.isDarkMode.value? Colors.white: Colors.white, fontFamily: 'manrope', fontSize: 17, fontWeight: FontWeight.w600),
       onFinish: () {
         print("Tutorial finished");
       },
@@ -168,7 +168,7 @@ void _showTutorial() {
   Future<Map<String, dynamic>?> getProofOfPaymentForSelectedMonth(
       String roomId, String token, String selectedMonth) async {
     final String apiUrl =
-        'http://192.168.1.5:3000/payment/room/${widget.room?['_id']}/monthlyPayments';
+        'https://rentconnect-backend-nodejs.onrender.com/payment/room/${widget.room?['_id']}/monthlyPayments';
 
     try {
       print('API URL: $apiUrl');
@@ -351,7 +351,7 @@ void _showTutorial() {
                               style: TextStyle(
                                 fontSize: 13,
                                 fontWeight: FontWeight.bold,
-                                fontFamily: 'geistsans',
+                                fontFamily: 'manrope',
                               ),
                             ),
                           ],
@@ -420,7 +420,7 @@ void _showTutorial() {
 
   Future<void> updatePaymentStatus(String monthPaymentId, String status) async {
     final String apiUrl =
-        'http://192.168.1.5:3000/payment/monthlyPayments/$monthPaymentId/status';
+        'https://rentconnect-backend-nodejs.onrender.com/payment/monthlyPayments/$monthPaymentId/status';
 
     try {
       final response = await http.put(
@@ -487,7 +487,7 @@ Widget build(BuildContext context) {
         children: [
           Text(
             'Rent payment details',
-            style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, fontFamily: 'geistsans'),
+            style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, fontFamily: 'manrope'),
           ),
           
           IconButton(
@@ -757,7 +757,7 @@ Widget build(BuildContext context) {
                                   children: [
                                     const Text(
                                       'Complete',
-                                      style: TextStyle(fontFamily: 'geistsans', fontSize: 12, fontWeight: FontWeight.w600),
+                                      style: TextStyle(fontFamily: 'manrope', fontSize: 12, fontWeight: FontWeight.w600),
                                       textAlign: TextAlign.center,
                                     ),
                                     Checkbox(
@@ -779,7 +779,7 @@ Widget build(BuildContext context) {
                                   children: [
                                     const Text(
                                       'Reject',
-                                      style: TextStyle(fontFamily: 'geistsans', fontSize: 12, fontWeight: FontWeight.w600),
+                                      style: TextStyle(fontFamily: 'manrope', fontSize: 12, fontWeight: FontWeight.w600),
                                       textAlign: TextAlign.center,
                                     ),
                                     Checkbox(
@@ -878,7 +878,7 @@ Widget build(BuildContext context) {
   Future<void> updateDueDate(
       String roomId, DateTime dueDate, String token) async {
     final String apiUrl =
-        'http://192.168.1.5:3000/rooms/${widget.room!['_id']}/due-date';
+        'https://rentconnect-backend-nodejs.onrender.com/rooms/${widget.room!['_id']}/due-date';
 
     try {
       final response = await http.put(
@@ -952,7 +952,7 @@ Widget build(BuildContext context) {
 
 // Future<Map<String, dynamic>?> getProofOfPaymentForSelectedMonth(
 //     String roomId, String token, String selectedMonth) async {
-//   final String apiUrl = 'http://192.168.1.5:3000/payment/room/$roomId/monthlyPayments';
+//   final String apiUrl = 'https://rentconnect-backend-nodejs.onrender.com/payment/room/$roomId/monthlyPayments';
 
 //   try {
 //     print('API URL: $apiUrl');

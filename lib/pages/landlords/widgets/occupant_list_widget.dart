@@ -38,7 +38,7 @@ class OccupantListWidget extends StatelessWidget {
               style: TextStyle(
                 fontWeight: FontWeight.bold,
                 fontSize: 18,
-                fontFamily: 'geistsans',
+                fontFamily: 'manrope',
               ),
             ),
             ElevatedButton(
@@ -93,7 +93,7 @@ class OccupantListWidget extends StatelessWidget {
               Text(
                 'Agreement',
                 style: TextStyle(
-                  fontFamily: 'geistsans',
+                  fontFamily: 'manrope',
                   fontSize: 12,
 
                   color: isDarkMode ? Colors.white : Colors.black,
@@ -269,7 +269,7 @@ class OccupantListWidget extends StatelessWidget {
                     fullName,
                     overflow: TextOverflow.ellipsis,
                     style: TextStyle(
-                      fontFamily: 'GeistSans',
+                      fontFamily: 'manrope',
                       fontWeight: FontWeight.w600,
                       fontSize: 12.0,
                     ),
@@ -296,7 +296,7 @@ class OccupantListWidget extends StatelessWidget {
                   'Loading...',
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
-                    fontFamily: 'GeistSans',
+                    fontFamily: 'manrope',
                     fontWeight: FontWeight.w600,
                     fontSize: 12.0,
                   ),

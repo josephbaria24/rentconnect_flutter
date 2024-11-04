@@ -309,7 +309,7 @@ void initializeSelectedAmenities() {
     List<String> selectedAmenitiesList = getSelectedAmenities();
     String amenitiesJson = jsonEncode(selectedAmenitiesList); // Convert selected amenities to JSON
 
-    final Uri uri = Uri.parse('http://192.168.1.5:3000/properties/${widget.propertyId}');
+    final Uri uri = Uri.parse('https://rentconnect-backend-nodejs.onrender.com/properties/${widget.propertyId}');
     final request = http.MultipartRequest('PUT', uri)
       ..headers['Authorization'] = 'Bearer ${widget.token}';
 
@@ -390,7 +390,7 @@ void initializeSelectedAmenities() {
         title: Text(
           'Update Property',
           style: TextStyle(
-            fontFamily: 'GeistSans',
+            fontFamily: 'manrope',
             fontWeight: FontWeight.bold,
           ),
         ),
@@ -443,7 +443,7 @@ void initializeSelectedAmenities() {
                   style: TextStyle(
                     color: _themeController.isDarkMode.value ? const Color.fromARGB(255, 255, 255, 255) : Colors.black,
                     fontSize: 20,
-                    fontFamily: 'GeistSans',
+                    fontFamily: 'manrope',
                     fontWeight: FontWeight.bold,
                   ),
                 ),
@@ -473,7 +473,7 @@ void initializeSelectedAmenities() {
                   style: TextStyle(
                     color: _themeController.isDarkMode.value ? const Color.fromARGB(255, 255, 255, 255) : Colors.black,
                     fontSize: 20,
-                    fontFamily: 'GeistSans',
+                    fontFamily: 'manrope',
                     fontWeight: FontWeight.bold,
                   ),
                 ),
@@ -493,7 +493,7 @@ void initializeSelectedAmenities() {
             style: TextStyle(
               color: _themeController.isDarkMode.value? const Color.fromARGB(255, 255, 255, 255): Colors.black,
               fontSize: 20,
-              fontFamily: 'GeistSans',
+              fontFamily: 'manrope',
               fontWeight: FontWeight.bold,
             ),
           ),
@@ -548,7 +548,7 @@ void initializeSelectedAmenities() {
             style: TextStyle(
               color: _themeController.isDarkMode.value? const Color.fromARGB(255, 255, 255, 255): Colors.black,
               fontSize: 20,
-              fontFamily: 'GeistSans',
+              fontFamily: 'manrope',
               fontWeight: FontWeight.bold,
             ),
           ),
@@ -571,7 +571,7 @@ void initializeSelectedAmenities() {
                 selectedOptionBuilder: (context, value) => Text(
                   value ?? 'Select Type of Property',
                   style: TextStyle(
-                    fontFamily: 'geistsans',
+                    fontFamily: 'manrope',
                     fontWeight: FontWeight.w500,
                     color: _themeController.isDarkMode.value ? Colors.white : Colors.black,
                   ),
@@ -589,7 +589,7 @@ void initializeSelectedAmenities() {
             style: TextStyle(
               color: _themeController.isDarkMode.value? const Color.fromARGB(255, 255, 255, 255): Colors.black,
               fontSize: 20,
-              fontFamily: 'GeistSans',
+              fontFamily: 'manrope',
               fontWeight: FontWeight.bold,
             ),
           ),
@@ -598,7 +598,7 @@ void initializeSelectedAmenities() {
             style: TextStyle(
               color: _themeController.isDarkMode.value? const Color.fromARGB(255, 182, 182, 182): const Color.fromARGB(255, 122, 122, 122),
               fontSize: 13,
-              fontFamily: 'GeistSans',
+              fontFamily: 'manrope',
               fontWeight: FontWeight.w600,
             ),
           ),
@@ -642,7 +642,7 @@ Text(
   'Available Amenities: $amenitiesString',
   style: TextStyle(
     fontSize: 16,
-    fontFamily: 'GeistSans',
+    fontFamily: 'manrope',
     fontWeight: FontWeight.w500,
     color: _themeController.isDarkMode.value 
       ? const Color.fromARGB(255, 182, 182, 182) 
@@ -655,7 +655,7 @@ Text(
   'Type other amenities if needed:',
   style: TextStyle(
     fontSize: 13,
-    fontFamily: 'GeistSans',
+    fontFamily: 'manrope',
     fontWeight: FontWeight.w500,
     color: _themeController.isDarkMode.value 
       ? const Color.fromARGB(255, 182, 182, 182) 
@@ -665,7 +665,7 @@ Text(
 ShadInput(
   style: TextStyle(
     fontSize: 16,
-    fontFamily: 'GeistSans',
+    fontFamily: 'manrope',
     color: _themeController.isDarkMode.value ? Colors.white : Colors.black,
   ),
   controller: amenitiesController,
@@ -677,7 +677,7 @@ ShadInput(
             'Select Location',
             style: TextStyle(
               fontSize: 20,
-              fontFamily: 'GeistSans',
+              fontFamily: 'manrope',
               fontWeight: FontWeight.bold,
               color: _themeController.isDarkMode.value ? Colors.white : Colors.black,
             ),
@@ -718,7 +718,7 @@ ShadInput(
             'Property Photos',
             style: TextStyle(
               fontSize: 20,
-              fontFamily: 'GeistSans',
+              fontFamily: 'manrope',
               fontWeight: FontWeight.bold,
               color: _themeController.isDarkMode.value ? Colors.white : Colors.black,
             ),
@@ -737,7 +737,7 @@ ShadInput(
             'Legal Document Photos',
             style: TextStyle(
               fontSize: 20,
-              fontFamily: 'GeistSans',
+              fontFamily: 'manrope',
               fontWeight: FontWeight.bold,
               color: _themeController.isDarkMode.value ? Colors.white : Colors.black,
             ),
@@ -808,7 +808,7 @@ Widget _buildPhotoBox(int index, File? photo, Function(int) onSelectPhoto) {
       child: photo == null
           ? Center(child: Text('Photo $index',
           style: TextStyle(
-            fontFamily: 'geistsans',
+            fontFamily: 'manrope',
             color: _themeController.isDarkMode.value
                 ? const Color.fromARGB(255, 0, 0, 0)
                 : const Color.fromARGB(255, 255, 255, 255),

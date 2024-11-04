@@ -55,7 +55,7 @@ class _PersonalInformationState extends State<PersonalInformation> {
   }
 
 Future<void> _checkProfileCompletion() async {
-  final url = Uri.parse('http://192.168.1.5:3000/profile/checkProfileCompletion/$userId');
+  final url = Uri.parse('https://rentconnect-backend-nodejs.onrender.com/profile/checkProfileCompletion/$userId');
   try {
     final response = await http.get(url, headers: {'Authorization': 'Bearer ${widget.token}'});
     if (response.statusCode == 200) {
@@ -128,7 +128,7 @@ void _showThankYouModal() {
 
 
 Future<void> _updateProfileCompletion() async {
-  final url = Uri.parse('http://192.168.1.5:3000/profile/updateProfile');
+  final url = Uri.parse('https://rentconnect-backend-nodejs.onrender.com/profile/updateProfile');
   try {
     final response = await http.patch(
       url,
@@ -164,7 +164,7 @@ Future<void> _updateProfileCompletion() async {
 
 
   Future<void> _updateRole() async {
-    final url = Uri.parse('http://192.168.1.5:3000/updateUserInfo');
+    final url = Uri.parse('https://rentconnect-backend-nodejs.onrender.com/updateUserInfo');
     try {
       final response = await http.patch(
         url,
@@ -194,7 +194,7 @@ Future<void> _updateProfileCompletion() async {
 
 Map<String, dynamic>? userDetails;
 Future<void> _fetchUserDetails() async {
-  final url = Uri.parse('http://192.168.1.5:3000/user/$userId'); // Your new endpoint
+  final url = Uri.parse('https://rentconnect-backend-nodejs.onrender.com/user/$userId'); // Your new endpoint
   try {
     final response = await http.get(url, headers: {
       'Authorization': 'Bearer ${widget.token}',
@@ -226,7 +226,7 @@ Future<void> _fetchUserDetails() async {
     if (_validIdImage != null) {
       var request = http.MultipartRequest(
         'PATCH',
-        Uri.parse('http://192.168.1.5:3000/profile/uploadValidId')
+        Uri.parse('https://rentconnect-backend-nodejs.onrender.com/profile/uploadValidId')
       );
       request.fields['userId'] = userId;
       String mimeType = lookupMimeType(_validIdImage!.path) ?? 'application/octet-stream';
@@ -299,7 +299,7 @@ Widget build(BuildContext context) {
     appBar: AppBar(
       title: Text('Personal Information', style: TextStyle(
         fontSize: 20.0,
-        fontFamily: 'geistsans',
+        fontFamily: 'manrope',
         fontWeight: FontWeight.w700,
         color: _themeController.isDarkMode.value
             ? const Color.fromARGB(255, 255, 255, 255)
@@ -347,7 +347,7 @@ Widget build(BuildContext context) {
                     'Your profile is currently being reviewed.',
                     style: TextStyle(
                       fontSize: 20.0,
-                      fontFamily: 'geistsans',
+                      fontFamily: 'manrope',
                       fontWeight: FontWeight.w700,
                       color: _themeController.isDarkMode.value
                           ? const Color.fromARGB(255, 255, 255, 255)
@@ -359,7 +359,7 @@ Widget build(BuildContext context) {
                     'Please wait for the approval, Thank you!',
                     style: TextStyle(
                       fontSize: 15.0,
-                      fontFamily: 'geistsans',
+                      fontFamily: 'manrope',
                       fontWeight: FontWeight.w500,
                       color: _themeController.isDarkMode.value
                           ? const Color.fromARGB(255, 198, 198, 198)
@@ -415,7 +415,7 @@ Widget build(BuildContext context) {
                             label: Text(
                               'Firstname',
                               style: TextStyle(
-                              fontFamily: 'geistsans',
+                              fontFamily: 'manrope',
                               color: _themeController.isDarkMode.value
                                             ? Colors.white
                                             : Colors.black,
@@ -447,7 +447,7 @@ Widget build(BuildContext context) {
                             label: Text(
                               'Last Name',
                               style: TextStyle(
-                              fontFamily: 'geistsans',
+                              fontFamily: 'manrope',
                               color: _themeController.isDarkMode.value
                                             ? Colors.white
                                             : Colors.black,
@@ -480,7 +480,7 @@ Widget build(BuildContext context) {
                       label: Text(
                         'Phone',
                         style: TextStyle(
-                              fontFamily: 'geistsans',
+                              fontFamily: 'manrope',
                               color: _themeController.isDarkMode.value
                                             ? Colors.white
                                             : Colors.black,
@@ -509,7 +509,7 @@ Widget build(BuildContext context) {
                       label: Text(
                         'Address',
                         style: TextStyle(
-                              fontFamily: 'geistsans',
+                              fontFamily: 'manrope',
                               color: _themeController.isDarkMode.value
                                             ? Colors.white
                                             : Colors.black,
@@ -541,7 +541,7 @@ Widget build(BuildContext context) {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text("Gender", style: TextStyle(
-                              fontFamily: 'geistsans',
+                              fontFamily: 'manrope',
                               color: _themeController.isDarkMode.value
                                             ? Colors.white
                                             : Colors.black,
@@ -552,7 +552,7 @@ Widget build(BuildContext context) {
                               constraints: const BoxConstraints(minWidth: 170),
                               child: ShadSelect<String>(
                                 placeholder: Text('Select Gender',style: TextStyle(
-                                  fontFamily: 'geistsans',
+                                  fontFamily: 'manrope',
                                   color: _themeController.isDarkMode.value
                                                 ? Colors.white
                                                 : Colors.black,
@@ -571,7 +571,7 @@ Widget build(BuildContext context) {
                                    color: _themeController.isDarkMode.value
                                             ? Colors.white
                                             : Colors.black,
-                                    fontFamily: 'geistsans',
+                                    fontFamily: 'manrope',
                                 ),),
                                 onChanged: (newValue) {
                                   setState(() {
@@ -591,7 +591,7 @@ Widget build(BuildContext context) {
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
                                 Text("Role", style: TextStyle(
-                                      fontFamily: 'geistsans',
+                                      fontFamily: 'manrope',
                                       color: _themeController.isDarkMode.value
                                                     ? Colors.white
                                                     : Colors.black,
@@ -614,7 +614,7 @@ Widget build(BuildContext context) {
                                   child: Text(
                                     "What is role?",
                                     style: TextStyle(
-                                      fontFamily: 'geistsans',
+                                      fontFamily: 'manrope',
                                       color: _themeController.isDarkMode.value
                                           ? const Color.fromARGB(255, 0, 150, 250)
                                           : const Color.fromARGB(255, 0, 87, 250),
@@ -631,7 +631,7 @@ Widget build(BuildContext context) {
                               child: ShadSelect<String>(
                                 
                                 placeholder: Text('Select Role', style: TextStyle(
-                                  fontFamily: 'geistsans',
+                                  fontFamily: 'manrope',
                                   color: _themeController.isDarkMode.value
                                                 ? Colors.white
                                                 : Colors.black,
@@ -647,7 +647,7 @@ Widget build(BuildContext context) {
                                    color: _themeController.isDarkMode.value
                                             ? Colors.white
                                             : Colors.black,
-                                    fontFamily: 'geistsans',
+                                    fontFamily: 'manrope',
                                 ),),
                                 
                                 onChanged: (newValue) {
@@ -786,7 +786,7 @@ Widget build(BuildContext context) {
       title: const Text(
         'Learn more about Roles',
         style: TextStyle(
-          fontFamily: 'GeistSans',
+          fontFamily: 'manrope',
           fontWeight: FontWeight.bold,
         ),
       ),
@@ -875,7 +875,7 @@ Widget build(BuildContext context) {
                                   "• Make reservations\n"
                                   "• Manage payments and inquiries",
                                   style: TextStyle(
-                                    fontFamily: 'GeistSans',
+                                    fontFamily: 'manrope',
                                     fontSize: 14,
                                   ),
                                   textAlign: TextAlign.start,
@@ -896,7 +896,7 @@ Widget build(BuildContext context) {
                                   "• Receive notifications for updates\n"
                                   "• Manage monthly payment through the app",
                                   style: TextStyle(
-                                    fontFamily: 'GeistSans',
+                                    fontFamily: 'manrope',
                                     fontSize: 14,
                                   ),
                                   textAlign: TextAlign.start,
@@ -916,7 +916,7 @@ Widget build(BuildContext context) {
                                   "• Access documentation\n"
                                   "• Track lease agreements and conditions",
                                   style: TextStyle(
-                                    fontFamily: 'GeistSans',
+                                    fontFamily: 'manrope',
                                     fontSize: 14,
                                   ),
                                   textAlign: TextAlign.start,
@@ -983,7 +983,7 @@ Widget build(BuildContext context) {
                         "• Approve or reject reservations\n"
                         "• Handle tenant inquiries",
                         style: TextStyle(
-                          fontFamily: 'GeistSans',
+                          fontFamily: 'manrope',
                           fontSize: 14,
                         ),
                         textAlign: TextAlign.start,
@@ -1004,7 +1004,7 @@ Widget build(BuildContext context) {
                         "• Communicate with tenants\n"
                         "• Schedule property inspections",
                         style: TextStyle(
-                          fontFamily: 'GeistSans',
+                          fontFamily: 'manrope',
                           fontSize: 14,
                         ),
                         textAlign: TextAlign.start,
@@ -1025,7 +1025,7 @@ Widget build(BuildContext context) {
                         "• Manage documentation\n"
                         "• Oversee rental conditions",
                         style: TextStyle(
-                          fontFamily: 'GeistSans',
+                          fontFamily: 'manrope',
                           fontSize: 14,
                         ),
                         textAlign: TextAlign.start,

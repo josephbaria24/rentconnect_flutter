@@ -12,7 +12,7 @@ class SocketService {
 
   void connect() {
     if (_socket == null) {
-      _socket = IO.io('http://192.168.1.5:3000', <String, dynamic>{
+      _socket = IO.io('http://192.168.1.12:3000', <String, dynamic>{
         'transports': ['websocket'],
         'autoConnect': true,
       });

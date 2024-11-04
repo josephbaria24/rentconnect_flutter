@@ -88,7 +88,7 @@ Future<void> handleUpdateStatus(String selectedMonth, String status) async {
 }
 
 Future<void> updateDueDate(String roomId, DateTime dueDate, String token) async {
-  final String apiUrl = 'http://192.168.1.5:3000/rooms/$roomId/due-date';
+  final String apiUrl = 'https://rentconnect-backend-nodejs.onrender.com/rooms/$roomId/due-date';
 
   try {
     final response = await http.put(
@@ -213,7 +213,7 @@ SizedBox(
                       'Tap here to set due date',
                       style: TextStyle(
                         color: _themeController.isDarkMode.value ? Colors.blueAccent : Colors.blueAccent,
-                        fontFamily: 'geistsans',
+                        fontFamily: 'manrope',
                         fontSize: 14,
                       ),
                     ),
@@ -410,7 +410,7 @@ SizedBox(
   
 Future<Map<String, dynamic>?> getProofOfPaymentForSelectedMonth(
     String roomId, String token, String selectedMonth) async {
-  final String apiUrl = 'http://192.168.1.5:3000/payment/room/$roomId/monthlyPayments';
+  final String apiUrl = 'https://rentconnect-backend-nodejs.onrender.com/payment/room/$roomId/monthlyPayments';
 
   try {
     print('API URL: $apiUrl');
@@ -452,7 +452,7 @@ Future<Map<String, dynamic>?> getProofOfPaymentForSelectedMonth(
   return null;
 }
   Future<void> updatePaymentStatus(String monthPaymentId, String status) async {
-    final String apiUrl = 'http://192.168.1.5:3000/payment/monthlyPayments/$monthPaymentId/status';
+    final String apiUrl = 'https://rentconnect-backend-nodejs.onrender.com/payment/monthlyPayments/$monthPaymentId/status';
 
     try {
       final response = await http.put(

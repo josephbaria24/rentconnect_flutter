@@ -54,7 +54,7 @@ class _IndexPageState extends State<IndexPage> {
               'RENTCONNECT',
               textAlign: TextAlign.center,
               style: TextStyle(
-                fontFamily: 'GeistSans',
+                fontFamily: 'manrope',
                 fontWeight: FontWeight.w700,
                 fontSize: 37.0, // Adjust font size
                 color: const Color.fromARGB(255, 255, 255, 255)
@@ -95,7 +95,7 @@ class _IndexPageState extends State<IndexPage> {
                                 child: Image.asset('assets/icons/ren.png'),
                                  ),
                                 Text('RentConnect', style: TextStyle(
-                                  fontFamily: 'geistsans',
+                                  fontFamily: 'manrope',
                                   fontWeight: FontWeight.w700,
                                   fontSize: 17
                                 ),),
@@ -126,7 +126,7 @@ class _IndexPageState extends State<IndexPage> {
                                               descriptions[index],
                                               textAlign: TextAlign.center,
                                               style: const TextStyle(
-                                                fontFamily: 'GeistSans',
+                                                fontFamily: 'manrope',
                                                 fontWeight: FontWeight.w500,
                                                 fontSize: 15.0,
                                                 color: Color.fromARGB(
@@ -186,7 +186,7 @@ class _IndexPageState extends State<IndexPage> {
                               child: const Text(
                                 'SIGN UP',
                                 style: TextStyle(
-                                  fontFamily: 'GeistSans',
+                                  fontFamily: 'manrope',
                                   fontWeight: FontWeight.w500,
                                   fontSize: 16.0,
                                   color: Colors.white,
@@ -218,7 +218,7 @@ class _IndexPageState extends State<IndexPage> {
                               child: const Text(
                                 'LOGIN',
                                 style: TextStyle(
-                                  fontFamily: 'GeistSans',
+                                  fontFamily: 'manrope',
                                   fontWeight: FontWeight.w600,
                                   fontSize: 16.0,
                                   color: Color.fromARGB(255, 14, 14, 14),

@@ -42,7 +42,7 @@ class _FilterDialogState extends State<FilterDialog> {
       ),
       title: Center(
         child: Text("Filter", style: TextStyle(
-          fontFamily: 'geistsans',
+          fontFamily: 'manrope',
           fontWeight: FontWeight.bold,
           
         ),),
@@ -51,7 +51,7 @@ class _FilterDialogState extends State<FilterDialog> {
         mainAxisSize: MainAxisSize.min,
         children: [
           Text("Select Price Range", style: TextStyle(
-            fontFamily: 'geistsans',
+            fontFamily: 'manrope',
           ),),
           RangeSlider(
             inactiveColor: Colors.black,
@@ -87,7 +87,7 @@ class _FilterDialogState extends State<FilterDialog> {
             Navigator.of(context).pop(); // Close dialog
           },
           child: Text("Cancel", style: TextStyle(
-            fontFamily: 'geistsans',
+            fontFamily: 'manrope',
             color: _themeController.isDarkMode.value? Colors.white :Colors.black
           ),),
         ),
@@ -107,7 +107,7 @@ class _FilterDialogState extends State<FilterDialog> {
             Navigator.of(context).pop(); // Close dialog
           },
           child: Text("Clear", style: TextStyle(
-            fontFamily: 'geistsans',
+            fontFamily: 'manrope',
             color: _themeController.isDarkMode.value? Colors.white :Colors.black
           ),),
         ),

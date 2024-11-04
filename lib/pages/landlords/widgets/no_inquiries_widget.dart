@@ -21,7 +21,7 @@ class NoInquiriesWidget extends StatelessWidget {
           'This room has no occupant right now, Stay tuned!',
           textAlign: TextAlign.center, // Center the text
           style: TextStyle(
-            fontFamily: 'geistsans',
+            fontFamily: 'manrope',
             fontSize: 15,
             fontWeight: FontWeight.bold,
           ),

@@ -153,7 +153,7 @@ Widget build(BuildContext context) {
                       style: TextStyle(
                         color: _themeController.isDarkMode.value?Colors.black: Colors.white,
                         fontSize: 27,
-                        fontFamily: 'geistsans',
+                        fontFamily: 'manrope',
                         fontWeight: FontWeight.bold,
                       ),
                     ),
@@ -228,7 +228,7 @@ Widget build(BuildContext context) {
                   child: Text(
                     proofOfPaymentUrl != null ? 'Change' : 'Upload',
                     style: TextStyle(
-                      fontFamily: 'geistsans',
+                      fontFamily: 'manrope',
                       fontSize: 13,
                       color: proofOfPaymentUrl != null ? Colors.blue : Colors.grey,
                     ),
@@ -243,7 +243,7 @@ Widget build(BuildContext context) {
             if (status != null)
               Column(
                 children: [
-                  Text("Status", style: TextStyle(color: _themeController.isDarkMode.value? Colors.white:Colors.black, fontFamily: 'geistsans', fontWeight: FontWeight.w700),),
+                  Text("Status", style: TextStyle(color: _themeController.isDarkMode.value? Colors.white:Colors.black, fontFamily: 'manrope', fontWeight: FontWeight.w700),),
                   Icon(
                     status == 'pending'
                         ? Icons.pending
@@ -342,7 +342,7 @@ Widget build(BuildContext context) {
                             color: isSelected
                                 ? (_themeController.isDarkMode.value ? const Color.fromARGB(255, 0, 0, 0) : Colors.white)
                                 : _themeController.isDarkMode.value ? const Color.fromARGB(255, 255, 255, 255) : Colors.black,
-                            fontFamily: 'geistsans',
+                            fontFamily: 'manrope',
                             fontWeight: FontWeight.w600,
                             fontSize: 13,
                           ),
@@ -379,7 +379,7 @@ void _fetchMonthlyPayments() async {
   });
 
   try {
-    final response = await http.get(Uri.parse('http://192.168.1.5:3000/payment/room/${widget.roomDetails['_id']}/monthlyPayments'));
+    final response = await http.get(Uri.parse('https://rentconnect-backend-nodejs.onrender.com/payment/room/${widget.roomDetails['_id']}/monthlyPayments'));
 
     print('Response status: ${response.statusCode}');
     print('Response body: ${response.body}');
@@ -449,7 +449,7 @@ void _checkExistingPayment(String? selectedMonth) async {
 
     try {
       // Call the API to get monthly payments
-      final response = await http.get(Uri.parse('http://192.168.1.5:3000/payment/room/${widget.roomDetails['_id']}/monthlyPayments'));
+      final response = await http.get(Uri.parse('https://rentconnect-backend-nodejs.onrender.com/payment/room/${widget.roomDetails['_id']}/monthlyPayments'));
 
       // Debugging: Print the response status and body
       print('Response status: ${response.statusCode}');

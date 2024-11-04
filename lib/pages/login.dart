@@ -260,7 +260,7 @@ Future<bool> _sendPasswordResetEmail(String email) async {
   // Replace with your actual endpoint and logic
   try {
     final response = await http.post(
-      Uri.parse('http://192.168.1.5:3000/forgot-password'), // Update with your API endpoint
+      Uri.parse('https://rentconnect-backend-nodejs.onrender.com/forgot-password'), // Update with your API endpoint
       headers: <String, String>{
         'Content-Type': 'application/json; charset=UTF-8',
       },
@@ -331,7 +331,7 @@ Widget build(BuildContext context) {
                   Text(
                     'RentConnect',
                     style: TextStyle(
-                      fontFamily: 'geistsans',
+                      fontFamily: 'manrope',
                       fontWeight: FontWeight.w700,
                       color: Colors.black
                     ),
@@ -343,7 +343,7 @@ Widget build(BuildContext context) {
               Text(
                 'Login',
                 style: TextStyle(
-                  fontFamily: 'GeistSans',
+                  fontFamily: 'manrope',
                   fontWeight: FontWeight.bold,
                   fontSize: 30.0,
                   color: Color.fromRGBO(5, 5, 5, 1),
@@ -404,7 +404,7 @@ Widget build(BuildContext context) {
                     child: const Text(
                       'Forgot Password?',
                       style: TextStyle(
-                        fontFamily: 'GeistSans',
+                        fontFamily: 'manrope',
                         fontWeight: FontWeight.w500,
                         fontSize: 13.0,
                         color: Color.fromRGBO(95, 95, 95, 1),
@@ -435,7 +435,7 @@ Widget build(BuildContext context) {
                           ),
                         ],
                       )
-                    : const Text('Login', style: TextStyle(fontFamily: 'GeistSans', color: Colors.white)),
+                    : const Text('Login', style: TextStyle(fontFamily: 'manrope', color: Colors.white)),
               ),
               const SizedBox(height: 10.0),
               Row(
@@ -444,7 +444,7 @@ Widget build(BuildContext context) {
                   const Text(
                     "Don't have an account?",
                     style: TextStyle(
-                      fontFamily: 'GeistSans',
+                      fontFamily: 'manrope',
                       fontWeight: FontWeight.w400,
                       fontSize: 14.0,
                       color:Color.fromARGB(255, 97, 97, 97),
@@ -461,7 +461,7 @@ Widget build(BuildContext context) {
                     child: Text(
                       'Sign Up',
                       style: TextStyle(
-                        fontFamily: 'GeistSans',
+                        fontFamily: 'manrope',
                         fontWeight: FontWeight.bold,
                         fontSize: 14.0,
                         color: Color.fromRGBO(25, 22, 32, 1),
@@ -479,7 +479,7 @@ Widget build(BuildContext context) {
                       const Text(
                         "By signing up, you agree to our ",
                         style: TextStyle(
-                          fontFamily: 'GeistSans',
+                          fontFamily: 'manrope',
                           fontWeight: FontWeight.w400,
                           fontSize: 12.0,
                           color: Color.fromARGB(255, 97, 97, 97),
@@ -492,7 +492,7 @@ Widget build(BuildContext context) {
                         child: const Text(
                           'Terms of Service',
                           style: TextStyle(
-                            fontFamily: 'GeistSans',
+                            fontFamily: 'manrope',
                             fontWeight: FontWeight.bold,
                             fontSize: 12.0,
                             color: Color.fromRGBO(25, 22, 32, 1),
@@ -502,7 +502,7 @@ Widget build(BuildContext context) {
                       const Text(
                         ' and ',
                         style: TextStyle(
-                          fontFamily: 'GeistSans',
+                          fontFamily: 'manrope',
                           fontWeight: FontWeight.w400,
                           fontSize: 12.0,
                           color: Color.fromARGB(255, 97, 97, 97),
@@ -515,7 +515,7 @@ Widget build(BuildContext context) {
                         child: const Text(
                           'Privacy Policy',
                           style: TextStyle(
-                            fontFamily: 'GeistSans',
+                            fontFamily: 'manrope',
                             fontWeight: FontWeight.bold,
                             fontSize: 12.0,
                             color: Color.fromRGBO(25, 22, 32, 1),

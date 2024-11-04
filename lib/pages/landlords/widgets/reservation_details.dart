@@ -35,7 +35,7 @@ class _ReservationDetailsState extends State<ReservationDetails> {
   Future<String?> fetchProofOfReservation(String roomId) async {
     try {
     // Example API call to fetch payment details
-    var response = await http.get(Uri.parse('http://192.168.1.5:3000/payment/room/$roomId/proofOfReservation'));
+    var response = await http.get(Uri.parse('https://rentconnect-backend-nodejs.onrender.com/payment/room/$roomId/proofOfReservation'));
     if (response.statusCode == 200) {
       var data = jsonDecode(response.body);
       return data['proofOfReservation']; // Ensure the key matches your backend response
@@ -54,7 +54,7 @@ Future<void> markRoomAsOccupied(String roomId) async {
   if (widget.selectedUserId != null) {
     try {
       final response = await http.patch(
-        Uri.parse('http://192.168.1.5:3000/rooms/$roomId/occupy'),
+        Uri.parse('https://rentconnect-backend-nodejs.onrender.com/rooms/$roomId/occupy'),
         headers: {'Content-Type': 'application/json'},
         body: json.encode({
           'userId': widget.selectedUserId, // Pass the userId from approved inquiry
@@ -149,7 +149,7 @@ final ThemeController _themeController = Get.find<ThemeController>();
         ),
         const SizedBox(height: 10),
         Center(child: Text('Is the reservant moved-in?', style: TextStyle(
-          fontFamily: 'geistsans',
+          fontFamily: 'manrope',
           color: _themeController.isDarkMode.value? const Color.fromARGB(255, 216, 216, 216): const Color.fromARGB(193, 53, 53, 53),
           fontSize: 13,
         ),)),
