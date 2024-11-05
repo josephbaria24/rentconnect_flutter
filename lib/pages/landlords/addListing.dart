@@ -279,7 +279,7 @@ Future<void> _selectLegalDocPhoto(int index) async {
   }
 
   Future<void> _submitProperty() async {
-    var request = http.MultipartRequest('POST', Uri.parse('https://rentconnect-backend-nodejs.onrender.com/storeProperty'));
+    var request = http.MultipartRequest('POST', Uri.parse('https://rentconnect.vercel.app/storeProperty'));
 
     request.fields['userId'] = userId;
     request.fields['description'] = descriptionController.text;

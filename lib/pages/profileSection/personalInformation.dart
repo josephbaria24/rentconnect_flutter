@@ -55,7 +55,7 @@ class _PersonalInformationState extends State<PersonalInformation> {
   }
 
 Future<void> _checkProfileCompletion() async {
-  final url = Uri.parse('https://rentconnect-backend-nodejs.onrender.com/profile/checkProfileCompletion/$userId');
+  final url = Uri.parse('https://rentconnect.vercel.app/profile/checkProfileCompletion/$userId');
   try {
     final response = await http.get(url, headers: {'Authorization': 'Bearer ${widget.token}'});
     if (response.statusCode == 200) {
@@ -128,7 +128,7 @@ void _showThankYouModal() {
 
 
 Future<void> _updateProfileCompletion() async {
-  final url = Uri.parse('https://rentconnect-backend-nodejs.onrender.com/profile/updateProfile');
+  final url = Uri.parse('https://rentconnect.vercel.app/profile/updateProfile');
   try {
     final response = await http.patch(
       url,
@@ -164,7 +164,7 @@ Future<void> _updateProfileCompletion() async {
 
 
   Future<void> _updateRole() async {
-    final url = Uri.parse('https://rentconnect-backend-nodejs.onrender.com/updateUserInfo');
+    final url = Uri.parse('https://rentconnect.vercel.app/updateUserInfo');
     try {
       final response = await http.patch(
         url,
@@ -194,7 +194,7 @@ Future<void> _updateProfileCompletion() async {
 
 Map<String, dynamic>? userDetails;
 Future<void> _fetchUserDetails() async {
-  final url = Uri.parse('https://rentconnect-backend-nodejs.onrender.com/user/$userId'); // Your new endpoint
+  final url = Uri.parse('https://rentconnect.vercel.app/user/$userId'); // Your new endpoint
   try {
     final response = await http.get(url, headers: {
       'Authorization': 'Bearer ${widget.token}',
@@ -226,7 +226,7 @@ Future<void> _fetchUserDetails() async {
     if (_validIdImage != null) {
       var request = http.MultipartRequest(
         'PATCH',
-        Uri.parse('https://rentconnect-backend-nodejs.onrender.com/profile/uploadValidId')
+        Uri.parse('https://rentconnect.vercel.app/profile/uploadValidId')
       );
       request.fields['userId'] = userId;
       String mimeType = lookupMimeType(_validIdImage!.path) ?? 'application/octet-stream';

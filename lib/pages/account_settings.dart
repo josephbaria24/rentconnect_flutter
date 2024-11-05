@@ -37,7 +37,7 @@ class _AccountSettingsState extends State<AccountSettings> {
   }
 
   Future<void> _updateEmail(String newEmail) async {
-    final url = Uri.parse('https://rentconnect-backend-nodejs.onrender.com/updateUserInfo');
+    final url = Uri.parse('https://rentconnect.vercel.app/updateUserInfo');
     try {
       final response = await http.patch(
         url,
@@ -88,7 +88,7 @@ class _AccountSettingsState extends State<AccountSettings> {
   }
 
   Future<void> _updatePassword(String currentPassword, String newPassword) async {
-    final url = Uri.parse('https://rentconnect-backend-nodejs.onrender.com/updatePassword');
+    final url = Uri.parse('https://rentconnect.vercel.app/updatePassword');
     try {
       final response = await http.patch(
         url,

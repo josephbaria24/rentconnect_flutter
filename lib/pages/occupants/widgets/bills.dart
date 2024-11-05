@@ -36,7 +36,7 @@ class _AllBillsWidgetState extends State<AllBillsWidget> {
 
  
 Future<void> _fetchInquiries() async {
-  final url = 'https://rentconnect-backend-nodejs.onrender.com/inquiries/occupant/${widget.userId}';
+  final url = 'https://rentconnect.vercel.app/inquiries/occupant/${widget.userId}';
 
   try {
     final response = await http.get(Uri.parse(url));

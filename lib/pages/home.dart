@@ -157,7 +157,7 @@ Widget build(BuildContext context) {
               fontWeight: FontWeight.w700,
               fontFamily: 'manrope',
               color: _themeController.isDarkMode.value
-                  ? Colors.white
+                  ? const Color.fromARGB(255, 238, 238, 255)
                   : const Color.fromARGB(255, 10, 0, 40),
             ),
           ),
@@ -435,7 +435,7 @@ body: Padding(
                     final property = properties[index];
                     final imageUrl = property.photo.startsWith('http')
                         ? property.photo
-                        : 'https://rentconnect-backend-nodejs.onrender.com/${property.photo}';
+                        : 'https://rentconnect.vercel.app/${property.photo}';
 
                     return FutureBuilder<List<dynamic>>(
                       future: fetchRooms(property.id),
@@ -504,6 +504,10 @@ body: Padding(
 }
 
 
+
+
+
+
 Stream<List<dynamic>> notificationStream = NotificationStream().stream.cast<List<dynamic>>();
 
 
@@ -548,7 +552,7 @@ Future<void> initPlatform() async {
 
   Future<void> fetchUserProfileStatus() async {
     final url = Uri.parse(
-        'https://rentconnect-backend-nodejs.onrender.com/profile/checkProfileCompletion/$userId'); // Replace with your API endpoint
+        'https://rentconnect.vercel.app/profile/checkProfileCompletion/$userId'); // Replace with your API endpoint
     try {
       final response = await http.get(
         url,
@@ -576,7 +580,7 @@ Future<void> initPlatform() async {
 
   Future<void> fetchUserProfileStatusForNotification() async {
     final url = Uri.parse(
-        'https://rentconnect-backend-nodejs.onrender.com/profile/checkProfileCompletion/$userId'); // Your API endpoint
+        'https://rentconnect.vercel.app/profile/checkProfileCompletion/$userId'); // Your API endpoint
     try {
       final response = await http.get(
         url,
@@ -660,7 +664,7 @@ Future<List<Property>> fetchProperties() async {
   Future<List<dynamic>> fetchRooms(String propertyId) async {
     try {
       final response = await http.get(Uri.parse(
-          'https://rentconnect-backend-nodejs.onrender.com/rooms/properties/$propertyId/rooms'));
+          'https://rentconnect.vercel.app/rooms/properties/$propertyId/rooms'));
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         if (data['status']) {
@@ -737,7 +741,7 @@ Future<List<Property>> fetchProperties() async {
     try {
       final response = await http.get(
         Uri.parse(
-            'https://rentconnect-backend-nodejs.onrender.com/getUserBookmarks/$userId'), // Adjust endpoint if necessary
+            'https://rentconnect.vercel.app/getUserBookmarks/$userId'), // Adjust endpoint if necessary
         headers: {
           'Authorization': 'Bearer ${widget.token}',
         },
@@ -763,7 +767,7 @@ Future<List<Property>> fetchProperties() async {
   Future<String> fetchUserEmail(String userId) async {
     try {
       final response = await http.get(Uri.parse(
-          'https://rentconnect-backend-nodejs.onrender.com/getUserEmail/$userId'));
+          'https://rentconnect.vercel.app/getUserEmail/$userId'));
 
       if (response.statusCode == 200) {
         final Map<String, dynamic> json = jsonDecode(response.body);
@@ -878,7 +882,7 @@ Future<List<Property>> fetchProperties() async {
     try {
       final response = await http.get(
         Uri.parse(
-            'https://rentconnect-backend-nodejs.onrender.com/notification/unread/$userId'),
+            'https://rentconnect.vercel.app/notification/unread/$userId'),
         headers: {
           'Authorization': 'Bearer $token',
           'Content-Type': 'application/json',
@@ -931,7 +935,7 @@ Future<List<Property>> fetchProperties() async {
   Future<void> _markNotificationAsRead(String notificationId) async {
     final response = await http.patch(
       Uri.parse(
-          'https://rentconnect-backend-nodejs.onrender.com/notification/$notificationId/read'),
+          'https://rentconnect.vercel.app/notification/$notificationId/read'),
       headers: {
         'Authorization': 'Bearer ${widget.token}',
         'Content-Type': 'application/json',
@@ -976,14 +980,14 @@ void onSelected(String filter) async {
 
 
 Future<void> bookmarkProperty(String propertyId, Function(bool isBookmarked) onUpdate) async {
-  final url = Uri.parse('https://rentconnect-backend-nodejs.onrender.com/addBookmark');
+  final url = Uri.parse('https://rentconnect.vercel.app/addBookmark');
   final Map<String, dynamic> jwtDecodedToken = JwtDecoder.decode(widget.token);
   String userId = jwtDecodedToken['_id']?.toString() ?? 'Unknown user ID';
 
   try {
     if (bookmarkedPropertyIds.contains(propertyId)) {
       // If already bookmarked, remove it
-      final removeUrl = Uri.parse('https://rentconnect-backend-nodejs.onrender.com/removeBookmark');
+      final removeUrl = Uri.parse('https://rentconnect.vercel.app/removeBookmark');
       await http.post(removeUrl,
           headers: {
             'Authorization': 'Bearer ${widget.token}',

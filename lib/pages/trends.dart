@@ -25,7 +25,7 @@ class _TrendPageState extends State<TrendPage> {
   late List<Map<String, dynamic>> monthlyOccupancyData = [];
   final ThemeController _themeController = Get.find<ThemeController>();
   String userRole = '';
-  String profileStatus = 'none'; // Default value
+  String profileStatus = 'none'; 
   List<Map<String, String>> propertyList = []; // State variable to hold property IDs with indices
 
   @override
@@ -72,7 +72,7 @@ class _TrendPageState extends State<TrendPage> {
   }
 
   Future<void> fetchMonthlyOccupancyData() async {
-    final response = await http.get(Uri.parse("https://rentconnect-backend-nodejs.onrender.com/trends/monthly-occupancy"));
+    final response = await http.get(Uri.parse("https://rentconnect.vercel.app/trends/monthly-occupancy"));
     if (response.statusCode == 200) {
       final List<dynamic> data = json.decode(response.body)['monthlyOccupancyData'];
       setState(() {
@@ -97,7 +97,7 @@ class _TrendPageState extends State<TrendPage> {
   }
 
   Future<void> fetchUserProfileStatus() async {
-    final url = Uri.parse('https://rentconnect-backend-nodejs.onrender.com/profile/checkProfileCompletion/$userId');
+    final url = Uri.parse('https://rentconnect.vercel.app/profile/checkProfileCompletion/$userId');
     try {
       final response = await http.get(
         url,

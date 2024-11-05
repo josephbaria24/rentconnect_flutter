@@ -260,7 +260,7 @@ Future<bool> _sendPasswordResetEmail(String email) async {
   // Replace with your actual endpoint and logic
   try {
     final response = await http.post(
-      Uri.parse('https://rentconnect-backend-nodejs.onrender.com/forgot-password'), // Update with your API endpoint
+      Uri.parse('https://rentconnect.vercel.app/forgot-password'), // Update with your API endpoint
       headers: <String, String>{
         'Content-Type': 'application/json; charset=UTF-8',
       },

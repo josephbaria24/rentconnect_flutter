@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:http/http.dart' as http;
 import 'package:jwt_decoder/jwt_decoder.dart';
+import 'package:lottie/lottie.dart';
 import 'package:rentcon/pages/fullscreenImage.dart'; // Assuming you have this for property images
 import 'package:rentcon/pages/propertyDetailPage.dart';
 import 'package:rentcon/theme_controller.dart';
@@ -54,7 +55,7 @@ class _SearchResultPageState extends State<SearchResultPage> {
   Future<List<dynamic>> fetchRooms(String propertyId) async {
     try {
       final response = await http.get(Uri.parse(
-          'https://rentconnect-backend-nodejs.onrender.com/rooms/properties/$propertyId/rooms'));
+          'https://rentconnect.vercel.app/rooms/properties/$propertyId/rooms'));
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         if (data['status']) {
@@ -71,7 +72,12 @@ class _SearchResultPageState extends State<SearchResultPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Search Results for "${widget.query}"'),
+        title: Text('Search Results for "${widget.query}"',
+        style: TextStyle(
+          fontFamily: 'manrope',
+          fontSize: 19,
+          fontWeight: FontWeight.w600
+        ),),
         leading: Padding(
           padding: const EdgeInsets.symmetric(vertical: 11.0, horizontal: 12.0),
           child: SizedBox(
@@ -105,14 +111,27 @@ class _SearchResultPageState extends State<SearchResultPage> {
       body: Padding(
         padding: const EdgeInsets.all(15.0),
         child: widget.properties.isEmpty
-            ? Center(child: Text('No results found for "${widget.query}".'))
+            ? Center(child: 
+            Column(
+              children: [
+                Lottie.asset('assets/icons/noMessage.json', 
+                height: 240,
+                repeat: false),
+                Text('No results found for "${widget.query}".',
+                style: TextStyle(
+                  fontFamily: 'manrope',
+                  fontWeight: FontWeight.w700,
+                  fontSize: 18
+                ),),
+              ],
+            ))
             : ListView.builder(
                 itemCount: widget.properties.length,
                 itemBuilder: (context, index) {
                   final property = widget.properties[index];
                   final imageUrl = property.photo.startsWith('http')
                       ? property.photo
-                      : 'https://rentconnect-backend-nodejs.onrender.com/${property.photo}';
+                      : 'https://rentconnect.vercel.app/${property.photo}';
         
                   return FutureBuilder<List<dynamic>>(
                     future: fetchRooms(property.id),

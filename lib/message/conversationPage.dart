@@ -56,7 +56,7 @@ _fetchMessages({bool clearMessages = false}) async {
 
   try {
     final response = await http.get(
-      Uri.parse('https://rentconnect-backend-nodejs.onrender.com/messages?sender=$userId&recipient=${widget.recipient}'),
+      Uri.parse('https://rentconnect.vercel.app/messages?sender=$userId&recipient=${widget.recipient}'),
       headers: {'Content-Type': 'application/json'},
     );
 
@@ -169,7 +169,7 @@ void _scrollToBottom() {
 
     try {
       final response = await http.post(
-        Uri.parse('https://rentconnect-backend-nodejs.onrender.com/messages'),
+        Uri.parse('https://rentconnect.vercel.app/messages'),
         headers: {'Content-Type': 'application/json'},
         body: json.encode(messageData),
       );
@@ -187,7 +187,7 @@ void _scrollToBottom() {
 Future<List<Map<String, dynamic>>> fetchConversationsFromApi() async {
   try {
     final response = await http.get(
-      Uri.parse('https://rentconnect-backend-nodejs.onrender.com/conversations/${userId}'),
+      Uri.parse('https://rentconnect.vercel.app/conversations/${userId}'),
       headers: {'Authorization': 'Bearer ${widget.userToken}'},
     );
 

@@ -30,7 +30,7 @@ class _ProfileDetailsState extends State<ProfileDetails> {
   }
 
   Future<void> _fetchUserDetails() async {
-    final url = Uri.parse('https://rentconnect-backend-nodejs.onrender.com/user/$userId');
+    final url = Uri.parse('https://rentconnect.vercel.app/user/$userId');
     try {
       final response = await http.get(url, headers: {
         'Authorization': 'Bearer ${widget.token}',

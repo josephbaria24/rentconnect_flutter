@@ -6,6 +6,7 @@ import 'package:get/get.dart';
 import 'package:http/http.dart' as http;
 import 'package:lottie/lottie.dart';
 import 'package:rentcon/pages/home.dart';
+import 'package:rentcon/pages/propertyDetailPage.dart';
 import 'package:rentcon/theme_controller.dart';
 import 'toast.dart';
 import 'global_loading_indicator.dart';
@@ -15,7 +16,7 @@ import 'package:fluttertoast/fluttertoast.dart';
  // Make sure to import your theme controller
 
 Future<List<Property>> getBookmarkedProperties(String token, String userId) async {
-  final url = Uri.parse('https://rentconnect-backend-nodejs.onrender.com/getUserBookmarks/$userId'); 
+  final url = Uri.parse('https://rentconnect.vercel.app/getUserBookmarks/$userId'); 
 
   try {
     final response = await http.get(
@@ -45,7 +46,7 @@ Future<List<Property>> getBookmarkedProperties(String token, String userId) asyn
 }
 
 Future<void> removeBookmark(String token, String userId, String propertyId) async {
-  final url = Uri.parse('https://rentconnect-backend-nodejs.onrender.com/removeBookmark');
+  final url = Uri.parse('https://rentconnect.vercel.app/removeBookmark');
 
   try {
     final response = await http.post(
@@ -95,7 +96,8 @@ class _BookmarkPageState extends State<BookmarkPage> {
   late ToastNotification toast;
   final ThemeController _themeController = Get.find<ThemeController>();
  late ToastNotification toastNotification;
-
+   String userRole = '';
+  String profileStatus = 'none'; 
   @override
   void initState() {
     super.initState();
@@ -125,27 +127,51 @@ class _BookmarkPageState extends State<BookmarkPage> {
     }
   }
 
+ Future<void> fetchUserProfileStatus() async {
+    final url = Uri.parse('https://rentconnect.vercel.app/profile/checkProfileCompletion/$userId');
+    try {
+      final response = await http.get(
+        url,
+        headers: {
+          'Authorization': 'Bearer ${widget.token}',
+        },
+      );
+      if (response.statusCode == 200) {
+        final Map<String, dynamic> jsonMap = jsonDecode(response.body);
+        setState(() {
+          profileStatus = jsonMap['profileStatus'] ?? 'none';
+          userRole = jsonMap['userRole'] ?? 'none';
+        });
+      } else {
+        print('Failed to fetch profile status');
+      }
+    } catch (error) {
+      print('Error fetching profile status: $error');
+    }
+  }
+
+
+
     @override
   Widget build(BuildContext context) {
     return Scaffold(
+      appBar: AppBar(
+        backgroundColor: _themeController.isDarkMode.value
+          ? Color.fromARGB(255, 28, 29, 34)
+          : Color.fromRGBO(252, 252, 252, 1),
+        title: Text('Bookmark', style: TextStyle(
+          fontFamily: 'manrope',
+          fontSize: 22,
+          fontWeight: FontWeight.w700
+        ),),
+      ),
       backgroundColor: _themeController.isDarkMode.value
           ? Color.fromARGB(255, 28, 29, 34)
           : Color.fromRGBO(252, 252, 252, 1),
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          SizedBox(height: 30),
-          Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Text(
-              'Bookmark',
-              style: TextStyle(
-                fontSize: 24,
-                fontWeight: FontWeight.bold,
-                color: _themeController.isDarkMode.value ? Colors.white : Colors.black,
-              ),
-            ),
-          ),
+          
           Expanded(
             child: FutureBuilder<List<Property>>(
               future: bookmarkedProperties,
@@ -183,36 +209,63 @@ class _BookmarkPageState extends State<BookmarkPage> {
                       final property = snapshot.data![index];
                       final imageUrl = property.photo.startsWith('http')
                           ? property.photo
-                          : 'https://rentconnect-backend-nodejs.onrender.com/${property.photo}';
+                          : 'https://rentconnect.vercel.app/${property.photo}';
 
                       return Card(
+                        borderOnForeground: true,
                         color: _themeController.isDarkMode.value
                             ? Color.fromARGB(255, 36, 37, 43)
-                            : Colors.white,
-                        elevation: 4,
+                            : const Color.fromARGB(255, 230, 230, 230),
+                        elevation: 0,
                         margin: EdgeInsets.symmetric(vertical: 10.0, horizontal: 15.0),
                         child: ListTile(
                           title: Text(
                             property.description,
                             style: TextStyle(
+                              fontFamily: 'manrope',
+                              fontWeight: FontWeight.w600,
                               color: _themeController.isDarkMode.value ? Colors.white : Colors.black,
                             ),
                           ),
                           subtitle: Text(
-                            '${property.street}, ${property.barangay}, ${property.city}',
+                            '${property.street}, Barangay ${property.barangay}',
                             style: TextStyle(
                               color: _themeController.isDarkMode.value ? Colors.white70 : Colors.black54,
-                              fontFamily: 'Roboto',
-                              fontWeight: FontWeight.bold,
+                              fontFamily: 'manrope',
+                              fontSize: 13,
+                              fontWeight: FontWeight.w500,
                             ),
                           ),
-                          leading: Image.network(imageUrl, width: 100, fit: BoxFit.cover),
+                          leading: ClipRRect(
+                            borderRadius: BorderRadius.circular(10.0), // Set the radius here
+                            child: Image.network(
+                              imageUrl,
+                              width: 80, // Adjust width if needed
+                              height: 140, // Set the desired height here
+                              fit: BoxFit.cover, // Ensure the image fits properly
+                            ),
+                          ),
                           trailing: IconButton(
-                            icon: Icon(Icons.delete, color: Colors.red),
+                            icon: Icon(Icons.delete_outline_rounded, color: const Color.fromARGB(255, 240, 8, 66)),
                             onPressed: () async {
                               await handleRemoveBookmark(property.id);
                             },
                           ),
+                           onTap: () {
+                            // Navigate to the PropertyDetails page
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => PropertyDetailPage(
+                                  userRole: userRole,
+                                  profileStatus: profileStatus,
+                                  userEmail: email,
+                                  token: widget.token,
+                                  property: property
+                                  ),
+                              ),
+                            );
+                          },
                         ),
                       );
                     },

@@ -49,7 +49,7 @@ class _CardNotificationsState extends State<CardNotifications> {
   Future<List<dynamic>> fetchNotifications(String userId, String token) async {
     try {
       final response = await http.get(
-        Uri.parse('https://rentconnect-backend-nodejs.onrender.com/notification/unread/$userId'),
+        Uri.parse('https://rentconnect.vercel.app/notification/unread/$userId'),
         headers: {
           'Authorization': 'Bearer $token',
           'Content-Type': 'application/json',
@@ -107,7 +107,7 @@ class _CardNotificationsState extends State<CardNotifications> {
 
   Future<void> _markNotificationAsRead(String notificationId) async {
     final response = await http.patch(
-      Uri.parse('https://rentconnect-backend-nodejs.onrender.com/notification/$notificationId/read'),
+      Uri.parse('https://rentconnect.vercel.app/notification/$notificationId/read'),
       headers: {
         'Authorization': 'Bearer ${widget.token}',
         'Content-Type': 'application/json',

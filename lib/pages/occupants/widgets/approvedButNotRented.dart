@@ -63,7 +63,7 @@ class _ApprovedbutnotrentedState extends State<Approvedbutnotrented> {
  Map<String, dynamic>? occupantDetails;
  Future<void> _fetchLandlordProfile() async {
     final url = Uri.parse(
-        'https://rentconnect-backend-nodejs.onrender.com/user/${widget.roomDetails['ownerId']}'); // Adjust the endpoint if needed
+        'https://rentconnect.vercel.app/user/${widget.roomDetails['ownerId']}'); // Adjust the endpoint if needed
     try {
       final response = await http
           .get(url, headers: {'Authorization': 'Bearer ${widget.token}'});
@@ -81,7 +81,7 @@ class _ApprovedbutnotrentedState extends State<Approvedbutnotrented> {
   }
  Future<void> _fetchOccupantProfile() async {
     final url = Uri.parse(
-        'https://rentconnect-backend-nodejs.onrender.com/user/${widget.userId}'); // Adjust the endpoint if needed
+        'https://rentconnect.vercel.app/user/${widget.userId}'); // Adjust the endpoint if needed
     try {
       final response = await http
           .get(url, headers: {'Authorization': 'Bearer ${widget.token}'});

@@ -1,5 +1,6 @@
 // ignore_for_file: prefer_const_constructors
 
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
@@ -127,7 +128,7 @@ Future<void> _toggleTheme(bool isDark) async {
 
   Future<void> _fetchUserProfile() async {
     final url = Uri.parse(
-        'https://rentconnect-backend-nodejs.onrender.com/user/$userId'); // Adjust the endpoint if needed
+        'https://rentconnect.vercel.app/user/$userId'); // Adjust the endpoint if needed
     try {
       final response = await http
           .get(url, headers: {'Authorization': 'Bearer ${widget.token}'});
@@ -135,7 +136,11 @@ Future<void> _toggleTheme(bool isDark) async {
         final data = jsonDecode(response.body);
         setState(() {
           userDetails = jsonDecode(response.body);
-          _profileImageUrl = data['profilePicture']; // Update the URL variable
+          CachedNetworkImage(imageUrl:  _profileImageUrl = data['profilePicture'],
+          progressIndicatorBuilder: (context, url, downloadProgress) => 
+          CircularProgressIndicator(value: downloadProgress.progress),
+          errorWidget: (context, url, error) => Icon(Icons.error),);
+          //_profileImageUrl = data['profilePicture']; // Update the URL variable
         });
       } else {
         print('No profile yet');
@@ -147,7 +152,7 @@ Future<void> _toggleTheme(bool isDark) async {
 
   Future<void> fetchUserProfileStatus() async {
     final url = Uri.parse(
-        'https://rentconnect-backend-nodejs.onrender.com/profile/checkProfileCompletion/$userId'); // Replace with your API endpoint
+        'https://rentconnect.vercel.app/profile/checkProfileCompletion/$userId'); // Replace with your API endpoint
     try {
       final response = await http.get(
         url,
@@ -255,7 +260,7 @@ void _showLogoutConfirmationDialog(BuildContext context) {
 Future<void> _uploadProfilePicture() async {
   if (_profileImage != null) {
     final url =
-        Uri.parse('https://rentconnect-backend-nodejs.onrender.com/updateProfilePicture/$userId');
+        Uri.parse('https://rentconnect.vercel.app/updateProfilePicture/$userId');
     var request = http.MultipartRequest('PATCH', url)
       ..headers['Authorization'] = 'Bearer ${widget.token}';
 
@@ -451,8 +456,8 @@ Future<void> _uploadProfilePicture() async {
                       decoration: BoxDecoration(
                         borderRadius: BorderRadius.circular(100),
                         color: themeController.isDarkMode.value
-                            ? const Color.fromARGB(255, 97, 97, 97)
-                            : Color.fromARGB(190, 196, 196, 196),
+                            ? const Color.fromARGB(255, 57, 56, 66)
+                            : Color.fromARGB(189, 238, 238, 238),
                       ),
                       child: Padding(
                         padding: const EdgeInsets.all(4.0),
@@ -475,27 +480,36 @@ Future<void> _uploadProfilePicture() async {
                               ),
                             ),
                             Positioned(
-                              bottom: 2,
-                              right: 2,
-                              child: SizedBox(
-                                height: 31,
-                                width: 31,
-                                child: DecoratedBox(
-                                  decoration: BoxDecoration(
-                                    color: const Color.fromARGB(255, 100, 100, 100),
-                                    borderRadius: BorderRadius.circular(50),
-                                  ),
+                            bottom: 1,
+                            right: 1,
+                            child: SizedBox(
+                              height: 25,
+                              width: 25,
+                              child: DecoratedBox(
+                                decoration: BoxDecoration(
+                                  border: Border.all(width: 0.5),
+                                  color: themeController.isDarkMode.value 
+                                      ? Colors.black 
+                                      : const Color.fromARGB(255, 255, 255, 255),
+                                  borderRadius: BorderRadius.circular(9),
+                                ),
+                                child: Center( // Use Center to align the IconButton in the middle
                                   child: IconButton(
+                                    padding: EdgeInsets.zero, // Remove padding inside the IconButton
                                     icon: Icon(
                                       Icons.camera_alt_rounded,
-                                      color: const Color.fromARGB(255, 255, 255, 255),
-                                      size: 17,
+                                      color: themeController.isDarkMode.value 
+                                          ? const Color.fromARGB(255, 255, 255, 255) 
+                                          : Colors.black,
+                                      size: 16,
                                     ),
                                     onPressed: _pickImage,
                                   ),
                                 ),
                               ),
                             ),
+                          ),
+
                           ],
                         ),
                       ),
@@ -657,9 +671,9 @@ Future<void> _uploadProfilePicture() async {
                         'assets/icons/faq.json',
                         repeat: false,
                         height: 30,
-                                              ),
-                                              title: "FAQs",
-                                              textColor: themeController.isDarkMode.value
+                        ),
+                        title: "FAQs",
+                        textColor: themeController.isDarkMode.value
                           ? Colors.black
                           : Colors.black,
                                               icon2: Icon(
@@ -948,10 +962,10 @@ class DeviceCard2 extends StatelessWidget {
             width: MediaQuery.of(context).size.width * 0.40,
             decoration: BoxDecoration(
               color: _themeController.isDarkMode.value
-                  ? const Color.fromARGB(255, 42, 43, 51)
+                  ? const Color.fromARGB(0, 42, 43, 51)
                   : const Color.fromARGB(255, 255, 255, 255),
               borderRadius: BorderRadius.circular(17),
-              border: Border.all(width: 0.5)
+              border: Border.all(width: 0.5, color: _themeController.isDarkMode.value? Colors.white:Colors.black)
             ),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.start,

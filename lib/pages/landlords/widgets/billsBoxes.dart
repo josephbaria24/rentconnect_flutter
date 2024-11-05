@@ -377,7 +377,7 @@ void _submitAllBills() async {
     final inquiryId = widget.inquiries!.first['_id'];
 
     final response = await http.post(
-      Uri.parse('https://rentconnect-backend-nodejs.onrender.com/inquiries/$inquiryId/add'),
+      Uri.parse('https://rentconnect.vercel.app/inquiries/$inquiryId/add'),
       headers: {
         'Content-Type': 'application/json',
       },
@@ -414,7 +414,7 @@ void _submitAllBills() async {
 
 Future<dynamic> fetchExistingBill(String billId) async {
   final response = await http.get(
-    Uri.parse('https://rentconnect-backend-nodejs.onrender.com/inquiries/bills/getBillId/$billId'),
+    Uri.parse('https://rentconnect.vercel.app/inquiries/bills/getBillId/$billId'),
   );
 
   print('Response status: ${response.statusCode}');

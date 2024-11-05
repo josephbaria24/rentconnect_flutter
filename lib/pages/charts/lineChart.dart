@@ -16,7 +16,7 @@ class LineChartSample2 extends StatefulWidget {
 class _LineChartSample2State extends State<LineChartSample2> {
   List<Color> gradientColors = [
     const Color.fromARGB(255, 21, 57, 218),
-    const Color.fromARGB(255, 1, 255, 255),
+    const Color.fromARGB(255, 230, 10, 131),
   ];
 
   int selectedYear = DateTime.now().year;
@@ -77,7 +77,7 @@ class _LineChartSample2State extends State<LineChartSample2> {
                                     CupertinoDialogAction(
                                       child: const Text("OK"),
                                       onPressed: () {
-                                        Navigator.of(context).pop(); // Dismiss the dialog
+                                        Navigator.of(context).pop();
                                       },
                                     ),
                                   ],
@@ -95,10 +95,10 @@ class _LineChartSample2State extends State<LineChartSample2> {
                     Row(
                       children: [
                         Text('Select Year:', style: TextStyle(
-                                      fontFamily: "manrope",
-                                      fontWeight: FontWeight.w400
-                                    ),),
-                                    const SizedBox(width: 5),
+                          fontFamily: "manrope",
+                          fontWeight: FontWeight.w400
+                        ),),
+                        const SizedBox(width: 5),
                       DropdownButton<int>(
                         icon: Icon(Icons.arrow_drop_down_rounded),
                         value: selectedYear,
@@ -120,7 +120,6 @@ class _LineChartSample2State extends State<LineChartSample2> {
                       ),
                       ],
                     ),
-            
               ],
             ),
             
@@ -238,7 +237,7 @@ class _LineChartSample2State extends State<LineChartSample2> {
       maxY: getCompleteMonthlyData()
           .map((d) => d['occupancyCount'])
           .reduce((a, b) => a > b ? a : b)
-          .toDouble(),
+          .toDouble() + 1,
       lineBarsData: [
         LineChartBarData(
           spots: getSpots(),
@@ -261,4 +260,5 @@ class _LineChartSample2State extends State<LineChartSample2> {
       ],
     );
   }
+
 }

@@ -223,17 +223,33 @@ Widget build(BuildContext context) {
                     ),
                 ],
               ),
-                TextButton(
-                  onPressed: _uploadPayment,
+              SizedBox(height: 5,),
+               SizedBox(
+              height: 30,
+              child: TextButton(
+                style: ButtonStyle(
+                  padding: WidgetStateProperty.all<EdgeInsetsGeometry>(EdgeInsets.zero), // Remove padding
+                  backgroundColor: WidgetStateProperty.all<Color>(const Color.fromARGB(255, 108, 197, 248)),
+                  shape: WidgetStateProperty.all<RoundedRectangleBorder>(
+                    RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8), // Reduce border radius
+                    ),
+                  ),
+                ),
+                onPressed: _uploadPayment,
+                child: Center( // Center the text inside the button
                   child: Text(
                     proofOfPaymentUrl != null ? 'Change' : 'Upload',
                     style: TextStyle(
                       fontFamily: 'manrope',
-                      fontSize: 13,
-                      color: proofOfPaymentUrl != null ? Colors.blue : Colors.grey,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      color: proofOfPaymentUrl != null ? Color.fromARGB(255, 0, 0, 0) : const Color.fromARGB(255, 0, 0, 0),
                     ),
                   ),
                 ),
+              ),
+            ),
               ],
             ),
 
@@ -379,7 +395,7 @@ void _fetchMonthlyPayments() async {
   });
 
   try {
-    final response = await http.get(Uri.parse('https://rentconnect-backend-nodejs.onrender.com/payment/room/${widget.roomDetails['_id']}/monthlyPayments'));
+    final response = await http.get(Uri.parse('https://rentconnect.vercel.app/payment/room/${widget.roomDetails['_id']}/monthlyPayments'));
 
     print('Response status: ${response.statusCode}');
     print('Response body: ${response.body}');
@@ -449,7 +465,7 @@ void _checkExistingPayment(String? selectedMonth) async {
 
     try {
       // Call the API to get monthly payments
-      final response = await http.get(Uri.parse('https://rentconnect-backend-nodejs.onrender.com/payment/room/${widget.roomDetails['_id']}/monthlyPayments'));
+      final response = await http.get(Uri.parse('https://rentconnect.vercel.app/payment/room/${widget.roomDetails['_id']}/monthlyPayments'));
 
       // Debugging: Print the response status and body
       print('Response status: ${response.statusCode}');

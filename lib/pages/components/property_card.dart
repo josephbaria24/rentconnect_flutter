@@ -160,7 +160,7 @@ void _animationStatusListener(AnimationStatus status) {
               color: _themeController.isDarkMode.value
                   ? const Color.fromARGB(255, 36, 38, 43)
                   : const Color.fromARGB(255, 255, 255, 255),
-              elevation: 5.0,
+              elevation: 1.0,
               margin: const EdgeInsets.symmetric(vertical: 5.0, horizontal: 10.0),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(12),
@@ -385,7 +385,7 @@ void _animationStatusListener(AnimationStatus status) {
 
 
  Future<Map<String, String>> fetchUserProfileStatus() async {
-    final url = Uri.parse('https://rentconnect-backend-nodejs.onrender.com/profile/checkProfileCompletion/${widget.userId}');
+    final url = Uri.parse('https://rentconnect.vercel.app/profile/checkProfileCompletion/${widget.userId}');
     try {
       final response = await http.get(
         url,
@@ -420,7 +420,7 @@ Future<void> triggerView() async {
     final userId = widget.userId; // Get the current user's ID from your auth system
 
     final response = await http.post(
-      Uri.parse('https://rentconnect-backend-nodejs.onrender.com/properties/${widget.property.id}/view'),
+      Uri.parse('https://rentconnect.vercel.app/properties/${widget.property.id}/view'),
       headers: {
         'Content-Type': 'application/json',
         'Authorization': 'Bearer YOUR_JWT_TOKEN', // If you're using JWT for auth
@@ -442,7 +442,7 @@ Future<void> triggerView() async {
 
  void _fetchAverageRating() async {
   // Replace with your actual API endpoint
-  final url = Uri.parse('https://rentconnect-backend-nodejs.onrender.com/averageRating/${widget.property.id}');
+  final url = Uri.parse('https://rentconnect.vercel.app/averageRating/${widget.property.id}');
   try {
     final response = await http.get(
       url,

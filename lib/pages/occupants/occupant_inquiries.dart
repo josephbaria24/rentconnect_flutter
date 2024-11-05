@@ -200,7 +200,7 @@ Future<void> _initializeInquiries() async {
  Future<List<Map<String, dynamic>>> fetchInquiries(
       String userId, String token) async {
     final response = await http.get(
-      Uri.parse('https://rentconnect-backend-nodejs.onrender.com/inquiries/occupant/$userId'),
+      Uri.parse('https://rentconnect.vercel.app/inquiries/occupant/$userId'),
       headers: {
         'Authorization': 'Bearer $token',
         'Content-Type': 'application/json',
@@ -216,7 +216,7 @@ Future<void> _initializeInquiries() async {
   }
 
   Future<void> fetchPropertyDetails(String roomId) async {
-    final url = 'https://rentconnect-backend-nodejs.onrender.com/inquiries/room/$roomId/property';
+    final url = 'https://rentconnect.vercel.app/inquiries/room/$roomId/property';
 
     try {
       final response = await http.get(Uri.parse(url));
@@ -272,7 +272,7 @@ Future<void> _uploadProofOfReservation(
   if (image != null) {
     final request = http.MultipartRequest(
       'POST',
-      Uri.parse('https://rentconnect-backend-nodejs.onrender.com/payment/uploadProofOfReservation'),
+      Uri.parse('https://rentconnect.vercel.app/payment/uploadProofOfReservation'),
     );
 
     request.headers['Authorization'] = 'Bearer ${widget.token}';
@@ -342,7 +342,7 @@ Future<void> _uploadProofOfReservation(
 
           // Send notification request
           final notificationResponse = await http.post(
-            Uri.parse('https://rentconnect-backend-nodejs.onrender.com/notification/create'),
+            Uri.parse('https://rentconnect.vercel.app/notification/create'),
             headers: {
               'Authorization': 'Bearer ${widget.token}',
               'Content-Type': 'application/json',
@@ -387,7 +387,7 @@ Future<void> _uploadProofOfReservation(
 
   Future<String?> getProofOfReservation(String roomId, String token) async {
     final url =
-        'https://rentconnect-backend-nodejs.onrender.com/payment/room/$roomId/proofOfReservation';
+        'https://rentconnect.vercel.app/payment/room/$roomId/proofOfReservation';
 
     try {
       final response = await http.get(
@@ -413,7 +413,7 @@ Future<void> _uploadProofOfReservation(
   }
 
   Future<void> _getLandlordId(String roomId) async {
-    final uri = Uri.parse('https://rentconnect-backend-nodejs.onrender.com/rooms/getRoom/$roomId');
+    final uri = Uri.parse('https://rentconnect.vercel.app/rooms/getRoom/$roomId');
 
     final response = await http.get(uri);
 
@@ -454,7 +454,7 @@ void printPropertyId(Map<String, dynamic> propertyDetail) {
 
 
 Future<void> _fetchLandlordId(String propertyId) async {
-  final uri = Uri.parse('https://rentconnect-backend-nodejs.onrender.com/getPropertiesByIds?ids=${propertyRoomDetails!['_id']}');
+  final uri = Uri.parse('https://rentconnect.vercel.app/getPropertiesByIds?ids=${propertyRoomDetails!['_id']}');
 
   final response = await http.get(
     uri,
@@ -497,7 +497,7 @@ Future<void> _fetchLandlordId(String propertyId) async {
 
   Future<String?> getProofOfPayment(String roomId, String token) async {
     final String apiUrl =
-        'https://rentconnect-backend-nodejs.onrender.com/room/$roomId/monthlyPayments'; // Update with your API endpoint
+        'https://rentconnect.vercel.app/room/$roomId/monthlyPayments'; // Update with your API endpoint
 
     try {
       final response = await http.get(
@@ -546,7 +546,7 @@ Future<void> _fetchLandlordId(String propertyId) async {
 
   Future<void> deleteProof(String roomId, String type) async {
     final url =
-        'https://rentconnect-backend-nodejs.onrender.com/payment/room/$roomId/payment/month/proof/reservation';
+        'https://rentconnect.vercel.app/payment/room/$roomId/payment/month/proof/reservation';
 
     print('Attempting to delete: $url'); // Print the URL for debugging
 
@@ -576,7 +576,7 @@ Future<void> _fetchLandlordId(String propertyId) async {
   }
 
 Future<String?> fetchLandlordEmail(String ownerId, String token) async {
-  final url = Uri.parse('https://rentconnect-backend-nodejs.onrender.com/user/$ownerId');
+  final url = Uri.parse('https://rentconnect.vercel.app/user/$ownerId');
   try {
     final response = await http.get(url, headers: {'Authorization': 'Bearer $token'});
     if (response.statusCode == 200) {
@@ -613,11 +613,7 @@ Future<void> uploadProofOfPayment(
       print('Selected file extension: $fileExtension');
 
       if (!['jpg', 'jpeg', 'png', 'webp'].contains(fileExtension)) {
-        Fluttertoast.showToast(
-          msg: 'Invalid file type. Please upload a JPG or PNG image.',
-          backgroundColor: Colors.red,
-          textColor: Colors.white,
-        );
+        toastNotification.warn("Invalid file type. Please upload a JPG or PNG image.");
         return;
       }
 
@@ -626,7 +622,7 @@ Future<void> uploadProofOfPayment(
       // Creating the multipart request
       final paymentRequest = http.MultipartRequest(
         'POST',
-        Uri.parse('https://rentconnect-backend-nodejs.onrender.com/payment/createoraddMonthlyPayment'),
+        Uri.parse('https://rentconnect.vercel.app/payment/createoraddMonthlyPayment'),
       );
 
       // Adding headers
@@ -658,12 +654,7 @@ Future<void> uploadProofOfPayment(
 
       if (paymentResponse.statusCode == 200) {
         // Handle success
-        Fluttertoast.showToast(
-          msg: 'Monthly payment created/added successfully.',
-          backgroundColor: Colors.green,
-          textColor: Colors.white,
-        );
-
+        toastNotification.success('Monthly payment created/added successfully.');
         // Fetch the landlord's email using the ownerId
         final landlordEmail = await fetchLandlordEmail(landlordId, token);
 
@@ -686,7 +677,7 @@ Future<void> uploadProofOfPayment(
 
           // Send notification request
           final notificationResponse = await http.post(
-            Uri.parse('https://rentconnect-backend-nodejs.onrender.com/notification/create'),
+            Uri.parse('https://rentconnect.vercel.app/notification/create'),
             headers: {
               'Authorization': 'Bearer $token',
               'Content-Type': 'application/json',
@@ -706,11 +697,7 @@ Future<void> uploadProofOfPayment(
         }
       } else {
         print('Failed to create or add monthly payment. Status code: ${paymentResponse.statusCode}');
-        Fluttertoast.showToast(
-          msg: 'Failed to create or add monthly payment.',
-          backgroundColor: Colors.red,
-          textColor: Colors.white,
-        );
+        toastNotification.error('Failed to create or add monthly payment.');
       }
     } else {
       print('No image selected.');
@@ -729,7 +716,7 @@ Future<void> uploadProofOfPayment(
 
   Future<void> _cancelInquiry(String inquiryId, String token) async {
     final String apiUrl =
-        'https://rentconnect-backend-nodejs.onrender.com/inquiries/delete/$inquiryId';
+        'https://rentconnect.vercel.app/inquiries/delete/$inquiryId';
     try {
       final response = await http.delete(
         Uri.parse(apiUrl),
@@ -851,7 +838,7 @@ Future<void> uploadProofOfPayment(
                     future: fetchInquiries(widget.userId, widget.token),
                     builder: (context, snapshot) {
                       if (snapshot.connectionState == ConnectionState.waiting) {
-                        return const Center(child: CircularProgressIndicator());
+                        return const Center(child: CupertinoActivityIndicator());
                       } else if (snapshot.hasError) {
                         return Center(child: Text('Error: ${snapshot.error}'));
                       } else if (snapshot.hasData && snapshot.data != null) {

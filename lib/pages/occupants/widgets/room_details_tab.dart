@@ -36,7 +36,7 @@
 
 //   Future<String?> getProofOfReservation(String roomId, String token) async {
 //     final url =
-//         'https://rentconnect-backend-nodejs.onrender.com/payment/room/$roomId/proofOfReservation';
+//         'https://rentconnect.vercel.app/payment/room/$roomId/proofOfReservation';
 
 //     try {
 //       final response = await http.get(
@@ -63,7 +63,7 @@
 //  Future<List<Map<String, dynamic>>> fetchInquiries(
 //       String userId, String token) async {
 //     final response = await http.get(
-//       Uri.parse('https://rentconnect-backend-nodejs.onrender.com/inquiries/occupant/$userId'),
+//       Uri.parse('https://rentconnect.vercel.app/inquiries/occupant/$userId'),
 //       headers: {
 //         'Authorization': 'Bearer $token',
 //         'Content-Type': 'application/json',
@@ -81,7 +81,7 @@
 
 //  Future<String?> getProofOfPayment(String roomId, String token) async {
 //     final String apiUrl =
-//         'https://rentconnect-backend-nodejs.onrender.com/room/$roomId/monthlyPayments'; // Update with your API endpoint
+//         'https://rentconnect.vercel.app/room/$roomId/monthlyPayments'; // Update with your API endpoint
 
 //     try {
 //       final response = await http.get(

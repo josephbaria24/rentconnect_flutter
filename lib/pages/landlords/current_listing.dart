@@ -132,7 +132,7 @@ class _CurrentListingPageState extends State<CurrentListingPage> {
   }
 
 Future<String?> getProofOfPaymentForSelectedMonth(String roomId, String token, String selectedMonth) async {
-  final String apiUrl = 'https://rentconnect-backend-nodejs.onrender.com/payment/room/$roomId/monthlyPayments';
+  final String apiUrl = 'https://rentconnect.vercel.app/payment/room/$roomId/monthlyPayments';
 
   try {
     print('API URL: $apiUrl');
@@ -216,7 +216,7 @@ final List<String> rejectionReasons = [
 
 Future<int?> getReservationDuration(String roomId, String token) async {
   final response = await http.get(
-    Uri.parse('https://rentconnect-backend-nodejs.onrender.com/inquiries/rooms/$roomId'),
+    Uri.parse('https://rentconnect.vercel.app/inquiries/rooms/$roomId'),
     headers: {
       'Authorization': 'Bearer $token', // If you're using token-based authentication
       'Content-Type': 'application/json',
@@ -253,7 +253,7 @@ void showRoomDetailBottomSheet(BuildContext context, dynamic room, Map<String, d
     try {
       // Replace with your actual backend API endpoint
       final response = await http.put(
-        Uri.parse('https://rentconnect-backend-nodejs.onrender.com/rooms/room/${room['_id']}/markAsAvailable'),
+        Uri.parse('https://rentconnect.vercel.app/rooms/room/${room['_id']}/markAsAvailable'),
         headers: {'Authorization': 'Bearer ${widget.token}'},
       );
 
@@ -724,7 +724,7 @@ void showRoomDetailBottomSheet(BuildContext context, dynamic room, Map<String, d
   Future<void> updateInquiryStatus(
       String? inquiryId, String? newStatus, String? token) async {
     final url = Uri.parse(
-        'https://rentconnect-backend-nodejs.onrender.com/inquiries/update/$inquiryId'); // Match your backend route
+        'https://rentconnect.vercel.app/inquiries/update/$inquiryId'); // Match your backend route
 
     try {
       final response = await http.patch(
@@ -764,7 +764,7 @@ Future<void> updateInquiryStatusAndRoom(
     String token,
     int? reservationDuration,
 ) async {
-    final url = 'https://rentconnect-backend-nodejs.onrender.com/inquiries/update/$inquiryId'; // Update inquiry status
+    final url = 'https://rentconnect.vercel.app/inquiries/update/$inquiryId'; // Update inquiry status
     try {
         final response = await http.patch(
             Uri.parse(url),
@@ -784,7 +784,7 @@ Future<void> updateInquiryStatusAndRoom(
         if (response.statusCode == 200) {
             // Get the occupant's email
             final emailResponse = await http.get(
-                Uri.parse('https://rentconnect-backend-nodejs.onrender.com/inquiries/$inquiryId/email'),
+                Uri.parse('https://rentconnect.vercel.app/inquiries/$inquiryId/email'),
                 headers: {
                     'Authorization': 'Bearer $token',
                     'Content-Type': 'application/json',
@@ -815,7 +815,7 @@ Future<void> updateInquiryStatusAndRoom(
 
 
 Future<void> _sendOccupantNotificationEmail(String occupantEmail, String message, String userId) async {
-    final emailServiceUrl = 'https://rentconnect-backend-nodejs.onrender.com/notification/create'; // Endpoint to send notifications
+    final emailServiceUrl = 'https://rentconnect.vercel.app/notification/create'; // Endpoint to send notifications
     try {
         final response = await http.post(
             Uri.parse(emailServiceUrl),
@@ -849,7 +849,7 @@ Future<void> rejectAndDeleteInquiry(String inquiryId, String token, String reaso
   try {
     // First, call your API to reject the inquiry and send the reason
     final response = await http.patch(
-      Uri.parse('https://rentconnect-backend-nodejs.onrender.com/inquiries/reject/$inquiryId'), // Update the endpoint
+      Uri.parse('https://rentconnect.vercel.app/inquiries/reject/$inquiryId'), // Update the endpoint
       headers: {
         'Authorization': 'Bearer $token',
         'Content-Type': 'application/json',
@@ -864,7 +864,7 @@ Future<void> rejectAndDeleteInquiry(String inquiryId, String token, String reaso
 
       // Get the inquiry details, including userId and occupant's email
       final inquiryResponse = await http.get(
-        Uri.parse('https://rentconnect-backend-nodejs.onrender.com/inquiries/$inquiryId'), // Update the endpoint to get inquiry details
+        Uri.parse('https://rentconnect.vercel.app/inquiries/$inquiryId'), // Update the endpoint to get inquiry details
         headers: {
           'Authorization': 'Bearer $token',
           'Content-Type': 'application/json',
@@ -894,7 +894,7 @@ Future<void> rejectAndDeleteInquiry(String inquiryId, String token, String reaso
 
 
   Future<bool> deleteProperty(String propertyId) async {
-    final response = await http.delete(Uri.parse('https://rentconnect-backend-nodejs.onrender.com/deleteProperty/$propertyId'));
+    final response = await http.delete(Uri.parse('https://rentconnect.vercel.app/deleteProperty/$propertyId'));
 
     if (response.statusCode == 200) {
       // Successfully deleted the property
@@ -2008,7 +2008,7 @@ Future<void> getPropertyList(String userId) async {
   Future<void> fetchUserProfile(String userId) async {
     try {
       final response =
-          await http.get(Uri.parse('https://rentconnect-backend-nodejs.onrender.com/user/$userId'));
+          await http.get(Uri.parse('https://rentconnect.vercel.app/user/$userId'));
       if (response.statusCode == 200) {
         final user = json.decode(response.body);
         setState(() {
@@ -2029,7 +2029,7 @@ Future<void> getPropertyList(String userId) async {
 
 Future<void> fetchRoomInquiries(String roomId) async {
   try {
-    final response = await http.get(Uri.parse('https://rentconnect-backend-nodejs.onrender.com/inquiries/rooms/$roomId'));
+    final response = await http.get(Uri.parse('https://rentconnect.vercel.app/inquiries/rooms/$roomId'));
     
     if (response.statusCode == 200) {
       final inquiries = json.decode(response.body) as List<dynamic>; // Decode as List
@@ -2070,7 +2070,7 @@ void initializeRoomId() {
   Future<void> fetchRooms(String propertyId) async {
     try {
       final response = await http.get(Uri.parse(
-          'https://rentconnect-backend-nodejs.onrender.com/rooms/properties/$propertyId/rooms'));
+          'https://rentconnect.vercel.app/rooms/properties/$propertyId/rooms'));
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
@@ -2110,7 +2110,7 @@ void initializeRoomId() {
 
 
 Future<void> updateRoomStatus(String? roomId, String? newStatus) async {
-  final url = Uri.parse('https://rentconnect-backend-nodejs.onrender.com/rooms/updateRoom/$roomId'); // Replace with your backend URL
+  final url = Uri.parse('https://rentconnect.vercel.app/rooms/updateRoom/$roomId'); // Replace with your backend URL
   final headers = {
     'Content-Type': 'application/json',
     'Authorization': 'Bearer your_jwt_token' // Add your JWT token if required
@@ -2192,7 +2192,7 @@ Future<void> markRoomAsOccupied(BuildContext context, String roomID) async {
   if (selectedUserId != null) {
     try {
       final response = await http.patch(
-        Uri.parse('https://rentconnect-backend-nodejs.onrender.com/rooms/$roomID/occupy'),
+        Uri.parse('https://rentconnect.vercel.app/rooms/$roomID/occupy'),
         headers: {'Content-Type': 'application/json'},
         body: json.encode({
           'userId': selectedUserId, // Pass the userId from approved inquiry
@@ -2231,7 +2231,7 @@ Future<void> markRoomAsOccupied(BuildContext context, String roomID) async {
 Future<String?> fetchProofOfReservation(String roomId) async {
   try {
     // Example API call to fetch payment details
-    var response = await http.get(Uri.parse('https://rentconnect-backend-nodejs.onrender.com/payment/room/$roomId/proofOfReservation'));
+    var response = await http.get(Uri.parse('https://rentconnect.vercel.app/payment/room/$roomId/proofOfReservation'));
     if (response.statusCode == 200) {
       var data = jsonDecode(response.body);
       return data['proofOfReservation']; // Ensure the key matches your backend response

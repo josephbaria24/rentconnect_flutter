@@ -168,7 +168,7 @@ void _showTutorial() {
   Future<Map<String, dynamic>?> getProofOfPaymentForSelectedMonth(
       String roomId, String token, String selectedMonth) async {
     final String apiUrl =
-        'https://rentconnect-backend-nodejs.onrender.com/payment/room/${widget.room?['_id']}/monthlyPayments';
+        'https://rentconnect.vercel.app/payment/room/${widget.room?['_id']}/monthlyPayments';
 
     try {
       print('API URL: $apiUrl');
@@ -420,7 +420,7 @@ void _showTutorial() {
 
   Future<void> updatePaymentStatus(String monthPaymentId, String status) async {
     final String apiUrl =
-        'https://rentconnect-backend-nodejs.onrender.com/payment/monthlyPayments/$monthPaymentId/status';
+        'https://rentconnect.vercel.app/payment/monthlyPayments/$monthPaymentId/status';
 
     try {
       final response = await http.put(
@@ -878,7 +878,7 @@ Widget build(BuildContext context) {
   Future<void> updateDueDate(
       String roomId, DateTime dueDate, String token) async {
     final String apiUrl =
-        'https://rentconnect-backend-nodejs.onrender.com/rooms/${widget.room!['_id']}/due-date';
+        'https://rentconnect.vercel.app/rooms/${widget.room!['_id']}/due-date';
 
     try {
       final response = await http.put(
@@ -952,7 +952,7 @@ Widget build(BuildContext context) {
 
 // Future<Map<String, dynamic>?> getProofOfPaymentForSelectedMonth(
 //     String roomId, String token, String selectedMonth) async {
-//   final String apiUrl = 'https://rentconnect-backend-nodejs.onrender.com/payment/room/$roomId/monthlyPayments';
+//   final String apiUrl = 'https://rentconnect.vercel.app/payment/room/$roomId/monthlyPayments';
 
 //   try {
 //     print('API URL: $apiUrl');

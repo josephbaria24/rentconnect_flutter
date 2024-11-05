@@ -31,7 +31,7 @@ class _AgreementDetailsState extends State<AgreementDetails> {
   }
 
   Future<void> fetchAgreementDetails() async {
-    final String apiUrl = 'https://rentconnect-backend-nodejs.onrender.com/rental-agreement/inquiry/${widget.inquiryId}';
+    final String apiUrl = 'https://rentconnect.vercel.app/rental-agreement/inquiry/${widget.inquiryId}';
     print('Fetching agreement details from: $apiUrl'); // Debugging statement
 
     try {
@@ -86,7 +86,7 @@ class _AgreementDetailsState extends State<AgreementDetails> {
         print('Fetching landlord details for ID: $landlordId'); // Debug log
 
         final landlordResponse = await http.get(
-          Uri.parse('https://rentconnect-backend-nodejs.onrender.com/user/$landlordId'), // Correct URL
+          Uri.parse('https://rentconnect.vercel.app/user/$landlordId'), // Correct URL
         );
 
         if (landlordResponse.statusCode == 200) {
@@ -108,7 +108,7 @@ class _AgreementDetailsState extends State<AgreementDetails> {
         print('Fetching occupant details for ID: $occupantId'); // Debug log
 
         final occupantResponse = await http.get(
-          Uri.parse('https://rentconnect-backend-nodejs.onrender.com/user/$occupantId'), // Correct URL
+          Uri.parse('https://rentconnect.vercel.app/user/$occupantId'), // Correct URL
         );
 
         if (occupantResponse.statusCode == 200) {

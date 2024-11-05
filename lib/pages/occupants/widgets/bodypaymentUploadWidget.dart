@@ -319,7 +319,7 @@ void _fetchMonthlyPayments() async {
   });
 
   try {
-    final response = await http.get(Uri.parse('https://rentconnect-backend-nodejs.onrender.com/payment/room/${widget.roomDetails['_id']}/monthlyPayments'));
+    final response = await http.get(Uri.parse('https://rentconnect.vercel.app/payment/room/${widget.roomDetails['_id']}/monthlyPayments'));
 
     print('Response status: ${response.statusCode}');
     print('Response body: ${response.body}');
@@ -389,7 +389,7 @@ void _checkExistingPayment(String? selectedMonth) async {
 
     try {
       // Call the API to get monthly payments
-      final response = await http.get(Uri.parse('https://rentconnect-backend-nodejs.onrender.com/payment/room/${widget.roomDetails['_id']}/monthlyPayments'));
+      final response = await http.get(Uri.parse('https://rentconnect.vercel.app/payment/room/${widget.roomDetails['_id']}/monthlyPayments'));
 
       // Debugging: Print the response status and body
       print('Response status: ${response.statusCode}');

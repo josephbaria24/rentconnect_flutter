@@ -74,7 +74,7 @@ Future<Uint8List> _captureBillImage() async {
   Future<void> fetchBillDetails(String billId) async {
     try {
       final response = await http.get(
-        Uri.parse('https://rentconnect-backend-nodejs.onrender.com/inquiries/bills/getBillId/${widget.billId}'),
+        Uri.parse('https://rentconnect.vercel.app/inquiries/bills/getBillId/${widget.billId}'),
       );
 
       if (response.statusCode == 200) {
@@ -100,7 +100,7 @@ Future<Uint8List> _captureBillImage() async {
   Future<void> deleteBill(String billId) async {
     try {
       final response = await http.delete(
-        Uri.parse('https://rentconnect-backend-nodejs.onrender.com/inquiries/bill/delete/$billId'),
+        Uri.parse('https://rentconnect.vercel.app/inquiries/bill/delete/$billId'),
       );
 
       if (response.statusCode == 200) {
@@ -164,7 +164,7 @@ Future<void> saveBillAsImage() async {
 Future<void> markBillAsPaid(String billId) async {
   try {
     final response = await http.patch(
-      Uri.parse('https://rentconnect-backend-nodejs.onrender.com/inquiries/bills/$billId/isPaid'),
+      Uri.parse('https://rentconnect.vercel.app/inquiries/bills/$billId/isPaid'),
       headers: {'Content-Type': 'application/json'},
       body: jsonEncode({'isPaid': true}),
     );

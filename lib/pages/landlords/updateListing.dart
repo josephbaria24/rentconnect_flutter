@@ -309,7 +309,7 @@ void initializeSelectedAmenities() {
     List<String> selectedAmenitiesList = getSelectedAmenities();
     String amenitiesJson = jsonEncode(selectedAmenitiesList); // Convert selected amenities to JSON
 
-    final Uri uri = Uri.parse('https://rentconnect-backend-nodejs.onrender.com/properties/${widget.propertyId}');
+    final Uri uri = Uri.parse('https://rentconnect.vercel.app/properties/${widget.propertyId}');
     final request = http.MultipartRequest('PUT', uri)
       ..headers['Authorization'] = 'Bearer ${widget.token}';
 
