@@ -10,6 +10,7 @@ import 'package:flutter/rendering.dart';
 import 'package:get/get.dart';
 import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
+import 'package:rentcon/pages/toast.dart';
 import 'package:rentcon/theme_controller.dart';
 import 'package:saver_gallery/saver_gallery.dart';
 import 'package:flutter_email_sender/flutter_email_sender.dart';
@@ -27,6 +28,8 @@ class ViewBillPage extends StatefulWidget {
 class _ViewBillPageState extends State<ViewBillPage> {
   final ThemeController _themeController = Get.find<ThemeController>();
   Map<String, dynamic>? bill;
+    late ToastNotification toastNotification;
+
   bool isLoading = true;
   String? errorMessage;
   GlobalKey _billKey = GlobalKey(); // Key for capturing the bill widget
@@ -35,6 +38,7 @@ class _ViewBillPageState extends State<ViewBillPage> {
   void initState() {
     super.initState();
     fetchBillDetails(widget.billId);
+    toastNotification = ToastNotification(context);
   }
 
 
@@ -58,9 +62,9 @@ class _ViewBillPageState extends State<ViewBillPage> {
     );
 
     await FlutterEmailSender.send(email);
-    Get.snackbar('Success', 'Bill sent via email successfully!');
+    toastNotification.success('Bill sent via email successfully!');
   } catch (e) {
-    Get.snackbar('Error', 'An error occurred while sending the email: $e');
+    toastNotification.error('An error occurred while sending the email');
   }
 }
 
@@ -104,13 +108,13 @@ Future<Uint8List> _captureBillImage() async {
       );
 
       if (response.statusCode == 200) {
-        Get.snackbar('Success', 'Bill deleted successfully', snackPosition: SnackPosition.BOTTOM);
+        toastNotification.success('Bill deleted successfully');
         Navigator.pop(context); // Navigate back to the previous screen
       } else {
-        Get.snackbar('Error', 'Failed to delete bill (Error ${response.statusCode})', snackPosition: SnackPosition.BOTTOM);
+        toastNotification.warn('Failed to delete bill');
       }
     } catch (e) {
-      Get.snackbar('Error', 'An error occurred while deleting the bill: $e', snackPosition: SnackPosition.BOTTOM);
+      toastNotification.error('An error occurred while deleting the bill');
     }
   }
 
@@ -141,12 +145,12 @@ Future<void> saveBillAsImage() async {
 
     // Handle the result
     if (result.isSuccess) {
-      Get.snackbar('Success', 'Bill saved as image successfully!');
+      toastNotification.success('Bill saved as image successfully!');
     } else {
-      Get.snackbar('Error', 'Failed to save image to gallery.');
+      toastNotification.warn('Failed to save image to gallery.');
     }
   } catch (e) {
-    Get.snackbar('Error', 'An error occurred while saving the bill as an image: $e');
+   toastNotification.error('An error occurred while saving the bill as an image');
   }
 }
 
@@ -173,12 +177,12 @@ Future<void> markBillAsPaid(String billId) async {
       setState(() {
         bill?['isPaid'] = true;
       });
-      Get.snackbar('Success', 'Bill marked as paid successfully');
+      toastNotification.success('Bill marked as paid successfully');
     } else {
-      Get.snackbar('Error', 'Failed to mark bill as paid');
+      toastNotification.warn('Failed to mark bill as paid');
     }
   } catch (e) {
-    Get.snackbar('Error', 'An error occurred: $e');
+    toastNotification.error('An error occurred');
   }
 }
 

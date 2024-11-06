@@ -4,6 +4,7 @@ import 'package:get/get.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:jwt_decoder/jwt_decoder.dart';
+import 'package:rentcon/pages/toast.dart';
 import 'package:rentcon/theme_controller.dart';
 import 'package:shadcn_ui/shadcn_ui.dart';
 import 'package:fluttertoast/fluttertoast.dart';
@@ -24,13 +25,14 @@ class _AccountSettingsState extends State<AccountSettings> {
   String? _newPassword;
   bool obscure = true;
   final ThemeController _themeController = Get.find<ThemeController>();
-
+  late ToastNotification toastNotification;
   // Add a state variable to manage the selected tab
   String _selectedTab = 'account';
 
   @override
   void initState() {
     super.initState();
+    toastNotification = ToastNotification(context);
     final Map<String, dynamic> jwtDecodedToken = JwtDecoder.decode(widget.token);
     email = jwtDecodedToken['email']?.toString() ?? 'Unknown email';
     userId = jwtDecodedToken['_id']?.toString() ?? 'Unknown userId';
@@ -51,39 +53,15 @@ class _AccountSettingsState extends State<AccountSettings> {
         }),
       );
       if (response.statusCode == 200) {
-        Get.snackbar(
-        '', // Leave title empty because we're using titleText for customization
-        '', // Leave message empty because we're using messageText for customization
-        duration: Duration(milliseconds: 1500),
-        titleText: Text(
-          'Success',
-          style: TextStyle(color: Colors.green, fontWeight: FontWeight.bold), // Customize the color of 'Success'
-        ),
-        messageText: Text(
-          'Updated email successfully!', // Customize message text color if needed
-        ),
-      );
+        toastNotification.success('Updated email successfully!');
         setState(() {
           email = newEmail; // Update the displayed email
         });
       } else {
-        Get.snackbar(
-        '', // Leave title empty because we're using titleText for customization
-        '', // Leave message empty because we're using messageText for customization
-        duration: Duration(milliseconds: 1500),
-        titleText: Text(
-          'Failed',
-          style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold), // Customize the color of 'Success'
-        ),
-        messageText: Text(
-          'Failed to update email', // Customize message text color if needed
-        ),
-      );
+        toastNotification.warn('Failed to update email.');
       }
     } catch (error) {
-      Get.snackbar(
-        'Error', 'Error updating email!',duration: Duration(milliseconds: 1500)
-      );
+      toastNotification.error('Error updating email!');
     }
   }
 
@@ -103,37 +81,14 @@ class _AccountSettingsState extends State<AccountSettings> {
         }),
       );
       if (response.statusCode == 200) {
-       Get.snackbar(
-        '', // Leave title empty because we're using titleText for customization
-        '', // Leave message empty because we're using messageText for customization
-        duration: Duration(milliseconds: 1500),
-        titleText: Text(
-          'Success',
-          style: TextStyle(color: Colors.green, fontWeight: FontWeight.bold), // Customize the color of 'Success'
-        ),
-        messageText: Text(
-          'Password updated successfully!', // Customize message text color if needed
-        ),
-      );
+       toastNotification.success('Password updated successfully!');
         
         // Optionally, log the user out or clear the passwords
       } else {
-        Get.snackbar(
-        '', // Leave title empty because we're using titleText for customization
-        '', // Leave message empty because we're using messageText for customization
-        duration: Duration(milliseconds: 1500),
-        titleText: Text(
-          'Failed',
-          style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold), // Customize the color of 'Success'
-        ),
-        messageText: Text(
-          'Failed to update password.', // Customize message text color if needed
-        ),
-      );
+        toastNotification.warn('Failed to update password.');
       }
     } catch (error) {
-      Get.snackbar('Error','Error updating password!',duration: Duration(milliseconds: 1500)
-            );
+      toastNotification.error('Error updating password!');
     }
   }
 

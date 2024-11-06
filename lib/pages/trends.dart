@@ -4,6 +4,7 @@ import 'package:get/get.dart';
 import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
 import 'package:jwt_decoder/jwt_decoder.dart';
+import 'package:lottie/lottie.dart';
 import 'package:rentcon/config.dart';
 import 'package:rentcon/pages/charts/lineChart.dart';
 import 'package:rentcon/pages/charts/propertyViews.dart';
@@ -136,16 +137,23 @@ Widget build(BuildContext context) {
               : const Color.fromARGB(255, 255, 255, 255),
           title: Padding(
             padding: const EdgeInsets.only(left: 8.0),
-            child: Text(
-              'Trends',
-              style: TextStyle(
-                fontFamily: 'manrope',
-                fontSize: 22,
-          fontWeight: FontWeight.w700,
-                color: _themeController.isDarkMode.value
-                    ? Colors.white
-                    : Colors.black,
-              ),
+            child: Row(
+              children: [
+                Text(
+                  'Trends',
+                  style: TextStyle(
+                    fontFamily: 'manrope',
+                    fontSize: 22,
+                          fontWeight: FontWeight.w700,
+                    color: _themeController.isDarkMode.value
+                        ? Colors.white
+                        : Colors.black,
+                  ),
+                ),
+                Lottie.asset('assets/icons/analytics.json',
+                height: 30,
+                repeat: false)
+              ],
             ),
           ),
         ),

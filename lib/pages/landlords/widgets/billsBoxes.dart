@@ -8,6 +8,7 @@ import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
 import 'package:lottie/lottie.dart';
 import 'package:rentcon/pages/landlords/widgets/billPage.dart';
+import 'package:rentcon/pages/toast.dart';
 import 'package:rentcon/theme_controller.dart';
 import 'package:shadcn_ui/shadcn_ui.dart';
 
@@ -31,7 +32,15 @@ class _BillsboxesState extends State<Billsboxes> {
     'maintenance': [],
     'internet': [],
   }; // Separate lists for each bill type
+    late ToastNotification toastNotification;
+
   String _dueDate = ''; // Shared dueDate for all bill types
+@override
+  void initState() {
+    // TODO: implement initState
+    super.initState();
+    toastNotification = ToastNotification(context);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -307,7 +316,7 @@ Widget _buildPopoverForm(IconData icon, Color color, String title, String inquir
 
             // Validate the amount and prevent empty submission
             if (amount.isEmpty) {
-              Get.snackbar('Error', 'Please enter a valid amount');
+              toastNotification.warn('Please enter a valid amount');
               return; // Stop execution if amount is invalid
             }
             _updateBillData(billType, amount, _dueDate, _isPaid);
@@ -341,20 +350,20 @@ Widget _buildPopoverForm(IconData icon, Color color, String title, String inquir
 void _submitAllBills() async {
   // Check if there are inquiries available
   if (widget.inquiries == null || widget.inquiries!.isEmpty) {
-    Get.snackbar('Error', 'No inquiries available to submit bills.');
+    toastNotification.warn('No inquiries available to submit bills.');
     return; // Stop execution if there are no inquiries
   }
 
   // Check for due date and at least one bill
   if (_dueDate.isEmpty) {
-    Get.snackbar('Error', 'Please select a due date.');
+    toastNotification.warn('Please select a due date.');
     return; // Stop execution if no due date is selected
   }
 
   // Check if at least one bill has been added
   bool hasBills = _savedBillsByType.values.any((bills) => bills.isNotEmpty);
   if (!hasBills) {
-    Get.snackbar('Error', 'Please add at least one bill before submitting.');
+    toastNotification.warn('Please add at least one bill before submitting.');
     return; // Stop execution if no bills are present
   }
 
@@ -395,13 +404,13 @@ void _submitAllBills() async {
       // Show the dialog to view the existing bill
       _showExistingBillDialog(context, billId);
     } else if (response.statusCode == 201) {
-      Get.snackbar('Success', 'Bills added successfully');
+      toastNotification.success('Bills added successfully');
     } else {
-      Get.snackbar('Error', 'Failed to add bills: ${response.body}');
+      toastNotification.warn('Failed to add bills');
     }
   } catch (e) {
     print('Error occurred during bill submission: $e');
-    Get.snackbar('Error', 'An error occurred: $e');
+    toastNotification.error('An error occurred');
   } finally {
     setState(() {
       _isLoading = false; // End loading

@@ -310,18 +310,7 @@ Future<void> _uploadProofOfReservation(
       final responseData = await http.Response.fromStream(response);
 
       if (response.statusCode == 200) {
-        Get.snackbar(
-          '',
-          '',
-          duration: Duration(milliseconds: 1500),
-          titleText: Text(
-            'Success',
-            style: TextStyle(color: Colors.green, fontWeight: FontWeight.bold),
-          ),
-          messageText: Text(
-            'Proof of reservation uploaded and email sent successfully!',
-          ),
-        );
+        toastNotification.success('Proof of reservation uploaded and email sent successfully!');
 
         // Notification payload - extract relevant details from inquiries
         final selectedInquiry = inquiries.firstWhere(
@@ -369,18 +358,7 @@ Future<void> _uploadProofOfReservation(
       toastNotification.error('Error uploading proof of reservation: $e');
     }
   } else {
-    Get.snackbar(
-      '',
-      '',
-      duration: Duration(milliseconds: 1500),
-      titleText: Text(
-        'Warning',
-        style: TextStyle(color: Colors.orange, fontWeight: FontWeight.bold),
-      ),
-      messageText: Text(
-        'No image selected.',
-      ),
-    );
+    toastNotification.warn('No image selected.');
   }
 }
 

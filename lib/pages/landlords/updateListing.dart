@@ -1,20 +1,15 @@
-// ignore_for_file: prefer_const_constructors
+// ignore_for_file: prefer_const_constructors, depend_on_referenced_packages
 
 import 'dart:convert';
 import 'dart:io';
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:http_parser/http_parser.dart';
-import 'package:intl/intl.dart';
 import 'package:http/http.dart' as http;
-import 'package:jwt_decoder/jwt_decoder.dart';
 import 'package:latlong2/latlong.dart';
-import 'package:line_awesome_flutter/line_awesome_flutter.dart';
-import 'package:mime/mime.dart';
-import 'package:rentcon/pages/landlords/roomCreation.dart';
 import 'package:rentcon/pages/map/propertyLocationPicker.dart';
+import 'package:rentcon/pages/toast.dart';
 import 'package:rentcon/theme_controller.dart';
 import 'package:shadcn_ui/shadcn_ui.dart';
 
@@ -41,7 +36,7 @@ class _UpdatePropertyState extends State<UpdateProperty> {
   late TextEditingController cityController;
   late TextEditingController typeOfPropertyController;
   late TextEditingController amenitiesController;
-
+  late ToastNotification toastNotification;
     
   String selectedBarangay = '';
   String searchValue = '';
@@ -214,6 +209,7 @@ void toggleAmenity(int index) {
     super.initState();
      initializeSelectedAmenities();
      initializeAmenitiesString();
+     toastNotification = ToastNotification(context);
      print('Selected amenities after initialization: $selectedAmenities');
     // Use the passed property details to initialize the form fields
     descriptionController = TextEditingController(text: widget.propertyDetails['description']);
@@ -222,8 +218,9 @@ void toggleAmenity(int index) {
     cityController = TextEditingController(text: widget.propertyDetails['city']);
     typeOfPropertyController = TextEditingController(text: widget.propertyDetails['typeOfProperty']);
     amenitiesController = TextEditingController(
-    text: '',  // No initial value for amenities input
+    text: '', 
   );
+  
   }
 
 
@@ -355,26 +352,17 @@ void initializeSelectedAmenities() {
 
       if (response.statusCode == 200) {
         // Property updated successfully
-        Get.snackbar(
-        '', // Leave title empty because we're using titleText for customization
-        '', // Leave message empty because we're using messageText for customization
-        duration: Duration(milliseconds: 1500),
-        titleText: Text(
-          'Success',
-          style: TextStyle(color: Colors.green, fontWeight: FontWeight.bold), // Customize the color of 'Success'
-        ),
-        messageText: Text(
-          'Property updated successfully!', // Customize message text color if needed
-        ),
-      );
+        toastNotification.success('Property updated successfully!');
         Navigator.pop(context); // Optionally navigate back
       } else {
         // Handle error
         final responseBody = await response.stream.bytesToString();
         print('Failed to update property: $responseBody');
+        toastNotification.warn('Failed to update property.');
       }
     } catch (error) {
       print('Error updating property: $error');
+      toastNotification.error('Error updating property.');
     }
   }
 
@@ -767,13 +755,19 @@ ShadInput(
             ],
           ),
               const SizedBox(height: 20),
-              ElevatedButton(
-                onPressed: () {
-                  if (_formKey.currentState!.validate()) {
-                    updateProperty();
-                  }
-                },
-                child: Text('Update Property'),
+              SizedBox(
+                child: ShadButton(
+                  backgroundColor:  Colors.greenAccent,
+                  onPressed: () {
+                    if (_formKey.currentState!.validate()) {
+                      updateProperty();
+                    }
+                  },
+                  child: Text('Update Property', style: TextStyle(
+                    fontFamily: 'manrope',
+                    fontWeight: FontWeight.w700
+                  ),),
+                ),
               ),
             ],
           ),

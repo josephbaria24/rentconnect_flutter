@@ -1,28 +1,21 @@
-// ignore_for_file: prefer_const_constructors
+// ignore_for_file: prefer_const_constructors, depend_on_referenced_packages
 
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
-import 'package:flutter_colorpicker/flutter_colorpicker.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:get/get.dart';
 import 'package:jwt_decoder/jwt_decoder.dart';
 import 'package:line_awesome_flutter/line_awesome_flutter.dart';
 import 'package:lottie/lottie.dart';
 import 'package:permission_handler/permission_handler.dart';
-import 'package:rentcon/colorController.dart';
-import 'package:rentcon/config.dart';
 import 'package:rentcon/faqs.dart';
-import 'package:rentcon/main.dart';
 import 'package:rentcon/navigation_menu.dart';
 import 'package:rentcon/pages/about.dart';
 import 'package:rentcon/pages/account_settings.dart';
 import 'package:rentcon/pages/fullscreenImage.dart';
-import 'package:rentcon/pages/global_loading_indicator.dart';
 import 'package:rentcon/pages/landlords/current_listing.dart';
-import 'package:rentcon/pages/landlords/try.dart';
-import 'package:rentcon/pages/login.dart';
 import 'package:rentcon/pages/occupants/occupant_inquiries.dart';
 import 'package:rentcon/pages/profileSection/profileChecker.dart';
 import 'package:rentcon/pages/services/backend_service.dart';
@@ -61,7 +54,8 @@ class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStat
   Map<String, dynamic>? userDetails;
   String profileStatus = 'none'; // Default value
   String userRole = '';
-   late ToastNotification toastNotification;
+    late ToastNotification toastNotification;
+
   late AnimationController _animationController;
 
 
@@ -77,7 +71,7 @@ class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStat
   } else {
     _animationController.value = 0.0; // Start at the light mode frame (0 seconds)
   }
-      toastNotification = ToastNotification(context);
+    toastNotification = ToastNotification(context);
     _loadThemePreference();
     final Map<String, dynamic> jwtDecodedToken =
         JwtDecoder.decode(widget.token);
@@ -290,44 +284,19 @@ Future<void> _uploadProfilePicture() async {
           jsonResponse.containsKey('message')) {
         final message = jsonResponse['message'];
         if (message == 'Profile picture updated successfully') {
-          // Use your custom toast notification here
-          Get.snackbar(
-        '', // Leave title empty because we're using titleText for customization
-        '', // Leave message empty because we're using messageText for customization
-        duration: Duration(milliseconds: 1500),
-        titleText: Text(
-          'Success',
-          style: TextStyle(color: Colors.green, fontWeight: FontWeight.bold), // Customize the color of 'Success'
-        ),
-        messageText: Text(
-          'Profile picture updated successfully!', // Customize message text color if needed
-        ),
-      );
+          toastNotification.success('Profile picture updated successfully');
           _hasImageChanged = false; // Reset the flag after successful upload
         } else {
           // Use your custom toast notification for errors
-          Get.snackbar(
-        '', // Leave title empty because we're using titleText for customization
-        '', // Leave message empty because we're using messageText for customization
-        duration: Duration(milliseconds: 1500),
-        titleText: Text(
-          'Success',
-          style: TextStyle(color: Colors.orange, fontWeight: FontWeight.bold), // Customize the color of 'Success'
-        ),
-        messageText: Text(
-          'Failed to upload profile picture', // Customize message text color if needed
-        ),
-      );
+          toastNotification.warn('Failed to upload profile picture');
         }
       } else {
         // Handle unexpected response format
-        Get.snackbar('Error','Unexpected response format!',duration: Duration(milliseconds: 1500)
-            );
+        toastNotification.error('Failed to upload profile picture, unexpected format.');
       }
     } catch (error) {
       // Use your custom toast notification for errors
-      Get.snackbar('Error','Error uploading profile picture',duration: Duration(milliseconds: 1500)
-            );
+      toastNotification.error("Error uploading profile picture");
     }
   }
 }
@@ -476,7 +445,7 @@ Future<void> _uploadProfilePicture() async {
                                             _profileImageUrl!,
                                             fit: BoxFit.cover,
                                           )
-                                        : Image.asset("assets/images/profile.png"),
+                                        :  Lottie.network("https://lottie.host/175e3a4e-4de1-4e63-9e56-d0d88cfa8ccb/bJoOA5DkNU.json"),
                               ),
                             ),
                             Positioned(

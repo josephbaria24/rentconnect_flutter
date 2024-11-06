@@ -216,31 +216,9 @@ void _showForgotPasswordDialog(BuildContext context) {
 
                           // Close the dialog
                           Navigator.of(context).pop();
-                          Get.snackbar(
-        '', // Leave title empty because we're using titleText for customization
-        '', // Leave message empty because we're using messageText for customization
-        duration: Duration(milliseconds: 1500),
-        titleText: Text(
-          'Success',
-          style: TextStyle(color: Colors.green, fontWeight: FontWeight.bold), // Customize the color of 'Success'
-        ),
-        messageText: Text(
-          'Reset password link sent to ${emailController.text}', // Customize message text color if needed
-        ),
-      );
+                          toastNotification.success('Reset password link sent to ${emailController.text}');
                         } else {
-                          Get.snackbar(
-        '', // Leave title empty because we're using titleText for customization
-        '', // Leave message empty because we're using messageText for customization
-        duration: Duration(milliseconds: 1500),
-        titleText: Text(
-          'Failed',
-          style: TextStyle(color: Colors.orange, fontWeight: FontWeight.bold), // Customize the color of 'Success'
-        ),
-        messageText: Text(
-          'Failed to send reset link', // Customize message text color if needed
-        ),
-      );
+                          toastNotification.warn('Failed to send reset link');
                         }
                       },
                 child: _isSubmitting

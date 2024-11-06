@@ -159,11 +159,19 @@ class _BookmarkPageState extends State<BookmarkPage> {
         backgroundColor: _themeController.isDarkMode.value
           ? Color.fromARGB(255, 28, 29, 34)
           : Color.fromRGBO(252, 252, 252, 1),
-        title: Text('Bookmark', style: TextStyle(
-          fontFamily: 'manrope',
-          fontSize: 22,
-          fontWeight: FontWeight.w700
-        ),),
+        title: Row(
+          children: [
+            Text('Bookmark', style: TextStyle(
+              fontFamily: 'manrope',
+              fontSize: 22,
+              fontWeight: FontWeight.w700
+            ),),
+            SizedBox(width: 5,),
+            Lottie.asset('assets/icons/bookmarking2.json',
+            repeat: false,
+            height: 30)
+          ],
+        ),
       ),
       backgroundColor: _themeController.isDarkMode.value
           ? Color.fromARGB(255, 28, 29, 34)
@@ -186,7 +194,8 @@ class _BookmarkPageState extends State<BookmarkPage> {
                         mainAxisAlignment: MainAxisAlignment.center, // Center the children vertically
                         crossAxisAlignment: CrossAxisAlignment.center, // Center the children horizontally
                         children: [
-                          SvgPicture.asset('assets/icons/noBookmark.svg',
+                          Lottie.asset('assets/icons/noBookmark.json',
+                          repeat: false,
                           height: 280,),
                           SizedBox(height: 20), // Space between icon and text
                           Text(

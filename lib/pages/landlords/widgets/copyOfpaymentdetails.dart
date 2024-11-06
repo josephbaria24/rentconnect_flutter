@@ -9,6 +9,7 @@ import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 import 'package:rentcon/pages/fullscreenImage.dart';
 import 'package:http/http.dart' as http;
+import 'package:rentcon/pages/toast.dart';
 import 'package:rentcon/theme_controller.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:tutorial_coach_mark/tutorial_coach_mark.dart';
@@ -37,6 +38,8 @@ class _PaymentDetailsState extends State<PaymentDetails> {
   String _status = ''; // Default value for status
   Future<Map<String, dynamic>?>? proofFuture;
   final ThemeController _themeController = Get.find<ThemeController>();
+    late ToastNotification toastNotification;
+
   List<String> months = [
     "January",
     "February",
@@ -81,7 +84,7 @@ class _PaymentDetailsState extends State<PaymentDetails> {
         widget.room!['_id'], widget.token, _selectedMonth);
     _fetchProofForAllMonths(widget.room?['_id'], widget.token);
     handleUpdateStatus(_selectedMonth, _status);
-
+    toastNotification = ToastNotification(context);
     // Scroll to the selected month index
     _scrollController = ScrollController();
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -716,22 +719,7 @@ Widget build(BuildContext context) {
                               onPressed: () async {
                                 if (_selectedMonth != null) {
                                   await handleUpdateStatus(_selectedMonth, _status);
-                                  Get.snackbar(
-                                    '',
-                                    '',
-                                    titleText: Text(
-                                      'Success',
-                                      style: TextStyle(
-                                        color: _themeController.isDarkMode.value
-                                            ? Colors.green
-                                            : const Color.fromARGB(255, 1, 139, 6),
-                                        fontWeight: FontWeight.bold,
-                                        fontSize: 20,
-                                      ),
-                                    ),
-                                    messageText: Text('Payment status updated!'),
-                                    duration: Duration(seconds: 2),
-                                  );
+                                  toastNotification.success('Payment status updated!');
                                 } else {
                                   print('Selected month is null');
                                 }

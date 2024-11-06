@@ -238,12 +238,23 @@ Widget build(BuildContext context) {
   return Scaffold(
     appBar: AppBar(
       backgroundColor: themeController.isDarkMode.value ? Color.fromRGBO(28, 29, 34, 1) : Colors.white,
-      title: Text(
-        'Messages',
-        style: TextStyle(
-          fontFamily: 'manrope',
-          fontSize: 22,
-          fontWeight: FontWeight.w500,
+      title: Padding(
+        padding: const EdgeInsets.only(left: 8.0),
+        child: Row(
+          children: [
+            Text(
+              'Messages',
+              style: TextStyle(
+                fontFamily: 'manrope',
+                fontSize: 22,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+            SizedBox(width: 5),
+            Lottie.asset('assets/icons/messages.json',
+            height: 40,
+            repeat: false)
+          ],
         ),
       ),
     ),

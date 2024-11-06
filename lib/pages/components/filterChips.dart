@@ -23,40 +23,51 @@ class _FilterChipsState extends State<FilterChips> {
 
   @override
   Widget build(BuildContext context) {
-    return Wrap(
-      spacing: 8.0,
-      children: widget.filters.map((filter) {
-        final isSelected = widget.selectedFilter == filter;
-        return ChoiceChip(
-          checkmarkColor: _themeController.isDarkMode.value? Colors.black:Colors.white,
-          iconTheme: IconThemeData(color: _themeController.isDarkMode.value? Colors.black:Colors.white),
-          label: Text(
-            filter,
-            style: TextStyle(
-              color: isSelected 
-                  ? _themeController.isDarkMode.value? const Color.fromARGB(255, 1, 23, 36): Colors.white :// Change text color when selected
-                   _themeController.isDarkMode.value? Colors.white: Colors.black, // Default text color
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,  // Allow horizontal scrolling
+      child: Wrap(
+        spacing: 5.0,
+        children: widget.filters.map((filter) {
+          final isSelected = widget.selectedFilter == filter;
+          return ChoiceChip(
+            checkmarkColor: _themeController.isDarkMode.value ? Colors.black : Colors.white,
+            iconTheme: IconThemeData(color: _themeController.isDarkMode.value ? Colors.black : Colors.white),
+            label: Text(
+              filter,
+              style: TextStyle(
+                color: isSelected 
+                    ? _themeController.isDarkMode.value
+                        ? const Color.fromARGB(255, 1, 23, 36)
+                        : Colors.white
+                    : _themeController.isDarkMode.value
+                        ? Colors.white
+                        : Colors.black,
+              ),
             ),
-          ),
-          selected: isSelected,
-          onSelected: (selected) {
-            if (selected) {
-              widget.onSelected(filter);
-            }
-          },
-          selectedColor: _themeController.isDarkMode.value? Colors.white: const Color.fromARGB(255, 1, 23, 36), // Change to your desired color
-          backgroundColor: _themeController.isDarkMode.value? const Color.fromARGB(255, 48, 51, 58): Colors.white, // Default color
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(15.0), // Customize border radius here
-            side: BorderSide(
-              color: isSelected 
-                  ? Colors.transparent // No border when selected
-                  : const Color.fromARGB(255, 0, 16, 29), // Border color when not selected
-              width: 0.4, // Border width
+            selected: isSelected,
+            onSelected: (selected) {
+              if (selected) {
+                widget.onSelected(filter);
+              }
+            },
+            selectedColor: _themeController.isDarkMode.value
+                ? Colors.white
+                : const Color.fromARGB(255, 1, 23, 36),
+            backgroundColor: _themeController.isDarkMode.value
+                ? const Color.fromARGB(255, 48, 51, 58)
+                : Colors.white,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(15.0),
+              side: BorderSide(
+                color: isSelected
+                    ? Colors.transparent
+                    : const Color.fromARGB(255, 0, 16, 29),
+                width: 0.4,
+              ),
             ),
-          ),
-        );
-      }).toList(),
+          );
+        }).toList(),
+      ),
     );
   }
 }

@@ -549,7 +549,7 @@ Widget build(BuildContext context) {
                               fontWeight: FontWeight.w600
                             ),),
                             ConstrainedBox(
-                              constraints: const BoxConstraints(minWidth: 170),
+                              constraints: const BoxConstraints(minWidth: 140),
                               child: ShadSelect<String>(
                                 placeholder: Text('Select Gender',style: TextStyle(
                                   fontFamily: 'manrope',
@@ -627,7 +627,7 @@ Widget build(BuildContext context) {
                             ),
                             // Role selection using ShadSelect
                             ConstrainedBox(
-                              constraints: const BoxConstraints(minWidth: 170),
+                              constraints: const BoxConstraints(minWidth: 120),
                               child: ShadSelect<String>(
                                 
                                 placeholder: Text('Select Role', style: TextStyle(

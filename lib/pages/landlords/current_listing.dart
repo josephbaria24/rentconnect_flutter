@@ -116,7 +116,7 @@ class _CurrentListingPageState extends State<CurrentListingPage> {
       return const Color.fromARGB(255, 255, 196, 0); // Yellow for Waiting
     case 'Approved':
       return Colors.green; // Green for Approved
-    case 'Rejectesd':
+    case 'Rejected':
       return Colors.red; // Red for Rejected
     default:
       return _themeController.isDarkMode.value

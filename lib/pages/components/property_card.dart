@@ -357,8 +357,8 @@ void _animationStatusListener(AnimationStatus status) {
                                 builder: (context) => const Text('Save property'),
                                 child: GestureDetector(
                                   onTap: _bookmarkProperty,
-                                  child: Lottie.network(
-                                    'https://lottie.host/03753c90-78ba-4e39-b02c-c590287b7f36/VBizI5alvT.json',
+                                  child: Lottie.asset(
+                                   _themeController.isDarkMode.value? 'assets/icons/whitebm.json': 'assets/icons/blackbm.json',
                                     height: 40,
                                     controller: _controller,
                                     onLoaded: (composition) {
