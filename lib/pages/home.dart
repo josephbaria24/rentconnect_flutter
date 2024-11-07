@@ -24,6 +24,7 @@ import 'package:fluttertoast/fluttertoast.dart';
 import 'package:rentcon/pages/landlords/current_listing.dart';
 import 'package:rentcon/pages/occupants/occupant_inquiries.dart';
 import 'package:rentcon/pages/search_result.dart';
+import 'package:rentcon/pages/services/appUpdate.dart';
 import 'package:shadcn_ui/shadcn_ui.dart';
 import 'toast.dart';
 import 'package:rentcon/theme_controller.dart';
@@ -96,6 +97,10 @@ class _HomePageState extends State<HomePage> {
     UserSession().profileStatus =
         profileStatus; // Assuming profileStatus is set properly
     _fetchUserProfile();
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      UpdateChecker().checkForUpdates(context);
+    });
   }
 
   @override
@@ -182,8 +187,8 @@ class _HomePageState extends State<HomePage> {
               child: Row(
                 children: [
                   SizedBox(
-                    width: 45,
-                    height: 45,
+                    width: 40,
+                    height: 40,
                     child: ClipRRect(
                       borderRadius: BorderRadius.circular(100),
                       child: _profileImageUrl != null
@@ -467,7 +472,7 @@ class _HomePageState extends State<HomePage> {
                           if (snapshot.connectionState ==
                               ConnectionState.waiting) {
                             return Center(
-                                child: Lottie.asset("assets/icons/loading.json",
+                                child: Lottie.asset("assets/icons/houseloading2.json",
                                     height: 60));
                           } else if (snapshot.hasError) {
                             if (snapshot.error
@@ -723,7 +728,7 @@ class _HomePageState extends State<HomePage> {
     }
 
     try {
-      final response = await http.get(Uri.parse(getAllProperties));
+      final response = await http.get(Uri.parse('https://rentconnect.vercel.app/getAllProperties'));
 
       if (response.statusCode == 200) {
         final Map<String, dynamic> json = jsonDecode(response.body);

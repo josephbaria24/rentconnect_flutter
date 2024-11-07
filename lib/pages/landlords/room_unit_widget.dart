@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:image_picker/image_picker.dart';
@@ -50,11 +51,52 @@ class _RoomUnitWidgetState extends State<RoomUnitWidget> {
 
   Future<void> _pickImage(int index) async {
     final ImagePicker _picker = ImagePicker();
-    final pickedFile = await _picker.pickImage(source: ImageSource.gallery);
+  
+      // Ask the user to choose between picking an image from the gallery or taking a photo
+  showModalBottomSheet(
+    context: context,
+    builder: (BuildContext context) {
+      return SafeArea(
+        child: Wrap(
+          children: <Widget>[
+            ListTile(
+              leading: const Icon(Icons.photo_library),
+              title: const Text('Pick from Gallery', style: TextStyle(fontFamily: 'manrope')),
+              onTap: () async {
+                Navigator.of(context).pop();
 
-    if (pickedFile != null) {
-      widget.onImageSelected(File(pickedFile.path), index);
-    }
+                // Use FilePicker to select an image from the gallery
+                FilePickerResult? result = await FilePicker.platform.pickFiles(
+                  type: FileType.image,
+                );
+
+                if (result != null && result.files.single.path != null) {
+                  widget.onImageSelected(File(result.files.single.path!), index); // Return the selected image
+                } else {
+                  print('No image selected from gallery.');
+                }
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.camera_alt_rounded),
+              title: const Text('Take Photo', style: TextStyle(fontFamily: 'manrope')),
+              onTap: () async {
+                Navigator.of(context).pop();
+
+                // Use ImagePicker to capture an image using the camera
+                final pickedFile = await _picker.pickImage(source: ImageSource.camera);
+                if (pickedFile != null) {
+                  widget.onImageSelected(File(pickedFile.path), index); // Return the captured image
+                } else {
+                  print('No image captured.');
+                }
+              },
+            ),
+          ],
+        ),
+      );
+    },
+  );
   }
 
   // Function to check if all required fields are filled

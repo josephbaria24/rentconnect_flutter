@@ -2,6 +2,7 @@
 
 import 'dart:convert';
 import 'dart:io';
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -180,39 +181,79 @@ class _AddlistingState extends State<Addlisting> {
   }
 
 Future<void> _selectPhoto(int index) async {
-  // Check and request permission
-  final status = await Permission.photos.status;
+   final ImagePicker _picker = ImagePicker();
 
-  if (status.isDenied) {
-    // Request permission if not granted
-    final result = await Permission.photos.request();
-    if (result.isDenied) {
-      // If the user denies permission again, show a message
-      print('Permission denied. Cannot select photo.');
-      return;
-    }
-  }
+  // Show a modal or bottom sheet to let the user choose between gallery and camera
+  showModalBottomSheet(
+    context: context,
+    builder: (BuildContext context) {
+      return SafeArea(
+        child: Wrap(
+          children: <Widget>[
+            ListTile(
+              leading: const Icon(Icons.photo_library),
+              title: const Text('Pick from Gallery', style: TextStyle(fontFamily: 'manrope')),
+              onTap: () async {
+                Navigator.of(context).pop();
 
-  // Proceed with picking the image
-  final pickedFile = await _picker.pickImage(source: ImageSource.gallery);
-  if (pickedFile != null) {
-    setState(() {
-      switch (index) {
-        case 1:
-          _photo = File(pickedFile.path);
-          break;
-        case 2:
-          _photo2 = File(pickedFile.path);
-          break;
-        case 3:
-          _photo3 = File(pickedFile.path);
-          break;
-      }
-    });
-    print('Photo selected for index $index: ${pickedFile.path}');
-  } else {
-    print('No photo selected.');
-  }
+                // Use FilePicker to select an image from the gallery
+                FilePickerResult? result = await FilePicker.platform.pickFiles(
+                  type: FileType.image,
+                );
+
+                if (result != null && result.files.single.path != null) {
+                  setState(() {
+                    switch (index) {
+                      case 1:
+                        _photo = File(result.files.single.path!);
+                        break;
+                      case 2:
+                        _photo2 = File(result.files.single.path!);
+                        break;
+                      case 3:
+                        _photo3 = File(result.files.single.path!);
+                        break;
+                    }
+                  });
+                  print('Photo selected from gallery for index $index: ${result.files.single.path}');
+                } else {
+                  print('No photo selected from gallery.');
+                }
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.camera_alt_rounded),
+              title: const Text('Take Photo', style: TextStyle(fontFamily: 'manrope')),
+              onTap: () async {
+                Navigator.of(context).pop();
+
+                // Use ImagePicker to capture an image using the camera
+                final pickedFile = await _picker.pickImage(source: ImageSource.camera);
+                if (pickedFile != null) {
+                  setState(() {
+                    switch (index) {
+                      case 1:
+                        _photo = File(pickedFile.path);
+                        break;
+                      case 2:
+                        _photo2 = File(pickedFile.path);
+                        break;
+                      case 3:
+                        _photo3 = File(pickedFile.path);
+                        break;
+                    }
+                  });
+                  print('Photo captured with camera for index $index: ${pickedFile.path}');
+                } else {
+                  print('No photo captured.');
+                }
+              },
+            ),
+          ],
+        ),
+      );
+    },
+  );
 }
 
 
@@ -220,39 +261,79 @@ Future<void> _selectPhoto(int index) async {
 
 
 Future<void> _selectLegalDocPhoto(int index) async {
-  // Check and request permission
-  final status = await Permission.photos.status;
+  final ImagePicker _picker = ImagePicker();
 
-  if (status.isDenied) {
-    // Request permission if not granted
-    final result = await Permission.photos.request();
-    if (result.isDenied) {
-      // If the user denies permission again, show a message
-      print('Permission denied. Cannot select legal document photo.');
-      return;
-    }
-  }
+  // Show a modal or bottom sheet to let the user choose between gallery and camera
+  showModalBottomSheet(
+    context: context,
+    builder: (BuildContext context) {
+      return SafeArea(
+        child: Wrap(
+          children: <Widget>[
+            ListTile(
+              leading: const Icon(Icons.photo_library),
+              title: const Text('Pick from Gallery', style: TextStyle(fontFamily: 'manrope')),
+              onTap: () async {
+                Navigator.of(context).pop();
 
-  // Proceed with picking the image
-  final pickedFile = await _picker.pickImage(source: ImageSource.gallery);
-  if (pickedFile != null) {
-    setState(() {
-      switch (index) {
-        case 1:
-          _legalDocPhoto = File(pickedFile.path);
-          break;
-        case 2:
-          _legalDocPhoto2 = File(pickedFile.path);
-          break;
-        case 3:
-          _legalDocPhoto3 = File(pickedFile.path);
-          break;
-      }
-    });
-    print('Legal document photo selected for index $index: ${pickedFile.path}');
-  } else {
-    print('No legal document photo selected.');
-  }
+                // Use FilePicker to select an image from the gallery
+                FilePickerResult? result = await FilePicker.platform.pickFiles(
+                  type: FileType.image,
+                );
+
+                if (result != null && result.files.single.path != null) {
+                  setState(() {
+                    switch (index) {
+                      case 1:
+                        _legalDocPhoto = File(result.files.single.path!);
+                        break;
+                      case 2:
+                        _legalDocPhoto2 = File(result.files.single.path!);
+                        break;
+                      case 3:
+                        _legalDocPhoto3 = File(result.files.single.path!);
+                        break;
+                    }
+                  });
+                  print('Legal document photo selected from gallery for index $index: ${result.files.single.path}');
+                } else {
+                  print('No legal document photo selected from gallery.');
+                }
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.camera_alt_rounded),
+              title: const Text('Take Photo', style: TextStyle(fontFamily: 'manrope')),
+              onTap: () async {
+                Navigator.of(context).pop();
+
+                // Use ImagePicker to capture an image using the camera
+                final pickedFile = await _picker.pickImage(source: ImageSource.camera);
+                if (pickedFile != null) {
+                  setState(() {
+                    switch (index) {
+                      case 1:
+                        _legalDocPhoto = File(pickedFile.path);
+                        break;
+                      case 2:
+                        _legalDocPhoto2 = File(pickedFile.path);
+                        break;
+                      case 3:
+                        _legalDocPhoto3 = File(pickedFile.path);
+                        break;
+                    }
+                  });
+                  print('Legal document photo captured with camera for index $index: ${pickedFile.path}');
+                } else {
+                  print('No legal document photo captured.');
+                }
+              },
+            ),
+          ],
+        ),
+      );
+    },
+  );
 }
 
 

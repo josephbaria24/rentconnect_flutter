@@ -185,7 +185,7 @@ class _BookmarkPageState extends State<BookmarkPage> {
               future: bookmarkedProperties,
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
-                  return Center(child: Lottie.asset("assets/icons/loading.json", height: 60));
+                  return Center(child: Lottie.asset("assets/icons/houseloading2.json", height: 60));
                 } else if (snapshot.hasError) {
                   return Center(child: Text('Error: ${snapshot.error}'));
                 } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
@@ -194,9 +194,7 @@ class _BookmarkPageState extends State<BookmarkPage> {
                         mainAxisAlignment: MainAxisAlignment.center, // Center the children vertically
                         crossAxisAlignment: CrossAxisAlignment.center, // Center the children horizontally
                         children: [
-                          Lottie.asset('assets/icons/noBookmark.json',
-                          repeat: false,
-                          height: 280,),
+                          Lottie.asset('assets/icons/noBookmark.json', height: 240),
                           SizedBox(height: 20), // Space between icon and text
                           Text(
                             'No bookmarked properties.',
@@ -204,7 +202,7 @@ class _BookmarkPageState extends State<BookmarkPage> {
                               fontFamily: 'manrope',
                               fontWeight: FontWeight.bold,
                               fontSize: 18, // Font size for the text
-                              color:_themeController.isDarkMode.value? Colors.white: Colors.black, // Text color
+                              color:_themeController.isDarkMode.value? const Color.fromARGB(255, 255, 255, 255): Colors.black, // Text color
                             ),
                           ),
                         ],

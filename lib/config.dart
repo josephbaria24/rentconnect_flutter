@@ -2,7 +2,9 @@
 
 //final url = 'https://rentconnect-backend-nodejs.onrender.com/';
 final url = 'https://rentconnect.vercel.app/';
-//final url = 'http://192.168.1.12:3000/';
+//final url = 'http://192.168.1.12:3000/'; 
+//final url = 'http://localhost:3000/'; 
+
 final registration = url + "registration";
 final login = url + 'login';
 final storeProperty = url + 'storeProperty';

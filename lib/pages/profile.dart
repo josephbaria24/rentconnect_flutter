@@ -1,6 +1,7 @@
 // ignore_for_file: prefer_const_constructors, depend_on_referenced_packages
 
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
@@ -42,7 +43,7 @@ class ProfilePage extends StatefulWidget {
 
 class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStateMixin {
   bool _loading = false;
-  final backendService = BackendService();
+  // final backendService = BackendService();
   late String email;
   late String userId;
   File? _profileImage;
@@ -220,7 +221,7 @@ void _showLogoutConfirmationDialog(BuildContext context) {
 
 
 
- Future<void> _pickImage() async {
+Future<void> _pickImage() async {
   // Check and request permission
   final status = await Permission.photos.status;
 
@@ -233,21 +234,69 @@ void _showLogoutConfirmationDialog(BuildContext context) {
       return;
     }
   }
-
-  // Proceed with picking the image
-  print('Picking image...');
-  final pickedFile = await _picker.pickImage(source: ImageSource.gallery);
-  if (pickedFile != null) {
-    setState(() {
-      _profileImage = File(pickedFile.path);
-      _hasImageChanged = true; // Mark image as changed
-    });
-    print('Image picked: ${pickedFile.path}');
-  } else {
-    print('No image selected.');
+   // Check and request permission for camera (for camera access)
+  final cameraStatus = await Permission.camera.status;
+  if (cameraStatus.isDenied) {
+    final result = await Permission.camera.request();
+    if (result.isDenied) {
+      print('Permission denied. Cannot use camera.');
+      return;
+    }
   }
-}
+   showModalBottomSheet(
+    context: context,
+    builder: (BuildContext context) {
+      return SafeArea(
+        child: Wrap(
+          children: <Widget>[
+            ListTile(
+              leading: Icon(Icons.photo_library),
+              title: Text('Pick from Gallery'),
+              onTap: () async {
+                Navigator.of(context).pop();
+                // Use FilePicker to select an image from the gallery
+                print('Picking image from gallery...');
+                FilePickerResult? result = await FilePicker.platform.pickFiles(
+                  type: FileType.image,
+                );
 
+                if (result != null && result.files.single.path != null) {
+                  setState(() {
+                    _profileImage = File(result.files.single.path!);
+                    _hasImageChanged = true; // Mark image as changed
+                  });
+                  print('Image picked from gallery: ${result.files.single.path}');
+                } else {
+                  print('No image selected.');
+                }
+              },
+            ),
+            ListTile(
+              leading: Icon(Icons.camera_alt),
+              title: Text('Take Photo'),
+              onTap: () async {
+                Navigator.of(context).pop();
+                // Use ImagePicker to capture an image using the camera
+                print('Opening camera...');
+                final pickedFile = await _picker.pickImage(source: ImageSource.camera);
+
+                if (pickedFile != null) {
+                  setState(() {
+                    _profileImage = File(pickedFile.path);
+                    _hasImageChanged = true; // Mark image as changed
+                  });
+                  print('Image taken from camera: ${pickedFile.path}');
+                } else {
+                  print('No image captured.');
+                }
+              },
+            ),
+          ],
+        ),
+      );
+    },
+  );
+}
 
 
 

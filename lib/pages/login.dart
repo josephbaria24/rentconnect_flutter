@@ -62,7 +62,7 @@ void initOneSignal() async {
 
 
 
-void loginUser() async {
+Future<void> loginUser() async {
   if (emailController.text.isNotEmpty && passwordController.text.isNotEmpty) {
     setState(() {
       _isLoggingIn = true; // Start loading state
@@ -74,19 +74,24 @@ void loginUser() async {
     };
 
     try {
-      // Check for internet connection
-      final result = await InternetAddress.lookup('example.com');
-      if (result.isEmpty || result[0].rawAddress.isEmpty) {
-        showErrorDialog('No internet connection. Please check your connection.');
-        return;
-      }
+      
+      // final result = await InternetAddress.lookup('example.com');
+      // if (result.isEmpty || result[0].rawAddress.isEmpty) {
+      //   showErrorDialog('No internet connection. Please check your connection.');
+      //   return;
+      // }
 
-      // Make the login request
-      var response = await http.post(
-        Uri.parse(login),
+      final response = await http.post(
+        Uri.parse('https://rentconnect.vercel.app/login'),
         headers: {"Content-Type": "application/json"},
         body: jsonEncode(reqBody),
       );
+      // Make the login request
+      // var response = await http.post(
+      //   Uri.parse(login),
+      //   headers: {"Content-Type": "application/json"},
+      //   body: jsonEncode(reqBody),
+      // );
 
       print('Response status: ${response.statusCode}');
       print('Response body: ${response.body}');

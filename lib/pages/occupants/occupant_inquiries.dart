@@ -1,7 +1,9 @@
 // ignore_for_file: sort_child_properties_last, prefer_const_literals_to_create_immutables, prefer_const_constructors, prefer_final_fields
 
 import 'dart:convert';
+import 'dart:io';
 import 'dart:ui';
+import 'package:file_picker/file_picker.dart';
 import 'package:http_parser/http_parser.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:fluttertoast/fluttertoast.dart';
@@ -255,12 +257,61 @@ Future<void> _initializeInquiries() async {
     }
   }
 
+
 Future<void> _uploadProofOfReservation(
     String inquiryId, String occupantId, String roomId, String landlordId, String landlordEmail, String occupantName) async {
   final ImagePicker picker = ImagePicker();
-  final XFile? image = await picker.pickImage(source: ImageSource.gallery);
-  
-  if (landlordId == null) {
+
+  // Show a modal or bottom sheet to let the user choose between gallery and camera
+  showModalBottomSheet(
+    context: context,
+    builder: (BuildContext context) {
+      return SafeArea(
+        child: Wrap(
+          children: <Widget>[
+            ListTile(
+              leading: const Icon(Icons.photo_library),
+              title: const Text('Pick from Gallery', style: TextStyle(fontFamily: 'manrope')),
+              onTap: () async {
+                Navigator.of(context).pop();
+
+                // Use FilePicker to select an image from the gallery
+                FilePickerResult? result = await FilePicker.platform.pickFiles(
+                  type: FileType.image,
+                );
+
+                if (result != null && result.files.single.path != null) {
+                  _uploadImage(result.files.single.path!, inquiryId, occupantId, roomId, landlordId, landlordEmail, occupantName);
+                } else {
+                  Fluttertoast.showToast(msg: 'No image selected.');
+                }
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.camera_alt_rounded),
+              title: const Text('Take Photo', style: TextStyle(fontFamily: 'manrope')),
+              onTap: () async {
+                Navigator.of(context).pop();
+
+                // Use ImagePicker to capture an image using the camera
+                final pickedFile = await picker.pickImage(source: ImageSource.camera);
+                if (pickedFile != null) {
+                  _uploadImage(pickedFile.path, inquiryId, occupantId, roomId, landlordId, landlordEmail, occupantName);
+                } else {
+                  Fluttertoast.showToast(msg: 'No photo taken.');
+                }
+              },
+            ),
+          ],
+        ),
+      );
+    },
+  );
+}
+
+Future<void> _uploadImage(
+    String imagePath, String inquiryId, String occupantId, String roomId, String landlordId, String landlordEmail, String occupantName) async {
+  if (landlordId.isEmpty) {
     Fluttertoast.showToast(
       msg: 'Landlord ID is required.',
       backgroundColor: Colors.red,
@@ -269,99 +320,97 @@ Future<void> _uploadProofOfReservation(
     return;
   }
 
-  if (image != null) {
-    final request = http.MultipartRequest(
-      'POST',
-      Uri.parse('https://rentconnect.vercel.app/payment/uploadProofOfReservation'),
-    );
+  File image = File(imagePath);
 
-    request.headers['Authorization'] = 'Bearer ${widget.token}';
-    request.fields['inquiryId'] = inquiryId;
-    request.fields['occupantId'] = occupantId;
-    request.fields['roomId'] = roomId;
-    request.fields['landlordId'] = landlordId;
-    request.fields['landlordEmail'] = landlordEmail;
-    request.fields['occupantName'] = occupantName;
+  final request = http.MultipartRequest(
+    'POST',
+    Uri.parse('https://rentconnect.vercel.app/payment/uploadProofOfReservation'),
+  );
 
-    final fileStream = http.ByteStream(Stream.castFrom(image.openRead()));
-    final length = await image.length();
+  request.headers['Authorization'] = 'Bearer ${widget.token}';
+  request.fields['inquiryId'] = inquiryId;
+  request.fields['occupantId'] = occupantId;
+  request.fields['roomId'] = roomId;
+  request.fields['landlordId'] = landlordId;
+  request.fields['landlordEmail'] = landlordEmail;
+  request.fields['occupantName'] = occupantName;
 
-    String contentType = 'application/octet-stream';
-    if (image.name.endsWith('.jpg') || image.name.endsWith('.jpeg')) {
-      contentType = 'image/jpeg';
-    } else if (image.name.endsWith('.png')) {
-      contentType = 'image/png';
-    } else if (image.name.endsWith('.gif')) {
-      contentType = 'image/gif';
-    }
+  final fileStream = http.ByteStream(Stream.castFrom(image.openRead()));
+  final length = await image.length();
 
-    request.files.add(
-      http.MultipartFile(
-        'proofOfReservation',
-        fileStream,
-        length,
-        filename: image.name,
-        contentType: MediaType.parse(contentType),
-      ),
-    );
+  String contentType = 'application/octet-stream';
+  if (image.path.endsWith('.jpg') || image.path.endsWith('.jpeg')) {
+    contentType = 'image/jpeg';
+  } else if (image.path.endsWith('.png')) {
+    contentType = 'image/png';
+  } else if (image.path.endsWith('.gif')) {
+    contentType = 'image/gif';
+  }
 
-    try {
-      final response = await request.send();
-      final responseData = await http.Response.fromStream(response);
+  request.files.add(
+    http.MultipartFile(
+      'proofOfReservation',
+      fileStream,
+      length,
+      filename: image.uri.pathSegments.last,
+      contentType: MediaType.parse(contentType),
+    ),
+  );
 
-      if (response.statusCode == 200) {
-        toastNotification.success('Proof of reservation uploaded and email sent successfully!');
+  try {
+    final response = await request.send();
+    final responseData = await http.Response.fromStream(response);
 
-        // Notification payload - extract relevant details from inquiries
-        final selectedInquiry = inquiries.firstWhere(
-          (inquiry) => inquiry['_id'] == inquiryId,
-          orElse: () => {},
+    if (response.statusCode == 200) {
+      setState(() {
+        
+      });
+      Fluttertoast.showToast(msg: 'Proof of reservation uploaded and email sent successfully!');
+
+      // Notification payload - extract relevant details from inquiries
+      final selectedInquiry = inquiries.firstWhere(
+        (inquiry) => inquiry['_id'] == inquiryId,
+        orElse: () => {},
+      );
+
+      if (selectedInquiry.isNotEmpty) {
+        final roomDetails = selectedInquiry['roomId'];
+        final notificationBody = {
+          'userId': roomDetails['ownerId'],
+          'message': 'Your room ${roomDetails['roomNumber']} reservant has uploaded proof of reservation photo',
+          'roomId': roomDetails['_id'],
+          'roomNumber': roomDetails['roomNumber'],
+          'requesterEmail': landlordEmail,
+          'inquiryId': inquiryId,
+        };
+
+        // Send notification request
+        final notificationResponse = await http.post(
+          Uri.parse('https://rentconnect.vercel.app/notification/create'),
+          headers: {
+            'Authorization': 'Bearer ${widget.token}',
+            'Content-Type': 'application/json',
+          },
+          body: jsonEncode(notificationBody),
         );
 
-        if (selectedInquiry.isNotEmpty) {
-          final roomDetails = selectedInquiry['roomId'];
-          final notificationBody = {
-            'userId': roomDetails['ownerId'],
-            'message': 'Your room ${roomDetails['roomNumber']} reservant has uploaded proof of reservation photo',
-            'roomId': roomDetails['_id'],
-            'roomNumber': roomDetails['roomNumber'],
-            'requesterEmail': landlordEmail,
-            'inquiryId': inquiryId,
-          };
+        final notificationResponseData = jsonDecode(notificationResponse.body);
 
-          // Send notification request
-          final notificationResponse = await http.post(
-            Uri.parse('https://rentconnect.vercel.app/notification/create'),
-            headers: {
-              'Authorization': 'Bearer ${widget.token}',
-              'Content-Type': 'application/json',
-            },
-            body: jsonEncode(notificationBody),
-          );
-
-          final notificationResponseData = jsonDecode(notificationResponse.body);
-
-          if (notificationResponse.statusCode == 200 && notificationResponseData['status'] == true) {
-            print('Notification sent successfully.');
-          } else {
-            print('Failed to send notification: ${notificationResponse.body}');
-          }
+        if (notificationResponse.statusCode == 200 && notificationResponseData['status'] == true) {
+          print('Notification sent successfully.');
         } else {
-          print('Inquiry not found for notification.');
+          print('Failed to send notification: ${notificationResponse.body}');
         }
-
-        setState(() {});
       } else {
-        toastNotification.error('Failed to upload proof of reservation: ${responseData.body}');
+        print('Inquiry not found for notification.');
       }
-    } catch (e) {
-      toastNotification.error('Error uploading proof of reservation: $e');
+    } else {
+      Fluttertoast.showToast(msg: 'Failed to upload proof of reservation: ${responseData.body}');
     }
-  } else {
-    toastNotification.warn('No image selected.');
+  } catch (e) {
+    Fluttertoast.showToast(msg: 'Error uploading proof of reservation: $e');
   }
 }
-
 
   Future<String?> getProofOfReservation(String roomId, String token) async {
     final url =
@@ -537,6 +586,9 @@ Future<void> _fetchLandlordId(String propertyId) async {
       );
 
       if (response.statusCode == 200) {
+        setState(() {
+          
+        });
         final data = json.decode(response.body);
         if (data['status'] == true) {
           print('Proof of $type deleted successfully');
@@ -582,103 +634,161 @@ Future<void> uploadProofOfPayment(
   double amount, // New argument to pass the amount
 ) async {
   try {
-    // Pick the image
     final ImagePicker picker = ImagePicker();
-    final XFile? image = await picker.pickImage(source: ImageSource.gallery);
 
-    if (image != null) {
-      final String? fileExtension = image.name.split('.').last.toLowerCase();
-      print('Selected file extension: $fileExtension');
+    // Show a modal or bottom sheet to let the user choose between gallery and camera
+    showModalBottomSheet(
+      context: context,
+      builder: (BuildContext context) {
+        return SafeArea(
+          child: Wrap(
+            children: <Widget>[
+              ListTile(
+                leading: const Icon(Icons.photo_library),
+                title: const Text('Pick from Gallery', style: TextStyle(fontFamily: 'manrope')),
+                onTap: () async {
+                  Navigator.of(context).pop();
+                  
+                  // Use FilePicker to select an image from the gallery
+                  FilePickerResult? result = await FilePicker.platform.pickFiles(
+                    type: FileType.image,
+                  );
 
-      if (!['jpg', 'jpeg', 'png', 'webp'].contains(fileExtension)) {
-        toastNotification.warn("Invalid file type. Please upload a JPG or PNG image.");
-        return;
-      }
+                  if (result != null && result.files.single.path != null) {
+                    await _uploadPaymentImage(result.files.single.path!, inquiryId, userId, roomId, month, landlordId, token, amount);
+                  } else {
+                    Fluttertoast.showToast(msg: 'No image selected.');
+                  }
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.camera_alt_rounded),
+                title: const Text('Take Photo', style: TextStyle(fontFamily: 'manrope')),
+                onTap: () async {
+                  Navigator.of(context).pop();
 
-      final bytes = await image.readAsBytes();
+                  // Use ImagePicker to capture an image using the camera
+                  final pickedFile = await picker.pickImage(source: ImageSource.camera);
+                  if (pickedFile != null) {
+                    await _uploadPaymentImage(pickedFile.path, inquiryId, userId, roomId, month, landlordId, token, amount);
+                  } else {
+                    Fluttertoast.showToast(msg: 'No photo taken.');
+                  }
+                },
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  } catch (e) {
+    print('Error occurred while uploading proof of payment: $e');
+  }
+}
 
-      // Creating the multipart request
-      final paymentRequest = http.MultipartRequest(
-        'POST',
-        Uri.parse('https://rentconnect.vercel.app/payment/createoraddMonthlyPayment'),
+Future<void> _uploadPaymentImage(
+  String imagePath,
+  String inquiryId,
+  String userId,
+  String roomId,
+  String month,
+  String landlordId,
+  String token,
+  double amount,
+) async {
+  try {
+    final String? fileExtension = imagePath.split('.').last.toLowerCase();
+    print('Selected file extension: $fileExtension');
+
+    if (!['jpg', 'jpeg', 'png', 'webp'].contains(fileExtension)) {
+      Fluttertoast.showToast(msg: "Invalid file type. Please upload a JPG or PNG image.");
+      return;
+    }
+
+    final bytes = await File(imagePath).readAsBytes();
+
+    // Creating the multipart request
+    final paymentRequest = http.MultipartRequest(
+      'POST',
+      Uri.parse('https://rentconnect.vercel.app/payment/createoraddMonthlyPayment'),
+    );
+
+    // Adding headers
+    paymentRequest.headers['Authorization'] = 'Bearer $token';
+
+    // Adding fields
+    paymentRequest.fields['occupantId'] = userId;
+    paymentRequest.fields['landlordId'] = landlordId;
+    paymentRequest.fields['roomId'] = roomId;
+
+    // Ensure correct form-data format for monthlyPayments as an array
+    paymentRequest.fields['monthlyPayments[0][amount]'] = amount.toString(); // Pass amount dynamically
+    paymentRequest.fields['monthlyPayments[0][month]'] = month; // Month for payment
+    paymentRequest.fields['monthlyPayments[0][status]'] = 'pending';
+
+    // Attach the image file for proofOfPayment
+    paymentRequest.files.add(http.MultipartFile.fromBytes(
+      'proofOfPayment',
+      bytes,
+      filename: imagePath.split('/').last,
+      contentType: MediaType('image', fileExtension!),
+    ));
+
+    print('Payment Request Fields: ${paymentRequest.fields}');
+    print('Payment Request Headers: ${paymentRequest.headers}');
+
+    // Send the request
+    final paymentResponse = await paymentRequest.send();
+
+    if (paymentResponse.statusCode == 200) {
+      setState(() {
+        
+      });
+      toastNotification.success('Monthly payment created/added successfully.');
+
+      // Fetch the landlord's email using the ownerId
+      final landlordEmail = await fetchLandlordEmail(landlordId, token);
+
+      // Notification payload - extract relevant details from inquiries
+      final selectedInquiry = inquiries.firstWhere(
+        (inquiry) => inquiry['_id'] == inquiryId,
+        orElse: () => {},
       );
 
-      // Adding headers
-      paymentRequest.headers['Authorization'] = 'Bearer $token';
+      if (selectedInquiry.isNotEmpty) {
+        final roomDetails = selectedInquiry['roomId'];
+        final notificationBody = {
+          'userId': roomDetails['ownerId'],
+          'message': 'Your room ${roomDetails['roomNumber']} occupant has uploaded proof of payment photo',
+          'roomId': roomDetails['_id'],
+          'roomNumber': roomDetails['roomNumber'],
+          'requesterEmail': landlordEmail,
+          'inquiryId': inquiryId,
+        };
 
-      // Adding fields
-      paymentRequest.fields['occupantId'] = userId;
-      paymentRequest.fields['landlordId'] = landlordId;
-      paymentRequest.fields['roomId'] = roomId;
-
-      // Ensure correct form-data format for monthlyPayments as an array
-      paymentRequest.fields['monthlyPayments[0][amount]'] = amount.toString(); // Pass amount dynamically
-      paymentRequest.fields['monthlyPayments[0][month]'] = month; // Month for payment
-      paymentRequest.fields['monthlyPayments[0][status]'] = 'pending';
-
-      // Attach the image file for proofOfPayment
-      paymentRequest.files.add(http.MultipartFile.fromBytes(
-        'proofOfPayment',
-        bytes,
-        filename: image.name,
-        contentType: MediaType('image', fileExtension!),
-      ));
-
-      print('Payment Request Fields: ${paymentRequest.fields}');
-      print('Payment Request Headers: ${paymentRequest.headers}');
-
-      // Send the request
-      final paymentResponse = await paymentRequest.send();
-
-      if (paymentResponse.statusCode == 200) {
-        // Handle success
-        toastNotification.success('Monthly payment created/added successfully.');
-        // Fetch the landlord's email using the ownerId
-        final landlordEmail = await fetchLandlordEmail(landlordId, token);
-
-        // Notification payload - extract relevant details from inquiries
-        final selectedInquiry = inquiries.firstWhere(
-          (inquiry) => inquiry['_id'] == inquiryId,
-          orElse: () => {},
+        // Send notification request
+        final notificationResponse = await http.post(
+          Uri.parse('https://rentconnect.vercel.app/notification/create'),
+          headers: {
+            'Authorization': 'Bearer $token',
+            'Content-Type': 'application/json',
+          },
+          body: jsonEncode(notificationBody),
         );
 
-        if (selectedInquiry.isNotEmpty) {
-          final roomDetails = selectedInquiry['roomId'];
-          final notificationBody = {
-            'userId': roomDetails['ownerId'],
-            'message': 'Your room ${roomDetails['roomNumber']} occupant has uploaded proof of payment photo',
-            'roomId': roomDetails['_id'],
-            'roomNumber': roomDetails['roomNumber'],
-            'requesterEmail': landlordEmail,
-            'inquiryId': inquiryId,
-          };
+        final notificationResponseData = jsonDecode(notificationResponse.body);
 
-          // Send notification request
-          final notificationResponse = await http.post(
-            Uri.parse('https://rentconnect.vercel.app/notification/create'),
-            headers: {
-              'Authorization': 'Bearer $token',
-              'Content-Type': 'application/json',
-            },
-            body: jsonEncode(notificationBody),
-          );
-
-          final notificationResponseData = jsonDecode(notificationResponse.body);
-
-          if (notificationResponse.statusCode == 200 && notificationResponseData['status'] == true) {
-            print('Notification sent successfully.');
-          } else {
-            print('Failed to send notification: ${notificationResponse.body}');
-          }
+        if (notificationResponse.statusCode == 200 && notificationResponseData['status'] == true) {
+          print('Notification sent successfully.');
         } else {
-          print('Inquiry not found for notification.');
+          print('Failed to send notification: ${notificationResponse.body}');
         }
       } else {
-        print('Failed to create or add monthly payment. Status code: ${paymentResponse.statusCode}');
-        toastNotification.error('Failed to create or add monthly payment.');
+        print('Inquiry not found for notification.');
       }
     } else {
-      print('No image selected.');
+      print('Failed to create or add monthly payment. Status code: ${paymentResponse.statusCode}');
+      Fluttertoast.showToast(msg: 'Failed to create or add monthly payment.');
     }
   } catch (e) {
     print('Error occurred while uploading proof of payment: $e');

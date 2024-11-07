@@ -319,6 +319,9 @@ Widget build(BuildContext context) {
         )
       else
         ShadButton(
+          foregroundColor: widget.isDarkMode
+              ? const Color.fromARGB(255, 0, 0, 0)
+              : const Color.fromARGB(255, 255, 255, 255),
           backgroundColor: widget.isDarkMode
               ? Colors.white
               : const Color.fromARGB(255, 1, 0, 40),
@@ -338,7 +341,7 @@ Widget build(BuildContext context) {
               _isUploading = false;
             });
           },
-          icon: const Icon(Icons.add_a_photo),
+          icon: const Icon(Icons.add_a_photo, color: Colors.grey,),
           child: Text(
             'Upload Photo',
             style: TextStyle(

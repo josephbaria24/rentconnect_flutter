@@ -1,5 +1,6 @@
 // ignore_for_file: depend_on_referenced_packages, unused_import, library_private_types_in_public_api, use_super_parameters, prefer_const_constructors
 
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
@@ -13,6 +14,7 @@ import 'package:http_parser/http_parser.dart';
 import 'package:mime/mime.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:rentcon/navigation_menu.dart';
+import 'package:rentcon/pages/components/filePicker_modal.dart';
 import 'package:rentcon/pages/home.dart';
 import 'package:rentcon/theme_controller.dart';
 import 'package:lottie/lottie.dart';
@@ -268,17 +270,32 @@ void _selectValidIdImage() async {
       return;
     }
   }
-
-  // Proceed with picking the image
-  final pickedFile = await _picker.pickImage(source: ImageSource.gallery);
-  if (pickedFile != null) {
-    setState(() {
-      _validIdImage = File(pickedFile.path);
-    });
-    print('ID image selected: ${pickedFile.path}');
-  } else {
-    print('No ID image selected.');
+    // Check and request permission for camera (for camera access)
+  final cameraStatus = await Permission.camera.status;
+  if (cameraStatus.isDenied) {
+    final result = await Permission.camera.request();
+    if (result.isDenied) {
+      print('Permission denied. Cannot use camera.');
+      return;
+    }
   }
+  showModalBottomSheet(
+    context: context,
+    builder: (BuildContext context) {
+      return ImagePickerModal(
+        onImageSelected: (File? imageFile) {
+          if (imageFile != null) {
+            setState(() {
+              _validIdImage = imageFile; // Set the selected image
+            });
+            print('Selected Image: ${imageFile.path}');
+          } else {
+            print('No image selected.');
+          }
+        },
+      );
+    },
+  );
 }
 
   void _removeValidIdImage() {
