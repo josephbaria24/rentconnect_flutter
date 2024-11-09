@@ -14,6 +14,7 @@ import 'package:rentcon/pages/toast.dart';
 import 'package:rentcon/theme_controller.dart';
 import 'package:rive/rive.dart' as rive;
 import 'package:shadcn_ui/shadcn_ui.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'login.dart';
 import 'package:rentcon/config.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shadcnui;
@@ -497,6 +498,16 @@ Future<void> _showSuccessDialog() async {
   );
 }
 
+  // Method to open the Terms and Conditions URL
+  Future<void> _openTermsAndConditions() async {
+    const String url = 'https://josephbaria24.github.io/rentconnect_terms-condition/';
+    if (await canLaunchUrl(Uri.parse(url))) {
+      await launchUrl(Uri.parse(url));
+    } else {
+      throw 'Could not launch $url';
+    }
+  }
+
 
 bool isChecked = false;
 
@@ -629,7 +640,7 @@ bool isChecked = false;
                           fontWeight: FontWeight.w500
                             ),
                             recognizer: TapGestureRecognizer()..onTap = () {
-                              _showTermsAndConditions(context); // Show the terms and conditions dialog
+                              _openTermsAndConditions(); // Show the terms and conditions dialog
                             },
                           ),
                           const TextSpan(text: '.'),

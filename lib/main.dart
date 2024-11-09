@@ -245,7 +245,7 @@ void main() async {
 
   OneSignal.Debug.setLogLevel(OSLogLevel.verbose);
   OneSignal.initialize("af1220cb-edec-447f-a4e2-8bc6b7638322");
-  OneSignal.Notifications.requestPermission(true);
+  // OneSignal.Notifications.requestPermission(true);
 }
 
 class MyApp extends StatefulWidget {

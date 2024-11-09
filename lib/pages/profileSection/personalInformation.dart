@@ -259,26 +259,26 @@ Future<void> _fetchUserDetails() async {
 
 void _selectValidIdImage() async {
   // Check and request permission
-  final status = await Permission.photos.status;
+  // final status = await Permission.photos.status;
 
-  if (status.isDenied) {
-    // Request permission if not granted
-    final result = await Permission.photos.request();
-    if (result.isDenied) {
-      // If the user denies permission again, show a message
-      print('Permission denied. Cannot select ID image.');
-      return;
-    }
-  }
-    // Check and request permission for camera (for camera access)
-  final cameraStatus = await Permission.camera.status;
-  if (cameraStatus.isDenied) {
-    final result = await Permission.camera.request();
-    if (result.isDenied) {
-      print('Permission denied. Cannot use camera.');
-      return;
-    }
-  }
+  // if (status.isDenied) {
+  //   // Request permission if not granted
+  //   final result = await Permission.photos.request();
+  //   if (result.isDenied) {
+  //     // If the user denies permission again, show a message
+  //     print('Permission denied. Cannot select ID image.');
+  //     return;
+  //   }
+  // }
+  //   // Check and request permission for camera (for camera access)
+  // final cameraStatus = await Permission.camera.status;
+  // if (cameraStatus.isDenied) {
+  //   final result = await Permission.camera.request();
+  //   if (result.isDenied) {
+  //     print('Permission denied. Cannot use camera.');
+  //     return;
+  //   }
+  // }
   showModalBottomSheet(
     context: context,
     builder: (BuildContext context) {

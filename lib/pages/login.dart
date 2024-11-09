@@ -9,6 +9,7 @@ import 'package:rentcon/navigation_menu.dart';
 import 'package:rentcon/theme_controller.dart';
 
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'signup.dart';
 import 'package:http/http.dart' as http;
 import 'package:rentcon/config.dart';
@@ -290,6 +291,26 @@ void _resetPassword(String email) {
 }
 
 
+  // Method to open the Privacy Policy URL
+  Future<void> _openPrivacyPolicy() async {
+    const String url = 'https://josephbaria24.github.io/rentconnect_p-p/';
+    if (await canLaunchUrl(Uri.parse(url))) {
+      await launchUrl(Uri.parse(url));
+    } else {
+      throw 'Could not launch $url';
+    }
+  }
+
+  // Method to open the Terms and Conditions URL
+  Future<void> _openTermsAndConditions() async {
+    const String url = 'https://josephbaria24.github.io/rentconnect_terms-condition/';
+    if (await canLaunchUrl(Uri.parse(url))) {
+      await launchUrl(Uri.parse(url));
+    } else {
+      throw 'Could not launch $url';
+    }
+  }
+
 
 @override
 Widget build(BuildContext context) {
@@ -470,15 +491,16 @@ Widget build(BuildContext context) {
                       ),
                       GestureDetector(
                         onTap: () {
-                          // Navigate to Terms of Service page
+                          _openTermsAndConditions();
                         },
                         child: const Text(
                           'Terms of Service',
                           style: TextStyle(
+                            
                             fontFamily: 'manrope',
                             fontWeight: FontWeight.bold,
                             fontSize: 12.0,
-                            color: Color.fromRGBO(25, 22, 32, 1),
+                            color:Color.fromRGBO(41, 27, 245, 1),
                           ),
                         ),
                       ),
@@ -493,7 +515,7 @@ Widget build(BuildContext context) {
                       ),
                       GestureDetector(
                         onTap: () {
-                          // Navigate to Privacy Policy page
+                          _openPrivacyPolicy();
                         },
                         child: const Text(
                           'Privacy Policy',
@@ -501,7 +523,7 @@ Widget build(BuildContext context) {
                             fontFamily: 'manrope',
                             fontWeight: FontWeight.bold,
                             fontSize: 12.0,
-                            color: Color.fromRGBO(25, 22, 32, 1),
+                            color: Color.fromRGBO(41, 27, 245, 1),
                           ),
                         ),
                       ),

@@ -3,14 +3,12 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:jwt_decoder/jwt_decoder.dart';
 import 'package:rentcon/theme_controller.dart';
-import 'package:shadcn_ui/shadcn_ui.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 import 'package:url_launcher/url_launcher.dart'; // Import url_launcher
 
 class AboutPage extends StatefulWidget {
   final String token;
   const AboutPage({required this.token, Key? key}) : super(key: key);
-  
+
   @override
   _AboutPageState createState() => _AboutPageState();
 }
@@ -36,6 +34,26 @@ class _AboutPageState extends State<AboutPage> {
       await launchUrl(emailUri);
     } else {
       throw 'Could not launch $emailUri';
+    }
+  }
+
+  // Method to open the Privacy Policy URL
+  Future<void> _openPrivacyPolicy() async {
+    const String url = 'https://josephbaria24.github.io/rentconnect_p-p/';
+    if (await canLaunchUrl(Uri.parse(url))) {
+      await launchUrl(Uri.parse(url));
+    } else {
+      throw 'Could not launch $url';
+    }
+  }
+
+  // Method to open the Terms and Conditions URL
+  Future<void> _openTermsAndConditions() async {
+    const String url = 'https://josephbaria24.github.io/rentconnect_terms-condition/';
+    if (await canLaunchUrl(Uri.parse(url))) {
+      await launchUrl(Uri.parse(url));
+    } else {
+      throw 'Could not launch $url';
     }
   }
 
@@ -80,7 +98,6 @@ class _AboutPageState extends State<AboutPage> {
         padding: const EdgeInsets.only(left: 25.0, right: 25),
         child: Column(
           children: [
-            // Logo with Rounded Box
             ClipRRect(
               borderRadius: BorderRadius.circular(15),
               child: Container(
@@ -97,8 +114,6 @@ class _AboutPageState extends State<AboutPage> {
               ),
             ),
             const SizedBox(height: 20),
-
-            // App Name and Tagline
             Text(
               'RentConnect',
               style: TextStyle(
@@ -118,8 +133,6 @@ class _AboutPageState extends State<AboutPage> {
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 20),
-
-            // About Text
             Text(
               'At RentConnect, we strive to create a reliable platform for landlords and occupants. Our aim is to facilitate seamless communication, efficient management, and enjoyable rental experiences.',
               style: TextStyle(
@@ -130,17 +143,40 @@ class _AboutPageState extends State<AboutPage> {
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 20),
-
-            // Social Media Links
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-
                 IconButton(
                   icon: Icon(Icons.mail_rounded),
-                  onPressed: _sendEmail, // Opens Gmail with recipient email
+                  onPressed: _sendEmail, 
                 ),
               ],
+            ),
+            const SizedBox(height: 20),
+
+            // Privacy Policy and Terms and Conditions Links
+            GestureDetector(
+              onTap: _openPrivacyPolicy,
+              child: Text(
+                'Privacy Policy',
+                style: TextStyle(
+                  fontSize: 16,
+                  color: Colors.blue,
+                  decoration: TextDecoration.underline,
+                ),
+              ),
+            ),
+            const SizedBox(height: 10),
+            GestureDetector(
+              onTap: _openTermsAndConditions,
+              child: Text(
+                'Terms and Conditions',
+                style: TextStyle(
+                  fontSize: 16,
+                  color: Colors.blue,
+                  decoration: TextDecoration.underline,
+                ),
+              ),
             ),
           ],
         ),
