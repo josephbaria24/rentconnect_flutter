@@ -3,9 +3,12 @@ import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'package:rentcon/models/room_unit.dart';
 import 'package:rentcon/theme_controller.dart';
 import 'package:shadcn_ui/shadcn_ui.dart';
+import 'package:image/image.dart' as img;
 
 class RoomUnitWidget extends StatefulWidget {
   final RoomUnit room;
@@ -49,10 +52,25 @@ class _RoomUnitWidgetState extends State<RoomUnitWidget> {
 };
 
 
-  Future<void> _pickImage(int index) async {
-    final ImagePicker _picker = ImagePicker();
-  
-      // Ask the user to choose between picking an image from the gallery or taking a photo
+Future<File> compressImage(File file) async {
+  final originalImage = img.decodeImage(file.readAsBytesSync());
+  if (originalImage == null) return file;
+
+  final resizedImage = img.copyResize(originalImage, width: 1080); // Resize to reduce size
+  final compressedBytes = img.encodeJpg(resizedImage, quality: 75); // Compress to reduce quality slightly
+
+  // Save to a new file path
+  final directory = await getTemporaryDirectory();
+  final newPath = '${directory.path}/${DateTime.now().millisecondsSinceEpoch}.jpg';
+  final compressedFile = File(newPath)..writeAsBytesSync(compressedBytes);
+
+  return compressedFile;
+}
+
+Future<void> _pickImage(int index) async {
+  final ImagePicker _picker = ImagePicker();
+
+  // Ask the user to choose between picking an image from the gallery or taking a photo
   showModalBottomSheet(
     context: context,
     builder: (BuildContext context) {
@@ -71,7 +89,9 @@ class _RoomUnitWidgetState extends State<RoomUnitWidget> {
                 );
 
                 if (result != null && result.files.single.path != null) {
-                  widget.onImageSelected(File(result.files.single.path!), index); // Return the selected image
+                  // Compress the selected image
+                  final compressedFile = await compressImage(File(result.files.single.path!));
+                  widget.onImageSelected(compressedFile, index); // Return the compressed image
                 } else {
                   print('No image selected from gallery.');
                 }
@@ -86,7 +106,9 @@ class _RoomUnitWidgetState extends State<RoomUnitWidget> {
                 // Use ImagePicker to capture an image using the camera
                 final pickedFile = await _picker.pickImage(source: ImageSource.camera);
                 if (pickedFile != null) {
-                  widget.onImageSelected(File(pickedFile.path), index); // Return the captured image
+                  // Compress the captured image
+                  final compressedFile = await compressImage(File(pickedFile.path));
+                  widget.onImageSelected(compressedFile, index); // Return the compressed image
                 } else {
                   print('No image captured.');
                 }
@@ -97,7 +119,7 @@ class _RoomUnitWidgetState extends State<RoomUnitWidget> {
       );
     },
   );
-  }
+}
 
   // Function to check if all required fields are filled
   bool _areFieldsCompleted() {

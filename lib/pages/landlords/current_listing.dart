@@ -1,5 +1,6 @@
 // ignore_for_file: prefer_const_constructors, prefer_final_fields, unused_import, prefer_const_literals_to_create_immutables
 
+import 'dart:async';
 import 'dart:convert';
 import 'dart:typed_data';
 import 'package:rentcon/pages/agreementDetails.dart';
@@ -130,6 +131,16 @@ class _CurrentListingPageState extends State<CurrentListingPage> {
     tab2ScrollController.dispose(); // Dispose the controller
     super.dispose();
   }
+
+
+
+
+
+
+
+
+ 
+
 
 Future<String?> getProofOfPaymentForSelectedMonth(String roomId, String token, String selectedMonth) async {
   final String apiUrl = 'https://rentconnect.vercel.app/payment/room/$roomId/monthlyPayments';
@@ -636,8 +647,6 @@ void showRoomDetailBottomSheet(BuildContext context, dynamic room, Map<String, d
                                             );
                                           },
                                         );
-
-                                        // If confirmed, mark as available
                                         if (confirmed == true) {
                                           await markAsAvailable();
                                         }
@@ -996,6 +1005,74 @@ void _navigateToEditProperty(String propertyId) {
   );
 }
 
+
+
+
+
+Future<void> _confirmDeleteRoom(BuildContext context, String roomId) async {
+  // Show a Cupertino-style alert dialog with confirmation
+  showCupertinoDialog(
+    context: context,
+    builder: (BuildContext context) {
+      return CupertinoAlertDialog(
+        title: Text(
+          "This action cannot be undo, are you sure you want to delete this room?",
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ),
+        actions: [
+          CupertinoDialogAction(
+            onPressed: () {
+              deleteRoom(context, roomId);  // Proceed with deleting the room
+              Navigator.pop(context);
+            },
+            child: Text("Delete Room"),
+            isDestructiveAction: true,
+          ),
+          CupertinoDialogAction(
+            onPressed: () {
+              Navigator.pop(context);  // Close the dialog if cancelled
+            },
+            child: Text("Cancel"),
+          ),
+        ],
+      );
+    },
+  );
+}
+Future<void> deleteRoom(BuildContext context, String roomId) async {
+  // Replace with your API base URL
+  final String apiUrl = 'https://rentconnect.vercel.app/rooms/deleteRoom/$roomId'; 
+
+  try {
+    // Make the DELETE request to the API
+    final response = await http.delete(
+      Uri.parse(apiUrl),
+    );
+
+    if (response.statusCode == 200) {
+      // Room deleted successfully
+      final responseData = json.decode(response.body);
+      if (responseData['status'] == true) {
+        // Show a success notification
+        toastNotification.success('Room deleted successfully');
+        setState(() {
+          
+        });
+      } else {
+        // Show a warning notification if deletion failed
+        toastNotification.warn('Failed to delete room');
+      }
+    } else {
+      // API returned an error
+      toastNotification.warn('Error deleting room');
+    }
+  } catch (error) {
+    // Handle any errors from the API request
+    toastNotification.error('Something went wrong. Please try again later.');
+  }
+}
+
+
   @override
   Widget build(BuildContext context) {
     print('selected UserId from inquiry: $selectedUserId');
@@ -1151,7 +1228,7 @@ void _navigateToEditProperty(String propertyId) {
                                 color: _themeController.isDarkMode.value
                                     ? const Color.fromARGB(255, 36, 38, 43)
                                     : const Color.fromARGB(255, 255, 255, 255),
-                                elevation: 5.0,
+                                elevation: 2.0,
                                 margin: const EdgeInsets.symmetric(
                                     vertical: 10.0, horizontal: 10.0),
                                 shape: RoundedRectangleBorder(
@@ -1392,87 +1469,136 @@ void _navigateToEditProperty(String propertyId) {
                                                                       .start,
                                                               children: [
                                                                 Row(
-                                                                  children: [
-                                                                    ClipRRect(
-                                                                      borderRadius: BorderRadius.circular(10),
-                                                                      child: Image.network(
-                                                                        roomPhoto1,
-                                                                        width: 80,
-                                                                        height: 60,
-                                                                        fit: BoxFit.cover,
-                                                                      ),
-                                                                    ),
-                                                                    const SizedBox(width: 12),
-                                                                    Expanded(
-                                                                      child: Column(
-                                                                        crossAxisAlignment: CrossAxisAlignment.start,
-                                                                        children: [
-                                                                          Text(
-                                                                            'Room No. ${room['roomNumber']?.toString() ?? 'Unknown Room Number'}',
-                                                                            style: TextStyle(
-                                                                              fontWeight: FontWeight.bold,
-                                                                              fontSize: 14,
-                                                                              color: _themeController.isDarkMode.value ? const Color.fromARGB(255, 255, 255, 255) : Colors.black,
-                                                                            ),
-                                                                          ),
-                                                                          const SizedBox(height: 4),
-                                                                          Text(
-                                                                            'Price: ₱${room['price']?.toString() ?? 'N/A'}',
-                                                                            style: TextStyle(
-                                                                              fontSize: 12,
-                                                                              fontWeight: FontWeight.w600,
-                                                                              color: _themeController.isDarkMode.value ? const Color.fromARGB(255, 255, 255, 255) : const Color.fromARGB(255, 0, 0, 0),
-                                                                            ),
-                                                                          ),
-                                                                          Text(
-                                                                            'Capacity: ${room['capacity']?.toString() ?? 'N/A'}',
-                                                                            style: TextStyle(
-                                                                              fontFamily: 'manrope',
-                                                                              fontSize: 12,
-                                                                              fontWeight: FontWeight.w600,
-                                                                              color: _themeController.isDarkMode.value ? const Color.fromARGB(255, 255, 255, 255) : const Color.fromARGB(255, 0, 0, 0),
-                                                                            ),
-                                                                          ),
-                                                                          Row(
-                                                                            children: [
-                                                                              Text(
-                                                                                'Room Status: ',
-                                                                                style: TextStyle(
-                                                                                  fontFamily: 'manrope',
-                                                                                  fontSize: 12,
-                                                                                  fontWeight: FontWeight.w600,
-                                                                                  color: _themeController.isDarkMode.value ? const Color.fromARGB(255, 255, 255, 255) : const Color.fromARGB(255, 0, 0, 0),
-                                                                                ),
-                                                                              ),
-                                                                              Flexible(
-                                                                                child: Container(
-                                                                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                                                                                  decoration: BoxDecoration(
-                                                                                    color: _getRoomStatusColor(room['roomStatus']),
-                                                                                    borderRadius: BorderRadius.circular(5),
-                                                                                  ),
-                                                                                  child: Tooltip(
-                                                                                    message: 'this room is currently ${room['roomStatus']}',
-                                                                                    child: Text(
-                                                                                      '${room['roomStatus']?.toString().toUpperCase() ?? 'N/A'}',
-                                                                                      style: TextStyle(
-                                                                                        fontFamily: 'manrope',
-                                                                                        fontWeight: FontWeight.w800,
-                                                                                        fontSize: 12,
-                                                                                        color: const Color.fromARGB(255, 5, 5, 5),
-                                                                                      ),
-                                                                                      overflow: TextOverflow.ellipsis, // Prevent overflow by truncating the text
-                                                                                    ),
-                                                                                  ),
-                                                                                ),
-                                                                              ),
-                                                                            ],
-                                                                          ),
-                                                                        ],
-                                                                      ),
-                                                                    ),
-                                                                  ],
-                                                                ),
+  children: [
+    ClipRRect(
+      borderRadius: BorderRadius.circular(10),
+      child: Image.network(
+        roomPhoto1,
+        width: 80,
+        height: 60,
+        fit: BoxFit.cover,
+      ),
+    ),
+    const SizedBox(width: 12),
+    Expanded(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'Room No. ${room['roomNumber']?.toString() ?? 'Unknown Room Number'}',
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 14,
+                  color: _themeController.isDarkMode.value
+                      ? const Color.fromARGB(255, 255, 255, 255)
+                      : Colors.black,
+                ),
+              ),
+              GestureDetector(
+                onTap: () async {
+                  // Show confirmation dialog
+                    bool? isConfirmed = await showDialog<bool>(
+    context: context,
+    builder: (BuildContext context) {
+      return CupertinoAlertDialog(
+        title: Text("Delete Room"),
+        content: Text("Are you sure you want to delete this room?"),
+        actions: [
+          CupertinoDialogAction(
+            onPressed: () {
+              Navigator.of(context).pop(false);
+            },
+            child: Text("Cancel"),
+          ),
+          CupertinoDialogAction(
+            onPressed: () {
+              Navigator.of(context).pop(true);
+            },
+            child: Text("Delete", style: TextStyle(
+              color: Colors.red
+            ),),
+          ),
+        ],
+      );
+    },
+  );
+
+  // If confirmed, proceed with deletion
+  if (isConfirmed == true) {
+    _confirmDeleteRoom(context, roomId);
+  }
+                },
+                child: Icon(Icons.delete_outline_rounded),
+              ),
+            ],
+          ),
+          const SizedBox(height: 4),
+          Text(
+            'Price: ₱${room['price']?.toString() ?? 'N/A'}',
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+              color: _themeController.isDarkMode.value
+                  ? const Color.fromARGB(255, 255, 255, 255)
+                  : const Color.fromARGB(255, 0, 0, 0),
+            ),
+          ),
+          Text(
+            'Capacity: ${room['capacity']?.toString() ?? 'N/A'}',
+            style: TextStyle(
+              fontFamily: 'manrope',
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+              color: _themeController.isDarkMode.value
+                  ? const Color.fromARGB(255, 255, 255, 255)
+                  : const Color.fromARGB(255, 0, 0, 0),
+            ),
+          ),
+          Row(
+            children: [
+              Text(
+                'Room Status: ',
+                style: TextStyle(
+                  fontFamily: 'manrope',
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                  color: _themeController.isDarkMode.value
+                      ? const Color.fromARGB(255, 255, 255, 255)
+                      : const Color.fromARGB(255, 0, 0, 0),
+                ),
+              ),
+              Flexible(
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                  decoration: BoxDecoration(
+                    color: _getRoomStatusColor(room['roomStatus']),
+                    borderRadius: BorderRadius.circular(5),
+                  ),
+                  child: Tooltip(
+                    message: 'This room is currently ${room['roomStatus']}',
+                    child: Text(
+                      '${room['roomStatus']?.toString().toUpperCase() ?? 'N/A'}',
+                      style: TextStyle(
+                        fontFamily: 'manrope',
+                        fontWeight: FontWeight.w800,
+                        fontSize: 12,
+                        color: const Color.fromARGB(255, 5, 5, 5),
+                      ),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    ),
+  ],
+),
 
                                                                 const SizedBox(
                                                                     height: 10),

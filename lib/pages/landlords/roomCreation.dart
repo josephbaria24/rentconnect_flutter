@@ -60,6 +60,18 @@ void _addRoom() {
 
 void _submitRooms() async {
   // Validate fields for all rooms
+  showDialog(
+    context: context,
+    barrierDismissible: false,  // Prevent closing the dialog
+    builder: (BuildContext context) {
+      return Center(
+        child: CupertinoActivityIndicator(
+          radius: 20.0,
+        ),
+      );
+    },
+  );
+
   for (int i = 0; i < roomUnits.length; i++) {
     RoomUnit room = roomUnits[i];
 

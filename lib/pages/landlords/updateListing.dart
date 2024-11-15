@@ -9,10 +9,12 @@ import 'package:image_picker/image_picker.dart';
 import 'package:http_parser/http_parser.dart';
 import 'package:http/http.dart' as http;
 import 'package:latlong2/latlong.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:rentcon/pages/map/propertyLocationPicker.dart';
 import 'package:rentcon/pages/toast.dart';
 import 'package:rentcon/theme_controller.dart';
 import 'package:shadcn_ui/shadcn_ui.dart';
+import 'package:image/image.dart' as img;
 
 class UpdateProperty extends StatefulWidget {
   final String token;
@@ -264,85 +266,23 @@ void initializeSelectedAmenities() {
 }
 
 
+Future<File> compressImage(File file) async {
+  final originalImage = img.decodeImage(file.readAsBytesSync());
+  if (originalImage == null) return file;
 
-Future<void> _selectPhoto(int index) async {
-   final ImagePicker _picker = ImagePicker();
+  final resizedImage = img.copyResize(originalImage, width: 1080); // Resize to reduce size
+  final compressedBytes = img.encodeJpg(resizedImage, quality: 75); // Compress to reduce quality slightly
 
-  // Show a modal or bottom sheet to let the user choose between gallery and camera
-  showModalBottomSheet(
-    context: context,
-    builder: (BuildContext context) {
-      return SafeArea(
-        child: Wrap(
-          children: <Widget>[
-            ListTile(
-              leading: const Icon(Icons.photo_library),
-              title: const Text('Pick from Gallery', style: TextStyle(fontFamily: 'manrope')),
-              onTap: () async {
-                Navigator.of(context).pop();
+  // Save to a new file path
+  final directory = await getTemporaryDirectory();
+  final newPath = '${directory.path}/${DateTime.now().millisecondsSinceEpoch}.jpg';
+  final compressedFile = File(newPath)..writeAsBytesSync(compressedBytes);
 
-                // Use FilePicker to select an image from the gallery
-                FilePickerResult? result = await FilePicker.platform.pickFiles(
-                  type: FileType.image,
-                );
-
-                if (result != null && result.files.single.path != null) {
-                  setState(() {
-                    switch (index) {
-                      case 1:
-                        _photo = File(result.files.single.path!);
-                        break;
-                      case 2:
-                        _photo2 = File(result.files.single.path!);
-                        break;
-                      case 3:
-                        _photo3 = File(result.files.single.path!);
-                        break;
-                    }
-                  });
-                  print('Photo selected from gallery for index $index: ${result.files.single.path}');
-                } else {
-                  print('No photo selected from gallery.');
-                }
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.camera_alt_rounded),
-              title: const Text('Take Photo', style: TextStyle(fontFamily: 'manrope')),
-              onTap: () async {
-                Navigator.of(context).pop();
-
-                // Use ImagePicker to capture an image using the camera
-                final pickedFile = await _picker.pickImage(source: ImageSource.camera);
-                if (pickedFile != null) {
-                  setState(() {
-                    switch (index) {
-                      case 1:
-                        _photo = File(pickedFile.path);
-                        break;
-                      case 2:
-                        _photo2 = File(pickedFile.path);
-                        break;
-                      case 3:
-                        _photo3 = File(pickedFile.path);
-                        break;
-                    }
-                  });
-                  print('Photo captured with camera for index $index: ${pickedFile.path}');
-                } else {
-                  print('No photo captured.');
-                }
-              },
-            ),
-          ],
-        ),
-      );
-    },
-  );
+  return compressedFile;
 }
 
 
- Future<void> _selectLegalDocPhoto(int index) async {
+Future<void> _selectPhoto(int index) async {
   final ImagePicker _picker = ImagePicker();
 
   // Show a modal or bottom sheet to let the user choose between gallery and camera
@@ -364,20 +304,98 @@ Future<void> _selectPhoto(int index) async {
                 );
 
                 if (result != null && result.files.single.path != null) {
+                  final compressedFile = await compressImage(File(result.files.single.path!));
                   setState(() {
                     switch (index) {
                       case 1:
-                        _legalDocPhoto = File(result.files.single.path!);
+                        _photo = compressedFile;
                         break;
                       case 2:
-                        _legalDocPhoto2 = File(result.files.single.path!);
+                        _photo2 = compressedFile;
                         break;
                       case 3:
-                        _legalDocPhoto3 = File(result.files.single.path!);
+                        _photo3 = compressedFile;
                         break;
                     }
                   });
-                  print('Legal document photo selected from gallery for index $index: ${result.files.single.path}');
+                  print('Compressed photo selected from gallery for index $index: ${compressedFile.path}');
+                } else {
+                  print('No photo selected from gallery.');
+                }
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.camera_alt_rounded),
+              title: const Text('Take Photo', style: TextStyle(fontFamily: 'manrope')),
+              onTap: () async {
+                Navigator.of(context).pop();
+
+                // Use ImagePicker to capture an image using the camera
+                final pickedFile = await _picker.pickImage(source: ImageSource.camera);
+                if (pickedFile != null) {
+                  final compressedFile = await compressImage(File(pickedFile.path));
+                  setState(() {
+                    switch (index) {
+                      case 1:
+                        _photo = compressedFile;
+                        break;
+                      case 2:
+                        _photo2 = compressedFile;
+                        break;
+                      case 3:
+                        _photo3 = compressedFile;
+                        break;
+                    }
+                  });
+                  print('Compressed photo captured with camera for index $index: ${compressedFile.path}');
+                } else {
+                  print('No photo captured.');
+                }
+              },
+            ),
+          ],
+        ),
+      );
+    },
+  );
+}
+
+
+Future<void> _selectLegalDocPhoto(int index) async {
+  final ImagePicker _picker = ImagePicker();
+  showModalBottomSheet(
+    context: context,
+    builder: (BuildContext context) {
+      return SafeArea(
+        child: Wrap(
+          children: <Widget>[
+            ListTile(
+              leading: const Icon(Icons.photo_library),
+              title: const Text('Pick from Gallery', style: TextStyle(fontFamily: 'manrope')),
+              onTap: () async {
+                Navigator.of(context).pop();
+
+                // Use FilePicker to select an image from the gallery
+                FilePickerResult? result = await FilePicker.platform.pickFiles(
+                  type: FileType.image,
+                );
+
+                if (result != null && result.files.single.path != null) {
+                  final compressedFile = await compressImage(File(result.files.single.path!));
+                  setState(() {
+                    switch (index) {
+                      case 1:
+                        _legalDocPhoto = compressedFile;
+                        break;
+                      case 2:
+                        _legalDocPhoto2 = compressedFile;
+                        break;
+                      case 3:
+                        _legalDocPhoto3 = compressedFile;
+                        break;
+                    }
+                  });
+                  print('Compressed legal document photo selected from gallery for index $index: ${compressedFile.path}');
                 } else {
                   print('No legal document photo selected from gallery.');
                 }
@@ -392,20 +410,21 @@ Future<void> _selectPhoto(int index) async {
                 // Use ImagePicker to capture an image using the camera
                 final pickedFile = await _picker.pickImage(source: ImageSource.camera);
                 if (pickedFile != null) {
+                  final compressedFile = await compressImage(File(pickedFile.path));
                   setState(() {
                     switch (index) {
                       case 1:
-                        _legalDocPhoto = File(pickedFile.path);
+                        _legalDocPhoto = compressedFile;
                         break;
                       case 2:
-                        _legalDocPhoto2 = File(pickedFile.path);
+                        _legalDocPhoto2 = compressedFile;
                         break;
                       case 3:
-                        _legalDocPhoto3 = File(pickedFile.path);
+                        _legalDocPhoto3 = compressedFile;
                         break;
                     }
                   });
-                  print('Legal document photo captured with camera for index $index: ${pickedFile.path}');
+                  print('Compressed legal document photo captured with camera for index $index: ${compressedFile.path}');
                 } else {
                   print('No legal document photo captured.');
                 }
@@ -417,6 +436,8 @@ Future<void> _selectPhoto(int index) async {
     },
   );
 }
+
+
  Future<void> updateProperty() async {
     // Collect the selected amenities
     List<String> selectedAmenitiesList = getSelectedAmenities();

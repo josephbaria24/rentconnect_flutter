@@ -15,6 +15,7 @@ import 'package:rentcon/faqs.dart';
 import 'package:rentcon/navigation_menu.dart';
 import 'package:rentcon/pages/about.dart';
 import 'package:rentcon/pages/account_settings.dart';
+import 'package:rentcon/pages/components/customer_support.dart';
 import 'package:rentcon/pages/fullscreenImage.dart';
 import 'package:rentcon/pages/landlords/current_listing.dart';
 import 'package:rentcon/pages/occupants/occupant_inquiries.dart';
@@ -32,6 +33,7 @@ import 'package:mime/mime.dart'; // For lookupMimeType
 import 'package:http_parser/http_parser.dart'; // For MediaType
 import 'package:skeletonizer/skeletonizer.dart';
 import 'package:lottie/lottie.dart';
+import 'package:restart_app/restart_app.dart';
 
 class ProfilePage extends StatefulWidget {
   final String token;
@@ -41,7 +43,8 @@ class ProfilePage extends StatefulWidget {
   State<ProfilePage> createState() => _ProfilePageState();
 }
 
-class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStateMixin {
+class _ProfilePageState extends State<ProfilePage>
+    with SingleTickerProviderStateMixin {
   bool _loading = false;
   // final backendService = BackendService();
   late String email;
@@ -55,23 +58,25 @@ class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStat
   Map<String, dynamic>? userDetails;
   String profileStatus = 'none'; // Default value
   String userRole = '';
-    late ToastNotification toastNotification;
+  late ToastNotification toastNotification;
 
   late AnimationController _animationController;
-
 
   @override
   void initState() {
     super.initState();
-     _animationController = AnimationController(
+    _animationController = AnimationController(
       vsync: this,
-      duration: const Duration(seconds: 1),);
+      duration: const Duration(seconds: 1),
+    );
 
-      if (themeController.isDarkMode.value) {
-    _animationController.value = 1; // Start at the dark mode frame (2 seconds)
-  } else {
-    _animationController.value = 0.0; // Start at the light mode frame (0 seconds)
-  }
+    if (themeController.isDarkMode.value) {
+      _animationController.value =
+          1; // Start at the dark mode frame (2 seconds)
+    } else {
+      _animationController.value =
+          0.0; // Start at the light mode frame (0 seconds)
+    }
     toastNotification = ToastNotification(context);
     _loadThemePreference();
     final Map<String, dynamic> jwtDecodedToken =
@@ -84,16 +89,11 @@ class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStat
     print('Initialized with email: $email and userId: $userId');
   }
 
-
-
-
   @override
-void dispose() {
-  _animationController.dispose();
-  super.dispose();
-}
-
-
+  void dispose() {
+    _animationController.dispose();
+    super.dispose();
+  }
 
   Future<void> _loadThemePreference() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
@@ -102,24 +102,25 @@ void dispose() {
     });
   }
 
-Future<void> _toggleTheme(bool isDark) async {
-  // Save theme preference
-  SharedPreferences prefs = await SharedPreferences.getInstance();
-  await prefs.setBool('isDarkMode', isDark);
+  Future<void> _toggleTheme(bool isDark) async {
+    // Save theme preference
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('isDarkMode', isDark);
 
-  // Toggle the theme using GetX
-  Get.changeThemeMode(isDark ? ThemeMode.dark : ThemeMode.light);
+    // Toggle the theme using GetX
+    Get.changeThemeMode(isDark ? ThemeMode.dark : ThemeMode.light);
 
-  // Handle the animation based on the theme
-  if (isDark) {
-    // Stop the animation at the 1-second mark (dark mode)
-    await _animationController.animateTo(0.25, duration: const Duration(milliseconds: 200));
-  } else {
-    // Start the animation at 0-second mark (light mode)
-    await _animationController.animateTo(0.0, duration: const Duration(milliseconds: 300));
+    // Handle the animation based on the theme
+    if (isDark) {
+      // Stop the animation at the 1-second mark (dark mode)
+      await _animationController.animateTo(0.25,
+          duration: const Duration(milliseconds: 200));
+    } else {
+      // Start the animation at 0-second mark (light mode)
+      await _animationController.animateTo(0.0,
+          duration: const Duration(milliseconds: 300));
+    }
   }
-}
-
 
   Future<void> _fetchUserProfile() async {
     final url = Uri.parse(
@@ -131,10 +132,12 @@ Future<void> _toggleTheme(bool isDark) async {
         final data = jsonDecode(response.body);
         setState(() {
           userDetails = jsonDecode(response.body);
-          CachedNetworkImage(imageUrl:  _profileImageUrl = data['profilePicture'],
-          progressIndicatorBuilder: (context, url, downloadProgress) => 
-          CircularProgressIndicator(value: downloadProgress.progress),
-          errorWidget: (context, url, error) => Icon(Icons.error),);
+          CachedNetworkImage(
+            imageUrl: _profileImageUrl = data['profilePicture'],
+            progressIndicatorBuilder: (context, url, downloadProgress) =>
+                CircularProgressIndicator(value: downloadProgress.progress),
+            errorWidget: (context, url, error) => Icon(Icons.error),
+          );
           //_profileImageUrl = data['profilePicture']; // Update the URL variable
         });
       } else {
@@ -169,187 +172,195 @@ Future<void> _toggleTheme(bool isDark) async {
     }
   }
 
+// Future<void> _logout(BuildContext context) async {
+//   SharedPreferences prefs = await SharedPreferences.getInstance();
 
-Future<void> _logout(BuildContext context) async {
-  SharedPreferences prefs = await SharedPreferences.getInstance();
+//   // Clear all session data
+//   await prefs.clear();
 
-  // Clear all session data
-  await prefs.clear();
+//   // Show a toast notification before navigating to the login page
+//   toastNotification.success('You have been logged out successfully!');
 
-  // Show a toast notification before navigating to the login page
-  toastNotification.success('You have been logged out successfully!');
+//   // Immediately schedule navigation in a stable lifecycle phase
+//   if (mounted) {
+//     SchedulerBinding.instance.addPostFrameCallback((_) {
+//       Navigator.pushReplacementNamed(
+//         context,
+//         '/login', // Use pushReplacement to prevent going back to the profile page
+//       );
+//     });
+//   }
+// }
+  Future<void> _logout(BuildContext context) async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
 
-  // Immediately schedule navigation in a stable lifecycle phase
-  if (mounted) {
-    SchedulerBinding.instance.addPostFrameCallback((_) {
-      Navigator.pushReplacementNamed(
-        context,
-        '/login', // Use pushReplacement to prevent going back to the profile page
-      );
-    });
+    // Clear all session data
+    await prefs.clear();
+
+    // Show a toast notification before restarting the app
+    toastNotification.success('You have been logged out successfully!');
+
+    // Restart the app after logout
+    Restart.restartApp();
   }
-}
 
-
-
-void _showLogoutConfirmationDialog(BuildContext context) {
-  showCupertinoDialog(
-    context: context,
-    builder: (BuildContext context) {
-      return CupertinoAlertDialog(
-        title: Text("Confirm Logout"),
-        content: Text("Are you sure you want to logout?"),
-        actions: [
-          CupertinoDialogAction(
-            child: Text("Cancel"),
-            onPressed: () {
-              Navigator.of(context).pop(); // Dismiss the dialog
-            },
-          ),
-          CupertinoDialogAction(
-            child: Text("Logout", style: TextStyle(color: Colors.red)),
-            onPressed: () {
-              Navigator.of(context).pop(); // Dismiss the dialog
-              _logout(context); // Call the logout function
-            },
-          ),
-        ],
-      );
-    },
-  );
-}
-
-
-
-Future<void> _pickImage() async {
-  // Check and request permission
-  // final status = await Permission.photos.status;
-
-  // if (status.isDenied) {
-  //   // Request permission if not granted
-  //   final result = await Permission.photos.request();
-  //   if (result.isDenied) {
-  //     // If the user denies permission again, show a message
-  //     print('Permission denied. Cannot pick image.');
-  //     return;
-  //   }
-  // }
-  //  // Check and request permission for camera (for camera access)
-  // final cameraStatus = await Permission.camera.status;
-  // if (cameraStatus.isDenied) {
-  //   final result = await Permission.camera.request();
-  //   if (result.isDenied) {
-  //     print('Permission denied. Cannot use camera.');
-  //     return;
-  //   }
-  // }
-   showModalBottomSheet(
-    context: context,
-    builder: (BuildContext context) {
-      return SafeArea(
-        child: Wrap(
-          children: <Widget>[
-            ListTile(
-              leading: Icon(Icons.photo_library),
-              title: Text('Pick from Gallery'),
-              onTap: () async {
-                Navigator.of(context).pop();
-                // Use FilePicker to select an image from the gallery
-                print('Picking image from gallery...');
-                FilePickerResult? result = await FilePicker.platform.pickFiles(
-                  type: FileType.image,
-                );
-
-                if (result != null && result.files.single.path != null) {
-                  setState(() {
-                    _profileImage = File(result.files.single.path!);
-                    _hasImageChanged = true; // Mark image as changed
-                  });
-                  print('Image picked from gallery: ${result.files.single.path}');
-                } else {
-                  print('No image selected.');
-                }
+  void _showLogoutConfirmationDialog(BuildContext context) {
+    showCupertinoDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return CupertinoAlertDialog(
+          title: Text("Confirm Logout"),
+          content: Text("Are you sure you want to logout?"),
+          actions: [
+            CupertinoDialogAction(
+              child: Text("Cancel"),
+              onPressed: () {
+                Navigator.of(context).pop(); // Dismiss the dialog
               },
             ),
-            ListTile(
-              leading: Icon(Icons.camera_alt),
-              title: Text('Take Photo'),
-              onTap: () async {
-                Navigator.of(context).pop();
-                // Use ImagePicker to capture an image using the camera
-                print('Opening camera...');
-                final pickedFile = await _picker.pickImage(source: ImageSource.camera);
-
-                if (pickedFile != null) {
-                  setState(() {
-                    _profileImage = File(pickedFile.path);
-                    _hasImageChanged = true; // Mark image as changed
-                  });
-                  print('Image taken from camera: ${pickedFile.path}');
-                } else {
-                  print('No image captured.');
-                }
+            CupertinoDialogAction(
+              child: Text("Logout", style: TextStyle(color: Colors.red)),
+              onPressed: () {
+                Navigator.of(context).pop(); // Dismiss the dialog
+                _logout(context); // Call the logout function
               },
             ),
           ],
+        );
+      },
+    );
+  }
+
+  Future<void> _pickImage() async {
+    // Check and request permission
+    // final status = await Permission.photos.status;
+
+    // if (status.isDenied) {
+    //   // Request permission if not granted
+    //   final result = await Permission.photos.request();
+    //   if (result.isDenied) {
+    //     // If the user denies permission again, show a message
+    //     print('Permission denied. Cannot pick image.');
+    //     return;
+    //   }
+    // }
+    //  // Check and request permission for camera (for camera access)
+    // final cameraStatus = await Permission.camera.status;
+    // if (cameraStatus.isDenied) {
+    //   final result = await Permission.camera.request();
+    //   if (result.isDenied) {
+    //     print('Permission denied. Cannot use camera.');
+    //     return;
+    //   }
+    // }
+    showModalBottomSheet(
+      context: context,
+      builder: (BuildContext context) {
+        return SafeArea(
+          child: Wrap(
+            children: <Widget>[
+              ListTile(
+                leading: Icon(Icons.photo_library),
+                title: Text('Pick from Gallery'),
+                onTap: () async {
+                  Navigator.of(context).pop();
+                  // Use FilePicker to select an image from the gallery
+                  print('Picking image from gallery...');
+                  FilePickerResult? result =
+                      await FilePicker.platform.pickFiles(
+                    type: FileType.image,
+                  );
+
+                  if (result != null && result.files.single.path != null) {
+                    setState(() {
+                      _profileImage = File(result.files.single.path!);
+                      _hasImageChanged = true; // Mark image as changed
+                    });
+                    print(
+                        'Image picked from gallery: ${result.files.single.path}');
+                  } else {
+                    print('No image selected.');
+                  }
+                },
+              ),
+              ListTile(
+                leading: Icon(Icons.camera_alt),
+                title: Text('Take Photo'),
+                onTap: () async {
+                  Navigator.of(context).pop();
+                  // Use ImagePicker to capture an image using the camera
+                  print('Opening camera...');
+                  final pickedFile =
+                      await _picker.pickImage(source: ImageSource.camera);
+
+                  if (pickedFile != null) {
+                    setState(() {
+                      _profileImage = File(pickedFile.path);
+                      _hasImageChanged = true; // Mark image as changed
+                    });
+                    print('Image taken from camera: ${pickedFile.path}');
+                  } else {
+                    print('No image captured.');
+                  }
+                },
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Future<void> _uploadProfilePicture() async {
+    if (_profileImage != null) {
+      final url = Uri.parse(
+          'https://rentconnect.vercel.app/updateProfilePicture/$userId');
+      var request = http.MultipartRequest('PATCH', url)
+        ..headers['Authorization'] = 'Bearer ${widget.token}';
+
+      String mimeType =
+          lookupMimeType(_profileImage!.path) ?? 'application/octet-stream';
+      var fileExtension = mimeType.split('/').last;
+
+      request.files.add(
+        await http.MultipartFile.fromPath(
+          'profilePicture',
+          _profileImage!.path,
+          contentType: MediaType('image', fileExtension),
         ),
       );
-    },
-  );
-}
 
+      try {
+        final response = await request.send();
+        final responseBody = await response.stream.bytesToString();
+        print('Response body: $responseBody'); // Debug print
 
+        // Parse the response
+        final jsonResponse = jsonDecode(responseBody);
+        print('Decoded response: $jsonResponse'); // Debug print
 
-Future<void> _uploadProfilePicture() async {
-  if (_profileImage != null) {
-    final url =
-        Uri.parse('https://rentconnect.vercel.app/updateProfilePicture/$userId');
-    var request = http.MultipartRequest('PATCH', url)
-      ..headers['Authorization'] = 'Bearer ${widget.token}';
-
-    String mimeType =
-        lookupMimeType(_profileImage!.path) ?? 'application/octet-stream';
-    var fileExtension = mimeType.split('/').last;
-
-    request.files.add(
-      await http.MultipartFile.fromPath(
-        'profilePicture',
-        _profileImage!.path,
-        contentType: MediaType('image', fileExtension),
-      ),
-    );
-
-    try {
-      final response = await request.send();
-      final responseBody = await response.stream.bytesToString();
-      print('Response body: $responseBody'); // Debug print
-
-      // Parse the response
-      final jsonResponse = jsonDecode(responseBody);
-      print('Decoded response: $jsonResponse'); // Debug print
-
-      // Check the 'message' field
-      if (jsonResponse is Map<String, dynamic> &&
-          jsonResponse.containsKey('message')) {
-        final message = jsonResponse['message'];
-        if (message == 'Profile picture updated successfully') {
-          toastNotification.success('Profile picture updated successfully');
-          _hasImageChanged = false; // Reset the flag after successful upload
+        // Check the 'message' field
+        if (jsonResponse is Map<String, dynamic> &&
+            jsonResponse.containsKey('message')) {
+          final message = jsonResponse['message'];
+          if (message == 'Profile picture updated successfully') {
+            toastNotification.success('Profile picture updated successfully');
+            _hasImageChanged = false; // Reset the flag after successful upload
+          } else {
+            // Use your custom toast notification for errors
+            toastNotification.warn('Failed to upload profile picture');
+          }
         } else {
-          // Use your custom toast notification for errors
-          toastNotification.warn('Failed to upload profile picture');
+          // Handle unexpected response format
+          toastNotification
+              .error('Failed to upload profile picture, unexpected format.');
         }
-      } else {
-        // Handle unexpected response format
-        toastNotification.error('Failed to upload profile picture, unexpected format.');
+      } catch (error) {
+        // Use your custom toast notification for errors
+        toastNotification.error("Error uploading profile picture");
       }
-    } catch (error) {
-      // Use your custom toast notification for errors
-      toastNotification.error("Error uploading profile picture");
     }
   }
-}
-
 
   Future<void> _handleSave() async {
     print('Save button pressed.');
@@ -378,68 +389,83 @@ Future<void> _uploadProfilePicture() async {
     });
   }
 
- @override
-    Widget build(BuildContext context) {
-          return Obx(() => Scaffold(
+  @override
+  Widget build(BuildContext context) {
+    return Obx(() => Scaffold(
           appBar: AppBar(
-            scrolledUnderElevation: 0,
-            backgroundColor: _isDarkMode
-                ? const Color.fromARGB(0, 0, 0, 0)
-                : const Color.fromARGB(0, 241, 212, 212),
-            actions: [
-              
-              Align(
-                alignment: Alignment.topLeft,
-                child: Row(
-                  
-                  children: [
-                  GestureDetector(
-                  onTap: () async {
-                    // Toggle the theme mode
-                    bool isDark = themeController.isDarkMode.value;
-                    themeController.toggleTheme(!isDark);
+  scrolledUnderElevation: 0,
+  backgroundColor: _isDarkMode
+      ? const Color.fromARGB(0, 0, 0, 0)
+      : const Color.fromARGB(0, 241, 212, 212),
+  actions: [
+    Padding(
+      padding: const EdgeInsets.all(8.0),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.start, // Align the children to the start of the row
+        children: [
+          // Lottie animation with dynamic right padding
+          GestureDetector(
+            onTap: () => CustomerSupportModal.openSupportModal(context),
+            child: Container(
+              padding: EdgeInsets.only(right: MediaQuery.of(context).size.width * 0.7), // 10% padding to the right
+              child: Lottie.asset(
+                'assets/icons/cs.json',
+                height: 40,
+                repeat: false,
+              ),
+            ),
+          ),
+          GestureDetector(
+            onTap: () async {
+              // Toggle the theme mode
+              bool isDark = themeController.isDarkMode.value;
+              themeController.toggleTheme(!isDark);
 
-                    // Control Lottie animation
-                    if (isDark) {
-                      await _animationController.animateTo(0, duration: const Duration(milliseconds: 700)); // Light mode
-                    } else {
-                      await _animationController.animateTo(1, duration: const Duration(milliseconds: 700)); // Dark mode
-                    }
+              // Control Lottie animation
+              if (isDark) {
+                await _animationController.animateTo(0,
+                    duration: const Duration(milliseconds: 700)); // Light mode
+              } else {
+                await _animationController.animateTo(1,
+                    duration: const Duration(milliseconds: 700)); // Dark mode
+              }
 
-                    // Delay navigation until the animation finishes
-                    Navigator.pushReplacement(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => NavigationMenu(
-                            token: widget.token,
-                            currentIndex: 4,
-                          ),
-                        ),
-                      );
-                  },
-                  child: Padding(
-                    padding: const EdgeInsets.only(top: 10,right: 15.0),
-                    child: Container(
-                      height: 35,
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(12),
-                        color:themeController.isDarkMode.value? const Color.fromARGB(230, 49, 51, 59): Colors.black),
-                      child: Padding(
-                        padding: const EdgeInsets.all(1.0),
-                        child: Lottie.asset(
-                          'assets/icons/switch2.json',
-                          controller: _animationController,
-                        ),
-                      ),
-                    ),
+              // Delay navigation until the animation finishes
+              Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => NavigationMenu(
+                    token: widget.token,
+                    currentIndex: 4,
                   ),
                 ),
-
-                  ],
+              );
+            },
+            child: Padding(
+              padding: const EdgeInsets.only(top: 10, right: 10.0),
+              child: Container(
+                height: 35,
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(12),
+                  color: themeController.isDarkMode.value
+                      ? const Color.fromARGB(230, 49, 51, 59)
+                      : Colors.black,
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.all(1.0),
+                  child: Lottie.asset(
+                    'assets/icons/switch2.json',
+                    controller: _animationController,
+                  ),
                 ),
               ),
-            ],
+            ),
           ),
+        ],
+      ),
+    ),
+  ],
+),
 
           backgroundColor: themeController.isDarkMode.value
               ? Color.fromARGB(255, 28, 29, 34)
@@ -456,85 +482,92 @@ Future<void> _uploadProfilePicture() async {
                     height: 0,
                   ),
                   GestureDetector(
-                  onTap: () {
-                    if (_profileImageUrl != null) {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => FullscreenImage(imageUrl: _profileImageUrl!),
+                    onTap: () {
+                      if (_profileImageUrl != null) {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) =>
+                                FullscreenImage(imageUrl: _profileImageUrl!),
+                          ),
+                        );
+                      }
+                    },
+                    child: Hero(
+                      tag: _profileImageUrl ??
+                          'default_tag', // Provide a default tag if null
+                      child: Container(
+                        height: 100,
+                        width: 100,
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(100),
+                          color: themeController.isDarkMode.value
+                              ? const Color.fromARGB(255, 57, 56, 66)
+                              : Color.fromARGB(189, 238, 238, 238),
                         ),
-                      );
-                    }
-                  },
-                  child: Hero(
-                    tag: _profileImageUrl ?? 'default_tag', // Provide a default tag if null
-                    child: Container(
-                      height: 100,
-                      width: 100,
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(100),
-                        color: themeController.isDarkMode.value
-                            ? const Color.fromARGB(255, 57, 56, 66)
-                            : Color.fromARGB(189, 238, 238, 238),
-                      ),
-                      child: Padding(
-                        padding: const EdgeInsets.all(4.0),
-                        child: Stack(
-                          alignment: Alignment.center,
-                          children: [
-                            SizedBox(
-                              width: 110,
-                              height: 110,
-                              child: ClipRRect(
-                                borderRadius: BorderRadius.circular(100),
-                                child: _profileImage != null
-                                    ? Image.file(_profileImage!, fit: BoxFit.cover)
-                                    : _profileImageUrl != null
-                                        ? Image.network(
-                                            _profileImageUrl!,
-                                            fit: BoxFit.cover,
-                                          )
-                                        :  Lottie.network("https://lottie.host/175e3a4e-4de1-4e63-9e56-d0d88cfa8ccb/bJoOA5DkNU.json"),
-                              ),
-                            ),
-                            Positioned(
-                            bottom: 1,
-                            right: 1,
-                            child: SizedBox(
-                              height: 25,
-                              width: 25,
-                              child: DecoratedBox(
-                                decoration: BoxDecoration(
-                                  border: Border.all(width: 0.5),
-                                  color: themeController.isDarkMode.value 
-                                      ? Colors.black 
-                                      : const Color.fromARGB(255, 255, 255, 255),
-                                  borderRadius: BorderRadius.circular(9),
+                        child: Padding(
+                          padding: const EdgeInsets.all(4.0),
+                          child: Stack(
+                            alignment: Alignment.center,
+                            children: [
+                              SizedBox(
+                                width: 110,
+                                height: 110,
+                                child: ClipRRect(
+                                  borderRadius: BorderRadius.circular(100),
+                                  child: _profileImage != null
+                                      ? Image.file(_profileImage!,
+                                          fit: BoxFit.cover)
+                                      : _profileImageUrl != null
+                                          ? Image.network(
+                                              _profileImageUrl!,
+                                              fit: BoxFit.cover,
+                                            )
+                                          : Lottie.network(
+                                              "https://lottie.host/175e3a4e-4de1-4e63-9e56-d0d88cfa8ccb/bJoOA5DkNU.json"),
                                 ),
-                                child: Center( // Use Center to align the IconButton in the middle
-                                  child: IconButton(
-                                    padding: EdgeInsets.zero, // Remove padding inside the IconButton
-                                    icon: Icon(
-                                      Icons.camera_alt_rounded,
-                                      color: themeController.isDarkMode.value 
-                                          ? const Color.fromARGB(255, 255, 255, 255) 
-                                          : Colors.black,
-                                      size: 16,
+                              ),
+                              Positioned(
+                                bottom: 1,
+                                right: 1,
+                                child: SizedBox(
+                                  height: 25,
+                                  width: 25,
+                                  child: DecoratedBox(
+                                    decoration: BoxDecoration(
+                                      border: Border.all(width: 0.5),
+                                      color: themeController.isDarkMode.value
+                                          ? Colors.black
+                                          : const Color.fromARGB(
+                                              255, 255, 255, 255),
+                                      borderRadius: BorderRadius.circular(9),
                                     ),
-                                    onPressed: _pickImage,
+                                    child: Center(
+                                      // Use Center to align the IconButton in the middle
+                                      child: IconButton(
+                                        padding: EdgeInsets
+                                            .zero, // Remove padding inside the IconButton
+                                        icon: Icon(
+                                          Icons.camera_alt_rounded,
+                                          color:
+                                              themeController.isDarkMode.value
+                                                  ? const Color.fromARGB(
+                                                      255, 255, 255, 255)
+                                                  : Colors.black,
+                                          size: 16,
+                                        ),
+                                        onPressed: _pickImage,
+                                      ),
+                                    ),
                                   ),
                                 ),
                               ),
-                            ),
+                            ],
                           ),
-
-                          ],
                         ),
                       ),
                     ),
                   ),
-                ),
-
                   const SizedBox(height: 10),
                   Text(
                     '${userDetails?['profile']?['firstName'] ?? email} ${userDetails?['profile']?['lastName'] ?? ''}',
@@ -547,79 +580,103 @@ Future<void> _uploadProfilePicture() async {
                         ),
                   ),
                   if (profileStatus == 'approved')
-                  ShadTooltip(
-                    showDuration:Duration(milliseconds: 1000),
-                    builder: (context) => const Text('Your profile is verified'),
-                    child: DecoratedBox(
-                      decoration: BoxDecoration(
-                        border: Border.all(width: 1, color: themeController.isDarkMode.value?Colors.white: Colors.black),
-                        borderRadius: BorderRadius.circular(10),
-                        color: themeController.isDarkMode.value? const Color.fromARGB(255, 26, 26, 26):Color.fromARGB(255, 245, 245, 245),
-                      ),
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 6.0, vertical: 2.0), // Adds some padding inside the container
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min, // Ensures the row only takes the required space
-                          children: [
-                            const Icon(
-                              Icons.verified,
-                              color: Colors.blue, // Check icon with green color
-                              size: 16.0, // Icon size
-                            ),
-                            const SizedBox(width: 4), // Space between icon and text
-                            Text(
-                              'Verified',
-                              style: TextStyle(
-                                fontFamily: 'manrope',
-                                fontWeight: FontWeight.w700,
-                                color: themeController.isDarkMode.value
-                                    ? const Color.fromARGB(255, 255, 255, 255)
-                                    : const Color.fromARGB(255, 0, 0, 0),
+                    ShadTooltip(
+                      showDuration: Duration(milliseconds: 1000),
+                      builder: (context) =>
+                          const Text('Your profile is verified'),
+                      child: DecoratedBox(
+                        decoration: BoxDecoration(
+                          border: Border.all(
+                              width: 1,
+                              color: themeController.isDarkMode.value
+                                  ? Colors.white
+                                  : Colors.black),
+                          borderRadius: BorderRadius.circular(10),
+                          color: themeController.isDarkMode.value
+                              ? const Color.fromARGB(255, 26, 26, 26)
+                              : Color.fromARGB(255, 245, 245, 245),
+                        ),
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 6.0,
+                              vertical:
+                                  2.0), // Adds some padding inside the container
+                          child: Row(
+                            mainAxisSize: MainAxisSize
+                                .min, // Ensures the row only takes the required space
+                            children: [
+                              const Icon(
+                                Icons.verified,
+                                color:
+                                    Colors.green, // Check icon with green color
+                                size: 16.0, // Icon size
                               ),
-                            ),
-                          ],
+                              const SizedBox(
+                                  width: 4), // Space between icon and text
+                              Text(
+                                'Verified ${userDetails?['role']}',
+                                style: TextStyle(
+                                  fontFamily: 'manrope',
+                                  fontWeight: FontWeight.w700,
+                                  color: themeController.isDarkMode.value
+                                      ? const Color.fromARGB(255, 255, 255, 255)
+                                      : const Color.fromARGB(255, 0, 0, 0),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    )
+                  else
+                    ShadTooltip(
+                      showDuration: Duration(milliseconds: 1000),
+                      builder: (context) =>
+                          const Text('Your profile is not verified yet.'),
+                      child: DecoratedBox(
+                        decoration: BoxDecoration(
+                          border: Border.all(
+                              width: 1,
+                              color: themeController.isDarkMode.value
+                                  ? Colors.white
+                                  : Colors.black),
+                          borderRadius: BorderRadius.circular(10),
+                          color: themeController.isDarkMode.value
+                              ? const Color.fromARGB(255, 26, 26, 26)
+                              : Color.fromARGB(255, 245, 245, 245),
+                        ),
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 6.0,
+                              vertical:
+                                  2.0), // Adds some padding inside the container
+                          child: Row(
+                            mainAxisSize: MainAxisSize
+                                .min, // Ensures the row only takes the required space
+                            children: [
+                              SvgPicture.asset(
+                                'assets/icons/unverified.svg',
+                                color: Color.fromARGB(255, 240, 81,
+                                    32), // Check icon with green color
+                                height: 16.0, // Icon size
+                              ),
+                              const SizedBox(
+                                  width: 4), // Space between icon and text
+                              Text(
+                                'Unverified',
+                                style: TextStyle(
+                                  fontFamily: 'manrope',
+                                  fontWeight: FontWeight.w700,
+                                  color: themeController.isDarkMode.value
+                                      ? const Color.fromARGB(255, 255, 255, 255)
+                                      : const Color.fromARGB(255, 0, 0, 0),
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
                       ),
                     ),
-                  )
-                else
-                  ShadTooltip(
-                    showDuration:Duration(milliseconds: 1000),
-                    builder: (context) => const Text('Your profile is not verified yet.'),
-                    child: DecoratedBox(
-                      decoration: BoxDecoration(
-                        border: Border.all(width: 1, color: themeController.isDarkMode.value?Colors.white: Colors.black),
-                        borderRadius: BorderRadius.circular(10),
-                        color: themeController.isDarkMode.value? const Color.fromARGB(255, 26, 26, 26):Color.fromARGB(255, 245, 245, 245),
-                      ),
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 6.0, vertical: 2.0), // Adds some padding inside the container
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min, // Ensures the row only takes the required space
-                          children: [
-                             SvgPicture.asset(
-                              'assets/icons/unverified.svg',
-                              color: Color.fromARGB(255, 240, 81, 32), // Check icon with green color
-                              height: 16.0, // Icon size
-                            ),
-                            const SizedBox(width: 4), // Space between icon and text
-                            Text(
-                              'Unverified',
-                              style: TextStyle(
-                                fontFamily: 'manrope',
-                                fontWeight: FontWeight.w700,
-                                color: themeController.isDarkMode.value
-                                    ? const Color.fromARGB(255, 255, 255, 255)
-                                    : const Color.fromARGB(255, 0, 0, 0),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
-
-
                   const SizedBox(height: 20),
                   if (_hasImageChanged)
                     SizedBox(
@@ -627,21 +684,26 @@ Future<void> _uploadProfilePicture() async {
                       child: ElevatedButton(
                         onPressed: _handleSave,
                         style: ElevatedButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(vertical: 12.0, horizontal: 17.0), // Add padding for better touch target
+                          padding: const EdgeInsets.symmetric(
+                              vertical: 12.0,
+                              horizontal:
+                                  17.0), // Add padding for better touch target
                           elevation: 0, // Add shadow for depth
                           shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8.0), // Rounded corners
+                            borderRadius:
+                                BorderRadius.circular(8.0), // Rounded corners
                           ),
                           backgroundColor: themeController.isDarkMode.value
-                              ? const Color.fromARGB(146, 77, 245, 181) // Dark background
-                              : const Color.fromARGB(255, 77, 245, 181), // Light background
+                              ? const Color.fromARGB(
+                                  146, 77, 245, 181) // Dark background
+                              : const Color.fromARGB(
+                                  255, 77, 245, 181), // Light background
                         ),
                         child: _isUpdating
                             ? CupertinoActivityIndicator()
                             : Text(
                                 'Save Changes',
                                 style: TextStyle(
-                                  
                                     color: themeController.isDarkMode.value
                                         ? const Color.fromARGB(
                                             255, 255, 255, 255)
@@ -650,145 +712,120 @@ Future<void> _uploadProfilePicture() async {
                       ),
                     ),
                   SizedBox(height: 20),
-                  if (userRole == 'landlord' &&
-                      profileStatus == 'approved') ...[
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                      children: [
-                        DeviceCard1(
-                          title: "Listing",
-                          icon: SvgPicture.asset('assets/icons/listing2.svg',
-                              height: 20,
-                              color: themeController.isDarkMode.value
-                                  ? const Color.fromARGB(255, 0, 0, 0)
-                                  : const Color.fromARGB(255, 255, 255, 255)),
-                          
-                          textColor: themeController.isDarkMode.value
-                              ? Colors.white
-                              : const Color.fromARGB(255, 255, 255, 255),
-                          endIcon: true,
-                          icon2: Icon(Icons.chevron_right_outlined,
-                              size: 20,
-                              color: themeController.isDarkMode.value
-                                  ? const Color.fromARGB(255, 253, 253, 253)
-                                  : const Color.fromARGB(255, 0, 0, 0)),
-                          
-                          onPress: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) =>
-                                    CurrentListingPage(token: widget.token),
-                              ),
-                            );
-                          },
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                    children: [
+                      if (userRole == 'landlord' &&
+                          profileStatus == 'approved') ...[
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                          children: [
+                            DeviceCard1(
+                              title: "Listing",
+                              icon: SvgPicture.asset(
+                                  'assets/icons/listing2.svg',
+                                  height: 20,
+                                  color: themeController.isDarkMode.value
+                                      ? const Color.fromARGB(255, 0, 0, 0)
+                                      : const Color.fromARGB(
+                                          255, 255, 255, 255)),
+                              textColor: themeController.isDarkMode.value
+                                  ? Colors.white
+                                  : const Color.fromARGB(255, 255, 255, 255),
+                              endIcon: true,
+                              icon2: Icon(Icons.chevron_right_outlined,
+                                  size: 20,
+                                  color: themeController.isDarkMode.value
+                                      ? const Color.fromARGB(255, 253, 253, 253)
+                                      : const Color.fromARGB(255, 0, 0, 0)),
+                              onPress: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) =>
+                                        CurrentListingPage(token: widget.token),
+                                  ),
+                                );
+                              },
+                            ),
+                          ],
                         ),
-                       
-                        DeviceCard2(
-                                              icon: Lottie.asset(
-                        'assets/icons/faq.json',
-                        repeat: false,
-                        height: 30,
+                      ],
+                      if (userRole == 'occupant' &&
+                          profileStatus == 'approved') ...[
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            // Adaptable DeviceCard1
+                            Flexible(
+                              child: DeviceCard1(
+                                icon: SvgPicture.asset(
+                                  'assets/icons/occupanthome.svg',
+                                  color: themeController.isDarkMode.value
+                                      ? const Color.fromARGB(255, 0, 0, 0)
+                                      : const Color.fromARGB(
+                                          255, 255, 255, 255),
+                                  height: 20,
+                                  width: 20,
+                                ),
+                                title: "My Home",
+                                textColor: themeController.isDarkMode.value
+                                    ? Colors.white
+                                    : const Color.fromARGB(255, 0, 0, 0),
+                                icon2: Icon(
+                                  Icons.chevron_right_outlined,
+                                  size: 20,
+                                  color: themeController.isDarkMode.value
+                                      ? const Color.fromARGB(213, 253, 253, 253)
+                                      : const Color.fromARGB(146, 0, 0, 0),
+                                ),
+                                onPress: () {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) => OccupantInquiries(
+                                        userId: userId,
+                                        token: widget.token,
+                                      ),
+                                    ),
+                                  );
+                                },
+                              ),
+                            ),
+                            const SizedBox(
+                                width: 10), // Space between the two DeviceCards
+                            // Adaptable DeviceCard2
+                          ],
+                        ),
+                      ],
+                      DeviceCard2(
+                        icon: Lottie.asset(
+                          'assets/icons/faq.json',
+                          repeat: false,
+                          height: 30,
                         ),
                         title: "FAQs",
                         textColor: themeController.isDarkMode.value
-                          ? Colors.black
-                          : Colors.black,
-                                              icon2: Icon(
-                        Icons.chevron_right_outlined,
-                        size: 20,
-                        color: themeController.isDarkMode.value
-                            ? const Color.fromARGB(213, 253, 253, 253)
-                            : const Color.fromARGB(146, 0, 0, 0),
-                                              ),
-                                              onPress: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => Faqs(
+                            ? Colors.black
+                            : Colors.black,
+                        icon2: Icon(
+                          Icons.chevron_right_outlined,
+                          size: 20,
+                          color: themeController.isDarkMode.value
+                              ? const Color.fromARGB(213, 253, 253, 253)
+                              : const Color.fromARGB(146, 0, 0, 0),
+                        ),
+                        onPress: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => Faqs(),
                             ),
-                          ),
-                        );
-                                              },
-                                            ),
-                      ],
-                    ),
-                    
-                  ] else if (userRole == 'occupant' &&
-                      profileStatus == 'approved') ...[
-                    Row(
-  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-  children: [
-    // Adaptable DeviceCard1
-    Flexible(
-      child: DeviceCard1(
-        icon: SvgPicture.asset(
-          'assets/icons/occupanthome.svg',
-          color: themeController.isDarkMode.value
-              ? const Color.fromARGB(255, 0, 0, 0)
-              : const Color.fromARGB(255, 255, 255, 255),
-          height: 20,
-          width: 20,
-        ),
-        title: "My Home",
-        textColor: themeController.isDarkMode.value
-            ? Colors.white
-            : const Color.fromARGB(255, 0, 0, 0),
-        icon2: Icon(
-          Icons.chevron_right_outlined,
-          size: 20,
-          color: themeController.isDarkMode.value
-              ? const Color.fromARGB(213, 253, 253, 253)
-              : const Color.fromARGB(146, 0, 0, 0),
-        ),
-        onPress: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => OccupantInquiries(
-                userId: userId,
-                token: widget.token,
-              ),
-            ),
-          );
-        },
-      ),
-    ),
-    const SizedBox(width: 10), // Space between the two DeviceCards
-    // Adaptable DeviceCard2
-    Flexible(
-      child: DeviceCard2(
-        icon: Lottie.asset(
-          'assets/icons/faq.json',
-          repeat: false,
-          height: 30,
-        ),
-        title: "FAQs",
-        textColor: themeController.isDarkMode.value
-            ? Colors.black
-            : Colors.black,
-        icon2: Icon(
-          Icons.chevron_right_outlined,
-          size: 20,
-          color: themeController.isDarkMode.value
-              ? const Color.fromARGB(213, 253, 253, 253)
-              : const Color.fromARGB(146, 0, 0, 0),
-        ),
-        onPress: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => Faqs(
-              ),
-            ),
-          );
-        },
-      ),
-    ),
-  ],
-),
-
-                  ],
+                          );
+                        },
+                      ),
+                    ],
+                  ),
                   Padding(
                     padding: const EdgeInsets.all(8.0),
                     child: Row(
@@ -818,7 +855,6 @@ Future<void> _uploadProfilePicture() async {
                       );
                     },
                   ),
-                  
                   ProfileMenuWidget(
                     title: "Account Settings",
                     icon: Icons.settings,
@@ -865,11 +901,8 @@ Future<void> _uploadProfilePicture() async {
             ),
           ),
         ));
-  
   }
 }
-
-
 
 class DeviceCard1 extends StatelessWidget {
   DeviceCard1({
@@ -910,7 +943,8 @@ class DeviceCard1 extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.start,
               children: [
                 Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 13),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 8.0, vertical: 13),
                   child: icon,
                 ),
                 // Wrap the text and icon in Flexible to prevent overflow
@@ -924,17 +958,20 @@ class DeviceCard1 extends StatelessWidget {
                       fontSize: 14,
                       fontWeight: FontWeight.w600,
                       fontFamily: 'manrope',
-                      overflow: TextOverflow.ellipsis, // Add ellipsis to avoid overflow
+                      overflow: TextOverflow
+                          .ellipsis, // Add ellipsis to avoid overflow
                     ),
                   ),
                 ),
                 if (icon2 != null)
                   Padding(
-                    padding: const EdgeInsets.only(left: 6.0, right: 2),
+                    padding: const EdgeInsets.only(left: 6.0, right: 6),
                     child: Container(
                       decoration: BoxDecoration(
                         borderRadius: BorderRadius.circular(50),
-                        color: _themeController.isDarkMode.value? const Color.fromARGB(80, 0, 0, 0): const Color.fromARGB(255, 255, 255, 255),
+                        color: _themeController.isDarkMode.value
+                            ? const Color.fromARGB(80, 0, 0, 0)
+                            : const Color.fromARGB(255, 255, 255, 255),
                       ),
                       child: icon2,
                     ),
@@ -947,7 +984,6 @@ class DeviceCard1 extends StatelessWidget {
     );
   }
 }
-
 
 class DeviceCard2 extends StatelessWidget {
   DeviceCard2({
@@ -979,12 +1015,15 @@ class DeviceCard2 extends StatelessWidget {
             padding: const EdgeInsets.fromLTRB(1, 10, 3, 10),
             width: MediaQuery.of(context).size.width * 0.40,
             decoration: BoxDecoration(
-              color: _themeController.isDarkMode.value
-                  ? const Color.fromARGB(0, 42, 43, 51)
-                  : const Color.fromARGB(255, 255, 255, 255),
-              borderRadius: BorderRadius.circular(17),
-              border: Border.all(width: 0.5, color: _themeController.isDarkMode.value? Colors.white:Colors.black)
-            ),
+                color: _themeController.isDarkMode.value
+                    ? const Color.fromARGB(0, 42, 43, 51)
+                    : const Color.fromARGB(255, 255, 255, 255),
+                borderRadius: BorderRadius.circular(17),
+                border: Border.all(
+                    width: 0.5,
+                    color: _themeController.isDarkMode.value
+                        ? Colors.white
+                        : Colors.black)),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.start,
               children: [
@@ -1003,7 +1042,8 @@ class DeviceCard2 extends StatelessWidget {
                       fontSize: 13,
                       fontWeight: FontWeight.w600,
                       fontFamily: 'manrope',
-                      overflow: TextOverflow.ellipsis, // Avoid overflow with ellipsis
+                      overflow:
+                          TextOverflow.ellipsis, // Avoid overflow with ellipsis
                     ),
                   ),
                 ),
@@ -1069,7 +1109,9 @@ class ProfileMenuWidget extends StatelessWidget {
                   height: 40,
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(15),
-                    color: _themeController.isDarkMode.value? const Color.fromARGB(206, 61, 61, 63): const Color.fromARGB(15, 54, 54, 54),
+                    color: _themeController.isDarkMode.value
+                        ? const Color.fromARGB(206, 61, 61, 63)
+                        : const Color.fromARGB(15, 54, 54, 54),
                   ),
                   child: Icon(
                     icon,
@@ -1081,11 +1123,15 @@ class ProfileMenuWidget extends StatelessWidget {
                 const SizedBox(width: 10),
                 Text(
                   title,
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  style: Theme.of(context)
+                      .textTheme
+                      .bodyMedium
+                      ?.copyWith(
                         fontWeight: FontWeight.w500,
                         fontSize: 15,
                         fontFamily: 'manrope',
-                      )?.apply(color: textColor ?? Colors.white),
+                      )
+                      ?.apply(color: textColor ?? Colors.white),
                 ),
               ],
             ),
@@ -1110,4 +1156,3 @@ class ProfileMenuWidget extends StatelessWidget {
     );
   }
 }
-

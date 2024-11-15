@@ -116,12 +116,12 @@ void _handleRegistrationError(String errorMessage) {
 
         if (response.statusCode == 200) {
           _startCooldown(); // Start cooldown on successful resend
-          _showErrorDialog('OTP resent successfully. Please check your email.');
+          toastNotification.success('OTP resent successfully. Please check your email.');
         } else {
-          _showErrorDialog('Error resending OTP. Please try again.');
+          toastNotification.error('Error resending OTP. Please try again.');
         }
       } catch (error) {
-        _showErrorDialog("Error: $error. Please check your connection.");
+        toastNotification.error("Error: $error. Please check your connection.");
       }
     }
   }
@@ -136,8 +136,9 @@ void _showResendOtpDialog(String email) {
         actions: <Widget>[
           CupertinoDialogAction(
             onPressed: () async {
-              Navigator.of(context).pop(); // Close the dialog
-              await _resendOtp(email); // Call the function to resend OTP with email
+              Navigator.of(context).pop();
+              await _resendOtp(email); // Resend OTP and then show OTP dialog
+              _showOtpDialog(email); // Show OTP dialog for verification
             },
             isDefaultAction: true,
             child: const Text('Resend OTP'),
@@ -155,72 +156,7 @@ void _showResendOtpDialog(String email) {
 }
 
 
-void _showEmailExistsDialog() {
-  showCupertinoDialog(
-    context: context,
-    builder: (context) {
-      return CupertinoAlertDialog(
-        title: const Text('Email Exists'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min, // Ensure the column size is minimized
-          children: [
-            Container(
-              width: 100,
-              height: 100,
-              child: rive.RiveAnimation.asset(
-                "assets/flares/alert_icon.riv", // The correct Rive file path
-                animations: ['show'],    // The animation name in the Rive file
-              ),
-            ),
-            const SizedBox(height: 16), // Add some space between the animation and the text
-            const Text('This email is already registered. Would you like to go to the login page?'),
-          ],
-        ),
-        actions: <Widget>[
-          CupertinoDialogAction(
-            onPressed: () {
-              Navigator.of(context).pushReplacement(
-                MaterialPageRoute(builder: (context) => LoginPage()),
-              ); // Navigate to login page
-            },
-            isDefaultAction: true,
-            child: const Text('Go to Login'),
-          ),
-          CupertinoDialogAction(
-            onPressed: () {
-              Navigator.of(context).pop(); // Close the dialog
-            },
-            child: const Text('Cancel'),
-          ),
-        ],
-      );
-    },
-  );
-}
-
-
-  void _showErrorDialog(String message) {
-    showCupertinoDialog(
-      context: context,
-      builder: (context) {
-        return CupertinoAlertDialog(
-          title: const Text('Error'),
-          content: Text(message),
-          actions: <Widget>[
-            CupertinoDialogAction(
-              onPressed: () {
-                Navigator.of(context).pop(); // Close the dialog
-              },
-              isDefaultAction: true,
-              child: const Text('OK'),
-            ),
-          ],
-        );
-      },
-    );
-  }
-
-  // Method to show OTP dialog
+ // Method to show OTP dialog
 void _showOtpDialog(String email) {
   List<TextEditingController> otpControllers = List.generate(4, (_) => TextEditingController());
   String hash = ""; // Generate or retrieve hash if needed
@@ -303,12 +239,12 @@ void _showOtpDialog(String email) {
                   if (_isCooldown)
                     Text('Please wait ${(_secondsRemaining ~/ 60)}:${(_secondsRemaining % 60).toString().padLeft(2, '0')} before requesting again.'),
                   if (!_isCooldown)
-  CupertinoButton(
-    child: const Text('Resend OTP'),
-    onPressed: () async {
-      await _resendOtp(email); // Call the resend OTP function with the email
-    },
-  ),
+            CupertinoButton(
+              child: const Text('Resend OTP'),
+              onPressed: () async {
+                await _resendOtp(email); // Call the resend OTP function with the email
+              },
+            ),
                 ],
               ),
               actions: <Widget>[
@@ -349,6 +285,73 @@ void _showOtpDialog(String email) {
   );
 }
 
+
+void _showEmailExistsDialog() {
+  showCupertinoDialog(
+    context: context,
+    builder: (context) {
+      return CupertinoAlertDialog(
+        title: const Text('Email Exists'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min, // Ensure the column size is minimized
+          children: [
+            Container(
+              width: 100,
+              height: 100,
+              child: rive.RiveAnimation.asset(
+                "assets/flares/alert_icon.riv", // The correct Rive file path
+                animations: ['show'],    // The animation name in the Rive file
+              ),
+            ),
+            const SizedBox(height: 16), // Add some space between the animation and the text
+            const Text('This email is already registered. Would you like to go to the login page?'),
+          ],
+        ),
+        actions: <Widget>[
+          CupertinoDialogAction(
+            onPressed: () {
+              Navigator.of(context).pushReplacement(
+                MaterialPageRoute(builder: (context) => LoginPage()),
+              ); // Navigate to login page
+            },
+            isDefaultAction: true,
+            child: const Text('Go to Login'),
+          ),
+          CupertinoDialogAction(
+            onPressed: () {
+              Navigator.of(context).pop(); // Close the dialog
+            },
+            child: const Text('Cancel'),
+          ),
+        ],
+      );
+    },
+  );
+}
+
+
+  void _showErrorDialog(String message) {
+    showCupertinoDialog(
+      context: context,
+      builder: (context) {
+        return CupertinoAlertDialog(
+          title: const Text('Error'),
+          content: Text(message),
+          actions: <Widget>[
+            CupertinoDialogAction(
+              onPressed: () {
+                Navigator.of(context).pop(); // Close the dialog
+              },
+              isDefaultAction: true,
+              child: const Text('OK'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+ 
 void registerUser() async {
   // Check if terms and conditions checkbox is checked
   if (!isChecked) {
@@ -512,7 +515,7 @@ Future<void> _showSuccessDialog() async {
 bool isChecked = false;
 
 
-   @override
+@override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
