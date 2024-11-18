@@ -1,8 +1,8 @@
 // ignore_for_file: prefer_interpolation_to_compose_strings, prefer_const_declarations
 
 //final url = 'https://rentconnect-backend-nodejs.onrender.com/';
-final url = 'https://rentconnect.vercel.app/';
-//final url = 'http://192.168.1.26:3000/'; 
+//final url = 'https://rentconnect.vercel.app/';
+final url = 'http://192.168.1.115:3000/'; 
 //final url = 'http://localhost:3000/'; 
 
 final registration = url + "registration";

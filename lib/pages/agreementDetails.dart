@@ -1,3 +1,6 @@
+import 'dart:ui';
+
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:http/http.dart' as http;
@@ -31,7 +34,7 @@ class _AgreementDetailsState extends State<AgreementDetails> {
   }
 
   Future<void> fetchAgreementDetails() async {
-    final String apiUrl = 'https://rentconnect.vercel.app/rental-agreement/inquiry/${widget.inquiryId}';
+    final String apiUrl = 'http://192.168.1.115:3000/rental-agreement/inquiry/${widget.inquiryId}';
     print('Fetching agreement details from: $apiUrl'); // Debugging statement
 
     try {
@@ -86,7 +89,7 @@ class _AgreementDetailsState extends State<AgreementDetails> {
         print('Fetching landlord details for ID: $landlordId'); // Debug log
 
         final landlordResponse = await http.get(
-          Uri.parse('https://rentconnect.vercel.app/user/$landlordId'), // Correct URL
+          Uri.parse('http://192.168.1.115:3000/user/$landlordId'), // Correct URL
         );
 
         if (landlordResponse.statusCode == 200) {
@@ -108,7 +111,7 @@ class _AgreementDetailsState extends State<AgreementDetails> {
         print('Fetching occupant details for ID: $occupantId'); // Debug log
 
         final occupantResponse = await http.get(
-          Uri.parse('https://rentconnect.vercel.app/user/$occupantId'), // Correct URL
+          Uri.parse('http://192.168.1.115:3000/user/$occupantId'), // Correct URL
         );
 
         if (occupantResponse.statusCode == 200) {
@@ -141,7 +144,22 @@ Widget build(BuildContext context) {
       appBar: AppBar(
         title: const Text('Rental Agreement Details'),
       ),
-      body: const Center(child: CircularProgressIndicator()),
+      body: Center(
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(12), // 5 radius for rounded corners
+            child: BackdropFilter(
+              filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10), // Blur effect
+              child: Container(
+                width: 100, // Adjust size as needed
+                height: 100,
+                color:_themeController.isDarkMode.value? Colors.white.withOpacity(0.2) : Colors.grey.withOpacity(0.2), // Frosted glass effect
+                child: Center(
+                  child: CupertinoActivityIndicator(color: _themeController.isDarkMode.value? Colors.white : Colors.black), // Your indicator
+                ),
+              ),
+            ),
+          ),
+        )
     );
   }
 

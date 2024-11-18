@@ -73,7 +73,7 @@ class _TrendPageState extends State<TrendPage> {
   }
 
   Future<void> fetchMonthlyOccupancyData() async {
-    final response = await http.get(Uri.parse("https://rentconnect.vercel.app/trends/monthly-occupancy"));
+    final response = await http.get(Uri.parse("http://192.168.1.115:3000/trends/monthly-occupancy"));
     if (response.statusCode == 200) {
       final List<dynamic> data = json.decode(response.body)['monthlyOccupancyData'];
       setState(() {
@@ -98,7 +98,7 @@ class _TrendPageState extends State<TrendPage> {
   }
 
   Future<void> fetchUserProfileStatus() async {
-    final url = Uri.parse('https://rentconnect.vercel.app/profile/checkProfileCompletion/$userId');
+    final url = Uri.parse('http://192.168.1.115:3000/profile/checkProfileCompletion/$userId');
     try {
       final response = await http.get(
         url,

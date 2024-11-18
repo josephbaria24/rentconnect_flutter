@@ -10,7 +10,7 @@ class BookmarkProvider extends ChangeNotifier {
   List<String> bookmarkedPropertyIds = [];
 
   Future<void> bookmarkProperty(BuildContext context, String propertyId, String token) async {
-    final url = Uri.parse('https://rentconnect.vercel.app/addBookmark');
+    final url = Uri.parse('http://192.168.1.115:3000/addBookmark');
     final Map<String, dynamic> jwtDecodedToken = JwtDecoder.decode(token);
     String userId = jwtDecodedToken['_id']?.toString() ?? 'Unknown user ID';
 
@@ -20,7 +20,7 @@ class BookmarkProvider extends ChangeNotifier {
     try {
       if (bookmarkedPropertyIds.contains(propertyId)) {
         // If already bookmarked, remove it
-        final removeUrl = Uri.parse('https://rentconnect.vercel.app/removeBookmark');
+        final removeUrl = Uri.parse('http://192.168.1.115:3000/removeBookmark');
         await http.post(removeUrl,
             headers: {
               'Authorization': 'Bearer $token',

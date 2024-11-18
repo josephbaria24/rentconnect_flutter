@@ -55,7 +55,7 @@ class _SearchResultPageState extends State<SearchResultPage> {
   Future<List<dynamic>> fetchRooms(String propertyId) async {
     try {
       final response = await http.get(Uri.parse(
-          'https://rentconnect.vercel.app/rooms/properties/$propertyId/rooms'));
+          'http://192.168.1.115:3000/rooms/properties/$propertyId/rooms'));
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         if (data['status']) {
@@ -131,7 +131,7 @@ class _SearchResultPageState extends State<SearchResultPage> {
                   final property = widget.properties[index];
                   final imageUrl = property.photo.startsWith('http')
                       ? property.photo
-                      : 'https://rentconnect.vercel.app/${property.photo}';
+                      : 'http://192.168.1.115:3000/${property.photo}';
         
                   return FutureBuilder<List<dynamic>>(
                     future: fetchRooms(property.id),

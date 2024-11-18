@@ -42,7 +42,7 @@ class _RoommatesWidgetState extends State<RoommatesWidget> {
       ..addAll(List<String>.from(widget.roomDetails['occupantNonUsers']));
     
     // Fetch occupant details using IDs
-    final response = await http.get(Uri.parse('https://rentconnect.vercel.app/occupant/getAll'));
+    final response = await http.get(Uri.parse('http://192.168.1.115:3000/occupant/getAll'));
 
     if (response.statusCode == 200) {
       final data = json.decode(response.body);
@@ -63,7 +63,7 @@ class _RoommatesWidgetState extends State<RoommatesWidget> {
 
 Future<void> _addOccupant(String name, String gender, int age, String contactNumber, String emergencyNumber) async {
   final response = await http.post(
-    Uri.parse('https://rentconnect.vercel.app/occupant/create/room/${widget.roomDetails["_id"]}'),
+    Uri.parse('http://192.168.1.115:3000/occupant/create/room/${widget.roomDetails["_id"]}'),
     headers: {'Content-Type': 'application/json'},
     body: json.encode({
       'name': name,
@@ -96,7 +96,7 @@ Future<void> _addOccupant(String name, String gender, int age, String contactNum
 
   Future<void> _updateOccupant(String id, String newName) async {
     final response = await http.put(
-      Uri.parse('https://rentconnect.vercel.app/occupant/update/$id'),
+      Uri.parse('http://192.168.1.115:3000/occupant/update/$id'),
       headers: {'Content-Type': 'application/json'},
       body: json.encode({'name': newName}),
     );
@@ -111,7 +111,7 @@ Future<void> _addOccupant(String name, String gender, int age, String contactNum
 
   Future<void> _deleteOccupant(String id) async {
     final response = await http.delete(
-      Uri.parse('https://rentconnect.vercel.app/occupant/delete/$id'),
+      Uri.parse('http://192.168.1.115:3000/occupant/delete/$id'),
     );
 
     if (response.statusCode == 200) {

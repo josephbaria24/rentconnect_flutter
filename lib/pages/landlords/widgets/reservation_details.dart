@@ -35,7 +35,7 @@ class _ReservationDetailsState extends State<ReservationDetails> {
   Future<String?> fetchProofOfReservation(String roomId) async {
     try {
     // Example API call to fetch payment details
-    var response = await http.get(Uri.parse('https://rentconnect.vercel.app/payment/room/$roomId/proofOfReservation'));
+    var response = await http.get(Uri.parse('http://192.168.1.115:3000/payment/room/$roomId/proofOfReservation'));
     if (response.statusCode == 200) {
       var data = jsonDecode(response.body);
       return data['proofOfReservation']; // Ensure the key matches your backend response
@@ -51,13 +51,13 @@ class _ReservationDetailsState extends State<ReservationDetails> {
   String? selectedUserId; 
 
 Future<void> markRoomAsOccupied(String roomId) async {
-  if (widget.selectedUserId != null) {
+  if (widget.room['reservationInquirers'][0] != null) {
     try {
       final response = await http.patch(
-        Uri.parse('https://rentconnect.vercel.app/rooms/$roomId/occupy'),
+        Uri.parse('http://192.168.1.115:3000/rooms/$roomId/occupy'),
         headers: {'Content-Type': 'application/json'},
         body: json.encode({
-          'userId': widget.selectedUserId, // Pass the userId from approved inquiry
+          'userId': widget.room['reservationInquirers'][0], // Pass the userId from approved inquiry
         }),
       );
 

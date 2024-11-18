@@ -74,7 +74,7 @@ class _PropertyDetailsWidgetState extends State<PropertyDetailsWidget> {
 
   Future<Map<String, dynamic>?> fetchUserProfile(String? userId, String token) async {
     if (userId == null) return null;
-    final url = Uri.parse('https://rentconnect.vercel.app/user/$userId');
+    final url = Uri.parse('http://192.168.1.115:3000/user/$userId');
     try {
       final response = await http.get(url, headers: {'Authorization': 'Bearer $token'});
       if (response.statusCode == 200) {

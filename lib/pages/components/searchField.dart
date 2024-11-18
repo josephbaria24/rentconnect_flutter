@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:get/get.dart';
 import 'package:rentcon/theme_controller.dart';
 
@@ -69,25 +70,23 @@ class SearchFieldWidget extends StatelessWidget {
                       padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 7),
                       child: Container(
                         decoration: BoxDecoration(
-                          color: Colors.amber,
-                          borderRadius: BorderRadius.circular(100)
+                          color: const Color.fromARGB(0, 255, 193, 7),
+                          borderRadius: BorderRadius.circular(25)
                         ),
                         child: Padding(
-                          padding: const EdgeInsets.all(7.0),
-                          child: Image.asset(
-                            'assets/icons/search.png',
+                          padding: const EdgeInsets.all(6.0),
+                          child: SvgPicture.asset(
+                            'assets/icons/search22.svg',
                             color: _themeController.isDarkMode.value
-                                ? Colors.black
-                                : Colors.black,
-                            width: 13.0,
-                            height: 14.0,
+                                ? Colors.white
+                                : Colors.black
                           ),
                         ),
                       ),
                     ),
                   ),
                   border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(25),
+                    borderRadius: BorderRadius.circular(20),
                     borderSide: BorderSide.none,
                   ),
                 ),

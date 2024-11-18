@@ -98,7 +98,7 @@ import 'package:http/http.dart' as http;
   //     try {
   //       // Make an HTTP request to update the property details in the database
   //       final response = await http.put(
-  //         Uri.parse('https://rentconnect.vercel.app/properties/${widget.propertyId}'), // Edit API endpoint
+  //         Uri.parse('http://192.168.1.115:3000/properties/${widget.propertyId}'), // Edit API endpoint
   //         headers: {
   //           'Content-Type': 'application/json',
   //           // Add any authorization headers if needed
@@ -443,7 +443,7 @@ Future<void> _submitForm() async {
 
     try {
       final response = await http.put(
-        Uri.parse('https://rentconnect.vercel.app/properties/${widget.propertyId}'), // Edit API endpoint
+        Uri.parse('http://192.168.1.115:3000/properties/${widget.propertyId}'), // Edit API endpoint
         headers: {
           'Content-Type': 'application/json',
         },

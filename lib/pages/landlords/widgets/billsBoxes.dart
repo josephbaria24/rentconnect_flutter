@@ -1,6 +1,7 @@
 // ignore_for_file: prefer_const_constructors, no_leading_underscores_for_local_identifiers, sort_child_properties_last
 
 import 'dart:convert';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -14,14 +15,19 @@ import 'package:shadcn_ui/shadcn_ui.dart';
 
 class Billsboxes extends StatefulWidget {
   final List<dynamic>? inquiries;
+  final String token;
+  final String userID;
 
   const Billsboxes({
     required this.inquiries,
+    required this.token,
+    required this.userID
   });
 
   @override
   State<Billsboxes> createState() => _BillsboxesState();
 }
+
 
 class _BillsboxesState extends State<Billsboxes> {
   bool _isLoading = false;
@@ -33,6 +39,7 @@ class _BillsboxesState extends State<Billsboxes> {
     'internet': [],
   }; // Separate lists for each bill type
     late ToastNotification toastNotification;
+  Map<String, dynamic>? userDetails;
 
   String _dueDate = ''; // Shared dueDate for all bill types
 @override
@@ -42,8 +49,12 @@ class _BillsboxesState extends State<Billsboxes> {
     toastNotification = ToastNotification(context);
   }
 
+
+
+
   @override
   Widget build(BuildContext context) {
+    print('userProfile ${widget.inquiries![0]['userId']}');
     return Padding(
       padding: const EdgeInsets.all(0.0),
       child: Column(
@@ -79,7 +90,7 @@ class _BillsboxesState extends State<Billsboxes> {
                     Text(
                       'Due Date: ',
                       style: TextStyle(
-                        fontWeight: FontWeight.w600,
+                        fontWeight: FontWeight.w600, 
                         fontSize: 13,
                         color:_themeController.isDarkMode.value?Colors.white: Colors.black,
                       ),
@@ -386,7 +397,7 @@ void _submitAllBills() async {
     final inquiryId = widget.inquiries!.first['_id'];
 
     final response = await http.post(
-      Uri.parse('https://rentconnect.vercel.app/inquiries/$inquiryId/add'),
+      Uri.parse('http://192.168.1.115:3000/inquiries/$inquiryId/add'),
       headers: {
         'Content-Type': 'application/json',
       },
@@ -423,7 +434,7 @@ void _submitAllBills() async {
 
 Future<dynamic> fetchExistingBill(String billId) async {
   final response = await http.get(
-    Uri.parse('https://rentconnect.vercel.app/inquiries/bills/getBillId/$billId'),
+    Uri.parse('http://192.168.1.115:3000/inquiries/bills/getBillId/$billId'),
   );
 
   print('Response status: ${response.statusCode}');
@@ -464,7 +475,7 @@ void _showExistingBillDialog(BuildContext context, String billId) {
                   Navigator.push(
                     context,
                     CupertinoPageRoute(
-                      builder: (context) => ViewBillPage(billId: billId), // Pass the full bill details
+                      builder: (context) => ViewBillPage(billId: billId, userID: widget.userID, token: widget.token,), // Pass the full bill details
                     ),
                   );
                 },

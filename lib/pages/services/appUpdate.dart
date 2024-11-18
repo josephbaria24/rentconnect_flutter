@@ -13,7 +13,7 @@ class UpdateChecker {
     String currentVersion = packageInfo.version;
 
     // Fetch the latest version info from the Node.js backend
-    final response = await http.get(Uri.parse('https://rentconnect.vercel.app/download/version'));
+    final response = await http.get(Uri.parse('http://192.168.1.115:3000/download/version'));
     
     if (response.statusCode == 200) {
       final data = json.decode(response.body);

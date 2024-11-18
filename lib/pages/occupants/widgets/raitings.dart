@@ -36,7 +36,7 @@ class _RatingWidgetState extends State<RatingWidget> {
   }
 
   Future<void> _fetchExistingRating() async {
-    final url = 'https://rentconnect.vercel.app/getRating/${widget.propertyId}/${widget.userId}'; // Assuming you have a route to get a user's rating for a property
+    final url = 'http://192.168.1.115:3000/getRating/${widget.propertyId}/${widget.userId}'; // Assuming you have a route to get a user's rating for a property
 
     final response = await http.get(Uri.parse(url));
 
@@ -57,7 +57,7 @@ class _RatingWidgetState extends State<RatingWidget> {
   }
 
   Future<void> _submitRating() async {
-    final url = 'https://rentconnect.vercel.app/rateProperty/${widget.propertyId}';
+    final url = 'http://192.168.1.115:3000/rateProperty/${widget.propertyId}';
 
     final response = await http.post(
       Uri.parse(url),
@@ -78,7 +78,7 @@ class _RatingWidgetState extends State<RatingWidget> {
   }
 
   Future<void> _updateRating() async {
-    final url = 'https://rentconnect.vercel.app/updateRating/${widget.propertyId}/${_existingRating!['_id']}'; // Update rating route
+    final url = 'http://192.168.1.115:3000/updateRating/${widget.propertyId}/${_existingRating!['_id']}'; // Update rating route
 
     final response = await http.put(
       Uri.parse(url),
@@ -98,7 +98,7 @@ class _RatingWidgetState extends State<RatingWidget> {
   }
 
   Future<void> _deleteRating() async {
-    final url = 'https://rentconnect.vercel.app/deleteRating/${widget.propertyId}/${_existingRating!['_id']}'; // Delete rating route
+    final url = 'http://192.168.1.115:3000/deleteRating/${widget.propertyId}/${_existingRating!['_id']}'; // Delete rating route
 
     final response = await http.delete(Uri.parse(url));
 

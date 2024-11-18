@@ -1,6 +1,8 @@
 // ignore_for_file: no_leading_underscores_for_local_identifiers, avoid_print
 
 import 'dart:convert';
+import 'dart:ui';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:get/get.dart';
@@ -64,7 +66,7 @@ class _MessagePageState extends State<MessagePage> {
   Future<void> fetchUsers() async {
     try {
       final response = await http.get(
-        Uri.parse('https://rentconnect.vercel.app/users-with-profiles'),
+        Uri.parse('http://192.168.1.115:3000/users-with-profiles'),
         headers: {'Authorization': 'Bearer ${widget.token}'},
       );
 
@@ -89,7 +91,7 @@ class _MessagePageState extends State<MessagePage> {
 Future<void> fetchConversations({bool refresh = false}) async {
   try {
     final response = await http.get(
-      Uri.parse('https://rentconnect.vercel.app/conversations/$userId'),
+      Uri.parse('http://192.168.1.115:3000/conversations/$userId'),
       headers: {'Authorization': 'Bearer ${widget.token}'},
     );
 
@@ -173,7 +175,22 @@ void _showUserSelectionDialog() {
               ],
             ),
             content: isLoadingUsers
-                ? Center(child: CircularProgressIndicator())
+                ? Center(
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(12), // 5 radius for rounded corners
+            child: BackdropFilter(
+              filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10), // Blur effect
+              child: Container(
+                width: 100, // Adjust size as needed
+                height: 100,
+                color:themeController.isDarkMode.value? Colors.white.withOpacity(0.2) : Colors.grey.withOpacity(0.2), // Frosted glass effect
+                child: Center(
+                  child: CupertinoActivityIndicator(color: themeController.isDarkMode.value? Colors.white : Colors.black), // Your indicator
+                ),
+              ),
+            ),
+          ),
+        )
                 : SizedBox(
                     height: 300,
                     width: 300,
@@ -271,7 +288,22 @@ Widget build(BuildContext context) {
     body: Consumer<ConversationProvider>(
       builder: (context, provider, child) {
         if (provider.isLoading) {
-          return Center(child: CircularProgressIndicator());
+          return Center(
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(12), // 5 radius for rounded corners
+            child: BackdropFilter(
+              filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10), // Blur effect
+              child: Container(
+                width: 100, // Adjust size as needed
+                height: 100,
+                color:themeController.isDarkMode.value? Colors.white.withOpacity(0.2) : Colors.grey.withOpacity(0.2), // Frosted glass effect
+                child: Center(
+                  child: CupertinoActivityIndicator(color: themeController.isDarkMode.value? Colors.white : Colors.black), // Your indicator
+                ),
+              ),
+            ),
+          ),
+        );
         }
 
         final filteredConversations = provider.conversations; // Assuming you have a list of conversations in your provider
@@ -540,7 +572,7 @@ Widget _buildMessageTile({
 Future<void> _markMessagesAsUnread(String recipientId) async {
   try {
     final response = await http.patch(
-      Uri.parse('https://rentconnect.vercel.app/messages/markAsUnread'), // Ensure the URL is correct
+      Uri.parse('http://192.168.1.115:3000/messages/markAsUnread'), // Ensure the URL is correct
       headers: {
         'Authorization': 'Bearer ${widget.token}',
         'Content-Type': 'application/json',
@@ -570,7 +602,7 @@ Future<void> _markMessagesAsUnread(String recipientId) async {
   Future<void> _markConversationAsRead(String recipientId) async {
     try {
       final response = await http.patch(
-        Uri.parse('https://rentconnect.vercel.app/messages/markAsRead'),
+        Uri.parse('http://192.168.1.115:3000/messages/markAsRead'),
         headers: {
           'Authorization': 'Bearer ${widget.token}',
           'Content-Type': 'application/json',
@@ -595,7 +627,7 @@ Future<void> _deleteConversation(String recipientId) async {
     print('Attempting to delete conversation between $userId and $recipientId');
 
     final response = await http.patch(
-      Uri.parse('https://rentconnect.vercel.app/messages/markAsDeleted'),
+      Uri.parse('http://192.168.1.115:3000/messages/markAsDeleted'),
       headers: {
         'Authorization': 'Bearer ${widget.token}',
         'Content-Type': 'application/json',

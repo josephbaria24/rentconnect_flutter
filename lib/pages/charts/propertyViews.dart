@@ -24,7 +24,7 @@ class _PropertyDetailsBoxState extends State<PropertyDetailsBox> {
 
   
   Future<Map<String, int>> fetchPropertyViews(String propertyId) async {
-    final String url = 'https://rentconnect.vercel.app/properties/$propertyId/views';
+    final String url = 'http://192.168.1.115:3000/properties/$propertyId/views';
     
     try {
       final response = await http.get(Uri.parse(url));

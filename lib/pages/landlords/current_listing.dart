@@ -143,7 +143,7 @@ class _CurrentListingPageState extends State<CurrentListingPage> {
 
 
 Future<String?> getProofOfPaymentForSelectedMonth(String roomId, String token, String selectedMonth) async {
-  final String apiUrl = 'https://rentconnect.vercel.app/payment/room/$roomId/monthlyPayments';
+  final String apiUrl = 'http://192.168.1.115:3000/payment/room/$roomId/monthlyPayments';
 
   try {
     print('API URL: $apiUrl');
@@ -227,7 +227,7 @@ final List<String> rejectionReasons = [
 
 Future<int?> getReservationDuration(String roomId, String token) async {
   final response = await http.get(
-    Uri.parse('https://rentconnect.vercel.app/inquiries/rooms/$roomId'),
+    Uri.parse('http://192.168.1.115:3000/inquiries/rooms/$roomId'),
     headers: {
       'Authorization': 'Bearer $token', // If you're using token-based authentication
       'Content-Type': 'application/json',
@@ -256,15 +256,21 @@ Future<int?> getReservationDuration(String roomId, String token) async {
 
 
 
-
+String getUserIdFromInquiries(List<dynamic> inquiries) {
+  if (inquiries.isNotEmpty) {
+    return inquiries[0]['userId']; // Get the userId from the first inquiry
+  }
+  return ''; // Return an empty string if the list is empty
+}
  
 
 void showRoomDetailBottomSheet(BuildContext context, dynamic room, Map<String, dynamic> userProfiles, List<dynamic> inquiries, {String? selectedMonth, int currentMonthIndex = 0, int initialTabIndex = 0}) async {
+   
    Future<void> markAsAvailable() async {
     try {
       // Replace with your actual backend API endpoint
       final response = await http.put(
-        Uri.parse('https://rentconnect.vercel.app/rooms/room/${room['_id']}/markAsAvailable'),
+        Uri.parse('http://192.168.1.115:3000/rooms/room/${room['_id']}/markAsAvailable'),
         headers: {'Authorization': 'Bearer ${widget.token}'},
       );
 
@@ -286,10 +292,12 @@ void showRoomDetailBottomSheet(BuildContext context, dynamic room, Map<String, d
 
   ScrollController tab1ScrollController = ScrollController(); // ScrollController for Tab 1
   ScrollController tab2ScrollController = ScrollController(); // ScrollController for Tab 2
-    print('UserId from inquiry: $userId'); // Print the userId for debugging
-      print('RoomId from inquiry: ${room['_id']}');
+    // print('Userprofile: $userProfiles'); // Print the userId for debugging
+    //   print('RoomId from inquiry: ${room['_id']}');
   int? reservationDuration = await getReservationDuration(room['_id'], widget.token);
-  print("inquiry $inquiries");
+  print("inquiryyyt $inquiries[0]['userId']");
+  print("inqasda: ${getUserIdFromInquiries(inquiries)}");
+  print("propertyinq: ${propertyInquiries[room['_id']]}");
   showModalBottomSheet(
     backgroundColor: _themeController.isDarkMode.value? const Color.fromARGB(255, 43, 45, 56): Colors.white,
     context: context,
@@ -701,7 +709,9 @@ void showRoomDetailBottomSheet(BuildContext context, dynamic room, Map<String, d
                                 ),
                                 height: 2,),
                                 Billsboxes(
-                                  inquiries: inquiries
+                                  inquiries: inquiries,
+                                  token: widget.token,
+                                  userID: getUserIdFromInquiries(inquiries),
 
                                 )
                               ],
@@ -733,7 +743,7 @@ void showRoomDetailBottomSheet(BuildContext context, dynamic room, Map<String, d
   Future<void> updateInquiryStatus(
       String? inquiryId, String? newStatus, String? token) async {
     final url = Uri.parse(
-        'https://rentconnect.vercel.app/inquiries/update/$inquiryId'); // Match your backend route
+        'http://192.168.1.115:3000/inquiries/update/$inquiryId'); // Match your backend route
 
     try {
       final response = await http.patch(
@@ -773,7 +783,7 @@ Future<void> updateInquiryStatusAndRoom(
     String token,
     int? reservationDuration,
 ) async {
-    final url = 'https://rentconnect.vercel.app/inquiries/update/$inquiryId'; // Update inquiry status
+    final url = 'http://192.168.1.115:3000/inquiries/update/$inquiryId'; // Update inquiry status
     try {
         final response = await http.patch(
             Uri.parse(url),
@@ -793,7 +803,7 @@ Future<void> updateInquiryStatusAndRoom(
         if (response.statusCode == 200) {
             // Get the occupant's email
             final emailResponse = await http.get(
-                Uri.parse('https://rentconnect.vercel.app/inquiries/$inquiryId/email'),
+                Uri.parse('http://192.168.1.115:3000/inquiries/$inquiryId/email'),
                 headers: {
                     'Authorization': 'Bearer $token',
                     'Content-Type': 'application/json',
@@ -824,7 +834,7 @@ Future<void> updateInquiryStatusAndRoom(
 
 
 Future<void> _sendOccupantNotificationEmail(String occupantEmail, String message, String userId) async {
-    final emailServiceUrl = 'https://rentconnect.vercel.app/notification/create'; // Endpoint to send notifications
+    final emailServiceUrl = 'http://192.168.1.115:3000/notification/create'; // Endpoint to send notifications
     try {
         final response = await http.post(
             Uri.parse(emailServiceUrl),
@@ -858,7 +868,7 @@ Future<void> rejectAndDeleteInquiry(String inquiryId, String token, String reaso
   try {
     // First, call your API to reject the inquiry and send the reason
     final response = await http.patch(
-      Uri.parse('https://rentconnect.vercel.app/inquiries/reject/$inquiryId'), // Update the endpoint
+      Uri.parse('http://192.168.1.115:3000/inquiries/reject/$inquiryId'), // Update the endpoint
       headers: {
         'Authorization': 'Bearer $token',
         'Content-Type': 'application/json',
@@ -870,10 +880,14 @@ Future<void> rejectAndDeleteInquiry(String inquiryId, String token, String reaso
 
     if (response.statusCode == 200) {
       print('Inquiry rejected successfully.');
+      toastNotification.success('Inquiry rejected successfully.');
+      setState(() {
+        fetchRoomInquiries(roomId);
+      });
 
       // Get the inquiry details, including userId and occupant's email
       final inquiryResponse = await http.get(
-        Uri.parse('https://rentconnect.vercel.app/inquiries/$inquiryId'), // Update the endpoint to get inquiry details
+        Uri.parse('http://192.168.1.115:3000/inquiries/$inquiryId'), // Update the endpoint to get inquiry details
         headers: {
           'Authorization': 'Bearer $token',
           'Content-Type': 'application/json',
@@ -903,7 +917,7 @@ Future<void> rejectAndDeleteInquiry(String inquiryId, String token, String reaso
 
 
   Future<bool> deleteProperty(String propertyId) async {
-    final response = await http.delete(Uri.parse('https://rentconnect.vercel.app/deleteProperty/$propertyId'));
+    final response = await http.delete(Uri.parse('http://192.168.1.115:3000/deleteProperty/$propertyId'));
 
     if (response.statusCode == 200) {
       // Successfully deleted the property
@@ -1041,7 +1055,7 @@ Future<void> _confirmDeleteRoom(BuildContext context, String roomId) async {
 }
 Future<void> deleteRoom(BuildContext context, String roomId) async {
   // Replace with your API base URL
-  final String apiUrl = 'https://rentconnect.vercel.app/rooms/deleteRoom/$roomId'; 
+  final String apiUrl = 'http://192.168.1.115:3000/rooms/deleteRoom/$roomId'; 
 
   try {
     // Make the DELETE request to the API
@@ -1075,8 +1089,8 @@ Future<void> deleteRoom(BuildContext context, String roomId) async {
 
   @override
   Widget build(BuildContext context) {
-    print('selected UserId from inquiry: $selectedUserId');
-      print("roomID ${room['_id']}");
+    // print('selected UserId from inquiry: $selectedUserId');
+    //   print("roomID ${room['_id']}");
 
     return Scaffold(
       backgroundColor: _themeController.isDarkMode.value
@@ -1328,13 +1342,12 @@ Future<void> deleteRoom(BuildContext context, String roomId) async {
                                                 const SizedBox(height: 10),
 
                                                 // Description
-                                                Text(
-                                                  item['description'] ?? 'No Description',
+                                                ExpandableText(
+                                                  text: item['description'] ?? 'No Description',
                                                   style: TextStyle(
+                                                    fontFamily: 'manrope',
                                                     fontSize: 14,
-                                                    color: _themeController.isDarkMode.value
-                                                        ? Colors.white
-                                                        : Colors.black,
+                                                    color: _themeController.isDarkMode.value ? Colors.white : Colors.black,
                                                   ),
                                                 ),
                                                 const SizedBox(height: 12),
@@ -1631,21 +1644,29 @@ Future<void> deleteRoom(BuildContext context, String roomId) async {
                                                                     ),
                                                                   ),
                                                                   SizedBox(height:8),
-                                                                  inquiries.isEmpty? Text('No inquiries yet.')
-                                                                      : Column(
-                                                                          children:
-                                                                              inquiries.map((inquiry) {
-                                                                            String userId = inquiry['userId'];
-                                                                            var profile = userProfiles[userId]; // Get the user profile
 
-                                                                            // Default to "Unknown User" if profile is not available
-                                                                            String userName = (profile != null)
-                                                                                ? '${profile['firstName']} ${profile['lastName']}'
-                                                                                : 'Unknown User';
-                                                                            String userContact = (profile != null && profile['contactDetails'] != null)
-                                                                        ? 'Phone: ${profile['contactDetails']['phone'] ?? 'No phone provided'}\n' +
-                                                                          'Address: ${profile['contactDetails']['address'] ?? 'No address provided'}'
-                                                                        : 'No contact details available';
+
+
+
+
+
+                                                                  inquiries.isEmpty
+                                                                  ? Text('No inquiries yet.')
+                                                                  : Column(
+                                                                      children: inquiries
+                                                                          .where((inquiry) => inquiry['status'] != 'rejected') // Filter out rejected inquiries
+                                                                          .map((inquiry) {
+                                                                        String userId = inquiry['userId'];
+                                                                        var profile = userProfiles[userId]; // Get the user profile
+
+                                                                        // Default to "Unknown User" if profile is not available
+                                                                        String userName = (profile != null)
+                                                                            ? '${profile['firstName']} ${profile['lastName']}'
+                                                                            : 'Unknown User';
+                                                                        String userContact = (profile != null && profile['contactDetails'] != null)
+                                                                            ? 'Phone: ${profile['contactDetails']['phone'] ?? 'No phone provided'}\n' +
+                                                                                'Address: ${profile['contactDetails']['address'] ?? 'No address provided'}'
+                                                                            : 'No contact details available';
 
                                                                             return Padding(
                                                                               padding: const EdgeInsets.all(8.0),
@@ -1819,7 +1840,6 @@ Future<void> deleteRoom(BuildContext context, String roomId) async {
                                                                                                           );
                                                                                                         },
                                                                                                       );
-
                                                                                                       if (confirm == true) {
                                                                                                         // Show reasons dialog if the inquiry is rejected
                                                                                                         final String? selectedReason = await showCupertinoDialog<String>(
@@ -1876,6 +1896,7 @@ Future<void> deleteRoom(BuildContext context, String roomId) async {
                                                                             );
                                                                           }).toList(),
                                                                         ),
+                                                                
                                                                 ],
                                                               ],
                                                             ),
@@ -2134,7 +2155,7 @@ Future<void> getPropertyList(String userId) async {
   Future<void> fetchUserProfile(String userId) async {
     try {
       final response =
-          await http.get(Uri.parse('https://rentconnect.vercel.app/user/$userId'));
+          await http.get(Uri.parse('http://192.168.1.115:3000/user/$userId'));
       if (response.statusCode == 200) {
         final user = json.decode(response.body);
         setState(() {
@@ -2155,24 +2176,24 @@ Future<void> getPropertyList(String userId) async {
 
 Future<void> fetchRoomInquiries(String roomId) async {
   try {
-    final response = await http.get(Uri.parse('https://rentconnect.vercel.app/inquiries/rooms/$roomId'));
+    final response = await http.get(Uri.parse('http://192.168.1.115:3000/inquiries/rooms/$roomId'));
     
     if (response.statusCode == 200) {
       final inquiries = json.decode(response.body) as List<dynamic>; // Decode as List
       setState(() {
-        propertyInquiries[roomId] = inquiries; 
+        propertyInquiries['$roomId'] = inquiries; 
         initializeRoomId();// Store inquiries by room ID
       });
       
       // Fetch user profiles for each inquiry
       for (var inquiry in inquiries) {
-      final userId = inquiry['userId'];
+      final userIdfromInquiry = inquiry['userId'];
       roomID = inquiry['roomId']['_id'];
       if (inquiry['status'] == 'approved') {
-        selectedUserId = userId; // Store userId of the approved inquiry
+        selectedUserId = userIdfromInquiry; // Store userId of the approved inquiry
       }
       
-      print('UserId from inquiry: $userId'); // Print the userId for debugging
+      print('UserId from inquiryyy: $userIdfromInquiry'); // Print the userId for debugging
       print('RoomId from inquiry: $roomID'); // Print the userId for debugging
       await fetchUserProfile(userId); // Fetch user profile if needed
     }
@@ -2196,7 +2217,7 @@ void initializeRoomId() {
   Future<void> fetchRooms(String propertyId) async {
     try {
       final response = await http.get(Uri.parse(
-          'https://rentconnect.vercel.app/rooms/properties/$propertyId/rooms'));
+          'http://192.168.1.115:3000/rooms/properties/$propertyId/rooms'));
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
@@ -2236,7 +2257,7 @@ void initializeRoomId() {
 
 
 Future<void> updateRoomStatus(String? roomId, String? newStatus) async {
-  final url = Uri.parse('https://rentconnect.vercel.app/rooms/updateRoom/$roomId'); // Replace with your backend URL
+  final url = Uri.parse('http://192.168.1.115:3000/rooms/updateRoom/$roomId'); // Replace with your backend URL
   final headers = {
     'Content-Type': 'application/json',
     'Authorization': 'Bearer your_jwt_token' // Add your JWT token if required
@@ -2314,42 +2335,6 @@ Future<void> updateRoomStatus(String? roomId, String? newStatus) async {
   }
 
 
-Future<void> markRoomAsOccupied(BuildContext context, String roomID) async {
-  if (selectedUserId != null) {
-    try {
-      final response = await http.patch(
-        Uri.parse('https://rentconnect.vercel.app/rooms/$roomID/occupy'),
-        headers: {'Content-Type': 'application/json'},
-        body: json.encode({
-          'userId': selectedUserId, // Pass the userId from approved inquiry
-        }),
-      );
-
-      print('Response status: ${response.statusCode}');
-      print('Response body: ${response.body}'); // Log the response body
-
-      if (response.statusCode == 200) {
-        // Parse the response body for additional data
-        final data = json.decode(response.body);
-        
-        // Extract the agreement details from the response
-        final agreementData = data['agreement'];
-
-        // Handle success (e.g., show a success message, refresh UI)
-        print('Room marked as occupied successfully: ${data['message']}');
-
-        // Navigate to AgreementDetails page and pass the agreement dat
-      } else {
-        // Handle error responses
-        print('Error marking room as occupied: ${response.body}');
-      }
-    } catch (error) {
-      print('Error occurred while marking room as occupied: $error');
-    }
-  } else {
-    print('No userId found to mark as occupied');
-  }
-}
 
 
 
@@ -2357,7 +2342,7 @@ Future<void> markRoomAsOccupied(BuildContext context, String roomID) async {
 Future<String?> fetchProofOfReservation(String roomId) async {
   try {
     // Example API call to fetch payment details
-    var response = await http.get(Uri.parse('https://rentconnect.vercel.app/payment/room/$roomId/proofOfReservation'));
+    var response = await http.get(Uri.parse('http://192.168.1.115:3000/payment/room/$roomId/proofOfReservation'));
     if (response.statusCode == 200) {
       var data = jsonDecode(response.body);
       return data['proofOfReservation']; // Ensure the key matches your backend response
@@ -2456,6 +2441,55 @@ void showFullscreenImage(BuildContext context, String imageUrl) {
 
 
                                         
+class ExpandableText extends StatefulWidget {
+  final String text;
+  final TextStyle style;
+
+  const ExpandableText({
+    required this.text,
+    required this.style,
+    Key? key,
+  }) : super(key: key);
+
+  @override
+  _ExpandableTextState createState() => _ExpandableTextState();
+}
+
+class _ExpandableTextState extends State<ExpandableText> {
+  bool _isExpanded = true;
+
+  @override
+  Widget build(BuildContext context) {
+    final isTextLong = widget.text.length > 100 || widget.text.contains('\n'); // Adjust the condition as needed
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          widget.text,
+          maxLines: _isExpanded ? null : 100000, // Limit to 3 lines when collapsed
+          overflow: TextOverflow.ellipsis,
+          style: widget.style,
+        ),
+        if (isTextLong) // Only show toggle button if text is long
+          GestureDetector(
+            onTap: () {
+              setState(() {
+                _isExpanded = !_isExpanded;
+              });
+            },
+            child: Text(
+              _isExpanded ? 'Show more' : 'Show less',
+              style: TextStyle(
+                fontSize: 14,
+                color: Colors.blue,
+              ),
+            ),
+          ),
+      ],
+    );
+  }
+}
 
 
 
@@ -2465,8 +2499,43 @@ void showFullscreenImage(BuildContext context, String imageUrl) {
 
 
 
+//    Future<void> markRoomAsOccupied(BuildContext context, String roomID) async {
+//   if (propertyInquiries[room['reservationInquirers'][0]] != null) {
+//     try {
+//       final response = await http.patch(
+//         Uri.parse('http://192.168.1.115:3000/rooms/${room['_id']}/occupy'),
+//         headers: {'Content-Type': 'application/json'},
+//         body: json.encode({
+//           'userId': propertyInquiries[room['reservationInquirers'][0]], // Pass the userId from approved inquiry
+//         }),
+//       );
 
+//       print('Response status: ${response.statusCode}');
+//       print(propertyInquiries[room['reservationInquirers'][0]]);
+//       print('Response body: ${response.body}'); // Log the response body
 
+//       if (response.statusCode == 200) {
+//         // Parse the response body for additional data
+//         final data = json.decode(response.body);
+        
+//         // Extract the agreement details from the response
+//         final agreementData = data['agreement'];
+
+//         // Handle success (e.g., show a success message, refresh UI)
+//         print('Room marked as occupied successfully: ${data['message']}');
+
+//         // Navigate to AgreementDetails page and pass the agreement dat
+//       } else {
+//         // Handle error responses
+//         print('Error marking room as occupied: ${response.body}');
+//       }
+//     } catch (error) {
+//       print('Error occurred while marking room as occupied: $error');
+//     }
+//   } else {
+//     print('No userId found to mark as occupied');
+//   }
+// }
 
 
 // void showRoomDetailPopover(BuildContext context, dynamic room, Map<String, dynamic> userProfiles,  List<dynamic> inquiries, {String? selectedMonth,  int currentMonthIndex = 0}) async{

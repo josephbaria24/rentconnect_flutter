@@ -109,7 +109,7 @@ void _handleRegistrationError(String errorMessage) {
     if (!_isCooldown) {
       try {
         var response = await http.post(
-          Uri.parse('https://rentconnect.vercel.app/resend-otp'), // Replace with your resend OTP endpoint
+          Uri.parse('http://192.168.1.115:3000/resend-otp'), // Replace with your resend OTP endpoint
           headers: {"Content-Type": "application/json"},
           body: jsonEncode({'email': email}),
         );
@@ -240,7 +240,7 @@ void _showOtpDialog(String email) {
                     Text('Please wait ${(_secondsRemaining ~/ 60)}:${(_secondsRemaining % 60).toString().padLeft(2, '0')} before requesting again.'),
                   if (!_isCooldown)
             CupertinoButton(
-              child: const Text('Resend OTP'),
+              child: const Text('Send OTP'),
               onPressed: () async {
                 await _resendOtp(email); // Call the resend OTP function with the email
               },
@@ -429,7 +429,7 @@ void registerUser() async {
 Future<bool> verifyOtp(String email, String otp, String hash) async {
   try {
     var response = await http.post(
-      Uri.parse('https://rentconnect.vercel.app/verify-email-otp'), // Replace with your verification endpoint
+      Uri.parse('http://192.168.1.115:3000/verify-email-otp'), // Replace with your verification endpoint
       headers: {"Content-Type": "application/json"},
       body: jsonEncode({
         'email': email,

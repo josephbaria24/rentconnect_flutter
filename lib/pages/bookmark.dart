@@ -1,4 +1,6 @@
 import 'dart:convert';
+import 'dart:ui';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:fluttertoast/fluttertoast.dart';
@@ -16,7 +18,7 @@ import 'package:fluttertoast/fluttertoast.dart';
  // Make sure to import your theme controller
 
 Future<List<Property>> getBookmarkedProperties(String token, String userId) async {
-  final url = Uri.parse('https://rentconnect.vercel.app/getUserBookmarks/$userId'); 
+  final url = Uri.parse('http://192.168.1.115:3000/getUserBookmarks/$userId'); 
 
   try {
     final response = await http.get(
@@ -46,7 +48,7 @@ Future<List<Property>> getBookmarkedProperties(String token, String userId) asyn
 }
 
 Future<void> removeBookmark(String token, String userId, String propertyId) async {
-  final url = Uri.parse('https://rentconnect.vercel.app/removeBookmark');
+  final url = Uri.parse('http://192.168.1.115:3000/removeBookmark');
 
   try {
     final response = await http.post(
@@ -128,7 +130,7 @@ class _BookmarkPageState extends State<BookmarkPage> {
   }
 
  Future<void> fetchUserProfileStatus() async {
-    final url = Uri.parse('https://rentconnect.vercel.app/profile/checkProfileCompletion/$userId');
+    final url = Uri.parse('http://192.168.1.115:3000/profile/checkProfileCompletion/$userId');
     try {
       final response = await http.get(
         url,
@@ -185,7 +187,22 @@ class _BookmarkPageState extends State<BookmarkPage> {
               future: bookmarkedProperties,
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
-                  return Center(child: Lottie.asset("assets/icons/houseloading2.json", height: 60));
+                  return Center(
+                            child: ClipRRect(
+                              borderRadius: BorderRadius.circular(12), // 5 radius for rounded corners
+                              child: BackdropFilter(
+                                filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10), // Blur effect
+                                child: Container(
+                                  width: 100, // Adjust size as needed
+                                  height: 100,
+                                  color:_themeController.isDarkMode.value? Colors.white.withOpacity(0.2) : Colors.grey.withOpacity(0.2), // Frosted glass effect
+                                  child: Center(
+                                    child: CupertinoActivityIndicator(color: _themeController.isDarkMode.value? Colors.white : Colors.black), // Your indicator
+                                  ),
+                                ),
+                              ),
+                            ),
+                          );
                 } else if (snapshot.hasError) {
                   return Center(child: Text('Error: ${snapshot.error}'));
                 } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
@@ -216,7 +233,7 @@ class _BookmarkPageState extends State<BookmarkPage> {
                       final property = snapshot.data![index];
                       final imageUrl = property.photo.startsWith('http')
                           ? property.photo
-                          : 'https://rentconnect.vercel.app/${property.photo}';
+                          : 'http://192.168.1.115:3000/${property.photo}';
 
                       return Card(
                         borderOnForeground: true,

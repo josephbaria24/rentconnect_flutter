@@ -83,7 +83,7 @@ Future<void> loginUser() async {
       // }
 
       final response = await http.post(
-        Uri.parse('https://rentconnect.vercel.app/login'),
+        Uri.parse('http://192.168.1.115:3000/login'),
         headers: {"Content-Type": "application/json"},
         body: jsonEncode(reqBody),
       );
@@ -244,7 +244,7 @@ Future<bool> _sendPasswordResetEmail(String email) async {
   // Replace with your actual endpoint and logic
   try {
     final response = await http.post(
-      Uri.parse('https://rentconnect.vercel.app/forgot-password'), // Update with your API endpoint
+      Uri.parse('http://192.168.1.115:3000/forgot-password'), // Update with your API endpoint
       headers: <String, String>{
         'Content-Type': 'application/json; charset=UTF-8',
       },
@@ -441,7 +441,7 @@ Widget build(BuildContext context) {
                       )
                     : const Text('Login', style: TextStyle(fontFamily: 'manrope', color: Colors.white)),
               ),
-              const SizedBox(height: 10.0),
+              const SizedBox(height: 6.0),
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: <Widget>[
@@ -450,7 +450,7 @@ Widget build(BuildContext context) {
                     style: TextStyle(
                       fontFamily: 'manrope',
                       fontWeight: FontWeight.w400,
-                      fontSize: 14.0,
+                      fontSize: 12.0,
                       color:Color.fromARGB(255, 97, 97, 97),
                     ),
                   ),
@@ -469,67 +469,67 @@ Widget build(BuildContext context) {
                         fontWeight: FontWeight.bold,
                         fontSize: 14.0,
                         color: Color.fromRGBO(25, 22, 32, 1),
+                        decoration: TextDecoration.underline,
                       ),
                     ),
                   ),
                 ],
               ),
-              const SizedBox(height: 180),
-              Column(
-                children: [
-                  Wrap(
-                    alignment: WrapAlignment.center,
-                    children: <Widget>[
-                      const Text(
-                        "By signing up, you agree to our ",
+              //const SizedBox(height: 180),
+              
+              Padding(
+                padding:  EdgeInsets.only(top: MediaQuery.of(context).size.height * 0.26),
+                child: Wrap(
+                  alignment: WrapAlignment.center,
+                  children: <Widget>[
+                    const Text(
+                      "By signing up, you agree to our ",
+                      style: TextStyle(
+                        fontFamily: 'manrope',
+                        fontWeight: FontWeight.w400,
+                        fontSize: 12.0,
+                        color: Color.fromARGB(255, 97, 97, 97),
+                      ),
+                    ),
+                    GestureDetector(
+                      onTap: () {
+                        _openTermsAndConditions();
+                      },
+                      child: const Text(
+                        'Terms of Service',
                         style: TextStyle(
                           fontFamily: 'manrope',
-                          fontWeight: FontWeight.w400,
+                          fontWeight: FontWeight.bold,
                           fontSize: 12.0,
-                          color: Color.fromARGB(255, 97, 97, 97),
+                          decoration: TextDecoration.underline,  // Added underline
                         ),
                       ),
-                      GestureDetector(
-                        onTap: () {
-                          _openTermsAndConditions();
-                        },
-                        child: const Text(
-                          'Terms of Service',
-                          style: TextStyle(
-                            
-                            fontFamily: 'manrope',
-                            fontWeight: FontWeight.bold,
-                            fontSize: 12.0,
-                            color:Color.fromRGBO(41, 27, 245, 1),
-                          ),
-                        ),
+                    ),
+                    const Text(
+                      ' and ',
+                      style: TextStyle(
+                        fontFamily: 'manrope',
+                        fontWeight: FontWeight.w400,
+                        fontSize: 12.0,
+                        color: Color.fromARGB(255, 97, 97, 97),
                       ),
-                      const Text(
-                        ' and ',
+                    ),
+                    GestureDetector(
+                      onTap: () {
+                        _openPrivacyPolicy();
+                      },
+                      child: const Text(
+                        'Privacy Policy',
                         style: TextStyle(
                           fontFamily: 'manrope',
-                          fontWeight: FontWeight.w400,
+                          fontWeight: FontWeight.bold,
                           fontSize: 12.0,
-                          color: Color.fromARGB(255, 97, 97, 97),
+                          decoration: TextDecoration.underline,  // Added underline
                         ),
                       ),
-                      GestureDetector(
-                        onTap: () {
-                          _openPrivacyPolicy();
-                        },
-                        child: const Text(
-                          'Privacy Policy',
-                          style: TextStyle(
-                            fontFamily: 'manrope',
-                            fontWeight: FontWeight.bold,
-                            fontSize: 12.0,
-                            color: Color.fromRGBO(41, 27, 245, 1),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
+                    ),
+                  ],
+                ),
               ),
             ],
           ),

@@ -88,7 +88,7 @@ Future<void> handleUpdateStatus(String selectedMonth, String status) async {
 }
 
 Future<void> updateDueDate(String roomId, DateTime dueDate, String token) async {
-  final String apiUrl = 'https://rentconnect.vercel.app/rooms/$roomId/due-date';
+  final String apiUrl = 'http://192.168.1.115:3000/rooms/$roomId/due-date';
 
   try {
     final response = await http.put(
@@ -410,7 +410,7 @@ SizedBox(
   
 Future<Map<String, dynamic>?> getProofOfPaymentForSelectedMonth(
     String roomId, String token, String selectedMonth) async {
-  final String apiUrl = 'https://rentconnect.vercel.app/payment/room/$roomId/monthlyPayments';
+  final String apiUrl = 'http://192.168.1.115:3000/payment/room/$roomId/monthlyPayments';
 
   try {
     print('API URL: $apiUrl');
@@ -452,7 +452,7 @@ Future<Map<String, dynamic>?> getProofOfPaymentForSelectedMonth(
   return null;
 }
   Future<void> updatePaymentStatus(String monthPaymentId, String status) async {
-    final String apiUrl = 'https://rentconnect.vercel.app/payment/monthlyPayments/$monthPaymentId/status';
+    final String apiUrl = 'http://192.168.1.115:3000/payment/monthlyPayments/$monthPaymentId/status';
 
     try {
       final response = await http.put(

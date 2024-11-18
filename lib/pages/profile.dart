@@ -124,7 +124,7 @@ class _ProfilePageState extends State<ProfilePage>
 
   Future<void> _fetchUserProfile() async {
     final url = Uri.parse(
-        'https://rentconnect.vercel.app/user/$userId'); // Adjust the endpoint if needed
+        'http://192.168.1.115:3000/user/$userId'); // Adjust the endpoint if needed
     try {
       final response = await http
           .get(url, headers: {'Authorization': 'Bearer ${widget.token}'});
@@ -150,7 +150,7 @@ class _ProfilePageState extends State<ProfilePage>
 
   Future<void> fetchUserProfileStatus() async {
     final url = Uri.parse(
-        'https://rentconnect.vercel.app/profile/checkProfileCompletion/$userId'); // Replace with your API endpoint
+        'http://192.168.1.115:3000/profile/checkProfileCompletion/$userId'); // Replace with your API endpoint
     try {
       final response = await http.get(
         url,
@@ -314,7 +314,7 @@ class _ProfilePageState extends State<ProfilePage>
   Future<void> _uploadProfilePicture() async {
     if (_profileImage != null) {
       final url = Uri.parse(
-          'https://rentconnect.vercel.app/updateProfilePicture/$userId');
+          'http://192.168.1.115:3000/updateProfilePicture/$userId');
       var request = http.MultipartRequest('PATCH', url)
         ..headers['Authorization'] = 'Bearer ${widget.token}';
 
@@ -757,40 +757,38 @@ class _ProfilePageState extends State<ProfilePage>
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
                             // Adaptable DeviceCard1
-                            Flexible(
-                              child: DeviceCard1(
-                                icon: SvgPicture.asset(
-                                  'assets/icons/occupanthome.svg',
-                                  color: themeController.isDarkMode.value
-                                      ? const Color.fromARGB(255, 0, 0, 0)
-                                      : const Color.fromARGB(
-                                          255, 255, 255, 255),
-                                  height: 20,
-                                  width: 20,
-                                ),
-                                title: "My Home",
-                                textColor: themeController.isDarkMode.value
-                                    ? Colors.white
-                                    : const Color.fromARGB(255, 0, 0, 0),
-                                icon2: Icon(
-                                  Icons.chevron_right_outlined,
-                                  size: 20,
-                                  color: themeController.isDarkMode.value
-                                      ? const Color.fromARGB(213, 253, 253, 253)
-                                      : const Color.fromARGB(146, 0, 0, 0),
-                                ),
-                                onPress: () {
-                                  Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (context) => OccupantInquiries(
-                                        userId: userId,
-                                        token: widget.token,
-                                      ),
-                                    ),
-                                  );
-                                },
+                            DeviceCard1(
+                              icon: SvgPicture.asset(
+                                'assets/icons/occupanthome.svg',
+                                color: themeController.isDarkMode.value
+                                    ? const Color.fromARGB(255, 0, 0, 0)
+                                    : const Color.fromARGB(
+                                        255, 255, 255, 255),
+                                height: 20,
+                                width: 20,
                               ),
+                              title: "My Home",
+                              textColor: themeController.isDarkMode.value
+                                  ? Colors.white
+                                  : const Color.fromARGB(255, 0, 0, 0),
+                              icon2: Icon(
+                                Icons.chevron_right_outlined,
+                                size: 20,
+                                color: themeController.isDarkMode.value
+                                    ? const Color.fromARGB(213, 253, 253, 253)
+                                    : const Color.fromARGB(146, 0, 0, 0),
+                              ),
+                              onPress: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => OccupantInquiries(
+                                      userId: userId,
+                                      token: widget.token,
+                                    ),
+                                  ),
+                                );
+                              },
                             ),
                             const SizedBox(
                                 width: 10), // Space between the two DeviceCards

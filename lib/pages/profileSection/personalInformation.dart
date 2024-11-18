@@ -57,7 +57,7 @@ class _PersonalInformationState extends State<PersonalInformation> {
   }
 
 Future<void> _checkProfileCompletion() async {
-  final url = Uri.parse('https://rentconnect.vercel.app/profile/checkProfileCompletion/$userId');
+  final url = Uri.parse('http://192.168.1.115:3000/profile/checkProfileCompletion/$userId');
   try {
     final response = await http.get(url, headers: {'Authorization': 'Bearer ${widget.token}'});
     if (response.statusCode == 200) {
@@ -130,7 +130,7 @@ void _showThankYouModal() {
 
 
 Future<void> _updateProfileCompletion() async {
-  final url = Uri.parse('https://rentconnect.vercel.app/profile/updateProfile');
+  final url = Uri.parse('http://192.168.1.115:3000/profile/updateProfile');
   try {
     final response = await http.patch(
       url,
@@ -166,7 +166,7 @@ Future<void> _updateProfileCompletion() async {
 
 
   Future<void> _updateRole() async {
-    final url = Uri.parse('https://rentconnect.vercel.app/updateUserInfo');
+    final url = Uri.parse('http://192.168.1.115:3000/updateUserInfo');
     try {
       final response = await http.patch(
         url,
@@ -196,7 +196,7 @@ Future<void> _updateProfileCompletion() async {
 
 Map<String, dynamic>? userDetails;
 Future<void> _fetchUserDetails() async {
-  final url = Uri.parse('https://rentconnect.vercel.app/user/$userId'); // Your new endpoint
+  final url = Uri.parse('http://192.168.1.115:3000/user/$userId'); // Your new endpoint
   try {
     final response = await http.get(url, headers: {
       'Authorization': 'Bearer ${widget.token}',
@@ -228,7 +228,7 @@ Future<void> _fetchUserDetails() async {
     if (_validIdImage != null) {
       var request = http.MultipartRequest(
         'PATCH',
-        Uri.parse('https://rentconnect.vercel.app/profile/uploadValidId')
+        Uri.parse('http://192.168.1.115:3000/profile/uploadValidId')
       );
       request.fields['userId'] = userId;
       String mimeType = lookupMimeType(_validIdImage!.path) ?? 'application/octet-stream';
@@ -309,6 +309,9 @@ bool _isFormComplete() {
          _gender != null &&
          _selectedRole != null;
 }
+
+
+bool _isPrivacyPolicyAccepted = false;
 @override
 Widget build(BuildContext context) {
   print(userDetails?['profile']?['firstName']);
@@ -679,6 +682,8 @@ Widget build(BuildContext context) {
                       ],
                     ),
                     SizedBox(height: 20),
+                    Center(child: Text('You can upload any type of ID such as school ID, Government ID, etc,.', style: 
+                    TextStyle(fontFamily: 'manrope', fontSize: 13),)),
                     ElevatedButton.icon(
                       style: ElevatedButton.styleFrom(
                         backgroundColor: _themeController.isDarkMode.value
@@ -762,6 +767,8 @@ Widget build(BuildContext context) {
                     },
                     child: Text('Submit'),
                   ),
+
+                  
 
                   ],
                 ),

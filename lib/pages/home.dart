@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:ui';
 import 'package:awesome_snackbar_content/awesome_snackbar_content.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/cupertino.dart';
@@ -113,7 +114,7 @@ class _HomePageState extends State<HomePage> {
   }
 
  Future<void> _fetchUserProfile() async {
-  final url = Uri.parse('https://rentconnect.vercel.app/user/$userId');
+  final url = Uri.parse('http://192.168.1.115:3000/user/$userId');
   try {
     final response = await http.get(url, headers: {
       'Authorization': 'Bearer ${widget.token}',
@@ -472,8 +473,21 @@ class _HomePageState extends State<HomePage> {
                           if (snapshot.connectionState ==
                               ConnectionState.waiting) {
                             return Center(
-                                child: Lottie.asset("assets/icons/houseloading2.json",
-                                    height: 60));
+                            child: ClipRRect(
+                              borderRadius: BorderRadius.circular(12), // 5 radius for rounded corners
+                              child: BackdropFilter(
+                                filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10), // Blur effect
+                                child: Container(
+                                  width: 100, // Adjust size as needed
+                                  height: 100,
+                                  color:_themeController.isDarkMode.value? Colors.white.withOpacity(0.2) : Colors.grey.withOpacity(0.2), // Frosted glass effect
+                                  child: Center(
+                                    child: CupertinoActivityIndicator(color: _themeController.isDarkMode.value? Colors.white : Colors.black), // Your indicator
+                                  ),
+                                ),
+                              ),
+                            ),
+                          );
                           } else if (snapshot.hasError) {
                             if (snapshot.error
                                 .toString()
@@ -533,7 +547,7 @@ class _HomePageState extends State<HomePage> {
                                 final imageUrl = property.photo
                                         .startsWith('http')
                                     ? property.photo
-                                    : 'https://rentconnect.vercel.app/${property.photo}';
+                                    : 'http://192.168.1.115:3000/${property.photo}';
 
                                 return FutureBuilder<List<dynamic>>(
                                   future: fetchRooms(property.id),
@@ -652,7 +666,7 @@ class _HomePageState extends State<HomePage> {
 
   Future<void> fetchUserProfileStatus() async {
     final url = Uri.parse(
-        'https://rentconnect.vercel.app/profile/checkProfileCompletion/$userId'); // Replace with your API endpoint
+        'http://192.168.1.115:3000/profile/checkProfileCompletion/$userId'); // Replace with your API endpoint
     try {
       final response = await http.get(
         url,
@@ -680,7 +694,7 @@ class _HomePageState extends State<HomePage> {
 
   Future<void> fetchUserProfileStatusForNotification() async {
     final url = Uri.parse(
-        'https://rentconnect.vercel.app/profile/checkProfileCompletion/$userId'); // Your API endpoint
+        'http://192.168.1.115:3000/profile/checkProfileCompletion/$userId'); // Your API endpoint
     try {
       final response = await http.get(
         url,
@@ -728,7 +742,7 @@ class _HomePageState extends State<HomePage> {
     }
 
     try {
-      final response = await http.get(Uri.parse('https://rentconnect.vercel.app/getAllProperties'));
+      final response = await http.get(Uri.parse('http://192.168.1.115:3000/getAllProperties'));
 
       if (response.statusCode == 200) {
         final Map<String, dynamic> json = jsonDecode(response.body);
@@ -760,7 +774,7 @@ class _HomePageState extends State<HomePage> {
   Future<List<dynamic>> fetchRooms(String propertyId) async {
     try {
       final response = await http.get(Uri.parse(
-          'https://rentconnect.vercel.app/rooms/properties/$propertyId/rooms'));
+          'http://192.168.1.115:3000/rooms/properties/$propertyId/rooms'));
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         if (data['status']) {
@@ -835,7 +849,7 @@ class _HomePageState extends State<HomePage> {
     try {
       final response = await http.get(
         Uri.parse(
-            'https://rentconnect.vercel.app/getUserBookmarks/$userId'), // Adjust endpoint if necessary
+            'http://192.168.1.115:3000/getUserBookmarks/$userId'), // Adjust endpoint if necessary
         headers: {
           'Authorization': 'Bearer ${widget.token}',
         },
@@ -858,7 +872,7 @@ class _HomePageState extends State<HomePage> {
   Future<String> fetchUserEmail(String userId) async {
     try {
       final response = await http
-          .get(Uri.parse('https://rentconnect.vercel.app/getUserEmail/$userId'));
+          .get(Uri.parse('http://192.168.1.115:3000/getUserEmail/$userId'));
 
       if (response.statusCode == 200) {
         final Map<String, dynamic> json = jsonDecode(response.body);
@@ -964,7 +978,7 @@ class _HomePageState extends State<HomePage> {
   Future<List<dynamic>> fetchNotifications(String userId, String token) async {
     try {
       final response = await http.get(
-        Uri.parse('https://rentconnect.vercel.app/notification/unread/$userId'),
+        Uri.parse('http://192.168.1.115:3000/notification/unread/$userId'),
         headers: {
           'Authorization': 'Bearer $token',
           'Content-Type': 'application/json',
@@ -1014,7 +1028,7 @@ class _HomePageState extends State<HomePage> {
 
   Future<void> _markNotificationAsRead(String notificationId) async {
     final response = await http.patch(
-      Uri.parse('https://rentconnect.vercel.app/notification/$notificationId/read'),
+      Uri.parse('http://192.168.1.115:3000/notification/$notificationId/read'),
       headers: {
         'Authorization': 'Bearer ${widget.token}',
         'Content-Type': 'application/json',
@@ -1063,7 +1077,7 @@ class _HomePageState extends State<HomePage> {
 
   Future<void> bookmarkProperty(
       String propertyId, Function(bool isBookmarked) onUpdate) async {
-    final url = Uri.parse('https://rentconnect.vercel.app/addBookmark');
+    final url = Uri.parse('http://192.168.1.115:3000/addBookmark');
     final Map<String, dynamic> jwtDecodedToken =
         JwtDecoder.decode(widget.token);
     String userId = jwtDecodedToken['_id']?.toString() ?? 'Unknown user ID';
@@ -1071,7 +1085,7 @@ class _HomePageState extends State<HomePage> {
     try {
       if (bookmarkedPropertyIds.contains(propertyId)) {
         // If already bookmarked, remove it
-        final removeUrl = Uri.parse('https://rentconnect.vercel.app/removeBookmark');
+        final removeUrl = Uri.parse('http://192.168.1.115:3000/removeBookmark');
         await http.post(removeUrl,
             headers: {
               'Authorization': 'Bearer ${widget.token}',

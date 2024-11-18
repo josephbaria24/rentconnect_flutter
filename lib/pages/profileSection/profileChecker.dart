@@ -32,7 +32,7 @@ class _ProfilePageCheckerState extends State<ProfilePageChecker> {
  
 
   Future<void> _checkProfileCompletion() async {
-  final url = Uri.parse('https://rentconnect.vercel.app/profile/checkProfileCompletion/$userId');
+  final url = Uri.parse('http://192.168.1.115:3000/profile/checkProfileCompletion/$userId');
 
   try {
     final response = await http.get(url, headers: {'Authorization': 'Bearer ${widget.token}'});

@@ -102,7 +102,7 @@ void _submitRooms() async {
   }
 
   // If all fields are valid, proceed to submit the form
-  var request = http.MultipartRequest('POST', Uri.parse('https://rentconnect.vercel.app/rooms/createRoom'));
+  var request = http.MultipartRequest('POST', Uri.parse('http://192.168.1.115:3000/rooms/createRoom'));
 
   // Prepare data for all rooms
   for (int i = 0; i < roomUnits.length; i++) {
@@ -176,7 +176,7 @@ void _submitRooms() async {
   Future<void> _deleteProperty() async {
     try {
       final response = await http.delete(
-        Uri.parse('https://rentconnect.vercel.app/deleteProperty/${widget.propertyId}'),
+        Uri.parse('http://192.168.1.115:3000/deleteProperty/${widget.propertyId}'),
       );
 
       if (response.statusCode == 200) {

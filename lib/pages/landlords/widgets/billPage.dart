@@ -18,8 +18,10 @@ import 'package:path_provider/path_provider.dart';
 
 class ViewBillPage extends StatefulWidget {
   final String billId;
+  final String userID;
+  final String token;
 
-  ViewBillPage({required this.billId});
+  ViewBillPage({required this.billId, required this.userID, required this.token});
 
   @override
   _ViewBillPageState createState() => _ViewBillPageState();
@@ -39,10 +41,32 @@ class _ViewBillPageState extends State<ViewBillPage> {
     super.initState();
     fetchBillDetails(widget.billId);
     toastNotification = ToastNotification(context);
+    _fetchUserProfile();
   }
 
 
+Map<String, dynamic>? userDetails;
 
+Future<void> _fetchUserProfile() async {
+  // Ensure userId is converted to String if necessary
+  final url = Uri.parse('http://192.168.1.115:3000/user/${widget.userID}'); // Adjust the endpoint if needed
+  try {
+    final response = await http.get(
+      url,
+      headers: {'Authorization': 'Bearer ${widget.token}'},
+    );
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+      setState(() {
+        userDetails = data; // Properly decode the response
+      });
+    } else {
+      print('No profile yet');
+    }
+  } catch (error) {
+    print('Error fetching profile data: $error');
+  }
+}
   Future<void> sendBillViaEmail() async {
   try {
     // Get the temporary directory of the device
@@ -56,7 +80,7 @@ class _ViewBillPageState extends State<ViewBillPage> {
       body: 'Please find the attached bill.',
       subject: 'Your Bill - ${widget.billId}',
 
-      recipients: ['luckybaria66@gmail.com'], // Replace with the recipient's email
+      recipients: [userDetails!['email'] ?? ''], // Replace with the recipient's email
       attachmentPaths: [imagePath],
       isHTML: false,
     );
@@ -78,7 +102,7 @@ Future<Uint8List> _captureBillImage() async {
   Future<void> fetchBillDetails(String billId) async {
     try {
       final response = await http.get(
-        Uri.parse('https://rentconnect.vercel.app/inquiries/bills/getBillId/${widget.billId}'),
+        Uri.parse('http://192.168.1.115:3000/inquiries/bills/getBillId/${widget.billId}'),
       );
 
       if (response.statusCode == 200) {
@@ -104,7 +128,7 @@ Future<Uint8List> _captureBillImage() async {
   Future<void> deleteBill(String billId) async {
     try {
       final response = await http.delete(
-        Uri.parse('https://rentconnect.vercel.app/inquiries/bill/delete/$billId'),
+        Uri.parse('http://192.168.1.115:3000/inquiries/bill/delete/$billId'),
       );
 
       if (response.statusCode == 200) {
@@ -168,7 +192,7 @@ Future<void> saveBillAsImage() async {
 Future<void> markBillAsPaid(String billId) async {
   try {
     final response = await http.patch(
-      Uri.parse('https://rentconnect.vercel.app/inquiries/bills/$billId/isPaid'),
+      Uri.parse('http://192.168.1.115:3000/inquiries/bills/$billId/isPaid'),
       headers: {'Content-Type': 'application/json'},
       body: jsonEncode({'isPaid': true}),
     );
@@ -188,6 +212,8 @@ Future<void> markBillAsPaid(String billId) async {
 
   @override
   Widget build(BuildContext context) {
+    // print('userPr ${widget.userID}');
+    // print('userEmail ${userDetails!['email']}');
     return Scaffold(
       appBar: AppBar(
         title: Text(
