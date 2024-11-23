@@ -66,7 +66,7 @@ class _MessagePageState extends State<MessagePage> {
   Future<void> fetchUsers() async {
     try {
       final response = await http.get(
-        Uri.parse('http://192.168.1.115:3000/users-with-profiles'),
+        Uri.parse('https://rentconnect.vercel.app/users-with-profiles'),
         headers: {'Authorization': 'Bearer ${widget.token}'},
       );
 
@@ -91,7 +91,7 @@ class _MessagePageState extends State<MessagePage> {
 Future<void> fetchConversations({bool refresh = false}) async {
   try {
     final response = await http.get(
-      Uri.parse('http://192.168.1.115:3000/conversations/$userId'),
+      Uri.parse('https://rentconnect.vercel.app/conversations/$userId'),
       headers: {'Authorization': 'Bearer ${widget.token}'},
     );
 
@@ -572,7 +572,7 @@ Widget _buildMessageTile({
 Future<void> _markMessagesAsUnread(String recipientId) async {
   try {
     final response = await http.patch(
-      Uri.parse('http://192.168.1.115:3000/messages/markAsUnread'), // Ensure the URL is correct
+      Uri.parse('https://rentconnect.vercel.app/messages/markAsUnread'), // Ensure the URL is correct
       headers: {
         'Authorization': 'Bearer ${widget.token}',
         'Content-Type': 'application/json',
@@ -602,7 +602,7 @@ Future<void> _markMessagesAsUnread(String recipientId) async {
   Future<void> _markConversationAsRead(String recipientId) async {
     try {
       final response = await http.patch(
-        Uri.parse('http://192.168.1.115:3000/messages/markAsRead'),
+        Uri.parse('https://rentconnect.vercel.app/messages/markAsRead'),
         headers: {
           'Authorization': 'Bearer ${widget.token}',
           'Content-Type': 'application/json',
@@ -627,7 +627,7 @@ Future<void> _deleteConversation(String recipientId) async {
     print('Attempting to delete conversation between $userId and $recipientId');
 
     final response = await http.patch(
-      Uri.parse('http://192.168.1.115:3000/messages/markAsDeleted'),
+      Uri.parse('https://rentconnect.vercel.app/messages/markAsDeleted'),
       headers: {
         'Authorization': 'Bearer ${widget.token}',
         'Content-Type': 'application/json',

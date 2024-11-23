@@ -83,7 +83,7 @@ Future<void> loginUser() async {
       // }
 
       final response = await http.post(
-        Uri.parse('http://192.168.1.115:3000/login'),
+        Uri.parse('https://rentconnect.vercel.app/login'),
         headers: {"Content-Type": "application/json"},
         body: jsonEncode(reqBody),
       );
@@ -244,7 +244,7 @@ Future<bool> _sendPasswordResetEmail(String email) async {
   // Replace with your actual endpoint and logic
   try {
     final response = await http.post(
-      Uri.parse('http://192.168.1.115:3000/forgot-password'), // Update with your API endpoint
+      Uri.parse('https://rentconnect.vercel.app/forgot-password'), // Update with your API endpoint
       headers: <String, String>{
         'Content-Type': 'application/json; charset=UTF-8',
       },

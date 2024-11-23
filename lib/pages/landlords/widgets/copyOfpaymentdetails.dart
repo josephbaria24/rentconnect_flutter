@@ -171,7 +171,7 @@ void _showTutorial() {
   Future<Map<String, dynamic>?> getProofOfPaymentForSelectedMonth(
       String roomId, String token, String selectedMonth) async {
     final String apiUrl =
-        'http://192.168.1.115:3000/payment/room/${widget.room?['_id']}/monthlyPayments';
+        'https://rentconnect.vercel.app/payment/room/${widget.room?['_id']}/monthlyPayments';
 
     try {
       print('API URL: $apiUrl');
@@ -421,62 +421,99 @@ void _showTutorial() {
     );
   }
 
-  Future<void> updatePaymentStatus(String monthPaymentId, String status) async {
-    final String apiUrl =
-        'http://192.168.1.115:3000/payment/monthlyPayments/$monthPaymentId/status';
+ Future<void> updatePaymentStatus(String monthPaymentId, String status, String rejectionReason) async {
+  final String apiUrl =
+      'https://rentconnect.vercel.app/payment/monthlyPayments/$monthPaymentId/status';
 
-    try {
-      final response = await http.put(
-        Uri.parse(apiUrl),
-        headers: {
-          'Authorization': 'Bearer ${widget.token}',
-          'Content-Type': 'application/json',
-        },
-        body: jsonEncode({'status': status}), // Sending the new status
-      );
-
-      if (response.statusCode == 200) {
-        // Successfully updated the status
-        final updatedPayment = jsonDecode(response.body);
-        print('Payment status updated: $updatedPayment');
-        // You may want to show a success message or refresh data
-      } else if (response.statusCode == 404) {
-        print('Monthly Payment not found.');
-        // Handle not found error (maybe show a message to the user)
-      } else {
-        print('Failed to update payment status: ${response.statusCode}');
-        // Handle other errors (maybe show a message to the user)
-      }
-    } catch (e) {
-      print('Error updating payment status: $e');
-      // Handle network or other errors
-    }
-  }
-
-  Future<void> handleUpdateStatus(String selectedMonth, String status) async {
-    final proofData = await getProofOfPaymentForSelectedMonth(
-      widget.room?['_id'],
-      widget.token,
-      selectedMonth,
+  try {
+    final response = await http.put(
+      Uri.parse(apiUrl),
+      headers: {
+        'Authorization': 'Bearer ${widget.token}',
+        'Content-Type': 'application/json',
+      },
+      body: jsonEncode({
+        'status': status,
+        'rejectionReason': rejectionReason, // Include rejectionReason when status is 'rejected'
+      }),
     );
 
-    if (proofData != null) {
-      final monthlyPaymentId =
-          proofData['monthlyPaymentId']; // Get the monthlyPaymentId
-      await updatePaymentStatus(
-          monthlyPaymentId, status); // Pass it to the update function
-      // Update the due date if the status is 'completed' (or any other condition you want)
-      if (status == 'completed') {
-        await updateDueDate(widget.room?['_id'], widget.selectedDueDate!,
-            widget.token); // Call the new update function
-      }
+    if (response.statusCode == 200) {
+      // Successfully updated the status
+      final updatedPayment = jsonDecode(response.body);
+      print('Payment status updated: $updatedPayment');
+      // You may want to show a success message or refresh data
+    } else if (response.statusCode == 404) {
+      print('Monthly Payment not found.');
+      // Handle not found error (maybe show a message to the user)
     } else {
-      print('No payment data available for the selected month.');
+      print('Failed to update payment status: ${response.statusCode}');
+      // Handle other errors (maybe show a message to the user)
     }
+  } catch (e) {
+    print('Error updating payment status: $e');
+    // Handle network or other errors
   }
+}
+Future<void> handleUpdateStatus(String selectedMonth, String status) async {
+  final proofData = await getProofOfPaymentForSelectedMonth(
+    widget.room?['_id'],
+    widget.token,
+    selectedMonth,
+  );
+
+  if (proofData != null) {
+    final monthlyPaymentId = proofData['monthlyPaymentId']; // Get the monthlyPaymentId
+    
+    // If the status is 'rejected', ask the user for the rejection reason
+    String rejectionReason = '';
+    if (status == 'rejected') {
+      rejectionReason = await _showRejectionDialog(context); // Show dialog and get reason
+      if (rejectionReason.isEmpty) {
+        print('Rejection reason is required');
+        return; // Exit if no reason provided
+      }
+    }
+
+    // Update the payment status
+    await updatePaymentStatus(monthlyPaymentId, status, rejectionReason);
+    
+    // Update the due date if the status is 'completed'
+    if (status == 'completed') {
+      await updateDueDate(widget.room?['_id'], widget.selectedDueDate!, widget.token);
+    }
+  } else {
+    print('No payment data available for the selected month.');
+  }
+}
 
 
-
+Future<String> _showRejectionDialog(BuildContext context) async {
+  String reason = '';
+  await showDialog<String>(
+    context: context,
+    builder: (context) {
+      return AlertDialog(
+        title: Text('Rejection Reason'),
+        content: TextField(
+          onChanged: (value) {
+            reason = value;
+          },
+          decoration: InputDecoration(hintText: 'Enter reason for rejection'),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.of(context).pop(reason);
+            },
+            child: Text('Submit'),
+          ),
+        ],
+      );
+    },
+  );
+  return reason;
+}
 
 
 @override
@@ -710,85 +747,88 @@ Widget build(BuildContext context) {
                           style: TextStyle(fontWeight: FontWeight.bold),
                         ),
                         Row(
-                          key: _paymentStatus,
-                          children: [
-                            ShadButton(
-                              backgroundColor: _themeController.isDarkMode.value
-                                  ? Colors.white
-                                  : Colors.black,
-                              onPressed: () async {
-                                if (_selectedMonth != null) {
-                                  await handleUpdateStatus(_selectedMonth, _status);
-                                  toastNotification.success('Payment status updated!');
-                                } else {
-                                  print('Selected month is null');
-                                }
-                              },
-                              child: Text(
-                                'Update',
-                                style: TextStyle(
-                                  color: _themeController.isDarkMode.value
-                                      ? Colors.black
-                                      : Colors.white,
-                                  fontSize: 13,
-                                ),
-                              ),
-                            ),
-                            SizedBox(width: 20),
-                           Wrap(
-                              spacing: 10.0,
-                              runSpacing: 5.0,
-                              alignment: WrapAlignment.start,
-                              children: [
-                                Column(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    const Text(
-                                      'Complete',
-                                      style: TextStyle(fontFamily: 'manrope', fontSize: 12, fontWeight: FontWeight.w600),
-                                      textAlign: TextAlign.center,
-                                    ),
-                                    Checkbox(
-                                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(5)),
-                                      activeColor: const Color.fromARGB(255, 4, 230, 154),
-                                      value: _status == 'completed',
-                                      onChanged: (bool? value) {
-                                        setState(() {
-                                          if (value == true) {
-                                            _status = 'completed';
-                                          }
-                                        });
-                                      },
-                                    ),
-                                  ],
-                                ),
-                                Column(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    const Text(
-                                      'Reject',
-                                      style: TextStyle(fontFamily: 'manrope', fontSize: 12, fontWeight: FontWeight.w600),
-                                      textAlign: TextAlign.center,
-                                    ),
-                                    Checkbox(
-                                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(5)),
-                                      activeColor: const Color.fromARGB(255, 221, 6, 53),
-                                      value: _status == 'rejected',
-                                      onChanged: (bool? value) {
-                                        setState(() {
-                                          if (value == true) {
-                                            _status = 'rejected';
-                                          }
-                                        });
-                                      },
-                                    ),
-                                  ],
-                                ),
-                              ],
-                            )
+  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+  key: _paymentStatus,
+  children: [
+    Wrap(
+      spacing: 10.0,
+      runSpacing: 5.0,
+      alignment: WrapAlignment.start,
+      children: [
+        Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text(
+              'Completed',
+              style: TextStyle(fontFamily: 'manrope', fontSize: 12, fontWeight: FontWeight.w600),
+              textAlign: TextAlign.center,
+            ),
+            Checkbox(
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(5)),
+              activeColor: const Color.fromARGB(255, 4, 230, 154),
+              value: _status == 'completed',
+              onChanged: (bool? value) {
+                setState(() {
+                  if (value == true) {
+                    _status = 'completed';
+                  }
+                });
+              },
+            ),
+          ],
+        ),
+        Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text(
+              'Rejected',
+              style: TextStyle(fontFamily: 'manrope', fontSize: 12, fontWeight: FontWeight.w600),
+              textAlign: TextAlign.center,
+            ),
+            Checkbox(
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(5)),
+              activeColor: const Color.fromARGB(255, 221, 6, 53),
+              value: _status == 'rejected',
+              onChanged: (bool? value) {
+                setState(() {
+                  if (value == true) {
+                    _status = 'rejected';
+                    _showRejectionDialog(context); // Show the input dialog for rejection reason
+                  }
+                });
+              },
+            ),
+          ],
+        ),
+      ],
+    ),
+    SizedBox(width: 20),
+    ShadButton(
+      backgroundColor: _themeController.isDarkMode.value
+          ? Colors.white
+          : Colors.black,
+      onPressed: () async {
+        if (_selectedMonth != null) {
+          await handleUpdateStatus(_selectedMonth, _status);
+          toastNotification.success('Payment status updated!');
+        } else {
+          print('Selected month is null');
+        }
+      },
+      child: Text(
+        'Update',
+        style: TextStyle(
+          color: _themeController.isDarkMode.value
+              ? Colors.black
+              : Colors.white,
+          fontSize: 13,
+        ),
+      ),
+    ),
+  ],
+),
 
-                          ],
-                        ),
+
                       ],
                     );
                   } else {
@@ -807,9 +847,6 @@ Widget build(BuildContext context) {
     ],
   );
 }
-
-
-
 
 // Function to show Cupertino Dialog with payment status
 // Function to show Cupertino Dialog with all payment statuses (legend)
@@ -866,7 +903,7 @@ Widget build(BuildContext context) {
   Future<void> updateDueDate(
       String roomId, DateTime dueDate, String token) async {
     final String apiUrl =
-        'http://192.168.1.115:3000/rooms/${widget.room!['_id']}/due-date';
+        'https://rentconnect.vercel.app/rooms/${widget.room!['_id']}/due-date';
 
     try {
       final response = await http.put(
@@ -940,7 +977,7 @@ Widget build(BuildContext context) {
 
 // Future<Map<String, dynamic>?> getProofOfPaymentForSelectedMonth(
 //     String roomId, String token, String selectedMonth) async {
-//   final String apiUrl = 'http://192.168.1.115:3000/payment/room/$roomId/monthlyPayments';
+//   final String apiUrl = 'https://rentconnect.vercel.app/payment/room/$roomId/monthlyPayments';
 
 //   try {
 //     print('API URL: $apiUrl');

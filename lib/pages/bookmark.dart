@@ -18,7 +18,7 @@ import 'package:fluttertoast/fluttertoast.dart';
  // Make sure to import your theme controller
 
 Future<List<Property>> getBookmarkedProperties(String token, String userId) async {
-  final url = Uri.parse('http://192.168.1.115:3000/getUserBookmarks/$userId'); 
+  final url = Uri.parse('https://rentconnect.vercel.app/getUserBookmarks/$userId'); 
 
   try {
     final response = await http.get(
@@ -48,7 +48,7 @@ Future<List<Property>> getBookmarkedProperties(String token, String userId) asyn
 }
 
 Future<void> removeBookmark(String token, String userId, String propertyId) async {
-  final url = Uri.parse('http://192.168.1.115:3000/removeBookmark');
+  final url = Uri.parse('https://rentconnect.vercel.app/removeBookmark');
 
   try {
     final response = await http.post(
@@ -130,7 +130,7 @@ class _BookmarkPageState extends State<BookmarkPage> {
   }
 
  Future<void> fetchUserProfileStatus() async {
-    final url = Uri.parse('http://192.168.1.115:3000/profile/checkProfileCompletion/$userId');
+    final url = Uri.parse('https://rentconnect.vercel.app/profile/checkProfileCompletion/$userId');
     try {
       final response = await http.get(
         url,
@@ -233,7 +233,7 @@ class _BookmarkPageState extends State<BookmarkPage> {
                       final property = snapshot.data![index];
                       final imageUrl = property.photo.startsWith('http')
                           ? property.photo
-                          : 'http://192.168.1.115:3000/${property.photo}';
+                          : 'https://rentconnect.vercel.app/${property.photo}';
 
                       return Card(
                         borderOnForeground: true,

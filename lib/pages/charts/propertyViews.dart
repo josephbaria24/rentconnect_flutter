@@ -24,7 +24,7 @@ class _PropertyDetailsBoxState extends State<PropertyDetailsBox> {
 
   
   Future<Map<String, int>> fetchPropertyViews(String propertyId) async {
-    final String url = 'http://192.168.1.115:3000/properties/$propertyId/views';
+    final String url = 'https://rentconnect.vercel.app/properties/$propertyId/views';
     
     try {
       final response = await http.get(Uri.parse(url));
@@ -79,14 +79,7 @@ final _themeController = Get.find<ThemeController>();
       decoration: BoxDecoration(
         color: _themeController.isDarkMode.value? const Color.fromARGB(255, 35, 36, 43): Colors.white,
         borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: const Color.fromARGB(34, 0, 0, 0),
-            spreadRadius: 0.2,
-            blurRadius: 5,
-            offset: Offset(0, 3),
-          ),
-        ],
+        border: Border.all(width: 0.4)
       ),
       child: FutureBuilder<Map<String, int>>(
         future: fetchPropertyViews(widget.propertyId!),

@@ -3,6 +3,7 @@
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:get/get.dart';
 import 'package:http/http.dart' as http;
@@ -56,8 +57,11 @@ class _PersonalInformationState extends State<PersonalInformation> {
     _fetchUserDetails();
   }
 
+
+
+
 Future<void> _checkProfileCompletion() async {
-  final url = Uri.parse('http://192.168.1.115:3000/profile/checkProfileCompletion/$userId');
+  final url = Uri.parse('https://rentconnect.vercel.app/profile/checkProfileCompletion/$userId');
   try {
     final response = await http.get(url, headers: {'Authorization': 'Bearer ${widget.token}'});
     if (response.statusCode == 200) {
@@ -130,7 +134,7 @@ void _showThankYouModal() {
 
 
 Future<void> _updateProfileCompletion() async {
-  final url = Uri.parse('http://192.168.1.115:3000/profile/updateProfile');
+  final url = Uri.parse('https://rentconnect.vercel.app/profile/updateProfile');
   try {
     final response = await http.patch(
       url,
@@ -166,7 +170,7 @@ Future<void> _updateProfileCompletion() async {
 
 
   Future<void> _updateRole() async {
-    final url = Uri.parse('http://192.168.1.115:3000/updateUserInfo');
+    final url = Uri.parse('https://rentconnect.vercel.app/updateUserInfo');
     try {
       final response = await http.patch(
         url,
@@ -196,7 +200,7 @@ Future<void> _updateProfileCompletion() async {
 
 Map<String, dynamic>? userDetails;
 Future<void> _fetchUserDetails() async {
-  final url = Uri.parse('http://192.168.1.115:3000/user/$userId'); // Your new endpoint
+  final url = Uri.parse('https://rentconnect.vercel.app/user/$userId'); // Your new endpoint
   try {
     final response = await http.get(url, headers: {
       'Authorization': 'Bearer ${widget.token}',
@@ -228,7 +232,7 @@ Future<void> _fetchUserDetails() async {
     if (_validIdImage != null) {
       var request = http.MultipartRequest(
         'PATCH',
-        Uri.parse('http://192.168.1.115:3000/profile/uploadValidId')
+        Uri.parse('https://rentconnect.vercel.app/profile/uploadValidId')
       );
       request.fields['userId'] = userId;
       String mimeType = lookupMimeType(_validIdImage!.path) ?? 'application/octet-stream';
@@ -310,54 +314,54 @@ bool _isFormComplete() {
          _selectedRole != null;
 }
 
-
-bool _isPrivacyPolicyAccepted = false;
 @override
 Widget build(BuildContext context) {
-  print(userDetails?['profile']?['firstName']);
+
   return Scaffold(
     appBar: AppBar(
-      title: Text('Personal Information', style: TextStyle(
-        fontSize: 20.0,
-        fontFamily: 'manrope',
-        fontWeight: FontWeight.w700,
-        color: _themeController.isDarkMode.value
-            ? const Color.fromARGB(255, 255, 255, 255)
-            : const Color.fromARGB(255, 0, 0, 0),
-      ),),
+      title: Text(
+        'Personal Information',
+        style: TextStyle(
+          fontSize: 20.0,
+          fontFamily: 'manrope',
+          fontWeight: FontWeight.w700,
+          color: _themeController.isDarkMode.value
+              ? const Color.fromARGB(255, 255, 255, 255)
+              : const Color.fromARGB(255, 0, 0, 0),
+        ),
+      ),
       leading: Padding(
         padding: const EdgeInsets.symmetric(vertical: 11.0, horizontal: 12.0),
         child: SizedBox(
-          height: 40, // Set a specific height for the button
-          width: 40, // Set a specific width to make it a square button
+          height: 40,
+          width: 40,
           child: ElevatedButton(
             style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.transparent, // Transparent background to simulate outline
+              backgroundColor: Colors.transparent,
               side: BorderSide(
-                color: _themeController.isDarkMode.value ? Colors.white : Colors.black, // Outline color
-                width: 0.90, // Outline width
+                color: _themeController.isDarkMode.value ? Colors.white : Colors.black,
+                width: 0.90,
               ),
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8.0), // Optional rounded corners
+                borderRadius: BorderRadius.circular(8.0),
               ),
-              elevation: 0, // Remove elevation to get the outline effect
-              padding: EdgeInsets.all(0), // Remove any padding to center the icon
+              elevation: 0,
+              padding: EdgeInsets.all(0),
             ),
             onPressed: () {
               Navigator.pop(context);
             },
             child: Icon(
               Icons.chevron_left,
-              color: _themeController.isDarkMode.value ? Colors.white : Colors.black, // Icon color based on theme
-              size: 16, // Icon size
+              color: _themeController.isDarkMode.value ? Colors.white : Colors.black,
+              size: 16,
             ),
           ),
         ),
       ),
     ),
     body: _profileStatus == 'pending'
-        ? 
-          Center(
+        ? Center(
             child: Padding(
               padding: const EdgeInsets.all(16.0),
               child: Column(
@@ -388,37 +392,33 @@ Widget build(BuildContext context) {
                     textAlign: TextAlign.center,
                   ),
                   SizedBox(height: 50.0),
-                  // Add the Lottie animation here
                   Lottie.network(
-                    'https://lottie.host/5f367402-5bb5-4034-8d24-e7afdc572eef/lwQlfdeQpt.json', // Update the path to your Lottie JSON file
-                   height: 300,
+                    'https://lottie.host/5f367402-5bb5-4034-8d24-e7afdc572eef/lwQlfdeQpt.json',
+                    height: 300,
                   ),
-                  SizedBox(height: 20.0), // Space between icon and text
+                  SizedBox(height: 20.0),
                   ShadButton(
-                    backgroundColor:_themeController.isDarkMode.value
-                          ? const Color.fromARGB(255, 255, 255, 255)
-                          : const Color.fromARGB(255, 0, 0, 0),
-                  onPressed: () {
-                    // Add your navigation logic here, for example:
-                    Navigator.pop(context); // This will go back to the previous screen
-                  },
-                  child: Text(
-                    'Go Back',
-                    style: TextStyle(
-                      fontWeight: FontWeight.w600,
-                      fontSize: 16.0, // Adjust font size as needed
-                     color: _themeController.isDarkMode.value
-                          ? const Color.fromARGB(255, 0, 0, 0)
-                          : const Color.fromARGB(255, 255, 255, 255),// Change text color if necessary
+                    backgroundColor: _themeController.isDarkMode.value
+                        ? const Color.fromARGB(255, 255, 255, 255)
+                        : const Color.fromARGB(255, 0, 0, 0),
+                    onPressed: () {
+                      Navigator.pop(context);
+                    },
+                    child: Text(
+                      'Go Back',
+                      style: TextStyle(
+                        fontWeight: FontWeight.w600,
+                        fontSize: 16.0,
+                        color: _themeController.isDarkMode.value
+                            ? const Color.fromARGB(255, 0, 0, 0)
+                            : const Color.fromARGB(255, 255, 255, 255),
+                      ),
                     ),
                   ),
-                )
-
                 ],
               ),
             ),
           )
-
         : SingleChildScrollView(
             child: Padding(
               padding: const EdgeInsets.all(16.0),
@@ -429,66 +429,67 @@ Widget build(BuildContext context) {
                     Row(
                       children: [
                         Expanded(
-                          child: ShadInputFormField(
-                            controller: _firstNameController,
-                            placeholder: const Text('Enter your Firstname'),
-                            label: Text(
-                              'Firstname',
-                              style: TextStyle(
-                              fontFamily: 'manrope',
-                              color: _themeController.isDarkMode.value
-                                            ? Colors.white
-                                            : Colors.black,
-                              fontSize: 16,
-                              fontWeight: FontWeight.w600
-                            ),
-                            ),
-                            cursorColor: _themeController.isDarkMode.value
-                                ? Colors.black
-                                : Colors.black, // Cursor color
-                            style: TextStyle(
-                              color: _themeController.isDarkMode.value
-                                  ? Colors.white
-                                  : Colors.black,
-                            ), // Text input color
-                            validator: (value) {
-                              if (value == null || value.isEmpty) {
-                                return 'Please enter your first name';
-                              }
-                              return null;
-                            },
-                          ),
+                          child: 
+ShadInputFormField(
+  controller: _firstNameController,
+  placeholder: const Text('Enter your Firstname'),
+  label: Text(
+    'Firstname',
+    style: TextStyle(
+      fontFamily: 'manrope',
+      color: _themeController.isDarkMode.value ? Colors.white : Colors.black,
+      fontSize: 16,
+      fontWeight: FontWeight.w600,
+    ),
+  ),
+  cursorColor: _themeController.isDarkMode.value ? Colors.black : Colors.black,
+  style: TextStyle(
+    color: _themeController.isDarkMode.value ? Colors.white : Colors.black,
+  ),
+  validator: (value) {
+    if (value == null || value.isEmpty) {
+      return 'Please enter your first name';
+    }
+    return null;
+  },
+  inputFormatters: [
+    CapitalizeTextFormatter(), // Add this line to format the text input
+  ],
+),
                         ),
-                        SizedBox(width: 16), // Add spacing between the two input fields
+                        SizedBox(width: 16),
                         Expanded(
                           child: ShadInputFormField(
                             controller: _lastNameController,
                             placeholder: const Text('Enter your Lastname'),
                             label: Text(
-                              'Last Name',
+                              'Lastname',
                               style: TextStyle(
-                              fontFamily: 'manrope',
-                              color: _themeController.isDarkMode.value
-                                            ? Colors.white
-                                            : Colors.black,
-                              fontSize: 16,
-                              fontWeight: FontWeight.w600
-                            ),
+                                fontFamily: 'manrope',
+                                color: _themeController.isDarkMode.value
+                                    ? Colors.white
+                                    : Colors.black,
+                                fontSize: 16,
+                                fontWeight: FontWeight.w600,
+                              ),
                             ),
                             cursorColor: _themeController.isDarkMode.value
                                 ? Colors.white
-                                : Colors.black, // Cursor color
+                                : Colors.black,
                             style: TextStyle(
                               color: _themeController.isDarkMode.value
                                   ? Colors.white
                                   : Colors.black,
-                            ), // Text input color
+                            ),
                             validator: (value) {
                               if (value == null || value.isEmpty) {
                                 return 'Please enter your last name';
                               }
                               return null;
                             },
+                            inputFormatters: [
+                              CapitalizeTextFormatter(), // Add this line to format the text input
+                            ],
                           ),
                         ),
                       ],
@@ -1083,4 +1084,19 @@ Widget build(BuildContext context) {
     ),
   );
 }
+}
+
+class CapitalizeTextFormatter extends TextInputFormatter {
+  @override
+  TextEditingValue formatEditUpdate(TextEditingValue oldValue, TextEditingValue newValue) {
+    // Check if the first character is lowercase
+    String newText = newValue.text;
+    if (newText.isNotEmpty) {
+      newText = newText[0].toUpperCase() + newText.substring(1);
+    }
+    return TextEditingValue(
+      text: newText,
+      selection: TextSelection.collapsed(offset: newText.length),
+    );
+  }
 }

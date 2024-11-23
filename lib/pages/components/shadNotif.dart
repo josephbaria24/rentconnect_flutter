@@ -5,6 +5,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:get/get.dart';
 import 'package:http/http.dart' as http;
+import 'package:provider/provider.dart';
+import 'package:rentcon/provider/notification.dart';
 import 'package:rentcon/theme_controller.dart';
 import 'dart:convert'; // Add this import
 import 'package:shadcn_ui/shadcn_ui.dart';
@@ -49,7 +51,7 @@ class _CardNotificationsState extends State<CardNotifications> {
   Future<List<dynamic>> fetchNotifications(String userId, String token) async {
     try {
       final response = await http.get(
-        Uri.parse('http://192.168.1.115:3000/notification/unread/$userId'),
+        Uri.parse('https://rentconnect.vercel.app/notification/unread/$userId'),
         headers: {
           'Authorization': 'Bearer $token',
           'Content-Type': 'application/json',
@@ -107,7 +109,7 @@ class _CardNotificationsState extends State<CardNotifications> {
 
   Future<void> _markNotificationAsRead(String notificationId) async {
     final response = await http.patch(
-      Uri.parse('http://192.168.1.115:3000/notification/$notificationId/read'),
+      Uri.parse('https://rentconnect.vercel.app/notification/$notificationId/read'),
       headers: {
         'Authorization': 'Bearer ${widget.token}',
         'Content-Type': 'application/json',
@@ -120,8 +122,10 @@ class _CardNotificationsState extends State<CardNotifications> {
         notifications.removeWhere((notification) => notification['_id'] == notificationId);
         hasNewNotifications = notifications.isNotEmpty; // Update hasNewNotifications
       });
-      // Optionally, you could fetch notifications again to ensure the latest data
-       _fetchNotifications(); 
+      setState(() {
+         _fetchNotifications(); 
+      });
+      
     } else {
       print('Failed to mark notification as read');
     }
@@ -138,56 +142,13 @@ Widget build(BuildContext context) {
     child: Column(
       children: [
         const SizedBox(height: 16),
-        // Add the Push Notifications Section
-        Row(
-          children: [
-            ShadImage.square(
-              LucideIcons.bellRing,
-              size: 24,
-              color: theme.colorScheme.foreground,
-            ),
-            Expanded(
-              child: Padding(
-                padding: const EdgeInsets.only(left: 16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Push Notifications',
-                      style: theme.textTheme.small,
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      'Send notifications to device.',
-                      style: theme.textTheme.muted,
-                    ),
-                  ],
-                ),
-              ),
-            ),
-            ValueListenableBuilder(
-              valueListenable: pushNotifications,
-              builder: (context, value, child) {
-                return ShadSwitch(
-                  value: value,
-                  onChanged: (v) {
-                    pushNotifications.value = v;
-                    // Handle enabling/disabling push notifications
-                    _handlePushNotifications(v);
-                  },
-                );
-              },
-            ),
-          ],
-        ),
-        const SizedBox(height: 16),
         notifications.isNotEmpty
             ? SizedBox(
                 height: 200, // Set a fixed height for scrollable area
                 child: Scrollbar(
                   thumbVisibility: true, // Makes the scrollbar always visible
                   child: ListView.builder(
-                    itemCount: notifications.length > 5 ? 5 : notifications.length,
+                    itemCount: notifications.length > 1000 ? 5 : notifications.length,
                     itemBuilder: (context, index) {
                       final notification = notifications[index];
                       return NotificationRow(
@@ -224,25 +185,31 @@ Widget build(BuildContext context) {
 
 
 
-  Future<void> _handlePushNotifications(bool isEnabled) async {
-    // Implement logic to enable or disable push notifications
-    // This could involve calling an API or saving the preference locally
-    print('Push notifications ${isEnabled ? 'enabled' : 'disabled'}');
-  }
+ Future<void> _markAllAsRead() async {
+  try {
+    final response = await http.patch(
+      Uri.parse('https://rentconnect.vercel.app/notification/readAll'),
+      headers: {
+        'Authorization': 'Bearer ${widget.token}',
+        'Content-Type': 'application/json',
+      },
+      body: jsonEncode({'userId': widget.userId}), // Include userId in the body
+    );
 
-  Future<void> _markAllAsRead() async {
-    for (var notification in notifications) {
-      if (notification is Map<String, dynamic>) {
-        await _markNotificationAsRead(notification['_id']);
-      }
+    if (response.statusCode == 200) {
+      print('All notifications marked as read');
+      setState(() {
+        notifications.clear(); // Clear notifications after marking all as read
+        hasNewNotifications = false; // Update the state
+      });
+      widget.onNotificationsUpdated(notifications); // Notify parent of updates
+    } else {
+      print('Failed to mark all notifications as read');
     }
-    // You can call _fetchNotifications() again here, but it's done after the button is pressed
-    setState(() {
-      hasNewNotifications = false; // Update the state
-      notifications.clear(); // Clear notifications after marking all as read
-    });
-    print('All notifications marked as read locally.');
+  } catch (e) {
+    print('Error marking all notifications as read: $e');
   }
+}
 }
 
 class NotificationRow extends StatelessWidget {

@@ -3,7 +3,9 @@
 import 'package:awesome_snackbar_content/awesome_snackbar_content.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_map_tappable_polyline/flutter_map_tappable_polyline.dart';
 import 'package:fluttertoast/fluttertoast.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:get/get.dart';
 import 'package:jwt_decoder/jwt_decoder.dart';
 import 'package:line_awesome_flutter/line_awesome_flutter.dart';
@@ -74,6 +76,8 @@ class _PropertyDetailPageState extends State<PropertyDetailPage> {
         _currentPageIndex = _pageController.page!.round();
       });
     });
+     _getCurrentUserLocation();
+      _fetchUserLocation();
   }
     @override
   void dispose() {
@@ -82,12 +86,97 @@ class _PropertyDetailPageState extends State<PropertyDetailPage> {
     super.dispose();
   }
 
+
+  LatLng? _currentUserLocation;
+  List<LatLng> _routePoints = [];
+  bool _isLoadingRoute = false;
+
+
+  /// Fetches the user's current location
+  Future<void> _fetchUserLocation() async {
+    bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
+    if (!serviceEnabled) {
+      await Geolocator.openLocationSettings();
+      return;
+    }
+
+    LocationPermission permission = await Geolocator.checkPermission();
+    if (permission == LocationPermission.denied) {
+      permission = await Geolocator.requestPermission();
+      if (permission == LocationPermission.deniedForever) {
+        // Permissions are permanently denied.
+        return;
+      }
+    }
+
+    // Get current location
+    final position = await Geolocator.getCurrentPosition();
+    setState(() {
+      _currentUserLocation = LatLng(position.latitude, position.longitude);
+    });
+
+    // Fetch the route after getting the user's location
+    _fetchRoute();
+  }
+
+  /// Fetches route between user and property using OpenRouteService
+  Future<void> _fetchRoute() async {
+    if (_currentUserLocation == null) return;
+
+    setState(() {
+      _isLoadingRoute = true;
+    });
+
+    final apiKey = '5b3ce3597851110001cf6248fa6d0cb53ddf459b9aee587da71a8ebb';
+    final start = _currentUserLocation!;
+    final end = LatLng(
+      widget.property.location!['coordinates'][1],
+        widget.property.location!['coordinates'][0],
+    );
+
+    final String url =
+        'https://api.openrouteservice.org/v2/directions/driving-car?api_key=$apiKey&start=${start.longitude},${start.latitude}&end=${end.longitude},${end.latitude}';
+
+    try {
+      final response = await http.get(Uri.parse(url));
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        final List<dynamic> coordinates =
+            data['features'][0]['geometry']['coordinates'];
+
+        setState(() {
+          _routePoints = coordinates
+              .map((coord) => LatLng(coord[1], coord[0]))
+              .toList();
+        });
+      } else {
+        print('Failed to fetch route: ${response.body}');
+      }
+    } catch (e) {
+      print('Error fetching route: $e');
+    } finally {
+      setState(() {
+        _isLoadingRoute = false;
+      });
+    }
+  }
+
+
+
+
+
+
+
+
+
+
 Future<void> fetchRooms() async {
   setState(() {
     _loadingRooms = true;  // Start loading
   });
 
-  final response = await http.get(Uri.parse('http://192.168.1.115:3000/rooms/properties/${widget.property.id}/rooms'));
+  final response = await http.get(Uri.parse('https://rentconnect.vercel.app/rooms/properties/${widget.property.id}/rooms'));
 
   if (response.statusCode == 200) {
     final data = jsonDecode(response.body);
@@ -107,7 +196,7 @@ Future<void> fetchRooms() async {
 
 Future<void> fetchNotifications() async {
   final response = await http.get(
-    Uri.parse('http://192.168.1.115:3000/notifications'),
+    Uri.parse('https://rentconnect.vercel.app/notifications'),
     headers: {
       'Authorization': 'Bearer ${widget.token}', // Use the user's token for authentication
     },
@@ -312,7 +401,7 @@ void showRoomDetailsModal(BuildContext context, Map<String, dynamic> room) {
 void _sendRentRequest(BuildContext context, Map<String, dynamic> room, DateTime? proposedStartDate, String? customTerms) async {
   // Check if the user can inquire and if there is a pending request before proceeding
   final checkResponse = await http.get(
-    Uri.parse('http://192.168.1.115:3000/inquiries/check-pending?userId=$userId'),
+    Uri.parse('https://rentconnect.vercel.app/inquiries/check-pending?userId=$userId'),
     headers: {
       'Authorization': 'Bearer ${widget.token}',
     },
@@ -326,7 +415,7 @@ void _sendRentRequest(BuildContext context, Map<String, dynamic> room, DateTime?
      
       // Check if the user can inquire about the room
       final inquireCheckResponse = await http.get(
-        Uri.parse('http://192.168.1.115:3000/inquiries/check-pending?userId=$userId'), // New endpoint for inquiry check
+        Uri.parse('https://rentconnect.vercel.app/inquiries/check-pending?userId=$userId'), // New endpoint for inquiry check
         headers: {
           'Authorization': 'Bearer ${widget.token}',
         },
@@ -343,7 +432,7 @@ void _sendRentRequest(BuildContext context, Map<String, dynamic> room, DateTime?
 
         // Proceed with sending the request
         final inquiryResponse = await http.post(
-          Uri.parse('http://192.168.1.115:3000/inquiries/create'),
+          Uri.parse('https://rentconnect.vercel.app/inquiries/create'),
           headers: {
             'Authorization': 'Bearer ${widget.token}',
             'Content-Type': 'application/json',
@@ -370,7 +459,7 @@ void _sendRentRequest(BuildContext context, Map<String, dynamic> room, DateTime?
 
           // Fetch landlord's email using the provided endpoint
           final landlordEmailResponse = await http.get(
-            Uri.parse('http://192.168.1.115:3000/rooms/landlord-email/${room['_id']}'),
+            Uri.parse('https://rentconnect.vercel.app/rooms/landlord-email/${room['_id']}'),
             headers: {
               'Authorization': 'Bearer ${widget.token}',
             },
@@ -392,7 +481,7 @@ void _sendRentRequest(BuildContext context, Map<String, dynamic> room, DateTime?
 
             // Send notification request
             final notificationResponse = await http.post(
-              Uri.parse('http://192.168.1.115:3000/notification/create'),
+              Uri.parse('https://rentconnect.vercel.app/notification/create'),
               headers: {
                 'Authorization': 'Bearer ${widget.token}',
                 'Content-Type': 'application/json',
@@ -604,7 +693,7 @@ void _sendReserveRequest(BuildContext context, Map<String, dynamic> room, int se
 
   // Check if the user can inquire before proceeding
   final checkResponse = await http.get(
-    Uri.parse('http://192.168.1.115:3000/inquiries/check-pending?userId=$userId'),
+    Uri.parse('https://rentconnect.vercel.app/inquiries/check-pending?userId=$userId'),
     headers: {
       'Authorization': 'Bearer ${widget.token}',
     },
@@ -633,7 +722,7 @@ void _sendReserveRequest(BuildContext context, Map<String, dynamic> room, int se
 
     // Proceed with sending the reservation request
     final inquiryResponse = await http.post(
-      Uri.parse('http://192.168.1.115:3000/inquiries/create'),
+      Uri.parse('https://rentconnect.vercel.app/inquiries/create'),
       headers: {
         'Authorization': 'Bearer ${widget.token}',
         'Content-Type': 'application/json',
@@ -655,7 +744,7 @@ void _sendReserveRequest(BuildContext context, Map<String, dynamic> room, int se
 
       // Fetch landlord's email using the provided endpoint
       final landlordEmailResponse = await http.get(
-        Uri.parse('http://192.168.1.115:3000/rooms/landlord-email/${room['_id']}'),
+        Uri.parse('https://rentconnect.vercel.app/rooms/landlord-email/${room['_id']}'),
         headers: {
           'Authorization': 'Bearer ${widget.token}',
         },
@@ -677,7 +766,7 @@ void _sendReserveRequest(BuildContext context, Map<String, dynamic> room, int se
 
         // Send notification request
         final notificationResponse = await http.post(
-          Uri.parse('http://192.168.1.115:3000/notification/create'),
+          Uri.parse('https://rentconnect.vercel.app/notification/create'),
           headers: {
             'Authorization': 'Bearer ${widget.token}',
             'Content-Type': 'application/json',
@@ -787,6 +876,50 @@ final Map<String, Color> amenityColors = {
 
 
 
+
+
+List<LatLng> _polylinePoints = [];
+
+Future<void> _getCurrentUserLocation() async {
+  bool serviceEnabled;
+  LocationPermission permission;
+
+  serviceEnabled = await Geolocator.isLocationServiceEnabled();
+  if (!serviceEnabled) {
+    // Show error or prompt user to enable location services
+    return;
+  }
+
+  permission = await Geolocator.checkPermission();
+  if (permission == LocationPermission.denied) {
+    permission = await Geolocator.requestPermission();
+    if (permission == LocationPermission.denied) {
+      return;
+    }
+  }
+
+  if (permission == LocationPermission.deniedForever) {
+    return;
+  }
+
+  final position = await Geolocator.getCurrentPosition();
+  setState(() {
+    _currentUserLocation = LatLng(position.latitude, position.longitude);
+    _updatePolyline();
+  });
+}
+
+void _updatePolyline() {
+  if (_currentUserLocation != null && widget.property.location != null) {
+    _polylinePoints = [
+      _currentUserLocation!,
+      LatLng(
+        widget.property.location!['coordinates'][1],
+        widget.property.location!['coordinates'][0],
+      ),
+    ];
+  }
+}
 
 @override
 Widget build(BuildContext context) {
@@ -1033,8 +1166,8 @@ Widget build(BuildContext context) {
              Wrap(
               spacing: 8,
               runSpacing: 8,
-              children: widget.property.amenities.isNotEmpty
-                  ? widget.property.amenities.map<Widget>((amenity) {
+              children: widget.property.amenities!.isNotEmpty
+                  ? widget.property.amenities!.map<Widget>((amenity) {
                       return Container(
                         width: (MediaQuery.of(context).size.width / 2) - 24, // Adjust size based on screen width
                         padding: EdgeInsets.all(8),
@@ -1067,39 +1200,157 @@ Widget build(BuildContext context) {
             ],
           ),
         ),
+        if (_showMap)
+          Positioned.fill(
+            child: GestureDetector(
+              onTap: () {
+                setState(() {
+                  _showMap = false; // Close the map when tapping outside
+                });
+              },
+              child: Container(
+                color: Colors.black.withOpacity(0.7), // Dark semi-transparent overlay
+              ),
+            ),
+          ),
 
         // Show Map Location
-        if (_showMap && widget.property.location != null)
-          Positioned(
-            bottom: 16,
-            right: 40,
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(40),
-              child: Container(
-                width: 300,
-                height: 300,
-                child: FlutterMap(
-                  options: MapOptions(
-                    initialCenter: LatLng(
+if (_showMap && widget.property.location != null)
+  Positioned(
+    bottom: 70,
+    right:20,
+    child: ClipRRect(
+      borderRadius: BorderRadius.circular(10),
+      child: Container(
+         width: MediaQuery.of(context).size.width * 0.9, // 80% of screen width
+        height: 550,
+        child: Stack(
+          children: [
+            // Base map
+            FlutterMap(
+              options: MapOptions(
+                initialCenter: _currentUserLocation ??
+                    LatLng(
                       widget.property.location!['coordinates'][1],
                       widget.property.location!['coordinates'][0],
                     ),
-                    initialZoom: 15.0,
+                initialZoom: 15.0,
+                rotation: 0.0, // Allow rotation if needed
+              ),
+              children: [
+                // Base Tile Layer
+                TileLayer(
+                  urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                ),
+
+                // Polyline Layer
+                if (_currentUserLocation != null && _routePoints.isNotEmpty)
+                  PolylineLayer(
+                    polylines: [
+                      Polyline(
+                        points: _routePoints,
+                        color: Colors.blueAccent,
+                        strokeWidth: 4.0,
+                      ),
+                    ],
                   ),
-                  children: [
-                    TileLayer(
-                      urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+
+                // Markers for user and property location
+                MarkerLayer(
+                  markers: [
+                    // User location marker
+                    if (_currentUserLocation != null)
+                      Marker(
+                        width: 40,
+                        height: 60,
+                        point: _currentUserLocation!,
+                        child: Column(
+                          children: [
+                            SvgPicture.asset(
+                                'assets/icons/loc2.svg',
+                                color: const Color.fromARGB(255, 25, 68, 102),
+                                height: 30),
+                            
+                          ],
+                        ),
+                      ),
+
+                    // Property location marker
+                    Marker(
+                      width: 40,
+                      height: 40,
+                      point: LatLng(
+                        widget.property.location!['coordinates'][1],
+                        widget.property.location!['coordinates'][0],
+                      ),
+                      child: Icon(
+                        CupertinoIcons.location_solid,
+                        color: Colors.red,
+                        size: 30,
+                      ),
                     ),
-                    MarkerLayer(
-                      markers: [
-                        Marker(
-                          width: 40,
-                          height: 40,
-                          point: LatLng(
-                            widget.property.location!['coordinates'][1],
-                            widget.property.location!['coordinates'][0],
-                          ),
-                          child: Icon(Icons.location_pin, color: Colors.red, size: 40),
+                  ],
+                ),
+              ],
+            ),
+
+            // Legend Text at the top of the map
+            Positioned(
+              top: 10,
+              left: 10,
+              right: 10,
+              child: Container(
+                padding: EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.7),
+                  borderRadius: BorderRadius.circular(8),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.2),
+                      blurRadius: 6,
+                      offset: Offset(0, 3),
+                    ),
+                  ],
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Legend Title
+                    Text(
+                      'Legend',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                       color: Colors.black
+                      ),
+                    ),
+                    SizedBox(height: 4),
+                    // Legend Items
+                    Row(
+                      children: [
+                        SvgPicture.asset(
+                          'assets/icons/loc2.svg',
+                          color: const Color.fromARGB(255, 25, 68, 102),
+                          height: 25,
+                        ),
+                        SizedBox(width: 5),
+                        Text(
+                          'Your Location',
+                          style: TextStyle(fontSize: 14, fontFamily: 'manrope', fontWeight: FontWeight.w600, color: Colors.black),
+                        ),
+                      ],
+                    ),
+                    Row(
+                      children: [
+                        Icon(
+                          CupertinoIcons.location_solid,
+                          color: Colors.red,
+                          size: 25,
+                        ),
+                        SizedBox(width: 5),
+                        Text(
+                          'Property Location',
+                          style: TextStyle(fontSize: 14,  fontFamily: 'manrope', fontWeight: FontWeight.w600, color: Colors.black),
                         ),
                       ],
                     ),
@@ -1107,11 +1358,18 @@ Widget build(BuildContext context) {
                 ),
               ),
             ),
-          ),
+          ],
+        ),
+      ),
+    ),
+  ),
+
       ],
     ),
     floatingActionButton: FloatingActionButton(
-      backgroundColor: const Color.fromARGB(255, 255, 255, 255),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(100)),
+      enableFeedback: true,
+      backgroundColor: const Color.fromARGB(255, 226, 30, 79),
       onPressed: () {
         setState(() {
           _showMap = !_showMap;
@@ -1119,7 +1377,7 @@ Widget build(BuildContext context) {
       },
       child: SvgPicture.asset(
         _showMap ? 'assets/icons/close.svg' : 'assets/icons/location.svg',
-        color: const Color.fromARGB(255, 0, 0, 0),
+        color: const Color.fromARGB(255, 255, 255, 255),
         width: 36,
         height: 36,
       ),
@@ -1129,8 +1387,6 @@ Widget build(BuildContext context) {
 }
 
 }
-
-
 
 
 

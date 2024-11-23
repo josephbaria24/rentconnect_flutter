@@ -443,7 +443,7 @@ Future<void> _selectLegalDocPhoto(int index) async {
     List<String> selectedAmenitiesList = getSelectedAmenities();
     String amenitiesJson = jsonEncode(selectedAmenitiesList); // Convert selected amenities to JSON
 
-    final Uri uri = Uri.parse('http://192.168.1.115:3000/properties/${widget.propertyId}');
+    final Uri uri = Uri.parse('https://rentconnect.vercel.app/properties/${widget.propertyId}');
     final request = http.MultipartRequest('PUT', uri)
       ..headers['Authorization'] = 'Bearer ${widget.token}';
 

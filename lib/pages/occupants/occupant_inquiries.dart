@@ -203,7 +203,7 @@ Future<void> _initializeInquiries() async {
  Future<List<Map<String, dynamic>>> fetchInquiries(
       String userId, String token) async {
     final response = await http.get(
-      Uri.parse('http://192.168.1.115:3000/inquiries/occupant/$userId'),
+      Uri.parse('https://rentconnect.vercel.app/inquiries/occupant/$userId'),
       headers: {
         'Authorization': 'Bearer $token',
         'Content-Type': 'application/json',
@@ -219,7 +219,7 @@ Future<void> _initializeInquiries() async {
   }
 
   Future<void> fetchPropertyDetails(String roomId) async {
-    final url = 'http://192.168.1.115:3000/inquiries/room/$roomId/property';
+    final url = 'https://rentconnect.vercel.app/inquiries/room/$roomId/property';
 
     try {
       final response = await http.get(Uri.parse(url));
@@ -325,7 +325,7 @@ Future<void> _uploadImage(
 
   final request = http.MultipartRequest(
     'POST',
-    Uri.parse('http://192.168.1.115:3000/payment/uploadProofOfReservation'),
+    Uri.parse('https://rentconnect.vercel.app/payment/uploadProofOfReservation'),
   );
 
   request.headers['Authorization'] = 'Bearer ${widget.token}';
@@ -387,7 +387,7 @@ Future<void> _uploadImage(
 
         // Send notification request
         final notificationResponse = await http.post(
-          Uri.parse('http://192.168.1.115:3000/notification/create'),
+          Uri.parse('https://rentconnect.vercel.app/notification/create'),
           headers: {
             'Authorization': 'Bearer ${widget.token}',
             'Content-Type': 'application/json',
@@ -415,7 +415,7 @@ Future<void> _uploadImage(
 
   Future<String?> getProofOfReservation(String roomId, String token) async {
     final url =
-        'http://192.168.1.115:3000/payment/room/$roomId/proofOfReservation';
+        'https://rentconnect.vercel.app/payment/room/$roomId/proofOfReservation';
 
     try {
       final response = await http.get(
@@ -441,7 +441,7 @@ Future<void> _uploadImage(
   }
 
   Future<void> _getLandlordId(String roomId) async {
-    final uri = Uri.parse('http://192.168.1.115:3000/rooms/getRoom/$roomId');
+    final uri = Uri.parse('https://rentconnect.vercel.app/rooms/getRoom/$roomId');
 
     final response = await http.get(uri);
 
@@ -482,7 +482,7 @@ void printPropertyId(Map<String, dynamic> propertyDetail) {
 
 
 Future<void> _fetchLandlordId(String propertyId) async {
-  final uri = Uri.parse('http://192.168.1.115:3000/getPropertiesByIds?ids=${propertyRoomDetails!['_id']}');
+  final uri = Uri.parse('https://rentconnect.vercel.app/getPropertiesByIds?ids=${propertyRoomDetails!['_id']}');
 
   final response = await http.get(
     uri,
@@ -525,7 +525,7 @@ Future<void> _fetchLandlordId(String propertyId) async {
 
   Future<String?> getProofOfPayment(String roomId, String token) async {
     final String apiUrl =
-        'http://192.168.1.115:3000/room/$roomId/monthlyPayments'; // Update with your API endpoint
+        'https://rentconnect.vercel.app/room/$roomId/monthlyPayments'; // Update with your API endpoint
 
     try {
       final response = await http.get(
@@ -574,7 +574,7 @@ Future<void> _fetchLandlordId(String propertyId) async {
 
   Future<void> deleteProof(String roomId, String type) async {
     final url =
-        'http://192.168.1.115:3000/payment/room/$roomId/payment/month/proof/reservation';
+        'https://rentconnect.vercel.app/payment/room/$roomId/payment/month/proof/reservation';
 
     print('Attempting to delete: $url'); // Print the URL for debugging
 
@@ -607,7 +607,7 @@ Future<void> _fetchLandlordId(String propertyId) async {
   }
 
 Future<String?> fetchLandlordEmail(String ownerId, String token) async {
-  final url = Uri.parse('http://192.168.1.115:3000/user/$ownerId');
+  final url = Uri.parse('https://rentconnect.vercel.app/user/$ownerId');
   try {
     final response = await http.get(url, headers: {'Authorization': 'Bearer $token'});
     if (response.statusCode == 200) {
@@ -714,7 +714,7 @@ Future<void> _uploadPaymentImage(
     // Creating the multipart request
     final paymentRequest = http.MultipartRequest(
       'POST',
-      Uri.parse('http://192.168.1.115:3000/payment/createoraddMonthlyPayment'),
+      Uri.parse('https://rentconnect.vercel.app/payment/createoraddMonthlyPayment'),
     );
 
     // Adding headers
@@ -772,7 +772,7 @@ Future<void> _uploadPaymentImage(
 
         // Send notification request
         final notificationResponse = await http.post(
-          Uri.parse('http://192.168.1.115:3000/notification/create'),
+          Uri.parse('https://rentconnect.vercel.app/notification/create'),
           headers: {
             'Authorization': 'Bearer $token',
             'Content-Type': 'application/json',
@@ -808,7 +808,7 @@ Future<void> _uploadPaymentImage(
 
   Future<void> _cancelInquiry(String inquiryId, String token) async {
     final String apiUrl =
-        'http://192.168.1.115:3000/inquiries/delete/$inquiryId';
+        'https://rentconnect.vercel.app/inquiries/delete/$inquiryId';
     try {
       final response = await http.delete(
         Uri.parse(apiUrl),

@@ -12,7 +12,7 @@ class PaymentService with ChangeNotifier {
   String get errorMessage => _errorMessage;
 
   Future<void> getProofOfPaymentForSelectedMonth(String roomId, String token, String selectedMonth) async {
-    final String apiUrl = 'http://192.168.1.115:3000/payment/room/6705b542970c37b7bf29c6d7/monthlyPayments';
+    final String apiUrl = 'https://rentconnect.vercel.app/payment/room/6705b542970c37b7bf29c6d7/monthlyPayments';
 
     _isLoading = true;
     notifyListeners(); // Notify listeners that loading has started

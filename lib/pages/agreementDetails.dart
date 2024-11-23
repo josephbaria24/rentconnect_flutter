@@ -34,7 +34,7 @@ class _AgreementDetailsState extends State<AgreementDetails> {
   }
 
   Future<void> fetchAgreementDetails() async {
-    final String apiUrl = 'http://192.168.1.115:3000/rental-agreement/inquiry/${widget.inquiryId}';
+    final String apiUrl = 'https://rentconnect.vercel.app/rental-agreement/inquiry/${widget.inquiryId}';
     print('Fetching agreement details from: $apiUrl'); // Debugging statement
 
     try {
@@ -89,7 +89,7 @@ class _AgreementDetailsState extends State<AgreementDetails> {
         print('Fetching landlord details for ID: $landlordId'); // Debug log
 
         final landlordResponse = await http.get(
-          Uri.parse('http://192.168.1.115:3000/user/$landlordId'), // Correct URL
+          Uri.parse('https://rentconnect.vercel.app/user/$landlordId'), // Correct URL
         );
 
         if (landlordResponse.statusCode == 200) {
@@ -111,7 +111,7 @@ class _AgreementDetailsState extends State<AgreementDetails> {
         print('Fetching occupant details for ID: $occupantId'); // Debug log
 
         final occupantResponse = await http.get(
-          Uri.parse('http://192.168.1.115:3000/user/$occupantId'), // Correct URL
+          Uri.parse('https://rentconnect.vercel.app/user/$occupantId'), // Correct URL
         );
 
         if (occupantResponse.statusCode == 200) {
@@ -266,10 +266,10 @@ Widget build(BuildContext context) {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text('Monthly Rent:', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, fontFamily: 'manrope')),
-                    Text('\$${monthlyRent.toStringAsFixed(2)}', style: const TextStyle(fontSize: 16, fontFamily: 'manrope')),
+                    Text('\₱${monthlyRent.toStringAsFixed(2)}', style: const TextStyle(fontSize: 16, fontFamily: 'manrope')),
                     const SizedBox(height: 10),
                     Text('Security Deposit:', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, fontFamily: 'manrope')),
-                    Text('\$${securityDeposit}', style: const TextStyle(fontSize: 16, fontFamily: 'manrope')),
+                    Text('\₱${securityDeposit}', style: const TextStyle(fontSize: 16, fontFamily: 'manrope')),
                     const SizedBox(height: 10),
                     Text('Lease Start Date:', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, fontFamily: 'manrope')),
                     Text('$leaseStartDate', style: const TextStyle(fontSize: 16, fontFamily: 'manrope')),

@@ -84,7 +84,7 @@ void dispose() {
 
   Future<void> _fetchUserProfile() async {
     final url = Uri.parse(
-        'http://192.168.1.115:3000/user/${widget.property.userId}');
+        'https://rentconnect.vercel.app/user/${widget.property.userId}');
     try {
       final response = await http
           .get(url, headers: {'Authorization': 'Bearer ${widget.token}'});
@@ -471,7 +471,7 @@ Widget build(BuildContext context) {
 }
 
  Future<Map<String, String>> fetchUserProfileStatus() async {
-    final url = Uri.parse('http://192.168.1.115:3000/profile/checkProfileCompletion/${widget.userId}');
+    final url = Uri.parse('https://rentconnect.vercel.app/profile/checkProfileCompletion/${widget.userId}');
     try {
       final response = await http.get(
         url,
@@ -502,7 +502,7 @@ Future<void> triggerView() async {
     final userId = widget.userId; // Get the current user's ID from your auth system
 
     final response = await http.post(
-      Uri.parse('http://192.168.1.115:3000/properties/${widget.property.id}/view'),
+      Uri.parse('https://rentconnect.vercel.app/properties/${widget.property.id}/view'),
       headers: {
         'Content-Type': 'application/json',
         'Authorization': 'Bearer YOUR_JWT_TOKEN', // If you're using JWT for auth
@@ -523,7 +523,7 @@ Future<void> triggerView() async {
 
  void _fetchAverageRating() async {
   // Replace with your actual API endpoint
-  final url = Uri.parse('http://192.168.1.115:3000/averageRating/${widget.property.id}');
+  final url = Uri.parse('https://rentconnect.vercel.app/averageRating/${widget.property.id}');
   try {
     final response = await http.get(
       url,

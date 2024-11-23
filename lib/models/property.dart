@@ -10,7 +10,7 @@ class Property {
   final String street;
   final String barangay;
   final String city;
-  final List<String> amenities;
+  final List<String>? amenities;
   final String status;
   final Map<String, dynamic>? location; // Add location field
   final String? typeOfProperty; // Add typeOfProperty field
@@ -25,7 +25,7 @@ class Property {
     required this.street,
     required this.barangay,
     required this.city,
-    required this.amenities,
+    this.amenities,
     required this.status,
     this.location, 
     this.typeOfProperty, 
@@ -38,10 +38,16 @@ class Property {
 
   // Print the parsed amenities
   print('Parsed amenities: $amenitiesList');
-
+    // Handle userId properly
+  String userId = '';
+  if (json['userId'] is String) {
+    userId = json['userId'] as String; // Direct string case
+  } else if (json['userId'] is Map && json['userId']['_id'] != null) {
+    userId = json['userId']['_id'] as String; // Nested object case
+  }
   return Property(
     id: json['_id'] as String,
-    userId: json['userId'] as String,
+    userId: userId,
     description: json['description'] as String,
     photo: json['photo'] as String,
     photo2: json['photo2'] as String?,
@@ -51,7 +57,9 @@ class Property {
     city: json['city'] as String,
     amenities: amenitiesList, // Use the parsed amenities list
     status: json['status'] as String,
-    location: json['location'] as Map<String, dynamic>?, // Parse location field
+    location: json['location'] != null
+        ? Map<String, dynamic>.from(json['location']) // Correctly handle location as a map
+        : null,
     typeOfProperty: json['typeOfProperty'] as String?, // Parse typeOfProperty field
   );
 }

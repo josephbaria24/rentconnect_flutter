@@ -124,7 +124,7 @@ class _ProfilePageState extends State<ProfilePage>
 
   Future<void> _fetchUserProfile() async {
     final url = Uri.parse(
-        'http://192.168.1.115:3000/user/$userId'); // Adjust the endpoint if needed
+        'https://rentconnect.vercel.app/user/$userId'); // Adjust the endpoint if needed
     try {
       final response = await http
           .get(url, headers: {'Authorization': 'Bearer ${widget.token}'});
@@ -150,7 +150,7 @@ class _ProfilePageState extends State<ProfilePage>
 
   Future<void> fetchUserProfileStatus() async {
     final url = Uri.parse(
-        'http://192.168.1.115:3000/profile/checkProfileCompletion/$userId'); // Replace with your API endpoint
+        'https://rentconnect.vercel.app/profile/checkProfileCompletion/$userId'); // Replace with your API endpoint
     try {
       final response = await http.get(
         url,
@@ -314,7 +314,7 @@ class _ProfilePageState extends State<ProfilePage>
   Future<void> _uploadProfilePicture() async {
     if (_profileImage != null) {
       final url = Uri.parse(
-          'http://192.168.1.115:3000/updateProfilePicture/$userId');
+          'https://rentconnect.vercel.app/updateProfilePicture/$userId');
       var request = http.MultipartRequest('PATCH', url)
         ..headers['Authorization'] = 'Bearer ${widget.token}';
 
@@ -838,21 +838,21 @@ class _ProfilePageState extends State<ProfilePage>
                   ),
                   const SizedBox(height: 2),
                   ProfileMenuWidget(
-                    title: "Personal Information",
-                    icon: LineAwesomeIcons.user,
-                    textColor: themeController.isDarkMode.value
-                        ? Colors.white
-                        : Colors.black,
-                    onPress: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) =>
-                              ProfilePageChecker(token: widget.token),
-                        ),
-                      );
-                    },
-                  ),
+  title: profileStatus == "none" ? "Setup Profile" : "Personal Information", // Change title based on profileStatus
+  icon: LineAwesomeIcons.user,
+  textColor: themeController.isDarkMode.value ? Colors.white : Colors.black,
+  onPress: () {
+    // If profileStatus is "none", navigate to setup profile page
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) =>
+           ProfilePageChecker(token: widget.token),
+      ),
+    );
+  },
+),
+
                   ProfileMenuWidget(
                     title: "Account Settings",
                     icon: Icons.settings,

@@ -61,6 +61,7 @@ class _PaymentUploadWidgetState extends State<PaymentUploadWidget> {
   
   String? proofOfPaymentUrl;
   String? status;
+  String? rejectionReason;
    String? lastSelectedMonth; // New variable to store the last selected month
   List<Map<String, dynamic>> monthlyPayments = [];
   bool _isLoading = false;
@@ -257,41 +258,57 @@ Widget build(BuildContext context) {
             
             const SizedBox(width: 36), // Spacing between image and icon
             if (status != null)
-              Column(
-                children: [
-                  Text("Status", style: TextStyle(color: _themeController.isDarkMode.value? Colors.white:Colors.black, fontFamily: 'manrope', fontWeight: FontWeight.w700),),
-                  Icon(
-                    status == 'pending'
-                        ? Icons.pending
-                        : status == 'completed'
-                            ? Icons.check_circle
-                            : Icons.cancel,
-                    color: status == 'pending'
-                        ? Colors.orange
-                        : status == 'completed'
-                            ? Colors.green
-                            : Colors.red,
-                    size: 24,
-                  ),
-                  SizedBox(height: 4), // Add space between icon and text
-                  Text(
-                    status == 'pending'
-                        ? 'Pending'
-                        : status == 'completed'
-                            ? 'Completed'
-                            : 'Rejected',
-                    style: TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.bold,
+              GestureDetector(
+                onTap: () {
+                  // Show dialog when status is rejected to display rejectionReason
+                  if (status == 'rejected') {
+                    _showRejectionDialog(context, rejectionReason!);
+                  }
+                },
+                child: Column(
+                  children: [
+                    Text(
+                      "Status",
+                      style: TextStyle(
+                        color: _themeController.isDarkMode.value ? Colors.white : Colors.black,
+                        fontFamily: 'manrope',
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    Icon(
+                      status == 'pending'
+                          ? Icons.pending
+                          : status == 'completed'
+                              ? Icons.check_circle
+                              : Icons.cancel,
                       color: status == 'pending'
                           ? Colors.orange
                           : status == 'completed'
                               ? Colors.green
                               : Colors.red,
+                      size: 24,
                     ),
-                  ),
-                ],
+                    SizedBox(height: 4), // Add space between icon and text
+                    Text(
+                      status == 'pending'
+                          ? 'Pending'
+                          : status == 'completed'
+                              ? 'Completed'
+                              : 'Rejected',
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                        color: status == 'pending'
+                            ? Colors.orange
+                            : status == 'completed'
+                                ? Colors.green
+                                : Colors.red,
+                      ),
+                    ),
+                  ],
+                ),
               ),
+
           ],
         ),
       ),
@@ -300,6 +317,51 @@ Widget build(BuildContext context) {
   );
 }
 
+
+/// Function to show the rejection reason in a dialog
+Future<void> _showRejectionDialog(BuildContext context, String rejectionReason) async {
+  showDialog(
+    context: context,
+    builder: (context) {
+      return AlertDialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(10), // Apply 10 border radius
+        ),
+        title: Center(
+          child: Text(
+            'Rejection Reason',
+            style: TextStyle(
+              fontFamily: 'Manrope', // Set font family to Manrope
+              fontWeight: FontWeight.w700,
+              fontSize: 18,
+            ),
+          ),
+        ),
+        content: Text(
+          rejectionReason.isEmpty ? 'No rejection reason provided' : rejectionReason,
+          style: TextStyle(
+            fontFamily: 'Manrope', // Set font family to Manrope
+            fontSize: 14,
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.of(context).pop();
+            },
+            child: Text(
+              'Close',
+              style: TextStyle(
+                fontFamily: 'Manrope', // Set font family to Manrope
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+        ],
+      );
+    },
+  );
+}
 
 
   void _showMonthSelectionDialog() {
@@ -395,7 +457,7 @@ void _fetchMonthlyPayments() async {
   });
 
   try {
-    final response = await http.get(Uri.parse('http://192.168.1.115:3000/payment/room/${widget.roomDetails['_id']}/monthlyPayments'));
+    final response = await http.get(Uri.parse('https://rentconnect.vercel.app/payment/room/${widget.roomDetails['_id']}/monthlyPayments'));
 
     print('Response status: ${response.statusCode}');
     print('Response body: ${response.body}');
@@ -465,7 +527,7 @@ void _checkExistingPayment(String? selectedMonth) async {
 
     try {
       // Call the API to get monthly payments
-      final response = await http.get(Uri.parse('http://192.168.1.115:3000/payment/room/${widget.roomDetails['_id']}/monthlyPayments'));
+      final response = await http.get(Uri.parse('https://rentconnect.vercel.app/payment/room/${widget.roomDetails['_id']}/monthlyPayments'));
 
       // Debugging: Print the response status and body
       print('Response status: ${response.statusCode}');
@@ -485,6 +547,7 @@ void _checkExistingPayment(String? selectedMonth) async {
                 setState(() {
                   proofOfPaymentUrl = payment['proofOfPayment'];
                   status = payment['status'];
+                  rejectionReason = payment['rejectionReason'];
                 });
               }
               return;
