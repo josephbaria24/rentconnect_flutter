@@ -23,6 +23,7 @@ import 'package:rentcon/pages/landlords/manageProperty.dart';
 import 'package:rentcon/pages/landlords/roomCreation.dart';
 import 'package:rentcon/pages/landlords/updateListing.dart';
 import 'package:rentcon/pages/landlords/widgets/billsBoxes.dart';
+import 'package:rentcon/pages/landlords/widgets/comment.dart';
 import 'package:rentcon/pages/landlords/widgets/copyOfpaymentdetails.dart';
 import 'package:rentcon/pages/landlords/widgets/editProperty.dart';
 import 'package:rentcon/pages/landlords/widgets/hasInquiry.dart';
@@ -45,7 +46,6 @@ import 'package:saver_gallery/saver_gallery.dart';
 class CurrentListingPage extends StatefulWidget {
   final String token;
 
-
   const CurrentListingPage({required this.token, Key? key}) : super(key: key);
 
   @override
@@ -63,26 +63,36 @@ class _CurrentListingPageState extends State<CurrentListingPage> {
   Map<String, List<dynamic>> propertyRooms = {};
   Map<String, List<dynamic>> propertyInquiries = {};
   Map<String, dynamic> userProfiles = {};
-  Map<String, dynamic> profilePic= {};
+  Map<String, dynamic> profilePic = {};
   Map<String, dynamic>? inquiry = {};
-  String? selectedUserId; 
+  String? selectedUserId;
   Map<String, dynamic> room = {};
-
 
   final ThemeController _themeController = Get.find<ThemeController>();
   bool _loading = true; // Added state for loading
   bool showAllRooms = false;
+  bool isLoading = false; // Add this to your state
+
   late String landlordId;
   int _currentMonthIndex = 0; // Track the current month index
-   final List<String> months = [
-    'January', 'February', 'March', 'April', 'May', 'June',
-    'July', 'August', 'September', 'October', 'November', 'December'
+  final List<String> months = [
+    'January',
+    'February',
+    'March',
+    'April',
+    'May',
+    'June',
+    'July',
+    'August',
+    'September',
+    'October',
+    'November',
+    'December'
   ];
   late PageController _monthPageController;
   late ToastNotification toastNotification;
   late ScrollController tab2ScrollController;
   String? roomID;
-
 
   @override
   void initState() {
@@ -93,38 +103,39 @@ class _CurrentListingPageState extends State<CurrentListingPage> {
     getPropertyList(userId);
     _loading = true;
     fetchRoomInquiries;
-     _monthPageController = PageController(initialPage: _currentMonthIndex); // Initialize the PageController
-      _fetchProofForAllMonths(room['_id'], widget.token); 
+    _monthPageController = PageController(
+        initialPage: _currentMonthIndex); // Initialize the PageController
+    _fetchProofForAllMonths(room['_id'], widget.token);
     tab2ScrollController = ScrollController();
-     if (mounted) {
-    toastNotification = ToastNotification(context);
-  }
-     // Fetch property list first
-  getPropertyList(userId).then((_) {
-    // Once property list is fetched, initialize roomId
-    initializeRoomId();
-    // Now it's safe to call fetchRoomInquiries with roomId
-    if (roomId.isNotEmpty) {
-      fetchRoomInquiries(roomId);
+    if (mounted) {
+      toastNotification = ToastNotification(context);
     }
-  });
+    fetchUserProfile(userId);
+    // Fetch property list first
+    getPropertyList(userId).then((_) {
+      // Once property list is fetched, initialize roomId
+      initializeRoomId();
+      // Now it's safe to call fetchRoomInquiries with roomId
+      if (roomId.isNotEmpty) {
+        fetchRoomInquiries(roomId);
+      }
+    });
   }
-
 
   Color getStatusColor(String? status) {
-  switch (status) {
-    case 'Waiting':
-      return const Color.fromARGB(255, 255, 196, 0); // Yellow for Waiting
-    case 'Approved':
-      return Colors.green; // Green for Approved
-    case 'Rejected':
-      return Colors.red; // Red for Rejected
-    default:
-      return _themeController.isDarkMode.value
-          ? Colors.grey // Default color for dark mode
-          : Colors.black; // Default color for light mode
+    switch (status) {
+      case 'Waiting':
+        return const Color.fromARGB(255, 255, 196, 0); // Yellow for Waiting
+      case 'Approved':
+        return Colors.green; // Green for Approved
+      case 'Rejected':
+        return Colors.red; // Red for Rejected
+      default:
+        return _themeController.isDarkMode.value
+            ? Colors.grey // Default color for dark mode
+            : Colors.black; // Default color for light mode
+    }
   }
-}
 
   @override
   void dispose() {
@@ -132,76 +143,68 @@ class _CurrentListingPageState extends State<CurrentListingPage> {
     super.dispose();
   }
 
+  Future<String?> getProofOfPaymentForSelectedMonth(
+      String roomId, String token, String selectedMonth) async {
+    final String apiUrl =
+        'https://rentconnect.vercel.app/payment/room/$roomId/monthlyPayments';
 
+    try {
+      print('API URL: $apiUrl');
 
+      final response = await http.get(
+        Uri.parse(apiUrl),
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Content-Type': 'application/json',
+        },
+      );
 
+      print('Response Body: ${response.body}');
 
+      if (response.statusCode == 200) {
+        final Map<String, dynamic> data = jsonDecode(response.body);
+        if (data['status'] == true && data['monthlyPayments'].isNotEmpty) {
+          final List<dynamic> monthlyPayments = data['monthlyPayments'];
 
+          // Find the payment for the selected month
+          final paymentForMonth = monthlyPayments.firstWhere(
+            (payment) => payment['month'] == selectedMonth,
+            orElse: () => null, // If no payment is found for that month
+          );
 
-
- 
-
-
-Future<String?> getProofOfPaymentForSelectedMonth(String roomId, String token, String selectedMonth) async {
-  final String apiUrl = 'https://rentconnect.vercel.app/payment/room/$roomId/monthlyPayments';
-
-  try {
-    print('API URL: $apiUrl');
-
-    final response = await http.get(
-      Uri.parse(apiUrl),
-      headers: {
-        'Authorization': 'Bearer $token',
-        'Content-Type': 'application/json',
-      },
-    );
-
-    print('Response Body: ${response.body}');
-
-    if (response.statusCode == 200) {
-      final Map<String, dynamic> data = jsonDecode(response.body);
-      if (data['status'] == true && data['monthlyPayments'].isNotEmpty) {
-        final List<dynamic> monthlyPayments = data['monthlyPayments'];
-
-        // Find the payment for the selected month
-        final paymentForMonth = monthlyPayments.firstWhere(
-          (payment) => payment['month'] == selectedMonth,
-          orElse: () => null, // If no payment is found for that month
-        );
-
-        if (paymentForMonth != null) {
-          final proofOfPayment = paymentForMonth['proofOfPayment'];
-          print('Proof of Payment for $selectedMonth: $proofOfPayment');
-          return proofOfPayment; // Return if it's a String (URL)
+          if (paymentForMonth != null) {
+            final proofOfPayment = paymentForMonth['proofOfPayment'];
+            print('Proof of Payment for $selectedMonth: $proofOfPayment');
+            return proofOfPayment; // Return if it's a String (URL)
+          } else {
+            print('No proof of payment found for $selectedMonth.');
+            return null; // No payment found for the selected month
+          }
         } else {
-          print('No proof of payment found for $selectedMonth.');
-          return null; // No payment found for the selected month
+          print('No payments found or empty monthlyPayments.');
+          return null;
         }
       } else {
-        print('No payments found or empty monthlyPayments.');
-        return null;
+        throw Exception(
+            'Failed to fetch proof of payment: ${response.statusCode}');
       }
-    } else {
-      throw Exception('Failed to fetch proof of payment: ${response.statusCode}');
+    } catch (e) {
+      print('Error fetching proof of payment: $e');
+      return null;
     }
-  } catch (e) {
-    print('Error fetching proof of payment: $e');
-    return null;
   }
-}
 
-final List<String> rejectionReasons = [
-  'Not enough information provided.',
-  'Room is already rented.',
-  'Duration is too long.',
-  'Not a valid request type.',
-  'User did not meet the criteria.',
-  'Request was made too late.',
-  'Other reasons.',
-];
+  final List<String> rejectionReasons = [
+    'Not enough information provided.',
+    'Room is already rented.',
+    'Duration is too long.',
+    'Not a valid request type.',
+    'User did not meet the criteria.',
+    'Request was made too late.',
+    'Other reasons.',
+  ];
 
-
- Map<String, bool> _monthsWithProof = {
+  Map<String, bool> _monthsWithProof = {
     'January': false,
     'February': false,
     'March': false,
@@ -218,527 +221,673 @@ final List<String> rejectionReasons = [
 
   Future<void> _fetchProofForAllMonths(String? roomId, String token) async {
     for (String month in _monthsWithProof.keys) {
-      final proof = await getProofOfPaymentForSelectedMonth(roomId!, token, month);
+      final proof =
+          await getProofOfPaymentForSelectedMonth(roomId!, token, month);
       _monthsWithProof[month] = proof != null; // Set to true if proof exists
     }
     setState(() {}); // Update UI after fetching proof for all months
   }
 
+  Future<int?> getReservationDuration(String roomId, String token) async {
+    final response = await http.get(
+      Uri.parse('https://rentconnect.vercel.app/inquiries/rooms/$roomId'),
+      headers: {
+        'Authorization':
+            'Bearer $token', // If you're using token-based authentication
+        'Content-Type': 'application/json',
+      },
+    );
 
-Future<int?> getReservationDuration(String roomId, String token) async {
-  final response = await http.get(
-    Uri.parse('https://rentconnect.vercel.app/inquiries/rooms/$roomId'),
-    headers: {
-      'Authorization': 'Bearer $token', // If you're using token-based authentication
-      'Content-Type': 'application/json',
-    },
-  );
+    if (response.statusCode == 200) {
+      // Parse the response JSON
+      final data = json.decode(response.body);
 
-  if (response.statusCode == 200) {
-    // Parse the response JSON
-    final data = json.decode(response.body);
-
-    // Check if inquiries exist and return the reservationDuration
-    if (data is List && data.isNotEmpty) {
-      // Assuming the inquiry structure contains 'reservationDuration'
-      return data.first['reservationDuration'];
-    }
-  } else {
-    // Handle the error (you can throw an error or return null)
-    print('Failed to load inquiries: ${response.statusCode}');
-  }
-  return null; // Return null if no valid data is found
-}
-
-
-
-
-
-
-
-String getUserIdFromInquiries(List<dynamic> inquiries) {
-  if (inquiries.isNotEmpty) {
-    return inquiries[0]['userId']; // Get the userId from the first inquiry
-  }
-  return ''; // Return an empty string if the list is empty
-}
- 
-
-void showRoomDetailBottomSheet(BuildContext context, dynamic room, Map<String, dynamic> userProfiles, List<dynamic> inquiries, {String? selectedMonth, int currentMonthIndex = 0, int initialTabIndex = 0}) async {
-   
-   Future<void> markAsAvailable() async {
-    try {
-      // Replace with your actual backend API endpoint
-      final response = await http.put(
-        Uri.parse('https://rentconnect.vercel.app/rooms/room/${room['_id']}/markAsAvailable'),
-        headers: {'Authorization': 'Bearer ${widget.token}'},
-      );
-
-      if (response.statusCode == 200) {
-        // Successfully marked as available, update local room status
-        setState(() {
-          room['roomStatus'] = 'available';
-        });
-        toastNotification.success("Room marked as available");
-      } else {
-         print('Failed to mark room as available: ${response.body}');
-         toastNotification.error("Failed to mark room as available");
+      // Check if inquiries exist and return the reservationDuration
+      if (data is List && data.isNotEmpty) {
+        // Assuming the inquiry structure contains 'reservationDuration'
+        return data.first['reservationDuration'];
       }
-    } catch (e) {
-      print("Error marking room as available: $e");
-         toastNotification.error("Error marking room as available");
+    } else {
+      // Handle the error (you can throw an error or return null)
+      print('Failed to load inquiries: ${response.statusCode}');
     }
+    return null; // Return null if no valid data is found
   }
 
-  ScrollController tab1ScrollController = ScrollController(); // ScrollController for Tab 1
-  ScrollController tab2ScrollController = ScrollController(); // ScrollController for Tab 2
+  String getUserIdFromInquiries(List<dynamic> inquiries) {
+    if (inquiries.isNotEmpty) {
+      return inquiries[0]['userId']; // Get the userId from the first inquiry
+    }
+    return ''; // Return an empty string if the list is empty
+  }
+
+  void showRoomDetailBottomSheet(BuildContext context, dynamic room,
+      Map<String, dynamic> userProfiles, List<dynamic> inquiries,
+      {String? selectedMonth,
+      int currentMonthIndex = 0,
+      int initialTabIndex = 0}) async {
+    Future<void> markAsAvailable() async {
+      try {
+        // Replace with your actual backend API endpoint
+        final response = await http.put(
+          Uri.parse(
+              'https://rentconnect.vercel.app/rooms/room/${room['_id']}/markAsAvailable'),
+          headers: {'Authorization': 'Bearer ${widget.token}'},
+        );
+
+        if (response.statusCode == 200) {
+          // Successfully marked as available, update local room status
+          setState(() {
+            room['roomStatus'] = 'available';
+          });
+          toastNotification.success("Room marked as available");
+        } else {
+          print('Failed to mark room as available: ${response.body}');
+          toastNotification.error("Failed to mark room as available");
+        }
+      } catch (e) {
+        print("Error marking room as available: $e");
+        toastNotification.error("Error marking room as available");
+      }
+    }
+
+    ScrollController tab1ScrollController =
+        ScrollController(); // ScrollController for Tab 1
+    ScrollController tab2ScrollController =
+        ScrollController(); // ScrollController for Tab 2
     // print('Userprofile: $userProfiles'); // Print the userId for debugging
     //   print('RoomId from inquiry: ${room['_id']}');
-  int? reservationDuration = await getReservationDuration(room['_id'], widget.token);
-  print("inquiryyyt $inquiries[0]['userId']");
-  print("inqasda: ${getUserIdFromInquiries(inquiries)}");
-  print("propertyinq: ${propertyInquiries[room['_id']]}");
-  showModalBottomSheet(
-    backgroundColor: _themeController.isDarkMode.value? const Color.fromARGB(255, 43, 45, 56): Colors.white,
-    context: context,
-    isScrollControlled: true, // Makes the modal sheet taller
-    shape: RoundedRectangleBorder(
-      borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-    ),
-    builder: (context) {
-      int selectedDay = room['dueDate'] != null 
-          ? DateTime.parse(room['dueDate']).day 
-          : 5; // Default to the 5th day
-      DateTime? _selectedDueDate;
+    int? reservationDuration =
+        await getReservationDuration(room['_id'], widget.token);
+    print("inquiryyyt $inquiries[0]['userId']");
+    print("inqasda: ${getUserIdFromInquiries(inquiries)}");
+    print("propertyinq: ${propertyInquiries[room['_id']]}");
+    showModalBottomSheet(
+      backgroundColor: _themeController.isDarkMode.value
+          ? const Color.fromARGB(255, 43, 45, 56)
+          : Colors.white,
+      context: context,
+      isScrollControlled: true, // Makes the modal sheet taller
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) {
+        int selectedDay = room['dueDate'] != null
+            ? DateTime.parse(room['dueDate']).day
+            : 5; // Default to the 5th day
+        DateTime? _selectedDueDate;
 
-      void calculateDueDate() {
-        DateTime today = DateTime.now();
+        void calculateDueDate() {
+          DateTime today = DateTime.now();
 
-        // Set the due date to the selected day of the current month
-        _selectedDueDate = DateTime(today.year, today.month, selectedDay);
-        
-        // If today is past the selected day, move to the next month
-        if (today.day > selectedDay) {
-          _selectedDueDate = DateTime(today.year, today.month + 1, selectedDay+1);
+          // Set the due date to the selected day of the current month
+          _selectedDueDate = DateTime(today.year, today.month, selectedDay);
+
+          // If today is past the selected day, move to the next month
+          if (today.day > selectedDay) {
+            // Adjust the month if today is past the selected day
+            _selectedDueDate = DateTime(today.year, today.month + 1, selectedDay);
+          }
+          
+          print("Calculated Due Date: $_selectedDueDate"); // Check the calculated due date
         }
-      }
 
-      // Call the function to calculate due date
-      calculateDueDate();
+        // Call the function to calculate due date
+        calculateDueDate();
 
-      List<String> photos = [
-        (room['photo1'] as String?)?.toString() ?? '',
-        (room['photo2'] as String?)?.toString() ?? '',
-        (room['photo3'] as String?)?.toString() ?? '',
-      ].where((photo) => photo.isNotEmpty).toList();
+        List<String> photos = [
+          (room['photo1'] as String?)?.toString() ?? '',
+          (room['photo2'] as String?)?.toString() ?? '',
+          (room['photo3'] as String?)?.toString() ?? '',
+        ].where((photo) => photo.isNotEmpty).toList();
 
-      PageController pageController = PageController();
-      bool hasOccupants = room['occupantUsers'] != null && room['occupantUsers'].isNotEmpty;
-      bool hasReserver = room['reservationInquirers'] != null && room['reservationInquirers'].isNotEmpty;
-      bool isReserved = room['roomStatus'] == 'reserved';
-      bool isRented = inquiries.isNotEmpty && inquiries.any((inquiry) => inquiry['isRented'] == true);
-      bool isAvailable = room['roomStatus'] == 'available';
-      bool isOccupied = room['roomStatus'] == 'occupied';
+        PageController pageController = PageController();
+        bool hasOccupants =
+            room['occupantUsers'] != null && room['occupantUsers'].isNotEmpty;
+        bool hasReserver = room['reservationInquirers'] != null &&
+            room['reservationInquirers'].isNotEmpty;
+        bool isReserved = room['roomStatus'] == 'reserved';
+        bool isRented = inquiries.isNotEmpty &&
+            inquiries.any((inquiry) => inquiry['isRented'] == true);
+        bool isAvailable = room['roomStatus'] == 'available';
+        bool isOccupied = room['roomStatus'] == 'occupied';
 
-      bool hasPendingInquiry = false;
-      if (propertyInquiries.containsKey(room['_id'])) {
-        List<dynamic> inquiries = propertyInquiries[room['_id']] ?? [];
-        hasPendingInquiry = inquiries.any((inquiry) => inquiry['status'] == 'pending');
-      }
-      
+        bool hasPendingInquiry = false;
+        if (propertyInquiries.containsKey(room['_id'])) {
+          List<dynamic> inquiries = propertyInquiries[room['_id']] ?? [];
+          hasPendingInquiry =
+              inquiries.any((inquiry) => inquiry['status'] == 'pending');
+        }
 
-      return DefaultTabController(
-        length: 2, // Two tabs
-        initialIndex: initialTabIndex,
-        child: ConstrainedBox(
-          constraints: BoxConstraints(
-            maxHeight: MediaQuery.of(context).size.height * 0.90,
-            maxWidth: MediaQuery.of(context).size.width * 0.98,
-          ),
-          child: Column(
-            children: [
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 10.0, vertical: 10),
-                child: Container(
-                  margin: EdgeInsets.symmetric(horizontal: 130),  // indent and endIndent effect
-                  height: 6,  // thickness
-                  decoration: BoxDecoration(
-                    color: Colors.grey,  // Divider color
-                    borderRadius: BorderRadius.circular(10),  // Rounded corners
+        return DefaultTabController(
+          length: 2, // Two tabs
+          initialIndex: initialTabIndex,
+          child: ConstrainedBox(
+            constraints: BoxConstraints(
+              maxHeight: MediaQuery.of(context).size.height * 0.90,
+              maxWidth: MediaQuery.of(context).size.width * 0.98,
+            ),
+            child: Column(
+              children: [
+                Padding(
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 10.0, vertical: 10),
+                  child: Container(
+                    margin: EdgeInsets.symmetric(
+                        horizontal: 130), // indent and endIndent effect
+                    height: 6, // thickness
+                    decoration: BoxDecoration(
+                      color: Colors.grey, // Divider color
+                      borderRadius:
+                          BorderRadius.circular(10), // Rounded corners
+                    ),
                   ),
                 ),
-              ),
-              Padding(
-                padding: const EdgeInsets.only(right: 10.0, left: 10),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      'Room No. ${room['roomNumber']?.toString() ?? 'Unknown'}',
-                      style: const TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 20,
-                        fontFamily: 'manrope',
+                Padding(
+                  padding: const EdgeInsets.only(right: 10.0, left: 10),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        'Room No. ${room['roomNumber']?.toString() ?? 'Unknown'}',
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 20,
+                          fontFamily: 'manrope',
+                        ),
                       ),
-                    ),
-                    
+                    ],
+                  ),
+                ),
+                // TabBar
+                TabBar(
+                  labelColor: _themeController.isDarkMode.value
+                      ? Colors.white
+                      : Colors.black,
+                  indicatorColor: _themeController.isDarkMode.value
+                      ? Colors.white
+                      : Colors.black,
+                  tabs: [
+                    Tab(text: 'Room'),
+                    Tab(text: 'Payment'),
                   ],
                 ),
-              ),
-              // TabBar
-              TabBar(
-                labelColor: _themeController.isDarkMode.value? Colors.white: Colors.black,
-                indicatorColor: _themeController.isDarkMode.value? Colors.white:Colors.black,
-                tabs: [
-                  Tab(text: 'Room'),
-                  Tab(text: 'Payment'),
-                ],
-              ),
-              Expanded(
-                child: TabBarView(
-                  children: [
-                    // Tab 1: Occupants, Room Photos, Agreement, etc.
-                    Padding(
-                      padding: const EdgeInsets.only(right: 3.0),
-                      child: Scrollbar(
-                        controller: tab1ScrollController, // Add ScrollController for Tab 1
-                        thickness: 4,
-                        radius: Radius.circular(10),
-                        thumbVisibility: true,
-                        child: SingleChildScrollView(
-                          controller: tab1ScrollController, // Assign ScrollController here too
-                          child: Padding(
-                            padding: const EdgeInsets.all(10.0),
-                            child: Column(
-                              children: [
-                                if (hasOccupants)
-                                  OccupantListWidget(
-                                    propertyInquiries: propertyInquiries,
-                                    room: room,
-                                    occupantUsers: room['occupantUsers'],
-                                    userProfiles: userProfiles,
-                                    profilePic: profilePic,
-                                    fetchUserProfile: fetchUserProfile,
-                                    isDarkMode: _themeController.isDarkMode.value,
-                                  ),
-                                if (hasReserver)
-                                  ReserverList(
-                                    hasReserver: hasReserver,
-                                    room: room,
-                                    userProfiles: userProfiles,
-                                    profilePic: profilePic,
-                                    themeController: _themeController,
-                                    fetchUserProfile: fetchUserProfile,
-                                  ),
-                                SizedBox(height: 10),
-                                Column( // Change Row to Column to stack photo and text vertically
-                                  children: [
-                                    Row(
-                                      mainAxisAlignment: MainAxisAlignment.spaceAround, // Aligns children evenly
-                                      children: [
-                                        SizedBox(
-                                          height: 150,
-                                          width: 150,
-                                          child: photos.isNotEmpty
-                                              ? PageView.builder(
-                                                  controller: pageController,
-                                                  itemCount: photos.length,
-                                                  itemBuilder: (context, index) {
-                                                    return GestureDetector(
-                                                      onTap: () {
-                                                        showFullscreenImage(context, photos[index]);
-                                                      },
-                                                      child: Container(
-                                                        decoration: BoxDecoration(
-                                                          border: Border.all(width: 1, color: _themeController.isDarkMode.value ? Colors.white : Colors.black),
-                                                          borderRadius: BorderRadius.circular(8),
-                                                        ),
-                                                        child: Padding(
-                                                          padding: const EdgeInsets.symmetric(vertical: 4.0, horizontal: 4),
-                                                          child: ClipRRect(
-                                                            borderRadius: BorderRadius.circular(8),
-                                                            child: FadeInImage.assetNetwork(
-                                                              placeholder: 'assets/images/placeholder.webp',
-                                                              image: photos[index],
-                                                              fit: BoxFit.cover,
-                                                            ),
-                                                          ),
-                                                        ),
-                                                      ),
-                                                    );
-                                                  },
-                                                )
-                                              : const Center(child: Text("No photos available")),
-                                        ),
-                                        SizedBox(width: 10),
-                                        
-                                          Expanded( // Makes the text take remaining space
-                                            child: Column(
-                                                  crossAxisAlignment: CrossAxisAlignment.start, // Aligns text to the start
-                                                  children: [
-                                                    Text.rich(
-                                                      TextSpan(
-                                                        children: [
-                                                          TextSpan(
-                                                            text: 'Monthly rent: ', 
-                                                            style: TextStyle(
-                                                              fontFamily: 'manrope',
-                                                              fontWeight: FontWeight.bold,
-                                                              fontSize: 13
-                                                            ),
-                                                          ),
-                                                          TextSpan(
-                                                            text: '₱${room['price'] ?? 'N/A'}',
-                                                            style: TextStyle(
-                                                              fontFamily: 'manrope',
-                                                              fontWeight: FontWeight.normal,
-                                                            ),
-                                                          ),
-                                                        ],
-                                                      ),
-                                                    ),
-                                                    Text.rich(
-                                                      TextSpan(
-                                                        children: [
-                                                          TextSpan(
-                                                            text: 'Capacity: ', 
-                                                            style: TextStyle(
-                                                              fontFamily: 'manrope',
-                                                              fontWeight: FontWeight.bold,
-                                                            ),
-                                                          ),
-                                                          TextSpan(
-                                                            text: '${room['capacity'] ?? 'N/A'}',
-                                                            style: TextStyle(
-                                                              fontFamily: 'manrope',
-                                                              fontWeight: FontWeight.normal,
-                                                            ),
-                                                          ),
-                                                        ],
-                                                      ),
-                                                    ),
-                                                    Text.rich(
-                                                      TextSpan(
-                                                        children: [
-                                                          TextSpan(
-                                                            text: 'Month Deposit: ', 
-                                                            style: TextStyle(
-                                                              fontFamily: 'manrope',
-                                                              fontWeight: FontWeight.bold,
-                                                            ),
-                                                          ),
-                                                          TextSpan(
-                                                            text: '${room['deposit'] ?? 'N/A'}',
-                                                            style: TextStyle(
-                                                              fontFamily: 'manrope',
-                                                              fontWeight: FontWeight.normal,
-                                                            ),
-                                                          ),
-                                                        ],
-                                                      ),
-                                                    ),
-                                                    Text.rich(
-                                                      TextSpan(
-                                                        children: [
-                                                          TextSpan(
-                                                            text: 'Month Advance: ', 
-                                                            style: TextStyle(
-                                                              fontFamily: 'manrope',
-                                                              fontWeight: FontWeight.bold,
-                                                            ),
-                                                          ),
-                                                          TextSpan(
-                                                            text: '${room['advance'] ?? 'N/A'}',
-                                                            style: TextStyle(
-                                                              fontFamily: 'manrope',
-                                                              fontWeight: FontWeight.normal,
-                                                            ),
-                                                          ),
-                                                        ],
-                                                      ),
-                                                    ),
-                                                  ],
-                                                ),
-
-                                          ), // Spacing between the photo and texts
-                                      ],
+                Expanded(
+                  child: TabBarView(
+                    children: [
+                      // Tab 1: Occupants, Room Photos, Agreement, etc.
+                      Padding(
+                        padding: const EdgeInsets.only(right: 3.0),
+                        child: Scrollbar(
+                          controller:
+                              tab1ScrollController, // Add ScrollController for Tab 1
+                          thickness: 4,
+                          radius: Radius.circular(10),
+                          thumbVisibility: true,
+                          child: SingleChildScrollView(
+                            controller:
+                                tab1ScrollController, // Assign ScrollController here too
+                            child: Padding(
+                              padding: const EdgeInsets.all(10.0),
+                              child: Column(
+                                children: [
+                                  if (hasOccupants)
+                                    OccupantListWidget(
+                                      propertyInquiries: propertyInquiries,
+                                      room: room,
+                                      occupantUsers: room['occupantUsers'],
+                                      occupantNonUsers:
+                                          room['occupantNonUsers'],
+                                      userProfiles: userProfiles,
+                                      profilePic: profilePic,
+                                      fetchUserProfile: fetchUserProfile,
+                                      isDarkMode:
+                                          _themeController.isDarkMode.value,
                                     ),
-                                    if (photos.isNotEmpty)
-                                      SizedBox(height: 5),
+                                  if (hasReserver)
+                                    ReserverList(
+                                      hasReserver: hasReserver,
+                                      room: room,
+                                      userProfiles: userProfiles,
+                                      profilePic: profilePic,
+                                      themeController: _themeController,
+                                      fetchUserProfile: fetchUserProfile,
+                                    ),
+                                  SizedBox(height: 10),
+                                  Column(
+                                    // Change Row to Column to stack photo and text vertically
+                                    children: [
+                                      Row(
+                                        mainAxisAlignment: MainAxisAlignment
+                                            .spaceAround, // Aligns children evenly
+                                        children: [
+                                          SizedBox(
+                                            height: 150,
+                                            width: 150,
+                                            child: photos.isNotEmpty
+                                                ? PageView.builder(
+                                                    controller: pageController,
+                                                    itemCount: photos.length,
+                                                    itemBuilder:
+                                                        (context, index) {
+                                                      return GestureDetector(
+                                                        onTap: () {
+                                                          showFullscreenImage(
+                                                              context,
+                                                              photos[index]);
+                                                        },
+                                                        child: Container(
+                                                          decoration:
+                                                              BoxDecoration(
+                                                            border: Border.all(
+                                                                width: 1,
+                                                                color: _themeController
+                                                                        .isDarkMode
+                                                                        .value
+                                                                    ? Colors
+                                                                        .white
+                                                                    : Colors
+                                                                        .black),
+                                                            borderRadius:
+                                                                BorderRadius
+                                                                    .circular(
+                                                                        8),
+                                                          ),
+                                                          child: Padding(
+                                                            padding:
+                                                                const EdgeInsets
+                                                                    .symmetric(
+                                                                    vertical:
+                                                                        4.0,
+                                                                    horizontal:
+                                                                        4),
+                                                            child: ClipRRect(
+                                                              borderRadius:
+                                                                  BorderRadius
+                                                                      .circular(
+                                                                          8),
+                                                              child: FadeInImage
+                                                                  .assetNetwork(
+                                                                placeholder:
+                                                                    'assets/images/placeholder.webp',
+                                                                image: photos[
+                                                                    index],
+                                                                fit: BoxFit
+                                                                    .cover,
+                                                              ),
+                                                            ),
+                                                          ),
+                                                        ),
+                                                      );
+                                                    },
+                                                  )
+                                                : const Center(
+                                                    child: Text(
+                                                        "No photos available")),
+                                          ),
+                                          SizedBox(width: 10),
+
+                                          Expanded(
+                                            // Makes the text take remaining space
+                                            child: Column(
+                                              crossAxisAlignment: CrossAxisAlignment
+                                                  .start, // Aligns text to the start
+                                              children: [
+                                                Text.rich(
+                                                  TextSpan(
+                                                    children: [
+                                                      TextSpan(
+                                                        text: 'Monthly rent: ',
+                                                        style: TextStyle(
+                                                            fontFamily:
+                                                                'manrope',
+                                                            fontWeight:
+                                                                FontWeight.bold,
+                                                            fontSize: 13),
+                                                      ),
+                                                      TextSpan(
+                                                        text:
+                                                            '₱${room['price'] ?? 'N/A'}',
+                                                        style: TextStyle(
+                                                          fontFamily: 'manrope',
+                                                          fontWeight:
+                                                              FontWeight.normal,
+                                                        ),
+                                                      ),
+                                                    ],
+                                                  ),
+                                                ),
+                                                Text.rich(
+                                                  TextSpan(
+                                                    children: [
+                                                      TextSpan(
+                                                        text: 'Capacity: ',
+                                                        style: TextStyle(
+                                                          fontFamily: 'manrope',
+                                                          fontWeight:
+                                                              FontWeight.bold,
+                                                        ),
+                                                      ),
+                                                      TextSpan(
+                                                        text:
+                                                            '${room['capacity'] ?? 'N/A'}',
+                                                        style: TextStyle(
+                                                          fontFamily: 'manrope',
+                                                          fontWeight:
+                                                              FontWeight.normal,
+                                                        ),
+                                                      ),
+                                                    ],
+                                                  ),
+                                                ),
+                                                Text.rich(
+                                                  TextSpan(
+                                                    children: [
+                                                      TextSpan(
+                                                        text: 'Month Deposit: ',
+                                                        style: TextStyle(
+                                                          fontFamily: 'manrope',
+                                                          fontWeight:
+                                                              FontWeight.bold,
+                                                        ),
+                                                      ),
+                                                      TextSpan(
+                                                        text:
+                                                            '${room['deposit'] ?? 'N/A'}',
+                                                        style: TextStyle(
+                                                          fontFamily: 'manrope',
+                                                          fontWeight:
+                                                              FontWeight.normal,
+                                                        ),
+                                                      ),
+                                                    ],
+                                                  ),
+                                                ),
+                                                Text.rich(
+                                                  TextSpan(
+                                                    children: [
+                                                      TextSpan(
+                                                        text: 'Month Advance: ',
+                                                        style: TextStyle(
+                                                          fontFamily: 'manrope',
+                                                          fontWeight:
+                                                              FontWeight.bold,
+                                                        ),
+                                                      ),
+                                                      TextSpan(
+                                                        text:
+                                                            '${room['advance'] ?? 'N/A'}',
+                                                        style: TextStyle(
+                                                          fontFamily: 'manrope',
+                                                          fontWeight:
+                                                              FontWeight.normal,
+                                                        ),
+                                                      ),
+                                                    ],
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          ), // Spacing between the photo and texts
+                                        ],
+                                      ),
+                                      if (photos.isNotEmpty)
+                                        SizedBox(height: 5),
+                                      Padding(
+                                        padding:
+                                            const EdgeInsets.only(left: 67.0),
+                                        child: Align(
+                                          alignment: Alignment
+                                              .centerLeft, // Aligns to the left
+                                          child: SmoothPageIndicator(
+                                            controller: pageController,
+                                            count: photos.length,
+                                            effect: ExpandingDotsEffect(
+                                              dotHeight: 5,
+                                              dotWidth: 5,
+                                              activeDotColor: Theme.of(context)
+                                                          .brightness ==
+                                                      Brightness.dark
+                                                  ? Colors.white
+                                                  : Colors.black,
+                                              dotColor: Colors.grey,
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  if (isOccupied || isReserved)
                                     Padding(
-                                      padding: const EdgeInsets.only(left: 67.0),
-                                      child: Align(
-                                        alignment: Alignment.centerLeft, // Aligns to the left
-                                        child: SmoothPageIndicator(
-                                          controller: pageController,
-                                          count: photos.length,
-                                          effect: ExpandingDotsEffect(
-                                            dotHeight: 5,
-                                            dotWidth: 5,
-                                            activeDotColor: Theme.of(context).brightness == Brightness.dark
-                                                ? Colors.white
-                                                : Colors.black,
-                                            dotColor: Colors.grey,
+                                      padding: const EdgeInsets.all(8.0),
+                                      child: ElevatedButton(
+                                        onPressed: () async {
+                                          // Show confirmation dialog
+                                          bool? confirmed = await showDialog(
+                                            context: context,
+                                            builder: (context) {
+                                              bool isHolding = false;
+                                              double progress = 0.0;
+
+                                              return StatefulBuilder(
+                                                builder: (context, setState) {
+                                                  void startHold() {
+                                                    setState(
+                                                        () => isHolding = true);
+                                                    Future.delayed(
+                                                        const Duration(
+                                                            milliseconds: 30),
+                                                        () {
+                                                      if (isHolding &&
+                                                          progress < 1.0) {
+                                                        setState(() =>
+                                                            progress += 0.01);
+                                                        startHold();
+                                                      } else if (progress >=
+                                                          1.0) {
+                                                        Navigator.of(context).pop(
+                                                            true); // Confirm action
+                                                      }
+                                                    });
+                                                  }
+
+                                                  void stopHold() {
+                                                    setState(() {
+                                                      isHolding = false;
+                                                      progress = 0.0;
+                                                    });
+                                                  }
+
+                                                  return AlertDialog(
+                                                    title: Text("Confirmation"),
+                                                    content: Text(
+                                                        "This action is irreversible and will remove all the occupants record from your room. Do you want to proceed?"),
+                                                    actions: [
+                                                      TextButton(
+                                                        onPressed: () {
+                                                          Navigator.of(context).pop(
+                                                              false); // Cancel action
+                                                        },
+                                                        child: Text("Cancel"),
+                                                      ),
+                                                      GestureDetector(
+                                                        onTapDown: (_) =>
+                                                            startHold(),
+                                                        onTapUp: (_) =>
+                                                            stopHold(),
+                                                        onTapCancel: stopHold,
+                                                        child: Stack(
+                                                          alignment:
+                                                              Alignment.center,
+                                                          children: [
+                                                            Container(
+                                                              width: 130,
+                                                              height: 40,
+                                                              child:
+                                                                  LinearProgressIndicator(
+                                                                borderRadius:
+                                                                    BorderRadius
+                                                                        .circular(
+                                                                            12),
+                                                                value: progress,
+                                                                backgroundColor:
+                                                                    const Color
+                                                                        .fromARGB(
+                                                                        255,
+                                                                        179,
+                                                                        179,
+                                                                        179),
+                                                                color: _themeController
+                                                                        .isDarkMode
+                                                                        .value
+                                                                    ? Colors
+                                                                        .white
+                                                                    : const Color
+                                                                        .fromARGB(
+                                                                        255,
+                                                                        224,
+                                                                        11,
+                                                                        64),
+                                                              ),
+                                                            ),
+                                                            Text(
+                                                                "Hold to Proceed",
+                                                                style: TextStyle(
+                                                                    color: isHolding
+                                                                        ? const Color
+                                                                            .fromARGB(
+                                                                            255,
+                                                                            255,
+                                                                            255,
+                                                                            255)
+                                                                        : Colors
+                                                                            .black)),
+                                                          ],
+                                                        ),
+                                                      ),
+                                                    ],
+                                                  );
+                                                },
+                                              );
+                                            },
+                                          );
+                                          if (confirmed == true) {
+                                            await markAsAvailable();
+                                          }
+                                        },
+                                        child: Text(
+                                          "Mark as Available",
+                                          style: TextStyle(
+                                            fontFamily: 'manrope',
+                                            color: _themeController
+                                                    .isDarkMode.value
+                                                ? Colors.black
+                                                : Colors.white,
+                                          ),
+                                        ),
+                                        style: ElevatedButton.styleFrom(
+                                          backgroundColor:
+                                              _themeController.isDarkMode.value
+                                                  ? Colors.white
+                                                  : Colors.black,
+                                          textStyle: TextStyle(
+                                            fontWeight: FontWeight.bold,
                                           ),
                                         ),
                                       ),
                                     ),
-                                  ],
-                                ),
-                                 if (isOccupied || isReserved)
-                                  Padding(
-                                    padding: const EdgeInsets.all(8.0),
-                                    child: ElevatedButton(
-                                      onPressed: () async {
-                                        // Show confirmation dialog
-                                        bool? confirmed = await showDialog(
-                                          context: context,
-                                          builder: (context) {
-                                            bool isHolding = false;
-                                            double progress = 0.0;
-
-                                            return StatefulBuilder(
-                                              builder: (context, setState) {
-                                                void startHold() {
-                                                  setState(() => isHolding = true);
-                                                  Future.delayed(const Duration(milliseconds: 30), () {
-                                                    if (isHolding && progress < 1.0) {
-                                                      setState(() => progress += 0.01);
-                                                      startHold();
-                                                    } else if (progress >= 1.0) {
-                                                      Navigator.of(context).pop(true); // Confirm action
-                                                    }
-                                                  });
-                                                }
-
-                                                void stopHold() {
-                                                  setState(() {
-                                                    isHolding = false;
-                                                    progress = 0.0;
-                                                  });
-                                                }
-
-                                                return AlertDialog(
-                                                  title: Text("Confirmation"),
-                                                  content: Text("This action is irreversible and will remove all the occupants record from your room. Do you want to proceed?"),
-                                                  actions: [
-                                                    TextButton(
-                                                      onPressed: () {
-                                                        Navigator.of(context).pop(false); // Cancel action
-                                                      },
-                                                      child: Text("Cancel"),
-                                                    ),
-                                                    GestureDetector(
-                                                      onTapDown: (_) => startHold(),
-                                                      onTapUp: (_) => stopHold(),
-                                                      onTapCancel: stopHold,
-                                                      child: Stack(
-                                                        alignment: Alignment.center,
-                                                        children: [
-                                                          Container(
-                                                            width: 130,
-                                                            height: 40,
-                                                            child: LinearProgressIndicator(
-                                                              borderRadius: BorderRadius.circular(12),
-                                                              value: progress,
-                                                              backgroundColor: const Color.fromARGB(255, 179, 179, 179),
-                                                              color: _themeController.isDarkMode.value ? Colors.white : const Color.fromARGB(255, 224, 11, 64),
-                                                            ),
-                                                          ),
-                                                          Text("Hold to Proceed", style: TextStyle(color: isHolding ? const Color.fromARGB(255, 255, 255, 255) : Colors.black)),
-                                                        ],
-                                                      ),
-                                                    ),
-                                                  ],
-                                                );
-                                              },
-                                            );
-                                          },
-                                        );
-                                        if (confirmed == true) {
-                                          await markAsAvailable();
-                                        }
-                                      },
-                                      child: Text(
-                                        "Mark as Available",
-                                        style: TextStyle(
-                                          fontFamily: 'manrope',
-                                          color: _themeController.isDarkMode.value ? Colors.black : Colors.white,
-                                        ),
-                                      ),
-                                      style: ElevatedButton.styleFrom(
-                                        backgroundColor: _themeController.isDarkMode.value ? Colors.white : Colors.black,
-                                        textStyle: TextStyle(
-                                          fontWeight: FontWeight.bold,
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-
-                              ],
+                                ],
+                              ),
                             ),
                           ),
                         ),
                       ),
-                    ),
-                    // Tab 2: Payment Details with Scrollbar
-                    Padding(
-                      padding: const EdgeInsets.only(right: 4.0),
-                      child: Scrollbar(
-                        thickness: 4,
-                        radius: Radius.circular(10),
-                        controller: tab2ScrollController, // Add ScrollController for Tab 2
-                        thumbVisibility: true, // Show scrollbar
-                        child: SingleChildScrollView(
-                          controller: tab2ScrollController, // Assign ScrollController here too
-                          child: Padding(
-                          padding: const EdgeInsets.all(16.0),
-                          child: Column(
-                            children: [
-                              if (isOccupied) ...[
-                                PaymentDetails(
-                                  token: widget.token,
-                                  room: room,
-                                  selectedDueDate: _selectedDueDate,
-                                  selectedMonth: selectedMonth,
+                      // Tab 2: Payment Details with Scrollbar
+                      Padding(
+                          padding: const EdgeInsets.only(right: 4.0),
+                          child: Scrollbar(
+                            thickness: 4,
+                            radius: Radius.circular(10),
+                            controller:
+                                tab2ScrollController, // Add ScrollController for Tab 2
+                            thumbVisibility: true, // Show scrollbar
+                            child: SingleChildScrollView(
+                              controller:
+                                  tab2ScrollController, // Assign ScrollController here too
+                              child: Padding(
+                                padding: const EdgeInsets.all(16.0),
+                                child: Column(
+                                  children: [
+                                    if (isOccupied) ...[
+                                      PaymentDetails(
+                                        token: widget.token,
+                                        room: room,
+                                        selectedDueDate: _selectedDueDate,
+                                        selectedMonth: selectedMonth,
+                                        
+                                      ),
+                                      SizedBox(
+                                        height: 10,
+                                      ),
+                                      Container(
+                                        decoration: BoxDecoration(
+                                            color: _themeController
+                                                    .isDarkMode.value
+                                                ? Colors.white
+                                                : Colors.black,
+                                            borderRadius:
+                                                BorderRadius.circular(2)),
+                                        height: 2,
+                                      ),
+                                      Billsboxes(
+                                        inquiries: inquiries,
+                                        token: widget.token,
+                                        userID:
+                                            getUserIdFromInquiries(inquiries),
+                                        onRetry: () {
+                                          Navigator.pop(
+                                              context); // Close the current modal
+                                          showRoomDetailBottomSheet(
+                                            context,
+                                            room,
+                                            userProfiles,
+                                            inquiries,
+                                            selectedMonth: selectedMonth,
+                                            currentMonthIndex:
+                                                currentMonthIndex,
+                                            initialTabIndex:
+                                                DefaultTabController.of(context)
+                                                        ?.index ??
+                                                    0, // Preserve current tab
+                                          );
+                                        },
+                                      )
+                                    ],
+                                    if (isReserved) ...[
+                                      ReservationDetails(
+                                        room: room,
+                                        token: widget.token,
+                                        mounted: mounted,
+                                        reservationDuration:
+                                            reservationDuration,
+                                        selectedUserId: selectedUserId!,
+                                      )
+                                    ],
+                                  ],
                                 ),
-                                SizedBox(height: 10,),
-                                Container(decoration: BoxDecoration(
-                                  color: _themeController.isDarkMode.value? Colors.white:Colors.black,
-                                  borderRadius: BorderRadius.circular(2)
-                                ),
-                                height: 2,),
-                                Billsboxes(
-                                  inquiries: inquiries,
-                                  token: widget.token,
-                                  userID: getUserIdFromInquiries(inquiries),
-
-                                )
-                              ],
-                              if (isReserved) ...[
-                                ReservationDetails(room: room, token: widget.token, mounted: mounted, reservationDuration: reservationDuration, selectedUserId: selectedUserId!,)
-                              ],
-                            ],
-                          ),
-                        ),
-                      ),
-
-                 ))],
+                              ),
+                            ),
+                          ))
+                    ],
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
-        ),
-      );
-    },
-  );
-}
-
-
-
-
-
-
+        );
+      },
+    );
+  }
 
   Future<void> updateInquiryStatus(
       String? inquiryId, String? newStatus, String? token) async {
@@ -769,12 +918,9 @@ void showRoomDetailBottomSheet(BuildContext context, dynamic room, Map<String, d
       // Optionally, show an error message in the UI
     }
   }
-  bool _isLoading = false;
-
-
 
 // Approve and update the room
-Future<void> updateInquiryStatusAndRoom(
+  Future<void> updateInquiryStatusAndRoom(
     Map<String, dynamic> inquiry,
     String inquiryId,
     String status,
@@ -782,142 +928,150 @@ Future<void> updateInquiryStatusAndRoom(
     String userId,
     String token,
     int? reservationDuration,
-) async {
-    final url = 'https://rentconnect.vercel.app/inquiries/update/$inquiryId'; // Update inquiry status
+  ) async {
+    final url =
+        'https://rentconnect.vercel.app/inquiries/update/$inquiryId'; // Update inquiry status
     try {
-        final response = await http.patch(
-            Uri.parse(url),
-            headers: {
-                'Authorization': 'Bearer $token', // Include token if required
-                'Content-Type': 'application/json',
-            },
-            body: json.encode({
-                'status': status,
-                'requestType': inquiry['requestType'], // Include requestType
-                'roomId': roomId,
-                'userId': userId,
-                'reservationDuration': reservationDuration, // Pass the duration
-            }),
+      final response = await http.patch(
+        Uri.parse(url),
+        headers: {
+          'Authorization': 'Bearer $token', // Include token if required
+          'Content-Type': 'application/json',
+        },
+        body: json.encode({
+          'status': status,
+          'requestType': inquiry['requestType'], // Include requestType
+          'roomId': roomId,
+          'userId': userId,
+          'reservationDuration': reservationDuration, // Pass the duration
+        }),
+      );
+
+      if (response.statusCode == 200) {
+        // Get the occupant's email
+        final emailResponse = await http.get(
+          Uri.parse(
+              'https://rentconnect.vercel.app/inquiries/$inquiryId/email'),
+          headers: {
+            'Authorization': 'Bearer $token',
+            'Content-Type': 'application/json',
+          },
         );
+        if (emailResponse.statusCode == 200) {
+          final occupantEmail = json.decode(emailResponse.body)['email'];
+          final message = status == 'approved'
+              ? 'Your inquiry for room ${inquiry['roomId']['roomNumber']} has been approved. Please Settle all needed payment immediately.'
+              : 'Your inquiry for room ${inquiry['roomNumber']} has been rejected.';
 
-        if (response.statusCode == 200) {
-            // Get the occupant's email
-            final emailResponse = await http.get(
-                Uri.parse('https://rentconnect.vercel.app/inquiries/$inquiryId/email'),
-                headers: {
-                    'Authorization': 'Bearer $token',
-                    'Content-Type': 'application/json',
-                },
-            );
-            if (emailResponse.statusCode == 200) {
-                final occupantEmail = json.decode(emailResponse.body)['email'];
-                final message = status == 'approved'
-                    ? 'Your inquiry for room ${inquiry['roomId']['roomNumber']} has been approved. Please Settle all needed payment immediately.'
-                    : 'Your inquiry for room ${inquiry['roomNumber']} has been rejected.';
-
-                await _sendOccupantNotificationEmail(occupantEmail, message, inquiry['userId']);
-                print('Occupant notified successfully.');
-            } else {
-                print('Failed to retrieve occupant email: ${emailResponse.statusCode}');
-            }
+          await _sendOccupantNotificationEmail(
+              occupantEmail, message, inquiry['userId']);
+          print('Occupant notified successfully.');
         } else {
-           print('Failed to update inquiry. Status Code: ${response.statusCode}');
-            print('Response Body: ${response.body}');
-            // Handle error
-            throw Exception('Failed to update inquiry and room');
+          print(
+              'Failed to retrieve occupant email: ${emailResponse.statusCode}');
         }
+      } else {
+        print('Failed to update inquiry. Status Code: ${response.statusCode}');
+        print('Response Body: ${response.body}');
+        // Handle error
+        throw Exception('Failed to update inquiry and room');
+      }
     } catch (e) {
-        // Handle exceptions (like network errors)
-        print('Error updating inquiry and room: $e');
-    } 
-}
-
-
-Future<void> _sendOccupantNotificationEmail(String occupantEmail, String message, String userId) async {
-    final emailServiceUrl = 'https://rentconnect.vercel.app/notification/create'; // Endpoint to send notifications
-    try {
-        final response = await http.post(
-            Uri.parse(emailServiceUrl),
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: json.encode({
-                'userId': userId, // Include the userId
-                'message': message,
-                'requesterEmail': occupantEmail, // This is the same as occupantEmail
-            }),
-        );
-
-        if (response.statusCode != 201) {
-            print('Failed to send notification email to occupant: ${response.statusCode}');
-        } else {
-            final responseBody = json.decode(response.body);
-            print('Email service response: $responseBody');
-        }
-    } catch (error) {
-        print('Error sending notification email: $error');
+      // Handle exceptions (like network errors)
+      print('Error updating inquiry and room: $e');
     }
-}
+  }
 
+  Future<void> _sendOccupantNotificationEmail(
+      String occupantEmail, String message, String userId) async {
+    final emailServiceUrl =
+        'https://rentconnect.vercel.app/notification/create'; // Endpoint to send notifications
+    try {
+      final response = await http.post(
+        Uri.parse(emailServiceUrl),
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: json.encode({
+          'userId': userId, // Include the userId
+          'message': message,
+          'requesterEmail': occupantEmail, // This is the same as occupantEmail
+        }),
+      );
 
+      if (response.statusCode != 201) {
+        print(
+            'Failed to send notification email to occupant: ${response.statusCode}');
+      } else {
+        final responseBody = json.decode(response.body);
+        print('Email service response: $responseBody');
+      }
+    } catch (error) {
+      print('Error sending notification email: $error');
+    }
+  }
 
-
-
-
-Future<void> rejectAndDeleteInquiry(String inquiryId, String token, String reason) async {
-  try {
-    // First, call your API to reject the inquiry and send the reason
-    final response = await http.patch(
-      Uri.parse('https://rentconnect.vercel.app/inquiries/reject/$inquiryId'), // Update the endpoint
-      headers: {
-        'Authorization': 'Bearer $token',
-        'Content-Type': 'application/json',
-      },
-      body: json.encode({
-        'reason': reason, // Include the rejection reason in the request body
-      }),
-    );
-
-    if (response.statusCode == 200) {
-      print('Inquiry rejected successfully.');
-      toastNotification.success('Inquiry rejected successfully.');
-      setState(() {
-        fetchRoomInquiries(roomId);
-      });
-
-      // Get the inquiry details, including userId and occupant's email
-      final inquiryResponse = await http.get(
-        Uri.parse('https://rentconnect.vercel.app/inquiries/$inquiryId'), // Update the endpoint to get inquiry details
+  Future<void> rejectAndDeleteInquiry(
+      String inquiryId, String token, String reason) async {
+    try {
+      // First, call your API to reject the inquiry and send the reason
+      final response = await http.patch(
+        Uri.parse(
+            'https://rentconnect.vercel.app/inquiries/reject/$inquiryId'), // Update the endpoint
         headers: {
           'Authorization': 'Bearer $token',
           'Content-Type': 'application/json',
         },
+        body: json.encode({
+          'reason': reason, // Include the rejection reason in the request body
+        }),
       );
 
-      if (inquiryResponse.statusCode == 200) {
-        final inquiryData = json.decode(inquiryResponse.body);
-        final occupantEmail = inquiryData['requesterEmail']; // Assuming this field exists
-        final userId = inquiryData['userId']; // Get userId from the inquiry data
+      if (response.statusCode == 200) {
+        print('Inquiry rejected successfully.');
+        toastNotification.success('Inquiry rejected successfully.');
+        setState(() {
+          fetchRoomInquiries(roomId);
+        });
 
-        // Prepare the rejection message
-        final message = 'Your inquiry has been rejected for the following reason: $reason';
-        await _sendOccupantNotificationEmail(occupantEmail, message, userId); // Pass userId here
-        print('Occupant notified successfully.');
+        // Get the inquiry details, including userId and occupant's email
+        final inquiryResponse = await http.get(
+          Uri.parse(
+              'https://rentconnect.vercel.app/inquiries/$inquiryId'), // Update the endpoint to get inquiry details
+          headers: {
+            'Authorization': 'Bearer $token',
+            'Content-Type': 'application/json',
+          },
+        );
+
+        if (inquiryResponse.statusCode == 200) {
+          final inquiryData = json.decode(inquiryResponse.body);
+          final occupantEmail =
+              inquiryData['requesterEmail']; // Assuming this field exists
+          final userId =
+              inquiryData['userId']; // Get userId from the inquiry data
+
+          // Prepare the rejection message
+          final message =
+              'Your inquiry has been rejected for the following reason: $reason';
+          await _sendOccupantNotificationEmail(
+              occupantEmail, message, userId); // Pass userId here
+          print('Occupant notified successfully.');
+        } else {
+          print(
+              'Failed to retrieve inquiry details: ${inquiryResponse.statusCode}');
+        }
       } else {
-        print('Failed to retrieve inquiry details: ${inquiryResponse.statusCode}');
+        print('Failed to reject inquiry: ${response.statusCode}');
       }
-    } else {
-      print('Failed to reject inquiry: ${response.statusCode}');
+    } catch (error) {
+      print('Error rejecting inquiry: $error');
     }
-  } catch (error) {
-    print('Error rejecting inquiry: $error');
   }
-}
-
-
 
   Future<bool> deleteProperty(String propertyId) async {
-    final response = await http.delete(Uri.parse('https://rentconnect.vercel.app/deleteProperty/$propertyId'));
+    final response = await http.delete(
+        Uri.parse('https://rentconnect.vercel.app/deleteProperty/$propertyId'));
 
     if (response.statusCode == 200) {
       // Successfully deleted the property
@@ -929,140 +1083,147 @@ Future<void> rejectAndDeleteInquiry(String inquiryId, String token, String reaso
     }
   }
 
-
- void _confirmDelete(String propertyId) async {
-  final bool? confirmed = await showCupertinoDialog<bool>(
-    context: context,
-    builder: (context) => CupertinoAlertDialog(
-      title: Text('Delete Property'),
-      content: Text('Are you sure you want to delete this property?'),
-      actions: [
-        CupertinoDialogAction(
-          onPressed: () => Navigator.of(context).pop(false),
-          child: Text('Cancel'),
-        ),
-        CupertinoDialogAction(
-          onPressed: () => Navigator.of(context).pop(true),
-          child: Text('Delete', style: TextStyle(
-            color: Colors.red
-          ),),
-        ),
-      ],
-    ),
-  );
-
-  if (confirmed == true) {
-    try {
-      final success = await deleteProperty(propertyId);
-      if (success) {
-        setState(() {
-          // Ensure items is non-null before calling removeWhere
-          if (items != null) {
-            items?.removeWhere((property) => property['_id'] == propertyId);
-          }
-        });
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Property deleted successfully.')),
-        );
-      }
-    } catch (error) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Failed to delete property: $error')),
-      );
-    }
-  }
-}
-
-
-
-void _navigateToEditProperty(String propertyId) {
-  // Find the property by its ID from the items list
-  var selectedProperty = items?.firstWhere((property) => property['_id'] == propertyId);
-
-  Navigator.push(
-    context,
-    MaterialPageRoute(
-      builder: (context) => UpdateProperty(
-        token: widget.token,
-        propertyId: propertyId,
-        propertyDetails: selectedProperty,  // Passing the selected property details
-      ),
-    ),
-  );
-}
-
-
-
-
-
-Future<void> _confirmDeleteRoom(BuildContext context, String roomId) async {
-  // Show a Cupertino-style alert dialog with confirmation
-  showCupertinoDialog(
-    context: context,
-    builder: (BuildContext context) {
-      return CupertinoAlertDialog(
-        title: Text(
-          "This action cannot be undo, are you sure you want to delete this room?",
-          style: TextStyle(fontWeight: FontWeight.bold),
-        ),
+  void _confirmDelete(String propertyId) async {
+    final bool? confirmed = await showCupertinoDialog<bool>(
+      context: context,
+      builder: (context) => CupertinoAlertDialog(
+        title: Text('Delete Property'),
+        content: Text('Are you sure you want to delete this property?'),
         actions: [
           CupertinoDialogAction(
-            onPressed: () {
-              deleteRoom(context, roomId);  // Proceed with deleting the room
-              Navigator.pop(context);
-            },
-            child: Text("Delete Room"),
-            isDestructiveAction: true,
+            onPressed: () => Navigator.of(context).pop(false),
+            child: Text('Cancel'),
           ),
           CupertinoDialogAction(
-            onPressed: () {
-              Navigator.pop(context);  // Close the dialog if cancelled
-            },
-            child: Text("Cancel"),
+            onPressed: () => Navigator.of(context).pop(true),
+            child: Text(
+              'Delete',
+              style: TextStyle(color: Colors.red),
+            ),
           ),
         ],
-      );
-    },
-  );
-}
-Future<void> deleteRoom(BuildContext context, String roomId) async {
-  // Replace with your API base URL
-  final String apiUrl = 'https://rentconnect.vercel.app/rooms/deleteRoom/$roomId'; 
-
-  try {
-    // Make the DELETE request to the API
-    final response = await http.delete(
-      Uri.parse(apiUrl),
+      ),
     );
 
-    if (response.statusCode == 200) {
-      // Room deleted successfully
-      final responseData = json.decode(response.body);
-      if (responseData['status'] == true) {
-        // Show a success notification
-        toastNotification.success('Room deleted successfully');
-        setState(() {
-          
-        });
-      } else {
-        // Show a warning notification if deletion failed
-        toastNotification.warn('Failed to delete room');
+    if (confirmed == true) {
+      try {
+        final success = await deleteProperty(propertyId);
+        if (success) {
+          setState(() {
+            // Ensure items is non-null before calling removeWhere
+            if (items != null) {
+              items?.removeWhere((property) => property['_id'] == propertyId);
+            }
+          });
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Property deleted successfully.')),
+          );
+        }
+      } catch (error) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to delete property: $error')),
+        );
       }
-    } else {
-      // API returned an error
-      toastNotification.warn('Error deleting room');
     }
-  } catch (error) {
-    // Handle any errors from the API request
-    toastNotification.error('Something went wrong. Please try again later.');
   }
-}
 
+  void _navigateToEditProperty(String propertyId) {
+    // Find the property by its ID from the items list
+    var selectedProperty =
+        items?.firstWhere((property) => property['_id'] == propertyId);
+
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => UpdateProperty(
+          token: widget.token,
+          propertyId: propertyId,
+          propertyDetails:
+              selectedProperty, // Passing the selected property details
+        ),
+      ),
+    );
+  }
+
+  Future<void> _confirmDeleteRoom(BuildContext context, String roomId) async {
+    // Show a Cupertino-style alert dialog with confirmation
+    showCupertinoDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return CupertinoAlertDialog(
+          title: Text(
+            "This action cannot be undo, are you sure you want to delete this room?",
+            style: TextStyle(fontWeight: FontWeight.bold),
+          ),
+          actions: [
+            CupertinoDialogAction(
+              onPressed: () {
+                deleteRoom(context, roomId); // Proceed with deleting the room
+                Navigator.pop(context);
+              },
+              child: Text("Delete Room"),
+              isDestructiveAction: true,
+            ),
+            CupertinoDialogAction(
+              onPressed: () {
+                Navigator.pop(context); // Close the dialog if cancelled
+              },
+              child: Text("Cancel"),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Future<void> deleteRoom(BuildContext context, String roomId) async {
+    // Replace with your API base URL
+    final String apiUrl =
+        'https://rentconnect.vercel.app/rooms/deleteRoom/$roomId';
+
+    try {
+      // Make the DELETE request to the API
+      final response = await http.delete(
+        Uri.parse(apiUrl),
+      );
+
+      if (response.statusCode == 200) {
+        // Room deleted successfully
+        final responseData = json.decode(response.body);
+        if (responseData['status'] == true) {
+          // Show a success notification
+          toastNotification.success('Room deleted successfully');
+          setState(() {});
+        } else {
+          // Show a warning notification if deletion failed
+          toastNotification.warn('Failed to delete room');
+        }
+      } else {
+        // API returned an error
+        toastNotification.warn('Error deleting room');
+      }
+    } catch (error) {
+      // Handle any errors from the API request
+      toastNotification.error('Something went wrong. Please try again later.');
+    }
+  }
+
+  void _navigateToCommentPage(String propertyId) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => CommentPage(propertyId: propertyId),
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
-    // print('selected UserId from inquiry: $selectedUserId');
+    print('selected UserId from inquiry: $propertyInquiries');
     //   print("roomID ${room['_id']}");
+    print('userId: $userId');
+    print('userProfiles: $userProfiles');
+    //print('profile: $profile');
 
     return Scaffold(
       backgroundColor: _themeController.isDarkMode.value
@@ -1074,7 +1235,7 @@ Future<void> deleteRoom(BuildContext context, String roomId) async {
             ? const Color.fromARGB(255, 28, 29, 34)
             : Colors.white,
         title: Text(
-          'Listed properties',
+          'My properties',
           style: TextStyle(
             color:
                 _themeController.isDarkMode.value ? Colors.white : Colors.black,
@@ -1085,52 +1246,58 @@ Future<void> deleteRoom(BuildContext context, String roomId) async {
         leading: Padding(
           padding: const EdgeInsets.symmetric(vertical: 11.0, horizontal: 12.0),
           child: SizedBox(
-            height: 40,  // Set a specific height for the button
-            width: 40,   // Set a specific width to make it a square button
+            height: 40, // Set a specific height for the button
+            width: 40, // Set a specific width to make it a square button
             child: ElevatedButton(
               style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.transparent, // Transparent background to simulate outline
+                backgroundColor: Colors
+                    .transparent, // Transparent background to simulate outline
                 side: BorderSide(
-                  color: _themeController.isDarkMode.value ? Colors.white : Colors.black, // Outline color
+                  color: _themeController.isDarkMode.value
+                      ? Colors.white
+                      : Colors.black, // Outline color
                   width: 0.90, // Outline width
                 ),
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8.0), // Optional rounded corners
+                  borderRadius:
+                      BorderRadius.circular(8.0), // Optional rounded corners
                 ),
                 elevation: 0, // Remove elevation to get the outline effect
-                padding: EdgeInsets.all(0), // Remove any padding to center the icon
+                padding:
+                    EdgeInsets.all(0), // Remove any padding to center the icon
               ),
               onPressed: () {
                 Navigator.pop(context);
               },
               child: Icon(
                 Icons.chevron_left,
-                color: _themeController.isDarkMode.value ? Colors.white : Colors.black, // Icon color based on theme
+                color: _themeController.isDarkMode.value
+                    ? Colors.white
+                    : Colors.black, // Icon color based on theme
                 size: 16, // Icon size
               ),
             ),
           ),
         ),
         actions: [
-         GestureDetector(
-          onTap: () {
-            showDialog(
-              context: context,
-              builder: (BuildContext context) {
-                return Dialog(
-                  insetAnimationDuration: Duration(milliseconds: 300),
-                  insetAnimationCurve: Curves.easeInOut,
-                  child: const Helpscreen(),
-                );
-              },
-            );
-          },
-          child: Padding(
-            padding: const EdgeInsets.only(right: 20.0),
-            child: Icon(Icons.help_outline_rounded),
+          GestureDetector(
+            onTap: () {
+              showDialog(
+                context: context,
+                builder: (BuildContext context) {
+                  return Dialog(
+                    insetAnimationDuration: Duration(milliseconds: 300),
+                    insetAnimationCurve: Curves.easeInOut,
+                    child: const Helpscreen(),
+                  );
+                },
+              );
+            },
+            child: Padding(
+              padding: const EdgeInsets.only(right: 20.0),
+              child: Icon(Icons.help_outline_rounded),
+            ),
           ),
-        ),
-
         ],
       ),
       body: RefreshIndicator(
@@ -1143,6 +1310,7 @@ Future<void> deleteRoom(BuildContext context, String roomId) async {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              
               Expanded(
                 child: Container(
                   decoration: BoxDecoration(
@@ -1158,734 +1326,840 @@ Future<void> deleteRoom(BuildContext context, String roomId) async {
                     padding: const EdgeInsets.all(8.0),
                     child: items == null
                         ? Center(child: GlobalLoadingIndicator())
-                         : items!.isEmpty
-                        ?  Center(
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Text(
-                                  'You have no listed property!',
-                                  textAlign: TextAlign.center,
-                                  style: TextStyle(
-                                    fontSize: 24,
-                                    color: _themeController.isDarkMode.value
-                                        ? const Color.fromARGB(255, 255, 255, 255)
-                                        : const Color.fromARGB(255, 0, 0, 0),
-                                    fontFamily: 'manrope',
-                                    fontWeight: FontWeight.bold
-                                  ),
+                        : items!.isEmpty
+                            ? Center(
+                                child: Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Text(
+                                      'You have no listed property!',
+                                      textAlign: TextAlign.center,
+                                      style: TextStyle(
+                                          fontSize: 24,
+                                          color:
+                                              _themeController.isDarkMode.value
+                                                  ? const Color.fromARGB(
+                                                      255, 255, 255, 255)
+                                                  : const Color.fromARGB(
+                                                      255, 0, 0, 0),
+                                          fontFamily: 'manrope',
+                                          fontWeight: FontWeight.bold),
+                                    ),
+                                    const SizedBox(height: 20),
+                                    Image.asset(
+                                      'assets/icons/emptypana.png',
+                                      height: 300, // Adjust height as needed
+                                      // Adjust width as needed
+                                    ),
+                                    Text(
+                                      'Add now by pressing the plus button',
+                                      textAlign: TextAlign.center,
+                                      style: TextStyle(
+                                          fontSize: 16,
+                                          color:
+                                              _themeController.isDarkMode.value
+                                                  ? Colors.white70
+                                                  : Colors.black54,
+                                          fontFamily: 'manrope',
+                                          fontWeight: FontWeight.w500),
+                                    ),
+                                  ],
                                 ),
-                                
-                                const SizedBox(height: 20),
-                                Image.asset(
-                                  'assets/icons/emptypana.png',
-                                  height: 300, // Adjust height as needed
-                                   // Adjust width as needed
-                                ),
-                                Text(
-                                  'Add now by pressing the plus button',
-                                  textAlign: TextAlign.center,
-                                  style: TextStyle(
-                                    fontSize: 16,
-                                    color: _themeController.isDarkMode.value
-                                        ? Colors.white70
-                                        : Colors.black54,
-                                        fontFamily: 'manrope',
-                                    fontWeight: FontWeight.w500
-                                  ),
-                                ),
-                              ],
-                            ),
-                          )
-                        : ListView.builder(
-                            itemCount: items!.length,
-                            itemBuilder: (context, index) {
-                              final item = items![index];
-                              final propertyId = item['_id'];
-                              final rooms = propertyRooms[propertyId] ?? [];
-                              final photoUrl = item['photo'] != null &&
-                                      item['photo'].isNotEmpty
-                                  ? (item['photo'].startsWith('http')
-                                      ? item['photo']
-                                      : '$url${item['photo']}')
-                                  : 'https://via.placeholder.com/150'; // Fallback URL
+                              )
+                            : ListView.builder(
+                                itemCount: items!.length,
+                                itemBuilder: (context, index) {
+                                  final item = items![index];
+                                  final propertyId = item['_id'];
+                                  final rooms = propertyRooms[propertyId] ?? [];
+                                  final photoUrl = item['photo'] != null &&
+                                          item['photo'].isNotEmpty
+                                      ? (item['photo'].startsWith('http')
+                                          ? item['photo']
+                                          : '$url${item['photo']}')
+                                      : 'https://via.placeholder.com/150'; // Fallback URL
 
-                              return Card(
-                                color: _themeController.isDarkMode.value
-                                    ? const Color.fromARGB(255, 36, 38, 43)
-                                    : const Color.fromARGB(255, 255, 255, 255),
-                                elevation: 2.0,
-                                margin: const EdgeInsets.symmetric(
-                                    vertical: 10.0, horizontal: 10.0),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                                child: InkWell(
-                                  child: Padding(
-                                    padding: const EdgeInsets.all(12.0),
-                                    child: Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        Row(
-                                        crossAxisAlignment: CrossAxisAlignment.start,
-                                        children: [
-                                          Expanded(
-                                            child: Column(
-                                              crossAxisAlignment: CrossAxisAlignment.start,
+                                  return Card(
+                                    color: _themeController.isDarkMode.value
+                                        ? const Color.fromARGB(255, 36, 38, 43)
+                                        : const Color.fromARGB(
+                                            255, 255, 255, 255),
+                                    elevation: 2.0,
+                                    margin: const EdgeInsets.symmetric(
+                                        vertical: 10.0, horizontal: 10.0),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                    child: InkWell(
+                                      child: Padding(
+                                        padding: const EdgeInsets.all(12.0),
+                                        child: Column(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          children: [
+                                            Row(
+                                              crossAxisAlignment:
+                                                  CrossAxisAlignment.start,
                                               children: [
-                                                // Property Type
-                                                Row(
-                                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                                  children: [
-                                                    Text(
-                                                      item['typeOfProperty'] ?? 'Unknown Property Type',
-                                                      style: TextStyle(
-                                                        fontWeight: FontWeight.bold,
-                                                        fontSize: 18,
-                                                        color: _themeController.isDarkMode.value
-                                                            ? Colors.white
-                                                            : Colors.black,
+                                                Expanded(
+                                                  child: Column(
+                                                    crossAxisAlignment:
+                                                        CrossAxisAlignment
+                                                            .start,
+                                                    children: [
+                                                      // Property Type
+                                                      Row(
+                                                        mainAxisAlignment:
+                                                            MainAxisAlignment
+                                                                .spaceBetween,
+                                                        children: [
+                                                          Text(
+                                                            item['typeOfProperty'] ??
+                                                                'Unknown Property Type',
+                                                            style: TextStyle(
+                                                              fontWeight:
+                                                                  FontWeight
+                                                                      .bold,
+                                                              fontSize: 18,
+                                                              color: _themeController
+                                                                      .isDarkMode
+                                                                      .value
+                                                                  ? Colors.white
+                                                                  : Colors
+                                                                      .black,
+                                                            ),
+                                                          ),
+                                                          Tooltip(
+                                                            message:
+                                                                'Property status: ${item['status']}',
+                                                            child: Text(
+                                                              item['status'] ??
+                                                                  'No Status',
+                                                              style: TextStyle(
+                                                                fontWeight:
+                                                                    FontWeight
+                                                                        .bold,
+                                                                fontSize: 14,
+                                                                color: getStatusColor(
+                                                                    item[
+                                                                        'status']), // Call the function to get the color based on status
+                                                              ),
+                                                            ),
+                                                          ),
+                                                          PopupMenuButton(
+                                                            color: _themeController
+                                                                    .isDarkMode
+                                                                    .value
+                                                                ? const Color
+                                                                    .fromARGB(
+                                                                    255,
+                                                                    42,
+                                                                    44,
+                                                                    48)
+                                                                : Colors.white,
+                                                            icon: Icon(Icons
+                                                                .more_vert), // Three-dot icon
+                                                            itemBuilder:
+                                                                (context) => [
+                                                              PopupMenuItem(
+                                                                value:
+                                                                    'edit', // Value for the edit option
+                                                                child: Text(
+                                                                    'Edit Property'), // Display text for the edit option
+                                                              ),
+                                                              PopupMenuItem(
+                                                                value:
+                                                                    'delete', // Value for the delete option
+                                                                child: Text(
+                                                                    'Delete Property'), // Display text for the delete option
+                                                              ),
+                                                              PopupMenuItem(
+                                                                value:
+                                                                    'comment', // Value for the comment option
+                                                                child: Text(
+                                                                    'View Comments'), // Display text for the comment option
+                                                              ),
+                                                            ],
+                                                            onSelected:
+                                                                (value) {
+                                                              if (value ==
+                                                                  'edit') {
+                                                                // Navigate to the edit page
+                                                                _navigateToEditProperty(
+                                                                    propertyId); // Replace this with your actual edit logic
+                                                              } else if (value ==
+                                                                  'delete') {
+                                                                // Confirm deletion
+                                                                _confirmDelete(
+                                                                    propertyId);
+                                                              } else if (value ==
+                                                                  'comment') {
+                                                                // Navigate to the comment page
+                                                                _navigateToCommentPage(
+                                                                    propertyId);
+                                                              }
+                                                            },
+                                                          ),
+                                                        ],
                                                       ),
-                                                    ),
-                                                    Tooltip(
-                                                      message: 'Property status: ${item['status']}',
-                                                      child: Text(
-                                                        item['status'] ?? 'No Status',
+                                                      const SizedBox(height: 8),
+                                                      Row(
+                                                        children: [
+                                                          Icon(
+                                                            Icons.location_on,
+                                                            size: 16,
+                                                            color: _themeController
+                                                                    .isDarkMode
+                                                                    .value
+                                                                ? const Color
+                                                                    .fromARGB(
+                                                                    255,
+                                                                    255,
+                                                                    0,
+                                                                    0)
+                                                                : const Color
+                                                                    .fromARGB(
+                                                                    255,
+                                                                    255,
+                                                                    0,
+                                                                    0),
+                                                          ),
+                                                          const SizedBox(
+                                                              width: 4),
+                                                          Text(
+                                                            '${item['street'] ?? 'No Address'}',
+                                                            style: TextStyle(
+                                                              fontSize: 14,
+                                                              color: _themeController
+                                                                      .isDarkMode
+                                                                      .value
+                                                                  ? Colors
+                                                                      .white70
+                                                                  : Colors
+                                                                      .black54,
+                                                            ),
+                                                          ),
+                                                        ],
+                                                      ),
+                                                      const SizedBox(
+                                                          height: 10),
+
+                                                      // Description
+                                                      ExpandableText(
+                                                        text: item[
+                                                                'description'] ??
+                                                            'No Description',
                                                         style: TextStyle(
-                                                          fontWeight: FontWeight.bold,
+                                                          fontFamily: 'manrope',
                                                           fontSize: 14,
-                                                          color: getStatusColor(item['status']), // Call the function to get the color based on status
+                                                          color: _themeController
+                                                                  .isDarkMode
+                                                                  .value
+                                                              ? Colors.white
+                                                              : Colors.black,
                                                         ),
                                                       ),
-                                                    ),
-                                                    PopupMenuButton(
-                                                      color: _themeController.isDarkMode.value? const Color.fromARGB(255, 42, 44, 48): Colors.white,
-                                                    icon: Icon(Icons.more_vert), // Three-dot icon
-                                                    itemBuilder: (context) => [
-                                                      PopupMenuItem(
-                                                        value: 'edit', // Value for the edit option
-                                                        child: Text('Edit Property'), // Display text for the edit option
-                                                      ),
-                                                      PopupMenuItem(
-                                                        value: 'delete', // Value for the delete option
-                                                        child: Text('Delete Property'), // Display text for the delete option
+                                                      const SizedBox(
+                                                          height: 12),
+                                                      ClipRRect(
+                                                        borderRadius:
+                                                            BorderRadius
+                                                                .circular(10),
+                                                        child: Image.network(
+                                                          photoUrl,
+                                                          width: double
+                                                              .infinity, // Make image take full width
+                                                          height:
+                                                              180, // Adjust height based on your design
+                                                          fit: BoxFit.cover,
+                                                        ),
                                                       ),
                                                     ],
-                                                    onSelected: (value) {
-                                                      if (value == 'edit') {
-                                                        // Call your edit function or navigate to the edit page
-                                                       _navigateToEditProperty(propertyId); // Replace this with your actual edit logic
-                                                      } else if (value == 'delete') {
-                                                        _confirmDelete(propertyId); // Call the confirm delete function
-                                                      }
-                                                    },
-                                                  ),
-
-                                                  ],
-                                                ),
-
-
-
-                                                const SizedBox(height: 8),
-
-                                                // Location Row
-                                                Row(
-                                                  children: [
-                                                    Icon(
-                                                      Icons.location_on,
-                                                      size: 16,
-                                                      color: _themeController.isDarkMode.value
-                                                          ? const Color.fromARGB(255, 255, 0, 0)
-                                                          : const Color.fromARGB(255, 255, 0, 0),
-                                                    ),
-                                                    const SizedBox(width: 4),
-                                                    Text(
-                                                      '${item['street'] ?? 'No Address'}',
-                                                      style: TextStyle(
-                                                        fontSize: 14,
-                                                        color: _themeController.isDarkMode.value
-                                                            ? Colors.white70
-                                                            : Colors.black54,
-                                                      ),
-                                                    ),
-                                                  ],
-                                                ),
-                                                const SizedBox(height: 10),
-
-                                                // Description
-                                                ExpandableText(
-                                                  text: item['description'] ?? 'No Description',
-                                                  style: TextStyle(
-                                                    fontFamily: 'manrope',
-                                                    fontSize: 14,
-                                                    color: _themeController.isDarkMode.value ? Colors.white : Colors.black,
-                                                  ),
-                                                ),
-                                                const SizedBox(height: 12),
-
-                                                // Image (Placed after text elements)
-                                                ClipRRect(
-                                                  borderRadius: BorderRadius.circular(10),
-                                                  child: Image.network(
-                                                    photoUrl,
-                                                    width: double.infinity, // Make image take full width
-                                                    height: 180, // Adjust height based on your design
-                                                    fit: BoxFit.cover,
                                                   ),
                                                 ),
                                               ],
                                             ),
-                                          ),
-                                        ],
-                                      ),
-                                      SizedBox(height: 10,),
-                                        const SizedBox(height: 10),
-                                        Row(
-                                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                            children: [
-                                              Text(
-                                                'Room/Unit Available',
-                                                style: TextStyle(
-                                                  fontWeight: FontWeight.bold,
-                                                  fontSize: 16,
-                                                ),
-                                              ),
-                                              
-                                              Expanded(
-                                                child: Padding(
-                                                  padding: const EdgeInsets.symmetric(horizontal: 5.0), // Add some padding to make the line look nicer
-                                                  child: Divider(
-                                                    thickness: 1.5, // Adjust the thickness of the line
-                                                    color: _themeController.isDarkMode.value ? Colors.white : Colors.black, // Change color based on the theme
+                                            SizedBox(
+                                              height: 10,
+                                            ),
+                                            const SizedBox(height: 10),
+                                            Row(
+                                              mainAxisAlignment:
+                                                  MainAxisAlignment
+                                                      .spaceBetween,
+                                              children: [
+                                                Text(
+                                                  'Room/Unit Available',
+                                                  style: TextStyle(
+                                                    fontWeight: FontWeight.bold,
+                                                    fontSize: 16,
                                                   ),
                                                 ),
-                                              ),
-                                              
-                                              Padding(
-                                                padding: const EdgeInsets.all(6.0),
-                                                child: Row(
-                                                  crossAxisAlignment: CrossAxisAlignment.end,
-                                                  children: [
-                                                    GestureDetector(
-                                                      onTap: () {
-                                                        Navigator.push(
-                                                          context,
-                                                          MaterialPageRoute(
-                                                            builder: (context) => Addingroom(
-                                                              token: widget.token,
-                                                              propertyId: propertyId,
-                                                            ),
-                                                          ),
-                                                        );
-                                                      },
-                                                      child: Icon(
-                                                        Icons.add_circle_rounded,
-                                                        size: 27,
-                                                        color: _themeController.isDarkMode.value ? Colors.white : Colors.black,
-                                                      ),
+                                                Expanded(
+                                                  child: Padding(
+                                                    padding: const EdgeInsets
+                                                        .symmetric(
+                                                        horizontal:
+                                                            5.0), // Add some padding to make the line look nicer
+                                                    child: Divider(
+                                                      thickness:
+                                                          1.5, // Adjust the thickness of the line
+                                                      color: _themeController
+                                                              .isDarkMode.value
+                                                          ? Colors.white
+                                                          : Colors
+                                                              .black, // Change color based on the theme
                                                     ),
-                                                  ],
+                                                  ),
                                                 ),
-                                              )
-                                            ],
-                                          ),
-
-                                        SizedBox(height: 8),
-                                        rooms.isEmpty
-                                            ? Text('No rooms available.')
-                                            : Column(
-                                                children: rooms.map((room) {
-                                                  final roomPhoto1 =
-                                                      '${room['photo1']}';
-                                                  final roomId = room[
-                                                      '_id']; // Get room ID for inquiries
-                                                  final inquiries =
-                                                      propertyInquiries[
-                                                              roomId] ??
-                                                          []; // Fetch inquiries for this room
-
-                                                  return Padding(
-                                                    padding:
-                                                        const EdgeInsets.all(
-                                                            2.0),
-                                                    child: DecoratedBox(
-                                                      decoration: BoxDecoration(
-                                                         boxShadow: [
-                                                          BoxShadow(
-                                                            color: _themeController.isDarkMode.value
-                                                                ? const Color.fromARGB(95, 0, 0, 0) // Adjust color for dark mode
-                                                                : const Color.fromARGB(59, 0, 0, 0), // Adjust color for light mode
-                                                            blurRadius: 8.0, // Softens the shadow
-                                                            offset: Offset(0, 5), // Changes the position of the shadow
-                                                            spreadRadius: 0, // Increases the size of the shadow
-                                                          ),
-                                                        ],
-                                                        color: _themeController
-                                                                .isDarkMode
-                                                                .value
-                                                            ? const Color
-                                                                .fromARGB(
-                                                                174, 68, 67, 82)
-                                                            : const Color.fromARGB(255, 255, 255, 255),
-                                                        borderRadius:
-                                                            BorderRadius
-                                                                .circular(12),
+                                                Padding(
+                                                  padding:
+                                                      const EdgeInsets.all(6.0),
+                                                  child: Row(
+                                                    crossAxisAlignment:
+                                                        CrossAxisAlignment.end,
+                                                    children: [
+                                                      GestureDetector(
+                                                        onTap: () {
+                                                          Navigator.push(
+                                                            context,
+                                                            MaterialPageRoute(
+                                                              builder:
+                                                                  (context) =>
+                                                                      Addingroom(
+                                                                token: widget
+                                                                    .token,
+                                                                propertyId:
+                                                                    propertyId,
+                                                              ),
+                                                            ),
+                                                          );
+                                                        },
+                                                        child: Icon(
+                                                          Icons
+                                                              .add_circle_rounded,
+                                                          size: 27,
+                                                          color: _themeController
+                                                                  .isDarkMode
+                                                                  .value
+                                                              ? Colors.white
+                                                              : Colors.black,
+                                                        ),
                                                       ),
-                                                      child: Padding(
+                                                    ],
+                                                  ),
+                                                )
+                                              ],
+                                            ),
+                                            SizedBox(height: 8),
+                                            rooms.isEmpty
+                                                ? Text('No rooms available.')
+                                                : Column(
+                                                    children: rooms.map((room) {
+                                                      
+                                                      final roomPhoto1 =
+                                                          '${room['photo1']}';
+                                                      final roomId = room[
+                                                          '_id']; // Get room ID for inquiries
+                                                      final inquiries =
+                                                          propertyInquiries[
+                                                                  roomId] ??
+                                                              []; // Fetch inquiries for this room
+
+                                                      return Padding(
                                                         padding:
-                                                            const EdgeInsets
-                                                                .all(8.0),
-                                                        child: InkWell(
-                                                        
-                                                          onTap: () =>
-                                                              showRoomDetailBottomSheet(
-                                                                  context,
-                                                                  room, userProfiles, inquiries),
+                                                             EdgeInsets
+                                                                .all(2.0),
+                                                        child: DecoratedBox(
+                                                          decoration:
+                                                              BoxDecoration(
+                                                                
+                                                                border: Border.all(width: 0.5),
+                                                                
+                                                            // boxShadow: [
+                                                            //   BoxShadow(
+                                                            //     color: _themeController
+                                                            //             .isDarkMode
+                                                            //             .value
+                                                            //         ? const Color
+                                                            //             .fromARGB(
+                                                            //             95,
+                                                            //             0,
+                                                            //             0,
+                                                            //             0) // Adjust color for dark mode
+                                                            //         : const Color
+                                                            //             .fromARGB(
+                                                            //             59,
+                                                            //             0,
+                                                            //             0,
+                                                            //             0), // Adjust color for light mode
+                                                            //     blurRadius:
+                                                            //         8.0, // Softens the shadow
+                                                            //     offset: Offset(
+                                                            //         0,
+                                                            //         5), // Changes the position of the shadow
+                                                            //     spreadRadius:
+                                                            //         0, // Increases the size of the shadow
+                                                            //   ),
+                                                            // ],
+                                                            color: _themeController
+                                                                    .isDarkMode
+                                                                    .value
+                                                                ? const Color
+                                                                    .fromARGB(
+                                                                    174,
+                                                                    68,
+                                                                    67,
+                                                                    82)
+                                                                : const Color
+                                                                    .fromARGB(
+                                                                    255,
+                                                                    255,
+                                                                    255,
+                                                                    255),
+                                                            borderRadius:
+                                                                BorderRadius
+                                                                    .circular(
+                                                                        8),
+                                                          ),
                                                           child: Padding(
                                                             padding:
                                                                 const EdgeInsets
+                                                                    .all(8.0),
+                                                            child: InkWell(
+                                                              onTap: () async {
+                                                                setState(() {
+                                                                  isLoading =
+                                                                      true; // Show loading indicator
+                                                                });
+                                                                if (inquiries
+                                                                    .isEmpty) {
+                                                                  await fetchRoomInquiries(
+                                                                      roomId); // Await initialization of inquiries
+                                                                }
+                                                                setState(() {
+                                                                  isLoading =
+                                                                      false; // Hide loading indicator
+                                                                });
+                                                                showRoomDetailBottomSheet(
+                                                                    context,
+                                                                    room,
+                                                                    userProfiles,
+                                                                    propertyInquiries[
+                                                                            roomId] ??
+                                                                        []);
+                                                              },
+                                                              child: Padding(
+                                                                padding: const EdgeInsets
                                                                     .symmetric(
                                                                     vertical:
                                                                         4.0),
-                                                            child: Column(
-                                                              crossAxisAlignment:
-                                                                  CrossAxisAlignment
-                                                                      .start,
-                                                              children: [
-                                                                Row(
-  children: [
-    ClipRRect(
-      borderRadius: BorderRadius.circular(10),
-      child: Image.network(
-        roomPhoto1,
-        width: 80,
-        height: 60,
-        fit: BoxFit.cover,
-      ),
-    ),
-    const SizedBox(width: 12),
-    Expanded(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                'Room No. ${room['roomNumber']?.toString() ?? 'Unknown Room Number'}',
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 14,
-                  color: _themeController.isDarkMode.value
-                      ? const Color.fromARGB(255, 255, 255, 255)
-                      : Colors.black,
-                ),
-              ),
-              GestureDetector(
-                onTap: () async {
-                  // Show confirmation dialog
-                    bool? isConfirmed = await showDialog<bool>(
-    context: context,
-    builder: (BuildContext context) {
-      return CupertinoAlertDialog(
-        title: Text("Delete Room"),
-        content: Text("Are you sure you want to delete this room?"),
-        actions: [
-          CupertinoDialogAction(
-            onPressed: () {
-              Navigator.of(context).pop(false);
-            },
-            child: Text("Cancel"),
-          ),
-          CupertinoDialogAction(
-            onPressed: () {
-              Navigator.of(context).pop(true);
-            },
-            child: Text("Delete", style: TextStyle(
-              color: Colors.red
-            ),),
-          ),
-        ],
-      );
-    },
-  );
-
-  // If confirmed, proceed with deletion
-  if (isConfirmed == true) {
-    _confirmDeleteRoom(context, roomId);
-  }
-                },
-                child: Icon(Icons.delete_outline_rounded),
-              ),
-            ],
-          ),
-          const SizedBox(height: 4),
-          Text(
-            'Price: ₱${room['price']?.toString() ?? 'N/A'}',
-            style: TextStyle(
-              fontSize: 12,
-              fontWeight: FontWeight.w600,
-              color: _themeController.isDarkMode.value
-                  ? const Color.fromARGB(255, 255, 255, 255)
-                  : const Color.fromARGB(255, 0, 0, 0),
-            ),
-          ),
-          Text(
-            'Capacity: ${room['capacity']?.toString() ?? 'N/A'}',
-            style: TextStyle(
-              fontFamily: 'manrope',
-              fontSize: 12,
-              fontWeight: FontWeight.w600,
-              color: _themeController.isDarkMode.value
-                  ? const Color.fromARGB(255, 255, 255, 255)
-                  : const Color.fromARGB(255, 0, 0, 0),
-            ),
-          ),
-          Row(
-            children: [
-              Text(
-                'Room Status: ',
-                style: TextStyle(
-                  fontFamily: 'manrope',
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
-                  color: _themeController.isDarkMode.value
-                      ? const Color.fromARGB(255, 255, 255, 255)
-                      : const Color.fromARGB(255, 0, 0, 0),
-                ),
-              ),
-              Flexible(
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                  decoration: BoxDecoration(
-                    color: _getRoomStatusColor(room['roomStatus']),
-                    borderRadius: BorderRadius.circular(5),
-                  ),
-                  child: Tooltip(
-                    message: 'This room is currently ${room['roomStatus']}',
-                    child: Text(
-                      '${room['roomStatus']?.toString().toUpperCase() ?? 'N/A'}',
-                      style: TextStyle(
-                        fontFamily: 'manrope',
-                        fontWeight: FontWeight.w800,
-                        fontSize: 12,
-                        color: const Color.fromARGB(255, 5, 5, 5),
-                      ),
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
-    ),
-  ],
-),
-
-                                                                const SizedBox(
-                                                                    height: 10),
-                                                                // Only show inquiries if the room status is 'available'
-                                                                if (room['roomStatus'] == 'available') ...[
-                                                                  Text(
-                                                                    'Inquiries',
-                                                                    style:
-                                                                        TextStyle(
-                                                                      fontWeight:
-                                                                          FontWeight
-                                                                              .bold,
-                                                                      fontSize:
-                                                                          16,
-                                                                      color: _themeController
-                                                                              .isDarkMode
-                                                                              .value
-                                                                          ? const Color
-                                                                              .fromARGB(
-                                                                              255,
-                                                                              255,
-                                                                              255,
-                                                                              255)
-                                                                          : const Color
-                                                                              .fromARGB(
-                                                                              255,
-                                                                              0,
-                                                                              0,
-                                                                              0),
-                                                                    ),
-                                                                  ),
-                                                                  SizedBox(height:8),
-
-
-
-
-
-
-                                                                  inquiries.isEmpty
-                                                                  ? Text('No inquiries yet.')
-                                                                  : Column(
-                                                                      children: inquiries
-                                                                          .where((inquiry) => inquiry['status'] != 'rejected') // Filter out rejected inquiries
-                                                                          .map((inquiry) {
-                                                                        String userId = inquiry['userId'];
-                                                                        var profile = userProfiles[userId]; // Get the user profile
-
-                                                                        // Default to "Unknown User" if profile is not available
-                                                                        String userName = (profile != null)
-                                                                            ? '${profile['firstName']} ${profile['lastName']}'
-                                                                            : 'Unknown User';
-                                                                        String userContact = (profile != null && profile['contactDetails'] != null)
-                                                                            ? 'Phone: ${profile['contactDetails']['phone'] ?? 'No phone provided'}\n' +
-                                                                                'Address: ${profile['contactDetails']['address'] ?? 'No address provided'}'
-                                                                            : 'No contact details available';
-
-                                                                            return Padding(
-                                                                              padding: const EdgeInsets.all(8.0),
-                                                                              child: Tooltip(
-                                                                                triggerMode: TooltipTriggerMode.longPress,
-                                                                               verticalOffset: -50,
-                                                                                message: 'Tap to see inquiry detail',
-                                                                                child: GestureDetector(
-                                                                                  onTap: () {
-                                                                                    showInquiryDetailsDialog(context, userName, userContact, inquiry);
-                                                                                  },
-                                                                                  child: DecoratedBox(
-                                                                                    decoration: BoxDecoration(
-                                                                                      color: _themeController.isDarkMode.value
-                                                                                          ? const Color.fromARGB(255, 0, 0, 0)
-                                                                                          : const Color.fromARGB(59, 187, 187, 187),
-                                                                                      borderRadius: BorderRadius.circular(12),
+                                                                child: Column(
+                                                                  crossAxisAlignment:
+                                                                      CrossAxisAlignment
+                                                                          .start,
+                                                                  children: [
+                                                                    Row(
+                                                                      children: [
+                                                                        ClipRRect(
+                                                                          borderRadius:
+                                                                              BorderRadius.circular(5),
+                                                                          child:
+                                                                              Image.network(
+                                                                            roomPhoto1,
+                                                                            width:
+                                                                                80,
+                                                                            height:
+                                                                                60,
+                                                                            fit:
+                                                                                BoxFit.cover,
+                                                                          ),
+                                                                        ),
+                                                                        const SizedBox(
+                                                                            width:
+                                                                                12),
+                                                                        Expanded(
+                                                                          child:
+                                                                              Column(
+                                                                            crossAxisAlignment:
+                                                                                CrossAxisAlignment.start,
+                                                                            children: [
+                                                                              Row(
+                                                                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                                                                children: [
+                                                                                  Text(
+                                                                                    'Room No. ${room['roomNumber']?.toString() ?? 'Unknown Room Number'}',
+                                                                                    style: TextStyle(
+                                                                                      fontWeight: FontWeight.bold,
+                                                                                      fontSize: 14,
+                                                                                      color: _themeController.isDarkMode.value ? const Color.fromARGB(255, 255, 255, 255) : Colors.black,
                                                                                     ),
-                                                                                    child: Padding(
-                                                                                      padding: const EdgeInsets.all(10.0),
-                                                                                      child: Column(
-                                                                                        crossAxisAlignment: CrossAxisAlignment.start,
-                                                                                        children: [
-                                                                                          Row(
-                                                                                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                                                                            children: [
-                                                                                              Text(
-                                                                                                'Inquiry from $userName', // Display user name
-                                                                                                style: TextStyle(
-                                                                                                  fontWeight: FontWeight.bold,
-                                                                                                  fontSize: 14,
-                                                                                                ),
+                                                                                  ),
+                                                                                  GestureDetector(
+                                                                                    onTap: () async {
+                                                                                      // Show confirmation dialog
+                                                                                      bool? isConfirmed = await showDialog<bool>(
+                                                                                        context: context,
+                                                                                        builder: (BuildContext context) {
+                                                                                          return CupertinoAlertDialog(
+                                                                                            title: Text("Delete Room"),
+                                                                                            content: Text("Are you sure you want to delete this room?"),
+                                                                                            actions: [
+                                                                                              CupertinoDialogAction(
+                                                                                                onPressed: () {
+                                                                                                  Navigator.of(context).pop(false);
+                                                                                                },
+                                                                                                child: Text("Cancel"),
                                                                                               ),
-                                                                                              Text(
-                                                                                                'View', // Display user name
-                                                                                                style: TextStyle(
-                                                                                                  fontWeight: FontWeight.bold,
-                                                                                                  fontSize: 14,
-                                                                                                  color: Colors.blue
+                                                                                              CupertinoDialogAction(
+                                                                                                onPressed: () {
+                                                                                                  Navigator.of(context).pop(true);
+                                                                                                },
+                                                                                                child: Text(
+                                                                                                  "Delete",
+                                                                                                  style: TextStyle(color: Colors.red),
                                                                                                 ),
                                                                                               ),
                                                                                             ],
+                                                                                          );
+                                                                                        },
+                                                                                      );
+                                                                                      if (isConfirmed == true) {
+                                                                                        _confirmDeleteRoom(context, roomId);
+                                                                                      }
+                                                                                    },
+                                                                                    child: Icon(Icons.delete_outline_rounded),
+                                                                                  ),
+                                                                                ],
+                                                                              ),
+                                                                              const SizedBox(height: 4),
+                                                                              Text(
+                                                                                'Price: ₱${room['price']?.toString() ?? 'N/A'}',
+                                                                                style: TextStyle(
+                                                                                  fontSize: 12,
+                                                                                  fontWeight: FontWeight.w600,
+                                                                                  color: _themeController.isDarkMode.value ? const Color.fromARGB(255, 255, 255, 255) : const Color.fromARGB(255, 0, 0, 0),
+                                                                                ),
+                                                                              ),
+                                                                              Text(
+                                                                                'Capacity: ${room['capacity']?.toString() ?? 'N/A'}',
+                                                                                style: TextStyle(
+                                                                                  fontFamily: 'manrope',
+                                                                                  fontSize: 12,
+                                                                                  fontWeight: FontWeight.w600,
+                                                                                  color: _themeController.isDarkMode.value ? const Color.fromARGB(255, 255, 255, 255) : const Color.fromARGB(255, 0, 0, 0),
+                                                                                ),
+                                                                              ),
+                                                                              Row(
+                                                                                children: [
+                                                                                  Text(
+                                                                                    'Room Status: ',
+                                                                                    style: TextStyle(
+                                                                                      fontFamily: 'manrope',
+                                                                                      fontSize: 12,
+                                                                                      fontWeight: FontWeight.w600,
+                                                                                      color: _themeController.isDarkMode.value ? const Color.fromARGB(255, 255, 255, 255) : const Color.fromARGB(255, 0, 0, 0),
+                                                                                    ),
+                                                                                  ),
+                                                                                  Flexible(
+                                                                                    child: Container(
+                                                                                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                                                                      decoration: BoxDecoration(
+                                                                                        color: _getRoomStatusColor(room['roomStatus']),
+                                                                                        borderRadius: BorderRadius.circular(5),
+                                                                                      ),
+                                                                                      child: Tooltip(
+                                                                                        message: 'This room is currently ${room['roomStatus']}',
+                                                                                        child: Text(
+                                                                                          '${room['roomStatus']?.toString().toUpperCase() ?? 'N/A'}',
+                                                                                          style: TextStyle(
+                                                                                            fontFamily: 'manrope',
+                                                                                            fontWeight: FontWeight.w800,
+                                                                                            fontSize: 12,
+                                                                                            color: const Color.fromARGB(255, 5, 5, 5),
                                                                                           ),
-                                                                                          
-                                                                                          SizedBox(height: 4),
-                                                                                          Text(
-                                                                                            'Request Date: ${DateFormat('yyyy-MM-dd').format(DateTime.parse(inquiry['requestDate']))}',
-                                                                                            style: TextStyle(
-                                                                                              fontSize: 12,
-                                                                                            ),
-                                                                                          ),
-                                                                                          SizedBox(height: 4),
-                                                                                          Text(
-                                                                                            'Request Type: ${inquiry['requestType']?.toString().toUpperCase() ?? 'N/A'}',
-                                                                                            style: TextStyle(
-                                                                                              fontSize: 12,
-                                                                                              fontWeight: FontWeight.w600,
-                                                                                            ),
-                                                                                          ),
-                                                                                          const SizedBox(height: 8),
-
-                                                                                          // Approve and Reject Buttons
-                                                                                              Row(
-                                                                                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                                                                                children: [
-                                                                                                  // Approve Button
-                                                                                                  Expanded(
-                                                                                                    child: ElevatedButton(
-                                                                                                      style: ElevatedButton.styleFrom(
-                                                                                                        backgroundColor: const Color.fromARGB(255, 0, 255, 106),
-                                                                                                        shape: RoundedRectangleBorder(
-                                                                                                          borderRadius: BorderRadius.circular(8.0),
-                                                                                                        ),
-                                                                                                      ),
-                                                                                                      onPressed: () async {
-                                                                                                        bool? confirm = await showCupertinoDialog(
-                                                                                                          context: context,
-                                                                                                          builder: (BuildContext context) {
-                                                                                                            return CupertinoAlertDialog(
-                                                                                                              title: Text("Approve Inquiry"),
-                                                                                                              content: Text("Are you sure you want to approve this inquiry?"),
-                                                                                                              actions: <Widget>[
-                                                                                                                CupertinoDialogAction(
-                                                                                                                  child: Text("Cancel"),
-                                                                                                                  onPressed: () {
-                                                                                                                    Navigator.of(context).pop(false);
-                                                                                                                  },
-                                                                                                                ),
-                                                                                                                 CupertinoDialogAction(
-                                                                                                                    isDestructiveAction: true,
-                                                                                                                    child: Text("Approve"),
-                                                                                                                    onPressed: () {
-                                                                                                                        Navigator.of(context).pop(true); // Only pop here
-                                                                                                                    },
-                                                                                                                ),
-                                                                                                              ],
-                                                                                                            );
-                                                                                                          },
-                                                                                                        );
-
-                                                                                                        
-                                                                                                if (confirm == true) {
-                                                                                                    // Call the function to approve inquiry and update room
-                                                                                                    try {
-                                                                                                        await updateInquiryStatusAndRoom(
-                                                                                                            inquiry,
-                                                                                                            inquiry['_id'],
-                                                                                                            'approved',
-                                                                                                            roomId,
-                                                                                                            userId,
-                                                                                                            widget.token,
-                                                                                                            inquiry['reservationDuration'],
-                                                                                                        );
-
-                                                                                                        // Only navigate here after successful update
-                                                                                                        Navigator.pushReplacement(
-                                                                                                            context,
-                                                                                                            MaterialPageRoute(
-                                                                                                                builder: (context) => CurrentListingPage(token: widget.token),
-                                                                                                            ),
-                                                                                                        );
-                                                                                                        await fetchRoomInquiries(roomId);
-                                                                                                    } catch (error) {
-                                                                                                        print('Error: $error');
-                                                                                                    }
-                                                                                                }
-                                                                                                      },
-                                                                                                      child: Text(
-                                                                                                        'Approve',
-                                                                                                        style: TextStyle(
-                                                                                                          color: Colors.black,
-                                                                                                        ),
-                                                                                                      ),
-                                                                                                    ),
-                                                                                                  ),
-
-                                                                                                  const SizedBox(width: 8),
-
-                                                                                                  // Reject Button
-                                                                                                  Expanded(
-                                                                                                  child: ElevatedButton(
-                                                                                                    style: ElevatedButton.styleFrom(
-                                                                                                      backgroundColor: const Color.fromARGB(255, 255, 3, 78), // Button color for Reject
-                                                                                                      shape: RoundedRectangleBorder(
-                                                                                                        borderRadius: BorderRadius.circular(8.0),
-                                                                                                      ),
-                                                                                                    ),
-                                                                                                    onPressed: () async {
-                                                                                                      // Show confirmation dialog for rejection
-                                                                                                      bool? confirm = await showCupertinoDialog(
-                                                                                                        context: context,
-                                                                                                        builder: (BuildContext context) {
-                                                                                                          return CupertinoAlertDialog(
-                                                                                                            title: Text("Reject Inquiry"),
-                                                                                                            content: Text("Are you sure you want to reject this inquiry?"),
-                                                                                                            actions: <Widget>[
-                                                                                                              CupertinoDialogAction(
-                                                                                                                child: Text("Cancel"),
-                                                                                                                onPressed: () {
-                                                                                                                  Navigator.of(context).pop(false); // Return false
-                                                                                                                },
-                                                                                                              ),
-                                                                                                              CupertinoDialogAction(
-                                                                                                                isDestructiveAction: true,
-                                                                                                                child: Text("Reject"),
-                                                                                                                onPressed: () {
-                                                                                                                  Navigator.of(context).pop(true); // Return true
-                                                                                                                },
-                                                                                                              ),
-                                                                                                            ],
-                                                                                                          );
-                                                                                                        },
-                                                                                                      );
-                                                                                                      if (confirm == true) {
-                                                                                                        // Show reasons dialog if the inquiry is rejected
-                                                                                                        final String? selectedReason = await showCupertinoDialog<String>(
-                                                                                                          context: context,
-                                                                                                          builder: (BuildContext context) {
-                                                                                                            return CupertinoAlertDialog(
-                                                                                                              title: Text("Select Rejection Reason"),
-                                                                                                              content: Column(
-                                                                                                                mainAxisSize: MainAxisSize.min,
-                                                                                                                children: rejectionReasons.map((reason) {
-                                                                                                                  return CupertinoDialogAction(
-                                                                                                                    child: Text(reason),
-                                                                                                                    onPressed: () {
-                                                                                                                      Navigator.of(context).pop(reason); // Return the selected reason
-                                                                                                                    },
-                                                                                                                  );
-                                                                                                                }).toList(),
-                                                                                                              ),
-                                                                                                            );
-                                                                                                          },
-                                                                                                        );
-
-                                                                                                        if (selectedReason != null) {
-                                                                                                          // Call API to reject inquiry and delete it with the selected reason
-                                                                                                          print('Reject button clicked for inquiry by $userName with reason: $selectedReason');
-                                                                                                          if (inquiry['_id'] != null && widget.token != null) {
-                                                                                                            await rejectAndDeleteInquiry(inquiry['_id'], widget.token, selectedReason); // Pass the reason
-                                                                                                          } else {
-                                                                                                            print('Error: Inquiry ID or token is null');
-                                                                                                          }
-                                                                                                        }
-                                                                                                      }
-                                                                                                    },
-                                                                                                    child: Text(
-                                                                                                      'Reject',
-                                                                                                      style: TextStyle(
-                                                                                                        color: Colors.black,
-                                                                                                      ),
-                                                                                                    ),
-                                                                                                  ),
-                                                                                                ),
-
-
-                                                                                                ],
-                                                                                              ),
-                                                                                                  
-                                                                                        ],
+                                                                                          overflow: TextOverflow.ellipsis,
+                                                                                        ),
                                                                                       ),
                                                                                     ),
                                                                                   ),
-                                                                                ),
-                                                                              )
-
-                                                                            );
-                                                                          }).toList(),
+                                                                                ],
+                                                                              ),
+                                                                            ],
+                                                                          ),
                                                                         ),
-                                                                
-                                                                ],
-                                                              ],
+                                                                      ],
+                                                                    ),
+
+                                                                    const SizedBox(
+                                                                        height:
+                                                                            10),
+                                                                    // Only show inquiries if the room status is 'available'
+                                                                    if (room[
+                                                                            'roomStatus'] ==
+                                                                        'available') ...[
+                                                                      Text(
+                                                                        'Inquiries',
+                                                                        style:
+                                                                            TextStyle(
+                                                                          fontWeight:
+                                                                              FontWeight.bold,
+                                                                          fontSize:
+                                                                              16,
+                                                                          color: _themeController.isDarkMode.value
+                                                                              ? const Color.fromARGB(255, 255, 255, 255)
+                                                                              : const Color.fromARGB(255, 0, 0, 0),
+                                                                        ),
+                                                                      ),
+                                                                      SizedBox(
+                                                                          height:
+                                                                              8),
+                                                                      inquiries
+                                                                              .isEmpty
+                                                                          ? Text(
+                                                                              'No inquiries yet.')
+                                                                          : Column(
+                                                                              children: inquiries
+                                                                                  .where((inquiry) => inquiry['status'] != 'rejected') // Filter out rejected inquiries
+                                                                                  .map((inquiry) {
+                                                                                String userId = inquiry['userId'];
+                                                                                var profile = userProfiles[userId];
+                                                                                String userName = (profile != null) ? '${profile['firstName']} ${profile['lastName']}' : 'Unknown User';
+                                                                                String userContact = (profile != null && profile['contactDetails'] != null) ? 'Phone: ${profile['contactDetails']['phone'] ?? 'No phone provided'}\n' + 'Address: ${profile['contactDetails']['address'] ?? 'No address provided'}' : 'No contact details available';
+
+                                                                                return Padding(
+                                                                                    padding: const EdgeInsets.all(8.0),
+                                                                                    child: Tooltip(
+                                                                                      triggerMode: TooltipTriggerMode.longPress,
+                                                                                      verticalOffset: -50,
+                                                                                      message: 'Tap to see inquiry detail',
+                                                                                      child: GestureDetector(
+                                                                                        onTap: () {
+                                                                                          showInquiryDetailsDialog(context, userName, userContact, inquiry);
+                                                                                        },
+                                                                                        child: DecoratedBox(
+                                                                                          decoration: BoxDecoration(
+                                                                                            color: _themeController.isDarkMode.value ? const Color.fromARGB(255, 0, 0, 0) : const Color.fromARGB(59, 187, 187, 187),
+                                                                                            borderRadius: BorderRadius.circular(12),
+                                                                                          ),
+                                                                                          child: Padding(
+                                                                                            padding: const EdgeInsets.all(10.0),
+                                                                                            child: Column(
+                                                                                              crossAxisAlignment: CrossAxisAlignment.start,
+                                                                                              children: [
+                                                                                                Row(
+                                                                                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                                                                                  children: [
+                                                                                                    Text(
+                                                                                                      'Inquiry from $userName', // Display user name
+                                                                                                      style: TextStyle(
+                                                                                                        fontWeight: FontWeight.bold,
+                                                                                                        fontSize: 14,
+                                                                                                      ),
+                                                                                                    ),
+                                                                                                    Text(
+                                                                                                      'View', // Display user name
+                                                                                                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Colors.blue),
+                                                                                                    ),
+                                                                                                  ],
+                                                                                                ),
+
+                                                                                                SizedBox(height: 4),
+                                                                                                Text(
+                                                                                                  'Request Date: ${DateFormat('yyyy-MM-dd').format(DateTime.parse(inquiry['requestDate']))}',
+                                                                                                  style: TextStyle(
+                                                                                                    fontSize: 12,
+                                                                                                  ),
+                                                                                                ),
+                                                                                                SizedBox(height: 4),
+                                                                                                Text(
+                                                                                                  'Request Type: ${inquiry['requestType']?.toString().toUpperCase() ?? 'N/A'}',
+                                                                                                  style: TextStyle(
+                                                                                                    fontSize: 12,
+                                                                                                    fontWeight: FontWeight.w600,
+                                                                                                  ),
+                                                                                                ),
+                                                                                                const SizedBox(height: 8),
+
+                                                                                                // Approve and Reject Buttons
+                                                                                                Row(
+                                                                                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                                                                                  children: [
+                                                                                                    // Approve Button
+                                                                                                    Expanded(
+                                                                                                      child: ElevatedButton(
+                                                                                                        style: ElevatedButton.styleFrom(
+                                                                                                          backgroundColor: const Color.fromARGB(255, 0, 255, 106),
+                                                                                                          shape: RoundedRectangleBorder(
+                                                                                                            borderRadius: BorderRadius.circular(8.0),
+                                                                                                          ),
+                                                                                                        ),
+                                                                                                        onPressed: () async {
+                                                                                                          bool? confirm = await showCupertinoDialog(
+                                                                                                            context: context,
+                                                                                                            builder: (BuildContext context) {
+                                                                                                              return CupertinoAlertDialog(
+                                                                                                                title: Text("Approve Inquiry"),
+                                                                                                                content: Text("Are you sure you want to approve this inquiry?"),
+                                                                                                                actions: <Widget>[
+                                                                                                                  CupertinoDialogAction(
+                                                                                                                    child: Text("Cancel"),
+                                                                                                                    onPressed: () {
+                                                                                                                      Navigator.of(context).pop(false);
+                                                                                                                    },
+                                                                                                                  ),
+                                                                                                                  CupertinoDialogAction(
+                                                                                                                    isDestructiveAction: true,
+                                                                                                                    child: Text("Approve"),
+                                                                                                                    onPressed: () {
+                                                                                                                      Navigator.of(context).pop(true); // Only pop here
+                                                                                                                    },
+                                                                                                                  ),
+                                                                                                                ],
+                                                                                                              );
+                                                                                                            },
+                                                                                                          );
+
+                                                                                                          if (confirm == true) {
+                                                                                                            // Call the function to approve inquiry and update room
+                                                                                                            try {
+                                                                                                              await updateInquiryStatusAndRoom(
+                                                                                                                inquiry,
+                                                                                                                inquiry['_id'],
+                                                                                                                'approved',
+                                                                                                                roomId,
+                                                                                                                userId,
+                                                                                                                widget.token,
+                                                                                                                inquiry['reservationDuration'],
+                                                                                                              );
+
+                                                                                                              // Only navigate here after successful update
+                                                                                                              Navigator.pushReplacement(
+                                                                                                                context,
+                                                                                                                MaterialPageRoute(
+                                                                                                                  builder: (context) => CurrentListingPage(token: widget.token),
+                                                                                                                ),
+                                                                                                              );
+                                                                                                              await fetchRoomInquiries(roomId);
+                                                                                                            } catch (error) {
+                                                                                                              print('Error: $error');
+                                                                                                            }
+                                                                                                          }
+                                                                                                        },
+                                                                                                        child: Text(
+                                                                                                          'Approve',
+                                                                                                          style: TextStyle(
+                                                                                                            color: Colors.black,
+                                                                                                          ),
+                                                                                                        ),
+                                                                                                      ),
+                                                                                                    ),
+
+                                                                                                    const SizedBox(width: 8),
+
+                                                                                                    // Reject Button
+                                                                                                    Expanded(
+                                                                                                      child: ElevatedButton(
+                                                                                                        style: ElevatedButton.styleFrom(
+                                                                                                          backgroundColor: const Color.fromARGB(255, 255, 3, 78), // Button color for Reject
+                                                                                                          shape: RoundedRectangleBorder(
+                                                                                                            borderRadius: BorderRadius.circular(8.0),
+                                                                                                          ),
+                                                                                                        ),
+                                                                                                        onPressed: () async {
+                                                                                                          // Show confirmation dialog for rejection
+                                                                                                          bool? confirm = await showCupertinoDialog(
+                                                                                                            context: context,
+                                                                                                            builder: (BuildContext context) {
+                                                                                                              return CupertinoAlertDialog(
+                                                                                                                title: Text("Reject Inquiry"),
+                                                                                                                content: Text("Are you sure you want to reject this inquiry?"),
+                                                                                                                actions: <Widget>[
+                                                                                                                  CupertinoDialogAction(
+                                                                                                                    child: Text("Cancel"),
+                                                                                                                    onPressed: () {
+                                                                                                                      Navigator.of(context).pop(false); // Return false
+                                                                                                                    },
+                                                                                                                  ),
+                                                                                                                  CupertinoDialogAction(
+                                                                                                                    isDestructiveAction: true,
+                                                                                                                    child: Text("Reject"),
+                                                                                                                    onPressed: () {
+                                                                                                                      Navigator.of(context).pop(true); // Return true
+                                                                                                                    },
+                                                                                                                  ),
+                                                                                                                ],
+                                                                                                              );
+                                                                                                            },
+                                                                                                          );
+                                                                                                          if (confirm == true) {
+                                                                                                            // Show reasons dialog if the inquiry is rejected
+                                                                                                            final String? selectedReason = await showCupertinoDialog<String>(
+                                                                                                              context: context,
+                                                                                                              builder: (BuildContext context) {
+                                                                                                                return CupertinoAlertDialog(
+                                                                                                                  title: Text("Select Rejection Reason"),
+                                                                                                                  content: Column(
+                                                                                                                    mainAxisSize: MainAxisSize.min,
+                                                                                                                    children: rejectionReasons.map((reason) {
+                                                                                                                      return CupertinoDialogAction(
+                                                                                                                        child: Text(reason),
+                                                                                                                        onPressed: () {
+                                                                                                                          Navigator.of(context).pop(reason); // Return the selected reason
+                                                                                                                        },
+                                                                                                                      );
+                                                                                                                    }).toList(),
+                                                                                                                  ),
+                                                                                                                );
+                                                                                                              },
+                                                                                                            );
+
+                                                                                                            if (selectedReason != null) {
+                                                                                                              // Call API to reject inquiry and delete it with the selected reason
+                                                                                                              print('Reject button clicked for inquiry by $userName with reason: $selectedReason');
+                                                                                                              if (inquiry['_id'] != null && widget.token != null) {
+                                                                                                                await rejectAndDeleteInquiry(inquiry['_id'], widget.token, selectedReason); // Pass the reason
+                                                                                                              } else {
+                                                                                                                print('Error: Inquiry ID or token is null');
+                                                                                                              }
+                                                                                                            }
+                                                                                                          }
+                                                                                                        },
+                                                                                                        child: Text(
+                                                                                                          'Reject',
+                                                                                                          style: TextStyle(
+                                                                                                            color: Colors.black,
+                                                                                                          ),
+                                                                                                        ),
+                                                                                                      ),
+                                                                                                    ),
+                                                                                                  ],
+                                                                                                ),
+                                                                                              ],
+                                                                                            ),
+                                                                                          ),
+                                                                                        ),
+                                                                                      ),
+                                                                                    ));
+                                                                              }).toList(),
+                                                                            ),
+                                                                    ],
+                                                                  ],
+                                                                ),
+                                                              ),
                                                             ),
                                                           ),
                                                         ),
-                                                      ),
-                                                    ),
-                                                  );
-                                                }).toList(),
-                                              ),
-                                      ],
+                                                      );
+                                                    }).toList(),
+                                                  ),
+                                          ],
+                                        ),
+                                      ),
                                     ),
-                                  ),
-                                ),
-                              );
-                            },
-                          ),
+                                  );
+                                },
+                              ),
                   ),
                 ),
               ),
@@ -1896,7 +2170,9 @@ Future<void> deleteRoom(BuildContext context, String roomId) async {
       floatingActionButton: FloatingActionButton(
         shape: CircleBorder(),
         hoverColor: const Color.fromARGB(186, 0, 213, 241),
-        backgroundColor: _themeController.isDarkMode.value?Colors.white: const Color.fromARGB(255, 0, 18, 32),
+        backgroundColor: _themeController.isDarkMode.value
+            ? Colors.white
+            : const Color.fromARGB(255, 0, 18, 32),
         onPressed: () {
           Navigator.push(
             context,
@@ -1905,114 +2181,90 @@ Future<void> deleteRoom(BuildContext context, String roomId) async {
             ),
           );
         },
-        child: Icon(Icons.add, color:_themeController.isDarkMode.value?Colors.black: Colors.white, size: 30,),
+        child: Icon(
+          Icons.add,
+          color:
+              _themeController.isDarkMode.value ? Colors.black : Colors.white,
+          size: 30,
+        ),
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.miniEndFloat,
     );
   }
 
+// // Function to initialize inquiries
+// Future<void> initializeInquiries() async {
+//   try {
+//     // Example logic for initializing inquiries
+//     propertyInquiries = await fetchRoomInquiries(); // This should return a Map<String, List<dynamic>>
+//     print("Inquiries initialized: $propertyInquiries");
+//   } catch (e) {
+//     print("Error initializing inquiries: $e");
+//     propertyInquiries = {}; // Provide a fallback or default value
+//   }
+// }
 
-
-void showInquiryDetailsDialog(BuildContext context, String userName, String userContact, Map<String, dynamic> inquiry) {
-  debugPrintStack(label: 'Error location', maxFrames: 10);
-  showCupertinoDialog(
-    context: context,
-    builder: (BuildContext context) {
-      return CupertinoAlertDialog(
-        title: Text(
-          "Inquiry Details",
-          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20),
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            SizedBox(height: 12),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  'Name:',
-                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-                ),
-                SizedBox(width: 5),
-                Expanded(
-                  child: Text(
-                    userName,
-                    style: TextStyle(fontSize: 16),
-                    textAlign: TextAlign.start,
-                  ),
-                ),
-              ],
-            ),
-            SizedBox(height: 4),
-            Text(
-              'Contact:',
-              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-            ),
-            SizedBox(height: 4),
-            Padding(
-              padding: const EdgeInsets.only(left: 10.0),
-              child: Text(
-                userContact,
-                style: TextStyle(fontSize: 14),
-                textAlign: TextAlign.start,
-              ),
-            ),
-            SizedBox(height: 8),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  'Request Date:',
-                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
-                ),
-                SizedBox(width: 5),
-                Expanded(
-                  child: Text(
-                    inquiry['requestDate'] != null
-                        ? DateFormat('yyyy-MM-dd').format(DateTime.parse(inquiry['requestDate']))
-                        : 'No date provided',
-                    style: TextStyle(fontSize: 14),
-                    textAlign: TextAlign.start,
-                  ),
-                ),
-              ],
-            ),
-            SizedBox(height: 4),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  'Request Type:',
-                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
-                ),
-                SizedBox(width: 5),
-                Expanded(
-                  child: Text(
-                    inquiry['requestType']?.toString()?.toUpperCase() ?? 'N/A',
-                    style: TextStyle(fontSize: 14),
-                    textAlign: TextAlign.start,
-                  ),
-                ),
-              ],
-            ),
-            // Conditionally show Proposed Start Date if requestType is 'rent'
-            if (inquiry['requestType']?.toString()?.toLowerCase() == 'rent') ...[
-              SizedBox(height: 4),
+  void showInquiryDetailsDialog(BuildContext context, String userName,
+      String userContact, Map<String, dynamic> inquiry) {
+    debugPrintStack(label: 'Error location', maxFrames: 10);
+    showCupertinoDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return CupertinoAlertDialog(
+          title: Text(
+            "Inquiry Details",
+            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20),
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              SizedBox(height: 12),
               Row(
-                mainAxisAlignment: MainAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
-                    'Proposed Start Date:',
-                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
-                    textAlign: TextAlign.start,
+                    'Name:',
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
                   ),
                   SizedBox(width: 5),
                   Expanded(
                     child: Text(
-                      inquiry['proposedStartDate'] != null
-                          ? DateFormat('yyyy-MM-dd').format(DateTime.parse(inquiry['proposedStartDate']))
+                      userName,
+                      style: TextStyle(fontSize: 16),
+                      textAlign: TextAlign.start,
+                    ),
+                  ),
+                ],
+              ),
+              SizedBox(height: 4),
+              Text(
+                'Contact:',
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+              ),
+              SizedBox(height: 4),
+              Padding(
+                padding: const EdgeInsets.only(left: 10.0),
+                child: Text(
+                  userContact,
+                  style: TextStyle(fontSize: 14),
+                  textAlign: TextAlign.start,
+                ),
+              ),
+              SizedBox(height: 8),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    'Request Date:',
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                  ),
+                  SizedBox(width: 5),
+                  Expanded(
+                    child: Text(
+                      inquiry['requestDate'] != null
+                          ? DateFormat('yyyy-MM-dd')
+                              .format(DateTime.parse(inquiry['requestDate']))
                           : 'No date provided',
                       style: TextStyle(fontSize: 14),
                       textAlign: TextAlign.start,
@@ -2020,66 +2272,111 @@ void showInquiryDetailsDialog(BuildContext context, String userName, String user
                   ),
                 ],
               ),
-            ],
-            if (inquiry['requestType']?.toString()?.toLowerCase() == 'reservation') ...[
-            SizedBox(height: 4),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.start,
-              children: [
-                Text(
-                  'Reservation duration:',
-                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
-                  textAlign: TextAlign.start,
-                ),
-                SizedBox(width: 5),
-                Expanded(
-                child: Text(
-                  inquiry['reservationDuration'] != null
-                      ? '${inquiry['reservationDuration']} Days'  // Append 'Days' after the duration
-                      : 'No duration provided',  // Fallback if null
-                  style: TextStyle(fontSize: 14),
-                  textAlign: TextAlign.start,
-                ),
-                ),
-              ],
-            ),
-          ],
-            SizedBox(height: 4),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  'Message:',
-                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
-                ),
-                SizedBox(width: 5),
-                Expanded(
-                  child: Text(
-                    inquiry['customTerms']?.toString() ?? 'None',
-                    style: const TextStyle(fontSize: 14),
-                    textAlign: TextAlign.start,
+              SizedBox(height: 4),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    'Request Type:',
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
                   ),
+                  SizedBox(width: 5),
+                  Expanded(
+                    child: Text(
+                      inquiry['requestType']?.toString()?.toUpperCase() ??
+                          'N/A',
+                      style: TextStyle(fontSize: 14),
+                      textAlign: TextAlign.start,
+                    ),
+                  ),
+                ],
+              ),
+              // Conditionally show Proposed Start Date if requestType is 'rent'
+              if (inquiry['requestType']?.toString()?.toLowerCase() ==
+                  'rent') ...[
+                SizedBox(height: 4),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Proposed Start Date:',
+                      style:
+                          TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                      textAlign: TextAlign.start,
+                    ),
+                    SizedBox(width: 5),
+                    Expanded(
+                      child: Text(
+                        inquiry['proposedStartDate'] != null
+                            ? DateFormat('yyyy-MM-dd').format(
+                                DateTime.parse(inquiry['proposedStartDate']))
+                            : 'No date provided',
+                        style: TextStyle(fontSize: 14),
+                        textAlign: TextAlign.start,
+                      ),
+                    ),
+                  ],
                 ),
               ],
+              if (inquiry['requestType']?.toString()?.toLowerCase() ==
+                  'reservation') ...[
+                SizedBox(height: 4),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Reservation duration:',
+                      style:
+                          TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                      textAlign: TextAlign.start,
+                    ),
+                    SizedBox(width: 5),
+                    Expanded(
+                      child: Text(
+                        inquiry['reservationDuration'] != null
+                            ? '${inquiry['reservationDuration']} Days' // Append 'Days' after the duration
+                            : 'No duration provided', // Fallback if null
+                        style: TextStyle(fontSize: 14),
+                        textAlign: TextAlign.start,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+              SizedBox(height: 4),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    'Message:',
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                  ),
+                  SizedBox(width: 5),
+                  Expanded(
+                    child: Text(
+                      inquiry['customTerms']?.toString() ?? 'None',
+                      style: const TextStyle(fontSize: 14),
+                      textAlign: TextAlign.start,
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+          actions: <CupertinoDialogAction>[
+            CupertinoDialogAction(
+              child: Text('Close'),
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
             ),
           ],
-        ),
-        actions: <CupertinoDialogAction>[
-          CupertinoDialogAction(
-            child: Text('Close'),
-            onPressed: () {
-              Navigator.of(context).pop();
-            },
-          ),
-        ],
-      );
-    },
-  );
-}
+        );
+      },
+    );
+  }
 
-
-
-Future<void> getPropertyList(String userId) async {
+  Future<void> getPropertyList(String userId) async {
     try {
       setState(() {
         _loading = true; // Set loading to true when starting fetch
@@ -2096,7 +2393,6 @@ Future<void> getPropertyList(String userId) async {
         var jsonResponse = jsonDecode(response.body);
         List<dynamic> properties = jsonResponse['success'] ?? [];
         setState(() {
-          
           items = properties;
           _loading = false; // Set loading to false after fetch
         });
@@ -2121,21 +2417,17 @@ Future<void> getPropertyList(String userId) async {
     }
   }
 
-
-
-
   Future<void> fetchUserProfile(String userId) async {
     try {
-      final response =
-          await http.get(Uri.parse('https://rentconnect.vercel.app/user/$userId'));
+      final response = await http
+          .get(Uri.parse('https://rentconnect.vercel.app/user/$userId'));
       if (response.statusCode == 200) {
         final user = json.decode(response.body);
         setState(() {
-          userProfiles[userId] =
-              user['profile']; // Store profile data by userId
-          profilePic[userId] =
-              user['profilePicture']; // Store profile data by userId
+          userProfiles[userId] = user['profile'];
+          profilePic[userId] = user['profilePicture'];
         });
+        return user['profile'];
       } else {
         print(
             "Error fetching user profile for $userId: ${response.statusCode}");
@@ -2145,47 +2437,57 @@ Future<void> getPropertyList(String userId) async {
     }
   }
 
+  Future<void> fetchRoomInquiries(String roomId) async {
+    try {
+      final response = await http.get(
+          Uri.parse('https://rentconnect.vercel.app/inquiries/rooms/$roomId'));
 
-Future<void> fetchRoomInquiries(String roomId) async {
-  try {
-    final response = await http.get(Uri.parse('https://rentconnect.vercel.app/inquiries/rooms/$roomId'));
-    
-    if (response.statusCode == 200) {
-      final inquiries = json.decode(response.body) as List<dynamic>; // Decode as List
-      setState(() {
-        propertyInquiries['$roomId'] = inquiries; 
-        initializeRoomId();// Store inquiries by room ID
-      });
-      
-      // Fetch user profiles for each inquiry
-      for (var inquiry in inquiries) {
-      final userIdfromInquiry = inquiry['userId'];
-      roomID = inquiry['roomId']['_id'];
-      if (inquiry['status'] == 'approved') {
-        selectedUserId = userIdfromInquiry; // Store userId of the approved inquiry
+      if (response.statusCode == 200) {
+        final inquiries = json.decode(response.body) as List<dynamic>;
+
+        // Create a list of futures for fetching all user profiles
+        List<Future<void>> profileFutures = [];
+
+        for (var inquiry in inquiries) {
+          final userIdFromInquiry = inquiry['userId'];
+          roomID = inquiry['roomId']['_id'];
+
+          if (inquiry['status'] == 'approved') {
+            selectedUserId = userIdFromInquiry;
+          }
+
+          // Add each profile fetch to our list of futures
+          profileFutures.add(fetchUserProfile(userIdFromInquiry));
+        }
+
+        // Wait for all profiles to be fetched
+        await Future.wait(profileFutures);
+
+        // Only update state after all profiles are fetched
+        setState(() {
+          propertyInquiries[roomId] = inquiries;
+          initializeRoomId();
+        });
+      } else {
+        print(
+            "Error fetching inquiries for room $roomId: ${response.statusCode}");
       }
-      
-      print('UserId from inquiryyy: $userIdfromInquiry'); // Print the userId for debugging
-      print('RoomId from inquiry: $roomID'); // Print the userId for debugging
-      await fetchUserProfile(userId); // Fetch user profile if needed
+    } catch (error) {
+      print('Error fetching inquiries for room $roomId: $error');
     }
-    } else {
-      print("Error fetching inquiries for room $roomId: ${response.statusCode}");
-    }
-  } catch (error) {
-    print('Error fetching inquiries for room $roomId: $error');
   }
-}
 
-void initializeRoomId() {
-  if (propertyInquiries.isNotEmpty) {
-    String firstKey = propertyInquiries.keys.first;
-    if (propertyInquiries[firstKey] != null && propertyInquiries[firstKey]!.isNotEmpty) {
-      roomId = propertyInquiries[firstKey]![0]['roomId']['_id'];
-      print("Initialized roomId: $roomId");
+  void initializeRoomId() {
+    if (propertyInquiries.isNotEmpty) {
+      String firstKey = propertyInquiries.keys.first;
+      if (propertyInquiries[firstKey] != null &&
+          propertyInquiries[firstKey]!.isNotEmpty) {
+        roomId = propertyInquiries[firstKey]![0]['roomId']['_id'];
+        print("Initialized roomId: $roomId");
+      }
     }
   }
-}
+
   Future<void> fetchRooms(String propertyId) async {
     try {
       final response = await http.get(Uri.parse(
@@ -2200,7 +2502,7 @@ void initializeRoomId() {
             propertyRooms[propertyId] = data['rooms'] ?? [];
             //roomId= data['rooms']['_id'];
           });
-        
+
           // Fetch inquiries and user profiles for each room
           for (var room in data['rooms']) {
             String roomId = room['_id'];
@@ -2227,38 +2529,38 @@ void initializeRoomId() {
     }
   }
 
+  Future<void> updateRoomStatus(String? roomId, String? newStatus) async {
+    final url = Uri.parse(
+        'https://rentconnect.vercel.app/rooms/updateRoom/$roomId'); // Replace with your backend URL
+    final headers = {
+      'Content-Type': 'application/json',
+      'Authorization': 'Bearer your_jwt_token' // Add your JWT token if required
+    };
 
-Future<void> updateRoomStatus(String? roomId, String? newStatus) async {
-  final url = Uri.parse('https://rentconnect.vercel.app/rooms/updateRoom/$roomId'); // Replace with your backend URL
-  final headers = {
-    'Content-Type': 'application/json',
-    'Authorization': 'Bearer your_jwt_token' // Add your JWT token if required
-  };
+    final updateData = {
+      'roomStatus': newStatus,
+    };
 
-  final updateData = {
-    'roomStatus': newStatus,
-  };
+    try {
+      final response = await http.patch(
+        url,
+        headers: headers,
+        body: json.encode(updateData),
+      );
 
-  try {
-    final response = await http.patch(
-      url,
-      headers: headers,
-      body: json.encode(updateData),
-    );
-
-    if (response.statusCode == 200) {
-      // Handle successful response
-      final responseData = json.decode(response.body);
-      print('Room updated successfully: ${responseData['room']}');
-    } else {
-      // Handle error response
-      final errorData = json.decode(response.body);
-      print('Failed to update room: ${errorData['error']}');
+      if (response.statusCode == 200) {
+        // Handle successful response
+        final responseData = json.decode(response.body);
+        print('Room updated successfully: ${responseData['room']}');
+      } else {
+        // Handle error response
+        final errorData = json.decode(response.body);
+        print('Failed to update room: ${errorData['error']}');
+      }
+    } catch (error) {
+      print('Error updating room: $error');
     }
-  } catch (error) {
-    print('Error updating room: $error');
   }
-}
 
   void showPropertyDetailPage(Property property) {
     Navigator.push(
@@ -2306,113 +2608,109 @@ Future<void> updateRoomStatus(String? roomId, String? newStatus) async {
     await getPropertyList(userId);
   }
 
-
-
-
-
-
-Future<String?> fetchProofOfReservation(String roomId) async {
-  try {
-    // Example API call to fetch payment details
-    var response = await http.get(Uri.parse('https://rentconnect.vercel.app/payment/room/$roomId/proofOfReservation'));
-    if (response.statusCode == 200) {
-      var data = jsonDecode(response.body);
-      return data['proofOfReservation']; // Ensure the key matches your backend response
-    } else {
-      // Handle error, return null if not available
+  Future<String?> fetchProofOfReservation(String roomId) async {
+    try {
+      // Example API call to fetch payment details
+      var response = await http.get(Uri.parse(
+          'https://rentconnect.vercel.app/payment/room/$roomId/proofOfReservation'));
+      if (response.statusCode == 200) {
+        var data = jsonDecode(response.body);
+        return data[
+            'proofOfReservation']; // Ensure the key matches your backend response
+      } else {
+        // Handle error, return null if not available
+        return null;
+      }
+    } catch (e) {
+      // Handle any errors during the request
       return null;
     }
-  } catch (e) {
-    // Handle any errors during the request
-    return null;
+  }
+
+  Future<void> saveImage(String imageUrl) async {
+    try {
+      final response = await http.get(Uri.parse(imageUrl));
+
+      if (response.statusCode == 200) {
+        final Uint8List imageBytes = response.bodyBytes;
+        final result = await SaverGallery.saveImage(
+          imageBytes,
+          quality: 60, // Adjust image quality
+          name: "saved_image", // Provide a name for the saved image
+          androidRelativePath:
+              "Pictures/YourAppName", // Specify the directory path
+          androidExistNotSave:
+              false, // Prevent saving if a file with the same name exists
+        );
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Image saved to gallery!')),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to fetch image.')),
+        );
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error saving image: $e')),
+      );
+    }
+  }
+
+  void showFullscreenImage(BuildContext context, String imageUrl) {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return Dialog(
+          backgroundColor: Colors.black,
+          child: GestureDetector(
+            onTap: () {
+              Navigator.of(context).pop(); // Close the fullscreen image on tap
+            },
+            child: Container(
+              constraints: BoxConstraints(
+                maxHeight: MediaQuery.of(context).size.height *
+                    0.4, // Limit height to 90% of screen
+              ),
+              child: Stack(
+                alignment: Alignment.center,
+                children: [
+                  Image.network(
+                    imageUrl,
+                    fit: BoxFit.contain,
+                    loadingBuilder: (context, child, loadingProgress) {
+                      if (loadingProgress == null)
+                        return child; // If loading complete
+                      return Center(
+                          child:
+                              CircularProgressIndicator()); // Show loading indicator
+                    },
+                    errorBuilder: (context, error, stackTrace) {
+                      return Center(
+                          child: Text('Error loading image',
+                              style: TextStyle(color: Colors.white)));
+                    },
+                  ),
+                  Positioned(
+                    top: 5,
+                    right: 10,
+                    child: IconButton(
+                      icon: Icon(Icons.download, color: Colors.white),
+                      onPressed: () {
+                        saveImage(imageUrl);
+                      },
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    );
   }
 }
 
-
-Future<void> saveImage(String imageUrl) async {
-        try {
-          final response = await http.get(Uri.parse(imageUrl));
-
-          if (response.statusCode == 200) {
-            final Uint8List imageBytes = response.bodyBytes;
-            final result = await SaverGallery.saveImage(
-              imageBytes,
-        quality: 60, // Adjust image quality
-        name: "saved_image", // Provide a name for the saved image
-        androidRelativePath: "Pictures/YourAppName", // Specify the directory path
-        androidExistNotSave: false, // Prevent saving if a file with the same name exists
-            );
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text('Image saved to gallery!')),
-            );
-          } else {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text('Failed to fetch image.')),
-            );
-          }
-        } catch (e) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Error saving image: $e')),
-          );
-        }
-      }
-
-
-void showFullscreenImage(BuildContext context, String imageUrl) {
-  showDialog(
-    context: context,
-    builder: (context) {
-      return Dialog(
-        backgroundColor: Colors.black,
-        child: GestureDetector(
-          onTap: () {
-            Navigator.of(context).pop(); // Close the fullscreen image on tap
-          },
-          child: Container(
-            constraints: BoxConstraints(
-              maxHeight: MediaQuery.of(context).size.height * 0.4, // Limit height to 90% of screen
-            ),
-            child: Stack(
-              alignment: Alignment.center,
-              children: [
-                Image.network(
-                  imageUrl,
-                  fit: BoxFit.contain,
-                  loadingBuilder: (context, child, loadingProgress) {
-                    if (loadingProgress == null) return child; // If loading complete
-                    return Center(child: CircularProgressIndicator()); // Show loading indicator
-                  },
-                  errorBuilder: (context, error, stackTrace) {
-                    return Center(child: Text('Error loading image', style: TextStyle(color: Colors.white)));
-                  },
-                ),
-                Positioned(
-                  top: 5,
-                  right: 10,
-                  child: IconButton(
-                    icon: Icon(Icons.download, color: Colors.white),
-                    onPressed: () {
-                      saveImage(imageUrl);
-                    },
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      );
-    },
-  );
-}
-
-}
-
-
-
-
-
-
-                                        
 class ExpandableText extends StatefulWidget {
   final String text;
   final TextStyle style;
@@ -2432,14 +2730,16 @@ class _ExpandableTextState extends State<ExpandableText> {
 
   @override
   Widget build(BuildContext context) {
-    final isTextLong = widget.text.length > 100 || widget.text.contains('\n'); // Adjust the condition as needed
+    final isTextLong = widget.text.length > 100 ||
+        widget.text.contains('\n'); // Adjust the condition as needed
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
           widget.text,
-          maxLines: _isExpanded ? null : 100000, // Limit to 3 lines when collapsed
+          maxLines:
+              _isExpanded ? null : 100000, // Limit to 3 lines when collapsed
           overflow: TextOverflow.ellipsis,
           style: widget.style,
         ),
@@ -2463,14 +2763,6 @@ class _ExpandableTextState extends State<ExpandableText> {
   }
 }
 
-
-
-
-
-
-
-
-
 //    Future<void> markRoomAsOccupied(BuildContext context, String roomID) async {
 //   if (propertyInquiries[room['reservationInquirers'][0]] != null) {
 //     try {
@@ -2489,7 +2781,7 @@ class _ExpandableTextState extends State<ExpandableText> {
 //       if (response.statusCode == 200) {
 //         // Parse the response body for additional data
 //         final data = json.decode(response.body);
-        
+
 //         // Extract the agreement details from the response
 //         final agreementData = data['agreement'];
 
@@ -2508,7 +2800,6 @@ class _ExpandableTextState extends State<ExpandableText> {
 //     print('No userId found to mark as occupied');
 //   }
 // }
-
 
 // void showRoomDetailPopover(BuildContext context, dynamic room, Map<String, dynamic> userProfiles,  List<dynamic> inquiries, {String? selectedMonth,  int currentMonthIndex = 0}) async{
 //   int? reservationDuration = await getReservationDuration(room['_id'], widget.token);
@@ -2717,147 +3008,145 @@ class _ExpandableTextState extends State<ExpandableText> {
 //                                 ],
 
 //                                 // Proof of Reservation when Reserved
-    //                             if (isReserved) ...[
-    //                               Column(
-    //   crossAxisAlignment: CrossAxisAlignment.start,
-    //   children: [
-    //     Text(
-    //       'Reservation Details',
-    //       style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-    //     ),
-    //     const SizedBox(height: 5),
-    //     Text('Reservation Fee: ₱${room['reservationFee'] ?? 'N/A'}'),
-    //     Text('Duration of Reservation: ${reservationDuration} days'), // Display reservationDuration
-    //     const SizedBox(height: 10),
-    //     Text('Proof of Reservation:', style: TextStyle(fontWeight: FontWeight.bold)),
-    //     FutureBuilder<String?>(
-    //       future: fetchProofOfReservation(room['_id']),
-    //       builder: (context, snapshot) {
-    //         if (snapshot.connectionState == ConnectionState.waiting) {
-    //           return Container(
-    //             height: 100,
-    //             alignment: Alignment.center,
-    //             child: CupertinoActivityIndicator(),
-    //           );
-    //         } else if (snapshot.hasError) {
-    //           return Container(
-    //             height: 100,
-    //             decoration: BoxDecoration(
-    //               borderRadius: BorderRadius.circular(12),
-    //               color: Colors.grey[200],
-    //             ),
-    //             alignment: Alignment.center,
-    //             child: Text('Error loading image'),
-    //           );
-    //         } else if (snapshot.hasData && snapshot.data != null) {
-    //           return GestureDetector(
-    //             onTap: () {
-    //               showFullscreenImage(context, snapshot.data!);
-    //             },
-    //             child: Container(
-    //               height: 100,
-    //               alignment: Alignment.center,
-    //               child: ClipRRect(
-    //                 borderRadius: BorderRadius.circular(12),
-    //                 child: FadeInImage.assetNetwork(
-    //                   placeholder: 'assets/images/placeholder.webp',
-    //                   image: snapshot.data!,
-    //                   fit: BoxFit.cover,
-    //                 ),
-    //               ),
-    //             ),
-    //           );
-    //         } else {
-    //           return Container(
-    //             height: 100,
-    //             decoration: BoxDecoration(
-    //               borderRadius: BorderRadius.circular(12),
-    //               color: const Color.fromARGB(136, 131, 131, 131),
-    //             ),
-    //             alignment: Alignment.center,
-    //             child: Text('No proof uploaded yet'),
-    //           );
-    //         }
-    //       },
-    //     ),
-    //     const SizedBox(height: 10),
-    //     Center(child: Text('Is the reservant moved-in?', style: TextStyle(
-    //       fontFamily: 'manrope',
-    //       color: _themeController.isDarkMode.value? const Color.fromARGB(255, 216, 216, 216): const Color.fromARGB(193, 53, 53, 53),
-    //       fontSize: 13,
-    //     ),)),
-    //     Tooltip(
-    //       message: 'Is the reservant moved-in?',
-    //       child: Center(
-    //         child: ShadButton(
-    //           backgroundColor: _themeController.isDarkMode.value? Colors.white: const Color.fromARGB(255, 0, 16, 34),
-    //           onPressed: () async {
+//                             if (isReserved) ...[
+//                               Column(
+//   crossAxisAlignment: CrossAxisAlignment.start,
+//   children: [
+//     Text(
+//       'Reservation Details',
+//       style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+//     ),
+//     const SizedBox(height: 5),
+//     Text('Reservation Fee: ₱${room['reservationFee'] ?? 'N/A'}'),
+//     Text('Duration of Reservation: ${reservationDuration} days'), // Display reservationDuration
+//     const SizedBox(height: 10),
+//     Text('Proof of Reservation:', style: TextStyle(fontWeight: FontWeight.bold)),
+//     FutureBuilder<String?>(
+//       future: fetchProofOfReservation(room['_id']),
+//       builder: (context, snapshot) {
+//         if (snapshot.connectionState == ConnectionState.waiting) {
+//           return Container(
+//             height: 100,
+//             alignment: Alignment.center,
+//             child: CupertinoActivityIndicator(),
+//           );
+//         } else if (snapshot.hasError) {
+//           return Container(
+//             height: 100,
+//             decoration: BoxDecoration(
+//               borderRadius: BorderRadius.circular(12),
+//               color: Colors.grey[200],
+//             ),
+//             alignment: Alignment.center,
+//             child: Text('Error loading image'),
+//           );
+//         } else if (snapshot.hasData && snapshot.data != null) {
+//           return GestureDetector(
+//             onTap: () {
+//               showFullscreenImage(context, snapshot.data!);
+//             },
+//             child: Container(
+//               height: 100,
+//               alignment: Alignment.center,
+//               child: ClipRRect(
+//                 borderRadius: BorderRadius.circular(12),
+//                 child: FadeInImage.assetNetwork(
+//                   placeholder: 'assets/images/placeholder.webp',
+//                   image: snapshot.data!,
+//                   fit: BoxFit.cover,
+//                 ),
+//               ),
+//             ),
+//           );
+//         } else {
+//           return Container(
+//             height: 100,
+//             decoration: BoxDecoration(
+//               borderRadius: BorderRadius.circular(12),
+//               color: const Color.fromARGB(136, 131, 131, 131),
+//             ),
+//             alignment: Alignment.center,
+//             child: Text('No proof uploaded yet'),
+//           );
+//         }
+//       },
+//     ),
+//     const SizedBox(height: 10),
+//     Center(child: Text('Is the reservant moved-in?', style: TextStyle(
+//       fontFamily: 'manrope',
+//       color: _themeController.isDarkMode.value? const Color.fromARGB(255, 216, 216, 216): const Color.fromARGB(193, 53, 53, 53),
+//       fontSize: 13,
+//     ),)),
+//     Tooltip(
+//       message: 'Is the reservant moved-in?',
+//       child: Center(
+//         child: ShadButton(
+//           backgroundColor: _themeController.isDarkMode.value? Colors.white: const Color.fromARGB(255, 0, 16, 34),
+//           onPressed: () async {
 
-    //             // Show confirmation dialog
-    //             showCupertinoDialog(
-    //               context: context,
-    //               builder: (BuildContext context) {
-    //                 return CupertinoAlertDialog(
-    //                   title: Text('Confirm Occupation'),
-    //                   content: Text('Are you sure you want to mark this room as occupied?'),
-    //                   actions: [
-    //                     CupertinoDialogAction(
-    //                       child: Text('Cancel'),
-    //                       isDefaultAction: true,
-    //                       onPressed: () {
-    //                         Navigator.of(context).pop(); // Close the dialog without action
-    //                       },
-    //                     ),
-    //                     CupertinoDialogAction(
-    //                       child: Text('Confirm'),
-    //                       isDestructiveAction: true,
-    //                       onPressed: () async {
-    //                         await markRoomAsOccupied(context,room["_id"],);
+//             // Show confirmation dialog
+//             showCupertinoDialog(
+//               context: context,
+//               builder: (BuildContext context) {
+//                 return CupertinoAlertDialog(
+//                   title: Text('Confirm Occupation'),
+//                   content: Text('Are you sure you want to mark this room as occupied?'),
+//                   actions: [
+//                     CupertinoDialogAction(
+//                       child: Text('Cancel'),
+//                       isDefaultAction: true,
+//                       onPressed: () {
+//                         Navigator.of(context).pop(); // Close the dialog without action
+//                       },
+//                     ),
+//                     CupertinoDialogAction(
+//                       child: Text('Confirm'),
+//                       isDestructiveAction: true,
+//                       onPressed: () async {
+//                         await markRoomAsOccupied(context,room["_id"],);
 
-    //                         Navigator.of(context).pop(); // Close confirmation dialog
+//                         Navigator.of(context).pop(); // Close confirmation dialog
 
-    //                         // Show success dialog
-    //                         showCupertinoDialog(
-    //                           context: context,
-    //                           builder: (BuildContext context) {
-    //                             return CupertinoAlertDialog(
-    //                               title: Text('Success'),
-    //                               content: Text('Successfully marked as occupied!'),
-    //                               actions: [
-    //                                 CupertinoDialogAction(
-    //                                   child: Text('OK'),
-    //                                   onPressed: () {
-    //                                     Navigator.of(context).pop(); // Close success dialog
-    //                                     Navigator.pushReplacement(
-    //                                       context,
-    //                                       MaterialPageRoute(
-    //                                         builder: (context) => CurrentListingPage(token: widget.token),
-    //                                       ),
-    //                                     );
-    //                                   },
-    //                                 ),
-    //                               ],
-    //                             );
-    //                           },
-    //                         );
-    //                       },
-    //                     ),
-    //                   ],
-    //                 );
-    //               },
-    //             );
-    //           },
-    //           child: Text('Mark as Occupied', style: TextStyle(
-    //             color: _themeController.isDarkMode.value? Colors.black: Colors.white
-    //           ),),
-    //         ),
-    //       ),
-    //     ),
-    //   ],
-    // ),
-    //                             ],
-
-
+//                         // Show success dialog
+//                         showCupertinoDialog(
+//                           context: context,
+//                           builder: (BuildContext context) {
+//                             return CupertinoAlertDialog(
+//                               title: Text('Success'),
+//                               content: Text('Successfully marked as occupied!'),
+//                               actions: [
+//                                 CupertinoDialogAction(
+//                                   child: Text('OK'),
+//                                   onPressed: () {
+//                                     Navigator.of(context).pop(); // Close success dialog
+//                                     Navigator.pushReplacement(
+//                                       context,
+//                                       MaterialPageRoute(
+//                                         builder: (context) => CurrentListingPage(token: widget.token),
+//                                       ),
+//                                     );
+//                                   },
+//                                 ),
+//                               ],
+//                             );
+//                           },
+//                         );
+//                       },
+//                     ),
+//                   ],
+//                 );
+//               },
+//             );
+//           },
+//           child: Text('Mark as Occupied', style: TextStyle(
+//             color: _themeController.isDarkMode.value? Colors.black: Colors.white
+//           ),),
+//         ),
+//       ),
+//     ),
+//   ],
+// ),
+//                             ],
 
 //                                 // Payment Details when Occupied
 //                                 if (isOccupied) ...[
@@ -2897,10 +3186,10 @@ class _ExpandableTextState extends State<ExpandableText> {
 //   _proofFuture = getProofOfPaymentForSelectedMonth(room['_id'], widget.token, month);
 
 //   // Close any existing dialogs
-//   Navigator.of(context).pop(); 
+//   Navigator.of(context).pop();
 
 //   // Open a new room detail popover and pass the selected month and current index
-//   showRoomDetailPopover(context, room, userProfiles, propertyInquiries[room['_id']] ?? [], 
+//   showRoomDetailPopover(context, room, userProfiles, propertyInquiries[room['_id']] ?? [],
 //     selectedMonth: month, currentMonthIndex: _currentMonthIndex, initialTabIndex: 1);
 // }
 
@@ -2917,7 +3206,7 @@ class _ExpandableTextState extends State<ExpandableText> {
 //     child: Row(
 //       children: [
 //         // Left Arrow Indicator
-//         if (months.isNotEmpty) 
+//         if (months.isNotEmpty)
 //           Padding(
 //             padding: const EdgeInsets.only(right: 6.0),
 //             child: SizedBox(

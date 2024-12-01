@@ -4,9 +4,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:rentcon/pages/agreementDetails.dart';
 import 'package:rentcon/pages/fullscreenImage.dart';
+import 'dart:convert';
+import 'package:http/http.dart' as http;
 
-class OccupantListWidget extends StatelessWidget {
+class OccupantListWidget extends StatefulWidget {
   final List<dynamic> occupantUsers;
+  final List<dynamic> occupantNonUsers;
   final Map<String, dynamic> userProfiles;
   final Map<String, dynamic> profilePic;
   final Function(String) fetchUserProfile;
@@ -16,18 +19,64 @@ class OccupantListWidget extends StatelessWidget {
       propertyInquiries; // Added property inquiries
 
   const OccupantListWidget({
-    Key? key,
+    super.key,
     required this.occupantUsers,
+    required this.occupantNonUsers,
     required this.userProfiles,
     required this.profilePic,
     required this.fetchUserProfile,
     required this.isDarkMode,
     required this.room,
     required this.propertyInquiries, // Ensure property inquiries are passed
-  }) : super(key: key);
+  });
+
+  @override
+  State<OccupantListWidget> createState() => _OccupantListWidgetState();
+}
+
+
+
+class _OccupantListWidgetState extends State<OccupantListWidget> {
+
+late Future<List<dynamic>> _occupantNonUsersFuture;
+
+
+    @override
+  void initState() {
+    super.initState();
+     _occupantNonUsersFuture = getOccupantNonUsers(widget.occupantNonUsers);
+  }
+  
+Future<List<dynamic>> getOccupantNonUsers(List<dynamic> occupantNonUserIds) async {
+  // Join the occupantNonUserIds into a comma-separated string
+  final String ids = occupantNonUserIds.join(',');
+
+  // Modify the URL to include the list of IDs as query parameters
+  final String url = 'https://rentconnect.vercel.app/rooms/occupant?ids=$ids';
+
+  try {
+    final response = await http.get(Uri.parse(url));
+
+    if (response.statusCode == 200) {
+      // Successfully fetched data
+      final data = json.decode(response.body);
+      print('Response Body: ${response.body}');
+      // Assuming the response contains the list of occupants
+      return data;
+    } else {
+      // Handle server errors or not found
+      throw Exception('Failed to load occupant non-users');
+    }
+  } catch (error) {
+    print('Error fetching occupant non-users: $error');
+    throw Exception('Error fetching occupant non-users');
+  }
+}
+
 
   @override
   Widget build(BuildContext context) {
+    print('occupant: ${widget.occupantNonUsers}');
     return Column(
       children: [
         Row(
@@ -44,7 +93,7 @@ class OccupantListWidget extends StatelessWidget {
             ElevatedButton(
           onPressed: () {
             // Access the inquiries for the specific room using room ID
-            final inquiries = propertyInquiries[room['_id']];
+            final inquiries = widget.propertyInquiries[widget.room['_id']];
             if (inquiries != null && inquiries.isNotEmpty) {
               // Pass the first inquiry's ID or handle accordingly
               final inquiry = inquiries.first; // Get the first inquiry object
@@ -69,18 +118,12 @@ class OccupantListWidget extends StatelessWidget {
             }
           },
           style: ElevatedButton.styleFrom(
-            backgroundColor: isDarkMode
+            backgroundColor: widget.isDarkMode
                 ? const Color.fromARGB(255, 41, 43, 53)
                 : Colors.white,
             elevation: 0,
             shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(8), // Set the border radius
-              // side: BorderSide(
-              //   color: isDarkMode
-              //       ? const Color.fromARGB(255, 146, 146, 146)
-              //       : Colors.black, // Set border color
-              //   width: 0.5, //0.5 Set border width
-              // ),
+              borderRadius: BorderRadius.circular(8),
             ),
           ),
           child: Row(
@@ -88,7 +131,7 @@ class OccupantListWidget extends StatelessWidget {
                 MainAxisSize.min, // Adjusts the button size to fit its contents
             children: [
               Icon(Icons.assignment,
-                  color: isDarkMode ? Colors.white : Colors.black),
+                  color: widget.isDarkMode ? Colors.white : Colors.black),
               const SizedBox(width: 2), // Space between icon and text
               Text(
                 'Agreement',
@@ -96,7 +139,7 @@ class OccupantListWidget extends StatelessWidget {
                   fontFamily: 'manrope',
                   fontSize: 12,
 
-                  color: isDarkMode ? Colors.white : Colors.black,
+                  color: widget.isDarkMode ? Colors.white : Colors.black,
                 ),
               ), // Button text
             ],
@@ -108,22 +151,16 @@ class OccupantListWidget extends StatelessWidget {
         const SizedBox(height: 4),
         // List of occupants
         Container(
-          height: 71, // Adjust to fit within available space
+          height: 80, // Adjust to fit within available space
           decoration: BoxDecoration(
+            border: Border.all(width: 0.5),
             borderRadius: BorderRadius.circular(10),
-            color: isDarkMode
+            color: widget.isDarkMode
                 ? Color.fromARGB(255, 41, 43, 53)
                 : Color.fromARGB(255, 255, 255, 255),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.2),
-                spreadRadius: 1,
-                blurRadius: 2,
-                offset: Offset(0, 3),
-              ),
-            ],
+            
           ),
-          child: occupantUsers.length > 3
+          child: widget.occupantUsers.length > 3
               ? SingleChildScrollView(
                   scrollDirection: Axis.horizontal,
                   child: Row(
@@ -141,17 +178,25 @@ class OccupantListWidget extends StatelessWidget {
     );
   }
 
-  List<Widget> _buildOccupantRows(BuildContext context) {
-    return occupantUsers.map<Widget>((occupantId) {
-      if (userProfiles.containsKey(occupantId)) {
-        var occupantProfile = userProfiles[occupantId];
-        var profilePicture = profilePic[occupantId];
-        String fullName =
-            '${occupantProfile['firstName']} ${occupantProfile['lastName']}';
+List<Widget> _buildOccupantRows(BuildContext context) {
+  // Combine occupantUsers and occupantNonUsers
+  final combinedOccupants = [
+    ...widget.occupantUsers.map((id) => {'type': 'user', 'id': id}),
+  ];
+
+  return combinedOccupants.map<Widget>((occupant) {
+    if (occupant['type'] == 'user') {
+      // Handle occupantUsers
+      final occupantId = occupant['id'];
+      if (widget.userProfiles.containsKey(occupantId)) {
+        var occupantProfile = widget.userProfiles[occupantId];
+        var profilePicture = widget.profilePic[occupantId];
+        String fullName = '${occupantProfile['firstName']} ${occupantProfile['lastName']}';
         String profilePictureUrl = profilePicture ?? '';
 
         return GestureDetector(
           onTap: () {
+            // Show details dialog for user occupant
             showCupertinoDialog(
               context: context,
               builder: (BuildContext context) {
@@ -162,58 +207,48 @@ class OccupantListWidget extends StatelessWidget {
                       mainAxisSize: MainAxisSize.min,
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        // Add profile picture as a small avatar
                         Row(
                           children: [
                             GestureDetector(
                               onTap: () {
                                 Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                        builder: (context) => FullscreenImage(
-                                            imageUrl: profilePictureUrl)));
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => FullscreenImage(imageUrl: profilePictureUrl),
+                                  ),
+                                );
                               },
                               child: CircleAvatar(
                                 radius: 30,
                                 backgroundImage: profilePictureUrl.isNotEmpty
                                     ? NetworkImage(profilePictureUrl)
-                                    : AssetImage('assets/images/profile.png')
-                                        as ImageProvider,
+                                    : AssetImage('assets/images/profile.png') as ImageProvider,
                               ),
                             ),
-                            const SizedBox(
-                                width: 10), // Spacing between image and text
+                            const SizedBox(width: 10),
                             Expanded(
-                              // Ensure the text fits in available space
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  // Name with wrapping and ellipsis if it overflows
                                   Text(
                                     'Name: $fullName',
-                                    style:
-                                        TextStyle(fontWeight: FontWeight.bold),
+                                    style: TextStyle(fontWeight: FontWeight.bold),
                                     overflow: TextOverflow.ellipsis,
-                                    maxLines:
-                                        2, // Wrap to a second line if necessary
+                                    maxLines: 2,
                                   ),
-                                  const SizedBox(
-                                      height: 4), // Spacing between details
-                                  // Gender
+                                  const SizedBox(height: 4),
                                   Text(
                                     'Gender: ${occupantProfile['gender']}',
                                     overflow: TextOverflow.ellipsis,
                                     maxLines: 2,
                                   ),
                                   const SizedBox(height: 4),
-                                  // Phone
                                   Text(
                                     'Phone: ${occupantProfile['contactDetails']['phone']}',
                                     overflow: TextOverflow.ellipsis,
                                     maxLines: 2,
                                   ),
                                   const SizedBox(height: 4),
-                                  // Address with wrapping for long addresses
                                   Text(
                                     'Address: ${occupantProfile['contactDetails']['address']}',
                                     overflow: TextOverflow.ellipsis,
@@ -230,7 +265,7 @@ class OccupantListWidget extends StatelessWidget {
                   actions: [
                     CupertinoDialogAction(
                       onPressed: () {
-                        Navigator.of(context).pop(); // Close dialog
+                        Navigator.of(context).pop();
                       },
                       child: Text('Close'),
                     ),
@@ -239,73 +274,66 @@ class OccupantListWidget extends StatelessWidget {
               },
             );
           },
-          child: Container(
-            height: 63,
-            width: 70,
-            margin: EdgeInsets.symmetric(horizontal: 4),
-            child: Column(
-              children: [
-                Container(
-                  padding: EdgeInsets.all(0.0),
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    border: Border.all(
-                      color: isDarkMode
-                          ? const Color.fromARGB(255, 33, 243, 233)
-                          : const Color.fromARGB(255, 22, 22, 22),
-                      width: 1.0,
-                    ),
-                  ),
-                  child: CircleAvatar(
-                    backgroundImage: profilePictureUrl.isNotEmpty
-                        ? NetworkImage(profilePictureUrl)
-                        : AssetImage('assets/images/profile.png')
-                            as ImageProvider,
-                  ),
-                ),
-                const SizedBox(height: 5),
-                Flexible(
-                  child: Text(
-                    fullName,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      fontFamily: 'manrope',
-                      fontWeight: FontWeight.w600,
-                      fontSize: 12.0,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
+          child: _buildOccupantAvatar(fullName, profilePictureUrl, widget.isDarkMode, true),
         );
       } else {
-        fetchUserProfile(occupantId);
-        return Container(
-          height: 63,
-          width: 45,
-          margin: EdgeInsets.symmetric(horizontal: 5),
-          child: Column(
-            children: [
-              CircleAvatar(
-                backgroundImage: AssetImage('assets/images/profile.png'),
-              ),
-              const SizedBox(height: 5),
-              Flexible(
-                child: Text(
-                  'Loading...',
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    fontFamily: 'manrope',
-                    fontWeight: FontWeight.w600,
-                    fontSize: 12.0,
-                  ),
-                ),
-              ),
-            ],
-          ),
-        );
+        widget.fetchUserProfile(occupantId);
+        return _buildOccupantAvatar('Loading...', null, widget.isDarkMode, true);
       }
-    }).toList(); // Convert map to list of widgets
-  }
+    } else if (occupant['type'] == 'nonUser') {
+      // Handle occupantNonUsers
+      final nonUser = occupant['data'];
+      String guestName = nonUser['name'] ?? 'Guest';
+      String guestAvatar = nonUser['avatar'] ?? '';  // You can use avatar if needed
+
+      return _buildOccupantAvatar(guestName, guestAvatar, widget.isDarkMode, false);
+    }
+    return Container(); // Fallback (shouldn't be reached)
+  }).toList();
+}
+
+
+Widget _buildOccupantAvatar(
+    String name, String? imageUrl, bool isDarkMode, bool isUser) {
+  return Container(
+    height: 63,
+    width: 70,
+    margin: EdgeInsets.symmetric(horizontal: 4),
+    child: Column(
+      children: [
+        Container(
+          padding: EdgeInsets.all(0.0),
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            border: Border.all(
+              color: isDarkMode
+                  ? const Color.fromARGB(255, 33, 243, 233)
+                  : const Color.fromARGB(255, 22, 22, 22),
+              width: 1.0,
+            ),
+          ),
+          child: CircleAvatar(
+            backgroundImage: imageUrl != null && imageUrl.isNotEmpty
+                ? NetworkImage(imageUrl)
+                : AssetImage(
+                        isUser ? 'assets/images/profile.png' : 'assets/images/guest.png')
+                    as ImageProvider,
+          ),
+        ),
+        const SizedBox(height: 5),
+        Flexible(
+          child: Text(
+            name,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(
+              fontFamily: 'manrope',
+              fontWeight: FontWeight.w600,
+              fontSize: 12.0,
+            ),
+          ),
+        ),
+      ],
+    ),
+  );
+}
 }

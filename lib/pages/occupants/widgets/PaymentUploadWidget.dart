@@ -481,21 +481,12 @@ void _fetchMonthlyPayments() async {
       }
     } else {
       String message = 'Failed to fetch monthly payments. Status: ${response.statusCode}';
-      print(message); // Print to console
-      Fluttertoast.showToast(
-        msg: message,
-        backgroundColor: Colors.red,
-        textColor: Colors.white,
-      );
+      print(message);
     }
   } catch (e) {
     String message = 'Error fetching payments. Please try again. Exception: $e';
     print(message); // Print to console
-    Fluttertoast.showToast(
-      msg: message,
-      backgroundColor: Colors.red,
-      textColor: Colors.white,
-    );
+    
   } finally {
     // Ensure loading is set to false regardless of success or failure
     if (mounted) {
@@ -555,11 +546,7 @@ void _checkExistingPayment(String? selectedMonth) async {
           }
         }
       } else {
-        Fluttertoast.showToast(
-          msg: 'Failed to fetch monthly payments.',
-          backgroundColor: Colors.red,
-          textColor: Colors.white,
-        );
+       
       }
     } catch (e) {
       // Handle any exceptions during the API call

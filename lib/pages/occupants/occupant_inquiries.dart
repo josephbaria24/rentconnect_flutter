@@ -10,6 +10,7 @@ import 'package:fluttertoast/fluttertoast.dart';
 import 'package:get/get.dart';
 import 'package:http/http.dart' as http;
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:jwt_decoder/jwt_decoder.dart';
 import 'package:lottie/lottie.dart';
 import 'package:rentcon/pages/components/countdown_reservation.dart';
@@ -623,6 +624,18 @@ Future<String?> fetchLandlordEmail(String ownerId, String token) async {
   }
 }
 
+// Helper function to format due date
+String formatDueDate(String? dueDate) {
+  if (dueDate == null || dueDate.isEmpty) return 'Not available';
+
+  try {
+    DateTime parsedDate = DateTime.parse(dueDate);
+    return DateFormat('MMMM dd, yyyy').format(parsedDate); // e.g., November 30, 2024
+  } catch (e) {
+    print('Error parsing due date: $e');
+    return 'Invalid date';
+  }
+}
 
 
 Future<void> uploadProofOfPayment(
@@ -1117,9 +1130,7 @@ Future<void> _uploadPaymentImage(
                                           ),
           
                                         const SizedBox(height: 16),
-                                        
                                         Row(
-                                          
                                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                             children: [
                                               Expanded(
@@ -1199,10 +1210,7 @@ Future<void> _uploadPaymentImage(
                                                   ),
                                                 ),
                                               ),
-                                              
                                               SizedBox(width: 5,),
-                                              
-
                                               if (inquiry['requestType'] == 'reservation' &&
                                                   inquiry['status'] == 'approved' &&
                                                   inquiry['isRented'] == false) ...[
@@ -1218,6 +1226,42 @@ Future<void> _uploadPaymentImage(
                                               if (inquiry['status'] == 'approved' &&
                                                 inquiry['requestType'] ==
                                                     'reservation' &&
+                                                inquiry['isRented'] == true) ...[
+                                                  InkWell(
+                                                    key: _billsKey,
+                                                    splashColor: Colors.amberAccent,
+                                                    child: GestureDetector(
+                                                      onTap: () {
+                                                        Navigator.push(context, MaterialPageRoute(builder: (context) => AllBillsWidget(userId: widget.userId)));
+                                                      },
+                                                      child: Container(
+                                                        child: Center(
+                                                          child: Column(
+                                                            mainAxisAlignment: MainAxisAlignment.center,
+                                                            children: [
+                                                              Icon(Icons.electric_bolt_outlined, color: Colors.amber, size: 29,),
+                                                              Text(
+                                                                'Bills', style: TextStyle(
+                                                                  fontFamily: 'manrope',
+                                                                  fontWeight: FontWeight.w700,
+                                                                  color: _themeController.isDarkMode.value? Colors.black:Colors.white
+                                                                ),
+                                                              ),
+                                                            ],
+                                                          ),
+                                                        ),
+                                                        height: 85,
+                                                        width: 85,
+                                                        decoration: BoxDecoration(
+                                                          borderRadius: BorderRadius.circular(12),
+                                                          color: _themeController.isDarkMode.value? Colors.white: Colors.black
+                                                        ),
+                                                            )
+                                                ),
+                                                  )],
+                                                  if (inquiry['status'] == 'approved' &&
+                                                inquiry['requestType'] ==
+                                                    'rent' &&
                                                 inquiry['isRented'] == true) ...[
                                                   InkWell(
                                                     key: _billsKey,
@@ -1327,17 +1371,24 @@ Future<void> _uploadPaymentImage(
                                               Row(
 
                                               children: [
-                                                Text(
-                                                  'Payment section',
-                                                  style: TextStyle(
-                                                    fontFamily: 'manrope',
-                                                    fontSize: 16,
-                                                    color: _themeController.isDarkMode.value ? Colors.white : const Color.fromARGB(255, 53, 53, 53),
-                                                    fontWeight: FontWeight.w400,
-                                                  ),
-                                                ),
-                                                SizedBox(width: 5),
-                                                GestureDetector(
+                                                Column(
+                                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                                  children: [
+                                                    Row(
+                                                      children: [
+                                                        Text(
+                                                          'Payment section',
+                                                          style: TextStyle(
+                                                            fontFamily: 'manrope',
+                                                            fontSize: 16,
+                                                            color: _themeController.isDarkMode.value
+                                                                ? Colors.white
+                                                                : const Color.fromARGB(255, 53, 53, 53),
+                                                            fontWeight: FontWeight.w400,
+                                                          ),
+                                                        ),
+                                                        SizedBox(width: 5),
+                                                         GestureDetector(
                                                   onTap: () {
                                                     showCupertinoDialog(
                                                       context: context,
@@ -1366,9 +1417,32 @@ Future<void> _uploadPaymentImage(
                                                   },
                                                   child: Icon(Icons.help_outline_outlined, color: _themeController.isDarkMode.value ? Colors.white : const Color.fromARGB(255, 54, 54, 54)),
                                                 ),
+                                                      ],
+                                                    ),
+                                                    Container(
+                                                      decoration: BoxDecoration(
+                                                        borderRadius: BorderRadius.circular(8),
+                                                        color: Colors.orangeAccent
+                                                      ),
+                                                      child: Padding(
+                                                        padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 3),
+                                                        child: Text(
+                                                          'Due date: ${formatDueDate(roomDetails['dueDate'])}',
+                                                          style: TextStyle(
+                                                            fontSize: 14,
+                                                            fontWeight: FontWeight.bold,
+                                                            fontFamily: 'manrope',
+                                                            color: _themeController.isDarkMode.value
+                                                                ? Colors.white70
+                                                                : Colors.black87,
+                                                          ),
+                                                        ),
+                                                      ),
+                                                    ),
+                                                  ],
+                                                ),
                                               ],
                                             ),
-          
                                           PaymentUploadWidget(
                                             key: _paymentSectionKey,
                                               inquiryId: inquiryId,

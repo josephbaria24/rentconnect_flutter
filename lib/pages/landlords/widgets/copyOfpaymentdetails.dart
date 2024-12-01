@@ -434,7 +434,7 @@ void _showTutorial() {
       },
       body: jsonEncode({
         'status': status,
-        'rejectionReason': rejectionReason, // Include rejectionReason when status is 'rejected'
+        'rejectionReason': rejectionReason,
       }),
     );
 
@@ -455,6 +455,7 @@ void _showTutorial() {
     // Handle network or other errors
   }
 }
+
 Future<void> handleUpdateStatus(String selectedMonth, String status) async {
   final proofData = await getProofOfPaymentForSelectedMonth(
     widget.room?['_id'],

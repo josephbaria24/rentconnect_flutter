@@ -23,6 +23,7 @@ import 'package:rentcon/provider/bookmark.dart';
 import 'package:rentcon/provider/conversation.dart';
 import 'package:rentcon/provider/message.dart';
 import 'package:rentcon/provider/notification.dart';
+import 'package:rentcon/provider/properties.dart';
 import 'package:rentcon/theme_controller.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:shadcn_ui/shadcn_ui.dart'; // Import Shadcn UI
@@ -43,7 +44,8 @@ void main() async {
         ChangeNotifierProvider(create: (context) => MessageProvider()),
         ChangeNotifierProvider(create: (context) => BookmarkProvider()),
         ChangeNotifierProvider<ConversationProvider>(create: (context) => ConversationProvider()),
-        ChangeNotifierProvider(create: (_) => NotificationProvider(userId: 'user-id-here',token: token!))
+        ChangeNotifierProvider(create: (_) => NotificationProvider(userId: 'user-id-here',token: token!)),
+        ChangeNotifierProvider(create: (_) => PropertiesProvider()),
       ],
       child: MyApp(token: token),
     ),

@@ -28,6 +28,7 @@ import 'package:rentcon/pages/occupants/occupant_inquiries.dart';
 import 'package:rentcon/pages/search_result.dart';
 import 'package:rentcon/pages/services/appUpdate.dart';
 import 'package:rentcon/provider/notification.dart';
+import 'package:rentcon/provider/properties.dart';
 import 'package:shadcn_ui/shadcn_ui.dart';
 import 'toast.dart';
 import 'package:rentcon/theme_controller.dart';
@@ -73,13 +74,8 @@ class _HomePageState extends State<HomePage> {
   @override
   void initState() {
     super.initState();
-    fToast = FToast();
-    fToast.init(context); // Initialize FToast with the context
-    propertiesFuture = fetchProperties();
     toastNotification = ToastNotification(context);
     _searchController = TextEditingController();
-    ftoast = FToast(); // Initialize FToast
-    ftoast.init(context);
     final Map<String, dynamic> jwtDecodedToken =
         JwtDecoder.decode(widget.token);
     email = jwtDecodedToken['email']?.toString() ?? 'Unknown email';
@@ -87,10 +83,12 @@ class _HomePageState extends State<HomePage> {
     propertiesFuture = fetchProperties();
     fetchUserBookmarks();
     propertiesFuture.then((properties) {
+    if (mounted) {
       setState(() {
         filteredProperties = properties;
       });
-    });
+    }
+  });
     fetchUserProfileStatus();
     initPlatform();
     _updateNotifications();
@@ -123,10 +121,12 @@ class _HomePageState extends State<HomePage> {
     });
     if (response.statusCode == 200) {
       final data = jsonDecode(response.body);
-      setState(() {
-        userDetails = data; 
-        _profileImageUrl = data['profilePicture'];
-      });
+      if (mounted) {
+        setState(() {
+          userDetails = data; 
+          _profileImageUrl = data['profilePicture'];
+        });
+      }
     } else {
       print('No profile yet');
     }
@@ -136,27 +136,23 @@ class _HomePageState extends State<HomePage> {
 }
 
 
-  Future<void> incrementPropertyViews(String propertyId) async {
-    final url =
-        Uri.parse('https://192.168.1.12:3000/properties/$propertyId/view');
+ Future<void> incrementPropertyViews(String propertyId) async {
+  if (!mounted) return;
 
-    try {
-      final response = await http.post(url);
-
-      if (response.statusCode == 200) {
-        // Successful response
-        final data = jsonDecode(response.body);
-        print(
-            'View count incremented successfully. Total views: ${data['views']}');
-      } else {
-        // Handle error
-        print('Failed to increment views. Status code: ${response.statusCode}');
-      }
-    } catch (e) {
-      // Handle exception
-      print('Error: $e');
+  final url = Uri.parse('https://192.168.1.12:3000/properties/$propertyId/view');
+  try {
+    final response = await http.post(url);
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+      print('View count incremented: ${data['views']}');
+    } else {
+      print('Failed to increment views. Status code: ${response.statusCode}');
     }
+  } catch (e) {
+    print('Error: $e');
   }
+}
+
 
   String getGreeting() {
     final hour = DateTime.now().hour;
@@ -174,8 +170,10 @@ class _HomePageState extends State<HomePage> {
     ftoast = FToast();
     ftoast.init(context);
     final NavigationController controller = Get.find<NavigationController>();
-   
-
+    final propertiesProvider = Provider.of<PropertiesProvider>(context);
+    if (!propertiesProvider.isLoading && propertiesProvider.properties.isEmpty) {
+      propertiesProvider.fetchProperties();
+    }
     return Scaffold(
         appBar: PreferredSize(
           preferredSize: Size.fromHeight(50.0),
@@ -341,9 +339,7 @@ class _HomePageState extends State<HomePage> {
                                 );
                               } else {
                                 final notifications = snapshot.data ?? [];
-                                final hasNewNotifications =
-                                    notifications.isNotEmpty;
-          
+                                final hasNewNotifications = notifications.isNotEmpty;
                                 return Stack(
                                   children: [
                                     IconButton(
@@ -417,222 +413,201 @@ class _HomePageState extends State<HomePage> {
             ? Color.fromARGB(255, 28, 29, 34)
             : Color.fromRGBO(255, 255, 255, 1),
         body: Stack(
-          children: [
-            
-
-            Padding(
-              padding: EdgeInsets.symmetric(horizontal: 10.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  SearchFieldWidget(
-                    searchController: _searchController,
-                    isDarkMode: _themeController.isDarkMode.value,
-                    handleSearch: _handleSearch,
-                    performSearch: _performSearch,
-                    showFilterDialog: () {
-                      showDialog(
-                        context: context,
-                        builder: (BuildContext context) {
-                          return FilterDialog(
-                            minPriceController: _minPriceController,
-                            maxPriceController: _maxPriceController,
-                            applyFilters: _applyFilters,
-                            initialRange: RangeValues(
-                              double.tryParse(_minPriceController.text) ?? 0.0,
-                              double.tryParse(_maxPriceController.text) ??
-                                  10000.0,
+      children: [
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 10.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              SearchFieldWidget(
+                searchController: _searchController,
+                isDarkMode: _themeController.isDarkMode.value,
+                handleSearch: _handleSearch,
+                performSearch: _performSearch,
+                showFilterDialog: () {
+                  showDialog(
+                    context: context,
+                    builder: (BuildContext context) {
+                      return FilterDialog(
+                        minPriceController: _minPriceController,
+                        maxPriceController: _maxPriceController,
+                        applyFilters: _applyFilters,
+                        initialRange: RangeValues(
+                          double.tryParse(_minPriceController.text) ?? 0.0,
+                          double.tryParse(_maxPriceController.text) ?? 10000.0,
+                        ),
+                        clearFilters: () {
+                          _minPriceController.text = '0';
+                          _maxPriceController.text = '10000';
+                          setState(() {
+                            isFilterApplied = false;
+                          });
+                        },
+                      );
+                    },
+                  );
+                },
+                isFilterApplied: isFilterApplied,
+              ),
+              const SizedBox(height: 10),
+              FilterChips(
+                filters: filters,
+                selectedFilter: selectedFilter,
+                onSelected: onSelected,
+              ),
+              const SizedBox(height: 5),
+              Expanded(
+                child: RefreshIndicator(
+                  color: Colors.black,
+                  backgroundColor: Colors.white,
+                  onRefresh: () async {
+                    await propertiesProvider.fetchProperties();
+                  },
+                  child: Builder(
+                    builder: (context) {
+                      if (propertiesProvider.isLoading) {
+                        return Center(
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(12),
+                            child: BackdropFilter(
+                              filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                              child: Container(
+                                width: 100,
+                                height: 100,
+                                color: _themeController.isDarkMode.value
+                                    ? Colors.white.withOpacity(0.2)
+                                    : Colors.grey.withOpacity(0.2),
+                                child: Center(
+                                  child: CupertinoActivityIndicator(
+                                    color: _themeController.isDarkMode.value
+                                        ? Colors.white
+                                        : Colors.black,
+                                  ),
+                                ),
+                              ),
                             ),
-                            clearFilters: () {
-                              _minPriceController.text = '0';
-                              _maxPriceController.text = '10000';
-                              setState(() {
-                                isFilterApplied = false;
-                              });
+                          ),
+                        );
+                      }
+
+                      if (propertiesProvider.errorMessage != null) {
+                        return Center(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Image.asset(
+                                'assets/icons/noInternet.png', // Replace with your PNG path
+                                width: 200,
+                                height: 200,
+                              ),
+                              const SizedBox(height: 20),
+                              Text(
+                                propertiesProvider.errorMessage!,
+                                style: TextStyle(
+                                  fontSize: 18,
+                                  color: _themeController.isDarkMode.value
+                                      ? Colors.white
+                                      : Colors.black,
+                                  fontFamily: 'manrope',
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              const SizedBox(height: 20),
+                              ShadButton(
+                                onPressed: () async {
+                                  await propertiesProvider.fetchProperties();
+                                },
+                                child: const Text('Retry'),
+                              ),
+                            ],
+                          ),
+                        );
+                      }
+
+                      if (propertiesProvider.properties.isEmpty) {
+                        return const Center(
+                          child: Text('No properties available.'),
+                        );
+                      }
+
+                      final properties = searchQuery.isEmpty
+                          ? propertiesProvider.properties
+                          : filteredProperties; // Adjust filtering logic as needed.
+
+                      return ListView.builder(
+                        itemCount: properties.length,
+                        itemBuilder: (context, index) {
+                          final property = properties[index];
+                          final imageUrl = property.photo.startsWith('http')
+                              ? property.photo
+                              : 'https://rentconnect.vercel.app/${property.photo}';
+
+                          return FutureBuilder<List<dynamic>>(
+                            future: fetchRooms(property.id),
+                            builder: (context, roomsSnapshot) {
+                              if (roomsSnapshot.connectionState ==
+                                  ConnectionState.waiting) {
+                                return const SizedBox.shrink();
+                              }
+
+                              final rooms = roomsSnapshot.data ?? [];
+                              final priceRange = rooms.isNotEmpty
+                                  ? '${rooms.map((r) => r['price']).reduce((a, b) => a < b ? a : b)} - ${rooms.map((r) => r['price']).reduce((a, b) => a > b ? a : b)}'
+                                  : 'N/A';
+
+                              return FutureBuilder<String>(
+                                future: fetchUserEmail(property.userId),
+                                builder: (context, userSnapshot) {
+                                  if (userSnapshot.connectionState ==
+                                      ConnectionState.waiting) {
+                                    return const SizedBox.shrink();
+                                  }
+
+                                  final userEmail = userSnapshot.data ?? '';
+
+                                  return PropertyCard(
+                                    userId: userId,
+                                    token: widget.token,
+                                    property: property,
+                                    userEmail: userEmail,
+                                    imageUrl: imageUrl,
+                                    bookmarkedPropertyIds:
+                                        bookmarkedPropertyIds,
+                                    bookmarkProperty: (propertyId) {
+                                      bookmarkProperty(
+                                        propertyId,
+                                        (bool isBookmarked) {},
+                                      );
+                                    },
+                                    priceRange: priceRange,
+                                    isDarkMode:
+                                        _themeController.isDarkMode.value,
+                                  );
+                                },
+                              );
                             },
                           );
                         },
                       );
                     },
-                    isFilterApplied: isFilterApplied,
                   ),
-                  SizedBox(height: 10),
-                  // Updated FilterChips widget call
-                  FilterChips(
-                      filters: filters,
-                      selectedFilter: selectedFilter,
-                      onSelected: onSelected),
-                  SizedBox(height: 5),
-                  Expanded(
-                    child: RefreshIndicator(
-                      color: Colors.black,
-                      backgroundColor: Colors.white,
-                      onRefresh: _refreshProperties,
-                      child: FutureBuilder<List<Property>>(
-                        future: propertiesFuture,
-                        builder: (context, snapshot) {
-                          if (snapshot.connectionState ==
-                              ConnectionState.waiting) {
-                            return Center(
-                            child: ClipRRect(
-                              borderRadius: BorderRadius.circular(12), // 5 radius for rounded corners
-                              child: BackdropFilter(
-                                filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10), // Blur effect
-                                child: Container(
-                                  width: 100, // Adjust size as needed
-                                  height: 100,
-                                  color:_themeController.isDarkMode.value? Colors.white.withOpacity(0.2) : Colors.grey.withOpacity(0.2), // Frosted glass effect
-                                  child: Center(
-                                    child: CupertinoActivityIndicator(color: _themeController.isDarkMode.value? Colors.white : Colors.black), // Your indicator
-                                  ),
-                                ),
-                              ),
-                            ),
-                          );
-                          } else if (snapshot.hasError) {
-                            if (snapshot.error
-                                .toString()
-                                .contains('No internet connection')) {
-                              return Center(
-                                child: Column(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    Image.asset(
-                                      'assets/icons/noInternet.png', // Replace with your PNG path
-                                      width: 200,
-                                      height: 200,
-                                    ),
-                                    SizedBox(height: 20),
-                                    Text(
-                                      'No Internet Connection',
-                                      style: TextStyle(
-                                          fontSize: 18,
-                                          color:
-                                              _themeController.isDarkMode.value
-                                                  ? Colors.white
-                                                  : Colors.black,
-                                          fontFamily: 'manrope',
-                                          fontWeight: FontWeight.bold),
-                                    ),
-                                    SizedBox(height: 20),
-                                    ShadButton(
-                                      onPressed: () {
-                                        setState(() {
-                                          propertiesFuture = fetchProperties();
-                                        });
-                                      },
-                                      child: Text('Retry'),
-                                    ),
-                                  ],
-                                ),
-                              );
-                            } else {
-                              return Center(
-                                  child: Text('Error: ${snapshot.error}'));
-                            }
-                          } else if (!snapshot.hasData ||
-                              snapshot.data!.isEmpty) {
-                            return Center(
-                                child: Text('No properties available.'));
-                          } else {
-                            final properties = searchQuery.isEmpty
-                                // ? snapshot.data!
-                                // : filteredProperties;
-                                ? filteredProperties // Use the filtered properties here
-                                : filteredProperties; // You might want to modify this to include search query filtering too
-
-                            return ListView.builder(
-                              itemCount: properties.length,
-                              itemBuilder: (context, index) {
-                                final property = properties[index];
-                                final imageUrl = property.photo
-                                        .startsWith('http')
-                                    ? property.photo
-                                    : 'https://rentconnect.vercel.app/${property.photo}';
-
-                                return FutureBuilder<List<dynamic>>(
-                                  future: fetchRooms(property.id),
-                                  builder: (context, roomsSnapshot) {
-                                    if (roomsSnapshot.connectionState ==
-                                        ConnectionState.waiting) {
-                                      return SizedBox.shrink();
-                                    } else if (roomsSnapshot.hasError ||
-                                        !roomsSnapshot.hasData) {
-                                      return Center(
-                                          child: Text('No rooms available.'));
-                                    }
-                                    final rooms = roomsSnapshot.data!;
-                                    final priceRange = rooms.isNotEmpty
-                                        ? '${rooms.map((r) => r['price']).reduce((a, b) => a < b ? a : b)} - ${rooms.map((r) => r['price']).reduce((a, b) => a > b ? a : b)}'
-                                        : 'N/A';
-                                    return FutureBuilder<String>(
-                                      future: fetchUserEmail(property.userId),
-                                      builder: (context, userSnapshot) {
-                                        if (userSnapshot.connectionState ==
-                                            ConnectionState.waiting) {
-                                          return SizedBox.shrink();
-                                        } else if (userSnapshot.hasError) {
-                                          return Center(
-                                              child: Text(
-                                                  'Error: ${userSnapshot.error}'));
-                                        } else if (!userSnapshot.hasData ||
-                                            userSnapshot.data!.isEmpty) {
-                                          return Center(
-                                              child:
-                                                  Text('No user email found.'));
-                                        } else {
-                                          final userEmail = userSnapshot.data!;
-
-                                          return PropertyCard(
-                                            userId: userId,
-                                            token: widget.token,
-                                            property: property,
-                                            userEmail: userEmail,
-                                            imageUrl: imageUrl,
-                                            bookmarkedPropertyIds:
-                                                bookmarkedPropertyIds,
-                                            bookmarkProperty: (propertyId) {
-                                              bookmarkProperty(propertyId,
-                                                  (bool isBookmarked) {
-                                                // This is where the state of the card will be updated
-                                                // setState(() {
-                                                //   // Optional if you want to refresh any list on the homepage
-                                                // });
-                                              });
-                                            },
-                                            priceRange: priceRange,
-                                            isDarkMode: _themeController
-                                                .isDarkMode.value,
-                                          );
-                                          
-                                        }
-                                      },
-                                    );
-                                  },
-                                );
-                              },
-                            );
-                          }
-                        },
-                      ),
-                    ),
-                  ),
-                  profileStatus == null
-                ? GlobalLoadingIndicator()
-                : profileStatus == 'none'
-                    ? Padding(
-                        padding: const EdgeInsets.only(right: 8.0),
-                        child: Setupprofilebutton(
-                          token: widget.token,
-                        ),
-                      )
-                    : SizedBox.shrink(),
-                    SizedBox(height: 10,)
-                ],
+                ),
               ),
-            ),
-          ],
-        ));
+              profileStatus == 'none'
+                  ? Padding(
+                      padding: const EdgeInsets.only(right: 8.0),
+                      child: Setupprofilebutton(
+                        token: widget.token,
+                      ),
+                    )
+                  : const SizedBox.shrink(),
+              const SizedBox(height: 10),
+            ],
+          ),
+        ),
+      ],
+    ),
+  );
   }
 
   Stream<List<dynamic>> notificationStream =
@@ -735,38 +710,51 @@ class _HomePageState extends State<HomePage> {
 
   //Fetch properties from the API
 // Fetch properties from the API and filter based on 'approved' status
-  Future<List<Property>> fetchProperties() async {
-    final connectivityResult = await Connectivity().checkConnectivity();
+Future<List<Property>>? _cachedPropertiesFuture;
 
-    if (connectivityResult.contains(ConnectivityResult.none)) {
-      throw Exception('No internet connection');
-    }
-
-    try {
-      final response = await http.get(Uri.parse('https://rentconnect.vercel.app/getAllProperties'));
-
-      if (response.statusCode == 200) {
-        final Map<String, dynamic> json = jsonDecode(response.body);
-        print('Response body: ${response.body}');
-        final List<dynamic> data = json['success'];
-        print('Success data: $data');
-
-        final properties = data
-            .map((json) => Property.fromJson(json as Map<String, dynamic>))
-            .toList();
-
-        final approvedProperties = properties
-            .where((property) => property.status.toLowerCase() == 'approved')
-            .toList();
-
-        return approvedProperties.reversed.toList();
-      } else {
-        throw Exception('Failed to load properties');
-      }
-    } catch (error) {
-      throw Exception('Failed to load properties: $error');
-    }
+Future<List<Property>> fetchProperties() async {
+  // If the Future is already cached, return it
+  if (_cachedPropertiesFuture != null) {
+    return _cachedPropertiesFuture!;
   }
+
+  // Otherwise, cache the result of the fetch operation
+  _cachedPropertiesFuture = _fetchPropertiesFromApi();
+  return _cachedPropertiesFuture!;
+}
+
+Future<List<Property>> _fetchPropertiesFromApi() async {
+  final connectivityResult = await Connectivity().checkConnectivity();
+
+  if (connectivityResult == ConnectivityResult.none) {
+    throw Exception('No internet connection');
+  }
+
+  try {
+    final response = await http.get(Uri.parse('https://rentconnect.vercel.app/getAllProperties'));
+
+    if (response.statusCode == 200) {
+      final Map<String, dynamic> json = jsonDecode(response.body);
+      print('Response body: ${response.body}');
+      final List<dynamic> data = json['success'];
+      print('Success data: $data');
+
+      final properties = data
+          .map((json) => Property.fromJson(json as Map<String, dynamic>))
+          .toList();
+
+      final approvedProperties = properties
+          .where((property) => property.status.toLowerCase() == 'approved')
+          .toList();
+
+      return approvedProperties.reversed.toList();
+    } else {
+      throw Exception('Failed to load properties');
+    }
+  } catch (error) {
+    throw Exception('Failed to load properties: $error');
+  }
+}
 
 
   Future<List<dynamic>> fetchRooms(String propertyId) async {
@@ -835,36 +823,29 @@ class _HomePageState extends State<HomePage> {
             .add(property); // Only add properties that match the price range
       }
     }
-
     return filtered;
   }
-
-  Future<void> fetchUserBookmarks() async {
-    final Map<String, dynamic> jwtDecodedToken =
-        JwtDecoder.decode(widget.token);
-    String userId = jwtDecodedToken['_id']?.toString() ?? 'Unknown user ID';
-
-    try {
-      final response = await http.get(
-        Uri.parse(
-            'https://rentconnect.vercel.app/getUserBookmarks/$userId'), // Adjust endpoint if necessary
-        headers: {
-          'Authorization': 'Bearer ${widget.token}',
-        },
-      );
-
-      if (response.statusCode == 200) {
-        final Map<String, dynamic> jsonMap = jsonDecode(response.body);
-        // Populate the bookmarkedPropertyIds list
+Future<void> fetchUserBookmarks() async {
+  if (bookmarkedPropertyIds.isNotEmpty) return; // Use cached data
+  try {
+    final response = await http.get(
+      Uri.parse('https://rentconnect.vercel.app/getUserBookmarks/$userId'),
+      headers: {
+        'Authorization': 'Bearer ${widget.token}',
+      },
+    );
+    if (response.statusCode == 200) {
+      final Map<String, dynamic> jsonMap = jsonDecode(response.body);
+      setState(() {
         bookmarkedPropertyIds = List<String>.from(
-            jsonMap['properties'].map((property) => property['_id']));
-      } else {
-        throw Exception('Failed to fetch bookmarks');
-      }
-    } catch (error) {
-      print('Error loading user bookmarks: $error');
+          jsonMap['properties'].map((property) => property['_id']),
+        );
+      });
     }
+  } catch (error) {
+    print('Error loading user bookmarks: $error');
   }
+}
 
   // Fetch user email from API
   Future<String> fetchUserEmail(String userId) async {
@@ -882,23 +863,15 @@ class _HomePageState extends State<HomePage> {
       throw Exception('Failed to load user email: $error');
     }
   }
-
-  // Refresh function to reload the properties
   Future<void> _refreshProperties() async {
     try {
-      // Fetch updated properties
       final properties = await fetchProperties();
-
-      // Fetch user bookmarks (create a function to do this if not already implemented)
       fetchUserBookmarks();
-
-      // Update the state with the new properties and bookmarks
       setState(() {
-        filteredProperties = properties; // Update the filtered properties
+        filteredProperties = properties;
       });
     } catch (error) {
       print('Error refreshing properties: $error');
-      // You might want to show an error toast or notification here
     }
   }
 
@@ -951,28 +924,6 @@ class _HomePageState extends State<HomePage> {
     });
   }
 
-  void _clearFilters() {
-    setState(() {
-      _currentRange = RangeValues(100, 500); // Reset to default
-      isFilterApplied = false; // No filter applied
-    });
-  }
-
-  void _showFilterDialog(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return FilterDialog(
-          minPriceController: _minPriceController,
-          maxPriceController: _maxPriceController,
-          applyFilters: _applyFilters,
-          clearFilters: _clearFilters,
-          initialRange: _currentRange, // Pass the current range
-        );
-      },
-    );
-  }
-
   Future<List<dynamic>> fetchNotifications(String userId, String token) async {
     try {
       final response = await http.get(
@@ -982,65 +933,45 @@ class _HomePageState extends State<HomePage> {
           'Content-Type': 'application/json',
         },
       );
-
-      // // Print the status code and response body to debug
-      // print('Response Status: ${response.statusCode}');
-      // print('Response Body: ${response.body}');
-
       if (response.statusCode == 200) {
         final Map<String, dynamic> data = jsonDecode(response.body);
-
-        // Ensure the notifications key exists and contains a list
         if (data.containsKey('notifications') &&
             data['notifications'] is List) {
           print('Notifications fetched: ${data['notifications']}');
           return data['notifications']; // Return the notifications list
         } else {
           print('No notifications found or invalid format');
-          return []; // Return an empty list if no notifications or wrong format
+          return [];
         }
       } else {
-        print(
-            'Failed to load notifications. Status code: ${response.statusCode}');
-        return []; // Return an empty list if the request fails
+        print('Failed to load notifications. Status code: ${response.statusCode}');
+        return [];
       }
     } catch (e) {
-      print('Error fetching notifications: $e');
-      return []; // Return an empty list in case of an error
+      return [];
     }
   }
-
-
   final List<String> filters = ['All', 'Boarding House', 'Apartment'];
-  String selectedFilter = 'All'; // State for selected filter
-
+  String selectedFilter = 'All';
   void onSelected(String filter) async {
     setState(() {
       selectedFilter = filter; // Update the selected filter
     });
-
-    // Fetch the properties again and filter them
     final properties =
-        await propertiesFuture; // Ensure propertiesFuture is a future that resolves to the property list
-
-    // Reset filtered properties based on the selection
+        await propertiesFuture;
     List<Property> filteredProperties;
-
     if (selectedFilter == 'All') {
-      // When 'All' is selected, use the entire properties list
       filteredProperties = properties; // No filtering, show all
     } else {
-      // Apply the filter for specific property types
       filteredProperties = properties
           .where((property) =>
               property.typeOfProperty?.toLowerCase() ==
               selectedFilter.toLowerCase())
           .toList();
     }
-
     setState(() {
       this.filteredProperties =
-          filteredProperties; // Update the state with filtered properties
+          filteredProperties;
     });
   }
 
@@ -1102,8 +1033,6 @@ class _HomePageState extends State<HomePage> {
         });
       }
     } catch (error) {
-      print('Error toggling bookmark: $error');
-      // Show error message with a toast
       Get.snackbar(
         'Error',
         'Error toggling bookmark!',

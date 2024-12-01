@@ -105,7 +105,7 @@ Future<bool> canSendEmail() async {
       // Send the file as multipart form-data
       var request = http.MultipartRequest(
         'POST',
-        Uri.parse('https://rentconnect.vercel.app/inquiries/send-bill'),
+        Uri.parse('https://rentconnect-backend-nodejs.onrender.com/inquiries/send-bill'),
       );
 
       // Add form fields (e.g., email, billId)
@@ -239,14 +239,6 @@ Future<void> saveBillAsImage() async {
 }
 
 
-
-
-
-
-
-
-
-
 // Within your ViewBillPage class
 
 Future<void> markBillAsPaid(String billId) async {
@@ -272,6 +264,7 @@ Future<void> markBillAsPaid(String billId) async {
 
   @override
 Widget build(BuildContext context) {
+  print(bill);
   return Scaffold(
     appBar: AppBar(
       title: Text(
@@ -366,7 +359,8 @@ Widget buildBillDetails() {
   final dueDate = bill?['dueDate'] ?? 'N/A';
   final dateOfCreation = bill?['created_at'] ?? 'N/A';
   final bill_id = bill?['_id'] ?? 'N/A';
-
+  final paymentMethod = bill?['paymentMethod']?['details'] ?? 'N/A';
+  final paymentMethodType = bill?['paymentMethod']?['type'] ?? 'N/A';
   // If dueDate is a valid date, format it, otherwise keep 'N/A'
   String formattedDueDate = 'N/A';
   if (dueDate != 'N/A') {
@@ -473,6 +467,16 @@ Widget buildBillDetails() {
                     buildReceiptRow('Internet:', '₱${internetAmount.toString()}'),
                     Divider(thickness: 2),
                     buildReceiptRow('Total:', '₱${totalAmount.toString()}'),
+                    SizedBox(height: 10),
+                    Text('Payment Method: $paymentMethodType',style: TextStyle( fontSize: 14), overflow: TextOverflow.ellipsis,),
+                    Text(
+                      '$paymentMethod',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 15,
+                      ),
+                      softWrap: true, // Allow text to wrap to the next line
+                    ),
                     SizedBox(height: 20),
                     Text('Bill ID: ${bill_id.toString()}', style: TextStyle(color: Colors.grey, fontStyle: FontStyle.italic, fontSize: 13)),
                     SizedBox(height: 20),

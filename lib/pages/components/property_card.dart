@@ -55,33 +55,20 @@ class _PropertyCardState extends State<PropertyCard> with SingleTickerProviderSt
 @override
 void initState() {
     super.initState();
-
-    // Initialize bookmark state
     isBookmarked = widget.bookmarkedPropertyIds.contains(widget.property.id);
-
     _controller = AnimationController(
       duration: Duration(milliseconds: 500),
       vsync: this,
     );
-
-    // Set the initial value of the animation
     _controller.value = isBookmarked ? 1.0 : 0.0;
-
-    // Fetch the average rating
     _fetchAverageRating();
     _fetchUserProfile();
   }
-
 @override
 void dispose() {
-  
   super.dispose();
   _controller.dispose();
-  
 }
-
-
-
   Future<void> _fetchUserProfile() async {
     final url = Uri.parse(
         'https://rentconnect.vercel.app/user/${widget.property.userId}');
@@ -107,7 +94,6 @@ void dispose() {
       print('Error fetching profile data: $error');
     }
   }
-
 void _bookmarkProperty() {
   // Start the animation based on the current bookmark state
   if (!isBookmarked) {
